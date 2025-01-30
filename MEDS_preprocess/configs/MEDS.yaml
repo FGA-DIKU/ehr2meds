@@ -1,0 +1,61 @@
+test: false
+env: azure
+run_name: MEDS
+paths:
+  output_dir: outputs/preMEDS
+  file_type: parquet 
+  dump_path: 'data-backup/SP-dumps/2024-09-10'
+
+combine:
+  output_dir: outputs/MEDS
+  config_name: 'event_configs'
+  n_parallel_workers: 100
+
+filtering: false
+
+preprocessor:
+  _target_: preprocessors.preMEDS.MEDSPreprocessor
+
+concepts:
+  admissions:
+    filename: CPMI_ADTHaendelser.parquet
+    keep_cols: [CPR_hash, Flyt_ind, Flyt_ud, Afsnit, ADT_haendelse]
+    chunksize: 1000000
+    file_type: csv
+  
+  diagnosis:
+    filename: CPMI_Diagnoser.parquet
+    keep_cols: [CPR_hash, Diagnosekode, Diagnose, Noteret_dato]
+    names: [PID, Diagnosekode, Diagnose, TIMESTAMP]
+    dtypes: {CONCEPT: category}
+    chunksize: 10000000
+    file_type: csv
+
+  procedure:
+    filename: CPMI_Procedurer.parquet
+    keep_cols: [CPR_hash, ProcedureCode, ServiceDatetime, ProcedureName]
+    dtypes: {CONCEPT: category}
+    chunksize: 10000000
+    file_type: csv
+
+  medication:
+    filename: CPMI_Medicin.parquet
+    keep_cols: [CPR_hash, ATC, Administrationstidspunkt]
+    dtypes: {CONCEPT: category, 'PID': category}  
+    chunksize: 10000000
+    start_chunk: 0
+    file_type: csv
+
+  labtest:
+    filename: [CPMI_Labsvar.parquet]
+    keep_cols: [CPR_hash, BestOrd, Prøvetagningstidspunkt, Resultatværdi]
+    names: [PID, CONCEPT, TIMESTAMP, RESULT]
+    dtypes: {CONCEPT: category}
+    chunksize: 10000000
+    file_type: csv
+  
+patients_info:
+  filename: CPMI_PatientInfo.parquet
+  names: [PID, BIRTHDATE, DEATHDATE, GENDER]
+  usecols: [0, 1, 2, 3]
+  file_type: parquet

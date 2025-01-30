@@ -1,0 +1,71 @@
+name: meds_dev  # Replace with your desired environment name
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11.10
+      # - mkdocs==1.6.0
+      # - mkdocs-material==9.5.31
+      # - mkdocstrings[python,shell]==0.25.2
+      # - mkdocs-gen-files==0.5.0
+      # - mkdocs-literate-nav==0.6.1
+      # - mkdocs-section-index==0.3.9
+      # - mkdocs-git-authors-plugin==0.9.0
+      # - mkdocs-git-revision-date-localized-plugin==1.2.6
+
+
+
+
+
+# name: MEDS_tab
+# channels:
+#   - defaults
+#   - conda-forge
+# dependencies:
+#   - _libgcc_mutex=0.1=main
+#   - _openmp_mutex=5.1=1_gnu
+#   - bzip2=1.0.8=h5eee18b_6
+#   - ca-certificates=2024.11.26=h06a4308_0
+#   - ld_impl_linux-64=2.40=h12ee557_0
+#   - libffi=3.4.4=h6a678d5_1
+#   - libgcc-ng=11.2.0=h1234567_1
+#   - libgomp=11.2.0=h1234567_1
+#   - libstdcxx-ng=11.2.0=h1234567_1
+#   - libuuid=1.41.5=h5eee18b_0
+#   - ncurses=6.4=h6a678d5_0
+#   - openssl=3.0.15=h5eee18b_0
+#   - pip=24.2=py311h06a4308_0
+#   - python=3.11.10=he870216_0
+#   - readline=8.2=h5eee18b_0
+#   - setuptools=75.1.0=py311h06a4308_0
+#   - sqlite=3.45.3=h5eee18b_0
+#   - tk=8.6.14=h39e8969_0
+#   - tzdata=2024b=h04d1e81_0
+#   - wheel=0.44.0=py311h06a4308_0
+#   - xz=5.4.6=h5eee18b_1
+#   - zlib=1.2.13=h5eee18b_1
+#   - pip:
+#       - antlr4-python3-runtime==4.9.3
+#       - attrs==24.2.0
+#       - bigtree==0.18.3
+#       - es-aces==0.5.0
+#       - hydra-core==1.3.2
+#       - jsonschema==4.23.0
+#       - jsonschema-specifications==2024.10.1
+#       - loguru==0.7.3
+#       - meds==0.3.3
+#       - meds-dev==0.1.dev135+gad919c4.d20241209
+#       - networkx==3.3
+#       - numpy==2.2.0
+#       - omegaconf==2.3.0
+#       - packaging==24.2
+#       - polars==1.5.0
+#       - pyarrow==17.0.0
+#       - pytimeparse==1.1.8
+#       - pyyaml==6.0.2
+#       - referencing==0.35.1
+#       - rpds-py==0.22.3
+#       - ruamel-yaml==0.18.6
+#       - ruamel-yaml-clib==0.2.12
+#       - typing-extensions==4.12.2
+# prefix: /anaconda/envs/MEDS_tab

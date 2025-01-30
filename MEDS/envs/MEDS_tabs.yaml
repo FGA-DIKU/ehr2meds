@@ -1,0 +1,13 @@
+channels:
+  - conda-forge
+  - anaconda
+dependencies:
+  - python=3.11.10
+  - pip:
+      - meds==0.3.3
+      - meds-transforms==0.0.7
+      - meds-tab==0.0.6
+      - hydra-core==1.3.2
+      - hydra-joblib-launcher==1.2.0
+name: meds_tabs
+
