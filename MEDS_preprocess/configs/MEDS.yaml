@@ -1,15 +1,10 @@
-test: false
+test: true
 env: azure
 run_name: MEDS
 paths:
   output_dir: outputs/preMEDS
   file_type: parquet 
   dump_path: 'data-backup/SP-dumps/2024-09-10'
-
-combine:
-  output_dir: outputs/MEDS
-  config_name: 'event_configs'
-  n_parallel_workers: 100
 
 filtering: false
 
