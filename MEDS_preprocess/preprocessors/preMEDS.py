@@ -27,12 +27,6 @@ class MEDSPreprocessor():
         self.cfg = cfg
         self.logger = logger
         self.datastore =  datastore
-        if 'file_path' in cfg.combine:
-            _, mount_context = setup_azure(run_name=self.cfg.run_name, datastore_name='workspaceblobstore', dataset_name='BREAST_CANCER')
-            self.mount_point = mount_context.mount_point
-            self.data_path = join(self.mount_point, cfg.combine.file_path)
-        else:
-            self.data_path = False
         self.dump_path = dump_path if dump_path is not None else None
         self.test = cfg.test
         self.logger.info(f"test {self.test}")
@@ -41,9 +35,8 @@ class MEDSPreprocessor():
         self.formatted_patients = set()
 
     def __call__(self):
-        if self.data_path is False:
-            subject_id_mapping = self.patients_info()
-            self.format_concepts(subject_id_mapping)        
+        subject_id_mapping = self.patients_info()
+        self.format_concepts(subject_id_mapping)        
 
     def filter_dates(self):
         self.logger.info("Filter dates")
@@ -209,14 +202,6 @@ class MEDSPreprocessor():
         self.save(df, self.cfg.patients_info, 'subject')
         return hash_to_integer_map
 
-    @staticmethod
-    def combine_dataframes(df1, df2):
-        """
-        Combine two dataframes, removing unnecessary columns from the one within admissions.
-        """
-        df2 = df2.drop(columns=['TIMESTAMP_START', 'TIMESTAMP_END'])
-        return pd.concat([df1, df2])
-    
     @staticmethod
     def assign_hash(df):
         return df.apply(lambda x: hashlib.sha256(str(x).encode()).hexdigest(), axis=1)

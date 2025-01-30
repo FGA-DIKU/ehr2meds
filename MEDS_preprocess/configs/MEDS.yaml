@@ -1,4 +1,4 @@
-test: true
+test: false
 env: azure
 run_name: MEDS
 paths:
