@@ -11,9 +11,10 @@ subject:
       - DOD
     time: col(DEATHDATE)
   gender:
-    code: ["GENDER", "col(gender)"]
-    time: null
-    
+    code:
+      - "GENDER"
+      - col(GENDER)
+    time: null    
 admissions:
   admission:
     code:

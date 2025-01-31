@@ -107,13 +107,12 @@ class MEDSPreprocessor():
         return filtered_chunk
 
     @staticmethod
-    def format_diagnosis(diag, cfg):
+    def format_diagnosis(diag, subject_id_mapping):
         diag['code'] = diag['Diagnose'].str.extract(r'\((D.*?)\)', expand=False)
-        if 'fill_diags' in cfg and cfg['fill_diags']:
-            diag['code'] = diag['code'].fillna(diag['Diagnose'])
         diag['CONCEPT'] = diag.Diagnosekode.fillna(diag.code)
         diag = diag.drop(['code', 'Diagnose', 'Diagnosekode'], axis=1)
-        diag = diag.rename(columns={'CPR_hash':'PID', 'Noteret_dato':'TIMESTAMP'})
+        diag = diag.rename(columns={'CPR_hash':'subject_id', 'Noteret_dato':'timestamp', 'CONCEPT':'code'})
+        diag['subject_id'] = diag['subject_id'].map(subject_id_mapping)
         return diag
 
     @staticmethod
