@@ -3,7 +3,7 @@ env: azure
 run_name: normalise_labs
 paths:
   output_dir: outputs/data
-    
+  dump_path: 'data-backup/SP-dumps/2024-09-10'    
 preprocessor:
   _target_: preprocessors.normaliser.Normaliser
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import os
 from tqdm import tqdm
 from azureml.core import Dataset
-from preprocessors.azure import MEDSPreprocessor
+from preprocessors.preMEDS import MEDSPreprocessor
 import torch
 from azure_run import datastore
 import numpy as np
@@ -19,7 +19,7 @@ class Normaliser():
         self.logger.info(f"test {self.test}")
         self.firstRound = True
         self.normalisation_type = cfg.data['norm_type']
-        self.azure_processor = MEDSPreprocessor(cfg, logger)
+        self.azure_processor = MEDSPreprocessor(cfg, logger, self.data_store, dump_path=cfg.paths.dump_path)
 
         # Load distribution data
         if 'dist_path' not in cfg.data:

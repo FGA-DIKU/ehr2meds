@@ -30,7 +30,6 @@ class MEDSPreprocessor():
         self.dump_path = dump_path if dump_path is not None else None
         self.test = cfg.test
         self.logger.info(f"test {self.test}")
-        self.removed_concepts = {k:0 for k in self.cfg.concepts.keys()} # count concepts that are removed
         self.initial_patients = set()
         self.formatted_patients = set()
 
