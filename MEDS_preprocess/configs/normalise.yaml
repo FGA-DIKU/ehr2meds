@@ -1,0 +1,22 @@
+test: false
+env: azure
+run_name: normalise_labs
+paths:
+  output_dir: outputs/data
+    
+preprocessor:
+  _target_: preprocessors.normaliser.Normaliser
+
+data:
+  norm_type: Min_max
+  chunksize: 30000000
+  data_store: "workspaceblobstore"
+  file_type: csv
+  save_name: "min_max_labtest"
+  data_path: "MEDS/data_2024_09_10/preMEDS/concept.labtest.csv"
+  save_path: "MEDS/data_2024_09_10/preMEDS/"
+
+# data:
+#   norm_type: Min_max
+#   n_quantiles: 1000
+#   chunksize: 30000000
