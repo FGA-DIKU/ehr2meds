@@ -4,7 +4,7 @@ from pathlib import Path
 import os
 from tqdm import tqdm
 from azureml.core import Dataset
-from preprocessors.preMEDS import MEDSPreprocessor
+from preprocessors.azure import AzurePreprocessor
 import torch
 from azure_run import datastore
 import numpy as np
@@ -19,7 +19,7 @@ class Normaliser():
         self.logger.info(f"test {self.test}")
         self.firstRound = True
         self.normalisation_type = cfg.data['norm_type']
-        self.azure_processor = MEDSPreprocessor(cfg, logger, self.data_store, dump_path=cfg.paths.dump_path)
+        self.azure_processor = AzurePreprocessor(cfg, logger)
 
         # Load distribution data
         if 'dist_path' not in cfg.data:
@@ -102,9 +102,9 @@ class Normaliser():
         counter = 0
         for chunk in tqdm(self.azure_processor.load_chunks(cfg.data), desc='Chunks'):
             self.logger.info(f'Loaded {cfg.data.chunksize*counter}')
-            chunk['RESULT'] = pd.to_numeric(chunk['RESULT'], errors='coerce')
-            chunk = chunk.dropna(subset=['RESULT'])
-            grouped = chunk.groupby('CONCEPT')['RESULT'].apply(list).to_dict()
+            chunk['numeric_value'] = pd.to_numeric(chunk['numeric_value'], errors='coerce')
+            chunk = chunk.dropna(subset=['numeric_value'])
+            grouped = chunk.groupby('code')['numeric_value'].apply(list).to_dict()
 
             for key, values in grouped.items():
                 if key in lab_val_dict:
@@ -116,12 +116,12 @@ class Normaliser():
         return lab_val_dict
 
     def process_chunk(self, chunk):
-        chunk['RESULT'] = chunk.apply(self.normalise, axis=1)
+        chunk['numeric_value'] = chunk.apply(self.normalise, axis=1)
         return chunk
         
     def normalise(self, row):
-        concept = row['CONCEPT']
-        value = row['RESULT']        
+        concept = row['code']
+        value = row['numeric_value']        
         # Returns value if it is not numerical
         if not pd.notnull(pd.to_numeric(value, errors='coerce')):
             return value
