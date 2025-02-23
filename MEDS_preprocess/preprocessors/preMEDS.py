@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 
+from azure_run import datastore
 import pandas as pd
 import pickle
 from azureml.core import Dataset
@@ -15,15 +16,16 @@ FILENAME = "filename"
 
 
 class MEDSPreprocessor:
-    def __init__(self, cfg, logger, datastore, dump_path):
+    def __init__(self, cfg, logger):
         self.cfg = cfg
         self.logger = logger
-        self.datastore = datastore
-        self.dump_path = dump_path
         self.test = cfg.test
         self.logger.info(f"test {self.test}")
         self.initial_patients = set()
         self.formatted_patients = set()
+
+        self.datastore = datastore(cfg.concepts.datastore)
+        self.dump_path = cfg.concepts.dump_path
 
     def __call__(self):
         # 1) Build a subject_id mapping
@@ -129,15 +131,18 @@ class MEDSPreprocessor:
             df[CODE] = df[CODE].str.extract(regex, expand=False)
 
         # 4) Fill missing code values using fillna_column, optionally with extraction regex
-        fillna_col = concept_config.get("fillna_column")
-        if fillna_col:
-            fillna_regex = concept_config.get("fillna_code_extraction_regex")
-            if fillna_regex:
-                fill_vals = df[fillna_col].str.extract(fillna_regex, expand=False)
-            else:
-                fill_vals = df[fillna_col]
-            df[CODE] = df[CODE].fillna(fill_vals)
-            df.drop(columns=[fillna_col], inplace=True)
+        fillna_cfg = concept_config.get("fillna")
+        if fillna_cfg:
+            for target_col, fill_config in fillna_cfg.items():
+                fill_col = fill_config.get("column")
+                if fill_col:
+                    fillna_regex = fill_config.get("regex")
+                    if fillna_regex:
+                        fill_vals = df[fill_col].str.extract(fillna_regex, expand=False)
+                    else:
+                        fill_vals = df[fill_col]
+                    df[target_col] = df[target_col].fillna(fill_vals)
+                df = df.drop(columns=[fill_col])
 
         # 5) Add a prefix if configured
         code_prefix = concept_config.get("code_prefix", "")

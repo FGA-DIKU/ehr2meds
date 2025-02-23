@@ -10,6 +10,8 @@ preprocessor:
   _target_: preprocessors.preMEDS.MEDSPreprocessor
 
 concepts:
+  datastore: researcher_data
+  dump_path: 'data-backup/SP-dumps/2024-09-10'
   admissions:
     filename: CPMI_ADTHaendelser.parquet
     # columns to keep, rename, and the final names
