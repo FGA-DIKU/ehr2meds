@@ -4,7 +4,6 @@ run_name: MEDS
 paths:
   output_dir: outputs/preMEDS
   file_type: csv 
-  dump_path: 'data-backup/SP-dumps/2024-09-10'
 
 preprocessor:
   _target_: preprocessors.preMEDS.MEDSPreprocessor
