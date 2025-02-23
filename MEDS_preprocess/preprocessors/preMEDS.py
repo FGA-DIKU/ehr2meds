@@ -1,25 +1,12 @@
-import pandas as pd
+import hashlib
 import os
+from datetime import timedelta
+from os.path import join
+
+import pandas as pd
+import torch
 from azureml.core import Dataset
 from tqdm import tqdm
-import hashlib
-from azureml.core import Workspace, Dataset, Datastore
-from os.path import join
-from datetime import timedelta
-import torch 
-
-def setup_azure(run_name, datastore_name='workspaceblobstore', dataset_name='BREAST_CANCER'):
-    from azure_run import datastore
-    from azure_run.run import Run
-    from azureml.core import Dataset
-    
-    run = Run
-    run.name(run_name)
-    ds = datastore(datastore_name)
-    dataset = Dataset.File.from_files(path=(ds, dataset_name))
-    mount_context = dataset.mount()
-    mount_context.start()  # this will mount the file streams
-    return run, mount_context
 
 
 class MEDSPreprocessor():
@@ -252,7 +239,7 @@ class MEDSPreprocessor():
             
     def get_dataset(self, cfg: dict):
         file_path = join(self.dump_path, cfg.filename) if self.dump_path is not None else cfg.filename
-        ds = Dataset.Tabular.from_parquet_files(path=(self.datastore,file_path))
+        ds = Dataset.Tabular.from_parquet_files(path=(self.datastore, file_path))
         if 'keep_cols' in cfg:
             ds = ds.keep_columns(columns=cfg.keep_cols)
         if self.test:
