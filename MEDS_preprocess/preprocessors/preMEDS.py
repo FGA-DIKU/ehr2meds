@@ -55,7 +55,7 @@ class ConceptProcessor:
     @staticmethod
     def _select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
         """Select and rename columns based on columns_map."""
-        MEDSPreprocessor.check_columns(df, columns_map)
+        ConceptProcessor.check_columns(df, columns_map)
         df = df[list(columns_map.keys())]
         df = df.rename(columns=columns_map)
         return df
@@ -71,7 +71,7 @@ class ConceptProcessor:
         # Fill missing values
         fillna_cfg = concept_config.get("fillna")
         if fillna_cfg:
-            df = MEDSPreprocessor._fill_missing_values(df, fillna_cfg)
+            df = ConceptProcessor._fill_missing_values(df, fillna_cfg)
 
         # Add code prefix if configured
         code_prefix = concept_config.get("code_prefix", "")
@@ -95,7 +95,7 @@ class ConceptProcessor:
             df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
 
         # Clean data
-        if MANDATORY_COLUMNS in df.columns:
+        if all(col in df.columns for col in MANDATORY_COLUMNS):
             df.dropna(subset=MANDATORY_COLUMNS, how="any", inplace=True)
         df.drop_duplicates(inplace=True)
 
@@ -128,7 +128,7 @@ class ConceptProcessor:
         Example: for admissions, we handle merges of overlapping intervals.
         """
         if postprocess_func_name == "merge_admissions":
-            return MEDSPreprocessor._merge_admissions(df)
+            return ConceptProcessor._merge_admissions(df)
         else:
             # Potentially handle other postprocesses or raise an error
             raise ValueError(f"Unknown postprocess function: {postprocess_func_name}")
