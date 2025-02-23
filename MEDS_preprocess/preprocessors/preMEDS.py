@@ -137,6 +137,7 @@ class MEDSPreprocessor:
             else:
                 fill_vals = df[fillna_col]
             df[CODE] = df[CODE].fillna(fill_vals)
+            df.drop(columns=[fillna_col], inplace=True)
 
         # 5) Add a prefix if configured
         code_prefix = concept_config.get("code_prefix", "")
@@ -269,13 +270,14 @@ class MEDSPreprocessor:
         else:
             raise ValueError(f"Filetype {file_type} not implemented.")
 
-
     @staticmethod
     def check_columns(df, columns_map):
         missing_columns = set(columns_map.keys()) - set(df.columns)
         if missing_columns:
-            available_columns = pd.DataFrame({'Available Columns': sorted(df.columns)})
-            requested_columns = pd.DataFrame({'Requested Columns': sorted(columns_map.keys())})
+            available_columns = pd.DataFrame({"Available Columns": sorted(df.columns)})
+            requested_columns = pd.DataFrame(
+                {"Requested Columns": sorted(columns_map.keys())}
+            )
             error_msg = f"\nMissing columns: {sorted(missing_columns)}\n\n"
             error_msg += "Columns comparison:\n"
             error_msg += f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
