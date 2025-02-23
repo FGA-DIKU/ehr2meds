@@ -23,7 +23,7 @@ def run_pre_MEDS(config_name):
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     logger = logging.getLogger(__name__)
-    preprocessor = instantiate(cfg.preprocessor, {'cfg':cfg, 'logger':logger, 'datastore':ds_sp, 'dump_path': cfg.paths.dump_path, 'file_datastore':blob_ds})
+    preprocessor = instantiate(cfg.preprocessor, {'cfg':cfg, 'logger':logger, 'datastore':ds_sp, 'dump_path': cfg.paths.dump_path})
     preprocessor()
     return config_path, cfg
 

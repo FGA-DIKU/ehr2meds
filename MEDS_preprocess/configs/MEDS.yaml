@@ -3,10 +3,8 @@ env: azure
 run_name: MEDS
 paths:
   output_dir: outputs/preMEDS
-  file_type: parquet 
+  file_type: csv 
   dump_path: 'data-backup/SP-dumps/2024-09-10'
-
-filtering: false
 
 preprocessor:
   _target_: preprocessors.preMEDS.MEDSPreprocessor
@@ -14,43 +12,77 @@ preprocessor:
 concepts:
   admissions:
     filename: CPMI_ADTHaendelser.parquet
-    keep_cols: [CPR_hash, Flyt_ind, Flyt_ud, Afsnit, ADT_haendelse]
-    chunksize: 1000000
-    file_type: csv
-  
+    # columns to keep, rename, and the final names
+    columns_map:
+      CPR_hash: subject_id
+      Flyt_ind: admission
+      Flyt_ud: discharge
+      # Afsnit: section 
+      # ADT_haendelse: type
+    # some special post-processing function for merges
+    postprocess: "merge_admissions"
+
   diagnosis:
     filename: CPMI_Diagnoser.parquet
-    keep_cols: [CPR_hash, Diagnosekode, Diagnose, Noteret_dato]
-    names: [PID, Diagnosekode, Diagnose, TIMESTAMP]
-    dtypes: {CONCEPT: category}
-    chunksize: 10000000
-    file_type: csv
+    columns_map:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Noteret_dato: timestamp
+      CPR_hash: subject_id
+    # code extraction
+    # code_extraction_regex: ... # if needed
+    fillna:
+      code:
+        column: fill_code
+        regex: '\((D[^)]+)\)'
+    code_prefix: "D_"
 
   procedure:
     filename: CPMI_Procedurer.parquet
-    keep_cols: [CPR_hash, ProcedureCode, ServiceDatetime, ProcedureName]
-    dtypes: {CONCEPT: category}
-    chunksize: 10000000
-    file_type: csv
+    columns_map:
+      ProcedureCode: code
+      ProcedureName: fill_code
+      ServiceDatetime: timestamp
+      ServiceDate: fill_timestamp
+      CPR_hash: subject_id
+    fillna:
+      code:
+        column: fill_code
+      timestamp:
+        column: fill_timestamp
+    code_prefix: "P_"
 
   medication:
     filename: CPMI_Medicin.parquet
-    keep_cols: [CPR_hash, ATC, Administrationstidspunkt]
-    dtypes: {CONCEPT: category, 'PID': category}  
-    chunksize: 10000000
-    start_chunk: 0
-    file_type: csv
+    columns_map:
+      ATC: code
+      Administrationstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      CPR_hash: subject_id
+    fillna:
+      timestamp:
+        column: fill_timestamp
+    code_prefix: "M_"
 
   labtest:
-    filename: [CPMI_Labsvar.parquet]
-    keep_cols: [CPR_hash, BestOrd, Prøvetagningstidspunkt, Resultatværdi]
-    names: [PID, CONCEPT, TIMESTAMP, RESULT]
-    dtypes: {CONCEPT: category}
-    chunksize: 10000000
-    file_type: csv
-  
+    filename: CPMI_Labsvar.parquet
+    columns_map:
+      BestOrd: code
+      Prøvetagningstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      Resultatværdi: numeric_value
+      CPR_hash: subject_id
+    fillna:
+      timestamp:
+        column: fill_timestamp
+    code_prefix: "L_"
+    numeric_columns: [numeric_value]
+
 patients_info:
   filename: CPMI_PatientInfo.parquet
-  names: [PID, BIRTHDATE, DEATHDATE, GENDER]
-  usecols: [0, 1, 2, 3]
+  columns_map:
+    CPR_hash: subject_id
+    Fødselsdato: birthdate
+    Dødsdato: deathdate
+    Køn: gender
   file_type: parquet
