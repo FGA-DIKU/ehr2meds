@@ -19,7 +19,7 @@ jobs:
               run: |
                 python -m venv .venv
                 source .venv/bin/activate
-                pip install .[all]
+                pip install -r requirements.txt
 
             - name: Running tests
               run: |
