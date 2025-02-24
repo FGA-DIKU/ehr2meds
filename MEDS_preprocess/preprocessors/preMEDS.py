@@ -128,39 +128,44 @@ class ConceptProcessor:
     @staticmethod
     def _merge_admissions(df: pd.DataFrame) -> pd.DataFrame:
         """
-        Example of special post-processing for admissions:
-        - Sort by subject_id and admission start
+        Merge overlapping admission intervals for each subject:
+        - Group by subject_id
+        - Sort by admission start time
         - Merge intervals that overlap or are within 24h
-        - Then produce final rows
         """
         # Drop rows where admission or discharge is missing
         df.dropna(subset=[ADMISSION, DISCHARGE], inplace=True)
         df[ADMISSION] = pd.to_datetime(df[ADMISSION], errors="coerce")
         df[DISCHARGE] = pd.to_datetime(df[DISCHARGE], errors="coerce")
 
-        df.sort_values(by=[SUBJECT_ID, ADMISSION], inplace=True)
-
+        # Sort by subject_id and admission time
+        df = df.sort_values(by=[SUBJECT_ID, ADMISSION])
+        
         merged = []
-        current = None
-
-        for _, row in df.iterrows():
-            if current is None:
-                current = row
-                continue
-            # If next admission is within 24h
-            if row[ADMISSION] <= current[DISCHARGE] + timedelta(hours=24):
-                # Extend discharge if needed
-                if row[DISCHARGE] > current[DISCHARGE]:
-                    current[DISCHARGE] = row[DISCHARGE]
-            else:
-                # add the completed admission
+        
+        # Process each subject separately
+        for _, subject_df in df.groupby(SUBJECT_ID):
+            current = None
+            
+            for _, row in subject_df.iterrows():
+                if current is None:
+                    current = row.copy()
+                    continue
+                    
+                # If next admission is within 24h of current discharge
+                if row[ADMISSION] <= current[DISCHARGE] + timedelta(hours=24):
+                    # Extend discharge if needed
+                    if row[DISCHARGE] > current[DISCHARGE]:
+                        current[DISCHARGE] = row[DISCHARGE]
+                else:
+                    # Add the completed admission
+                    merged.append(current)
+                    current = row.copy()
+                    
+            if current is not None:
                 merged.append(current)
-                current = row
-        if current is not None:
-            merged.append(current)
 
         final_df = pd.DataFrame(merged)
-        # Possibly set "timestamp" = "admission" for a final column if you want
         final_df[TIMESTAMP] = final_df[ADMISSION]
         return final_df
 
