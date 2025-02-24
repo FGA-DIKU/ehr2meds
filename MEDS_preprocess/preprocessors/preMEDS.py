@@ -5,8 +5,8 @@ from datetime import timedelta
 from typing import Dict, Iterator, Optional, Tuple
 
 import pandas as pd
-from MEDS_preprocess.preprocessors.azure import datastore
 from azureml.core import Dataset
+from MEDS_preprocess.azure_run import datastore
 from tqdm import tqdm
 
 from MEDS_preprocess.preprocessors.constants import (ADMISSION, CODE,

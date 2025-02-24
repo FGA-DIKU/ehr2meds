@@ -33,8 +33,6 @@ concepts:
       Diagnose: fill_code
       Noteret_dato: timestamp
       CPR_hash: subject_id
-    # code extraction
-    # code_extraction_regex: ... # if needed
     fillna:
       code:
         column: fill_code
