@@ -2,7 +2,6 @@ import json
 import time
 import numpy as np
 import random
-import torch
 # from sklearn.metrics import confusion_matrix
 from azureml.core import Run as AzureRun, ScriptRunConfig, Environment
 
@@ -58,7 +57,6 @@ class Run:
                 R._seed = seed
                 random.seed(seed)
                 np.random.seed(seed)
-                torch.manual_seed(seed)
                 Run.log_metric("Seed", seed)
                 log().info(f"Seed set = {R._seed}!")
         return R._seed
