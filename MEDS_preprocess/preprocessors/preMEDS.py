@@ -5,17 +5,14 @@ from datetime import timedelta
 from typing import Dict, Iterator, Optional, Tuple
 
 import pandas as pd
-from azure_run import datastore
+from MEDS_preprocess.preprocessors.azure import datastore
 from azureml.core import Dataset
 from tqdm import tqdm
 
-CODE = "code"
-SUBJECT_ID = "subject_id"
-ADMISSION = "admission"
-DISCHARGE = "discharge"
-TIMESTAMP = "timestamp"
-FILENAME = "filename"
-MANDATORY_COLUMNS = [SUBJECT_ID, CODE, TIMESTAMP]
+from MEDS_preprocess.preprocessors.constants import (ADMISSION, CODE,
+                                                     DISCHARGE, FILENAME,
+                                                     MANDATORY_COLUMNS,
+                                                     SUBJECT_ID, TIMESTAMP)
 
 
 @dataclass
@@ -62,12 +59,7 @@ class ConceptProcessor:
 
     @staticmethod
     def _process_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-        """Handle code extraction, filling missing values, and adding prefixes."""
-        # Extract code with regex if requested
-        regex = concept_config.get("code_extraction_regex")
-        if regex and CODE in df.columns:
-            df[CODE] = df[CODE].str.extract(regex, expand=False)
-
+        """Filling missing values, and adding prefixes."""
         # Fill missing values
         fillna_cfg = concept_config.get("fillna")
         if fillna_cfg:
