@@ -3,12 +3,13 @@ requires = ["setuptools>=64.0", "setuptools-scm>=8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ehr_preprocess"
+name = "ehr2meds"
 dynamic = ["version"]
 description = "A preprocessing pipeline for electronic health records."
 authors = [
-    { name = "Kiril Klein", email = "your.email@example.com" },
-    { name = "Mikkel Odgaard", email = "example.email@example.com"},
+    { name = "Kiril Klein", email = "kikl@di.ku.dk" },
+    { name = "Mikkel Odgaard"},
+    { name = "Maria Montgomery"}
 ]
 requires-python = ">=3.10"
 classifiers = [
@@ -17,7 +18,6 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "hydra-core",
     "pandas",
     "numpy",
     "pyarrow",
@@ -32,8 +32,6 @@ dev = [
     # Add other development dependencies here
 ]
 meds = [
-    "dask[complete]",
-    "meds",
     "MEDS-transforms>=0.0.7",
 ]
 [tool.setuptools_scm]
