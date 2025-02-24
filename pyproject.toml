@@ -21,12 +21,13 @@ dependencies = [
     "pandas",
     "numpy",
     "pyarrow",
-    "tqdm"
+    "tqdm",
+    "azureml-core"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest",
+    "unittests",
     "black",
     "flake8",
     # Add other development dependencies here
@@ -34,9 +35,7 @@ dev = [
 meds = [
     "MEDS-transforms>=0.0.7",
 ]
-azure = [
-    "azureml-core"
-]
+
 [tool.setuptools_scm]
 [tool.setuptools.packages.find]
 where = ["."]
