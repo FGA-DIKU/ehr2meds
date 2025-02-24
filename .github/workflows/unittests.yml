@@ -15,10 +15,11 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Setup dependencies.
+            - name: Setup dependencies
               run: |
                 python -m venv .venv
                 source .venv/bin/activate
+                pip install --upgrade pip setuptools
                 pip install .
 
             - name: Running tests
