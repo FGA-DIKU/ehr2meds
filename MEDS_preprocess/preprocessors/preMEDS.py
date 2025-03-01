@@ -9,10 +9,15 @@ from azureml.core import Dataset
 from MEDS_preprocess.azure_run import datastore
 from tqdm import tqdm
 
-from MEDS_preprocess.preprocessors.constants import (ADMISSION, CODE,
-                                                     DISCHARGE, FILENAME,
-                                                     MANDATORY_COLUMNS,
-                                                     SUBJECT_ID, TIMESTAMP)
+from MEDS_preprocess.preprocessors.constants import (
+    ADMISSION,
+    CODE,
+    DISCHARGE,
+    FILENAME,
+    MANDATORY_COLUMNS,
+    SUBJECT_ID,
+    TIMESTAMP,
+)
 
 
 @dataclass
@@ -112,18 +117,28 @@ class ConceptProcessor:
         return df
 
     @staticmethod
-    def _postprocess_switch(
-        df: pd.DataFrame, postprocess_func_name: str
+    def process_admissions(
+        df: pd.DataFrame, admissions_config: dict, subject_id_mapping: Dict[str, int]
     ) -> pd.DataFrame:
         """
-        Route to the appropriate postprocessing function.
-        Example: for admissions, we handle merges of overlapping intervals.
+        Process admissions data.
+        Expected final columns: subject_id, admission, discharge (and optionally timestamp).
         """
-        if postprocess_func_name == "merge_admissions":
-            return ConceptProcessor._merge_admissions(df)
-        else:
-            # Potentially handle other postprocesses or raise an error
-            raise ValueError(f"Unknown postprocess function: {postprocess_func_name}")
+        # For admissions, we only select & rename columns.
+        df = ConceptProcessor._select_and_rename_columns(
+            df, admissions_config.get("columns_map", {})
+        )
+        # For admissions, we do not process codes or convert numeric columns.
+        # But we still allow a postprocessing step (e.g., merging overlapping intervals).
+        df = ConceptProcessor._merge_admissions(df)
+        # Map subject_id if available
+        if SUBJECT_ID in df.columns:
+            df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
+
+        # Clean data
+        df.dropna(subset=[ADMISSION, DISCHARGE], how="any", inplace=True)
+        df.drop_duplicates(inplace=True)
+        return df
 
     @staticmethod
     def _merge_admissions(df: pd.DataFrame) -> pd.DataFrame:
@@ -140,18 +155,18 @@ class ConceptProcessor:
 
         # Sort by subject_id and admission time
         df = df.sort_values(by=[SUBJECT_ID, ADMISSION])
-        
+
         merged = []
-        
+
         # Process each subject separately
         for _, subject_df in df.groupby(SUBJECT_ID):
             current = None
-            
+
             for _, row in subject_df.iterrows():
                 if current is None:
                     current = row.copy()
                     continue
-                    
+
                 # If next admission is within 24h of current discharge
                 if row[ADMISSION] <= current[DISCHARGE] + timedelta(hours=24):
                     # Extend discharge if needed
@@ -161,13 +176,11 @@ class ConceptProcessor:
                     # Add the completed admission
                     merged.append(current)
                     current = row.copy()
-                    
+
             if current is not None:
                 merged.append(current)
 
-        final_df = pd.DataFrame(merged)
-        final_df[TIMESTAMP] = final_df[ADMISSION]
-        return final_df
+        return pd.DataFrame(merged)
 
     @staticmethod
     def check_columns(df: pd.DataFrame, columns_map: dict):
@@ -202,6 +215,7 @@ class MEDSPreprocessor:
         self.initial_patients = set()
         self.formatted_patients = set()
 
+        # this will be simplified in the future
         data_config = DataConfig(
             datastore=cfg.data_path.concepts.datastore,
             dump_path=cfg.data_path.concepts.dump_path,
@@ -260,20 +274,28 @@ class MEDSPreprocessor:
         for concept_type, concept_config in tqdm(
             self.cfg.concepts.items(), desc="Concepts"
         ):
-            first_chunk = True
+            if concept_type == "admissions":
+                self.format_admissions(concept_config, subject_id_mapping)
+                continue
+            self._process_concept_chunks(
+                concept_type, concept_config, subject_id_mapping, first_chunk=True
+            )
 
-            filenames = concept_config.get(FILENAME)
-            if isinstance(filenames, list):
-                for file_name in filenames:
-                    concept_config[FILENAME] = file_name
-                    self._process_concept_chunks(
-                        concept_type, concept_config, subject_id_mapping, first_chunk
-                    )
-                    first_chunk = False
-            else:
-                self._process_concept_chunks(
-                    concept_type, concept_config, subject_id_mapping, first_chunk
-                )
+    def format_admissions(
+        self, admissions_config: dict, subject_id_mapping: Dict[str, int]
+    ) -> None:
+        """Process the admissions concept separately."""
+        first_chunk = True
+        for chunk in tqdm(
+            self.data_handler.load_chunks(admissions_config, self.test),
+            desc="Chunks admissions",
+        ):
+            processed_chunk = ConceptProcessor.process_admissions(
+                chunk, admissions_config, subject_id_mapping
+            )
+            mode = "w" if first_chunk else "a"
+            self.data_handler.save(processed_chunk, "admissions", mode=mode)
+            first_chunk = False
 
     def _process_concept_chunks(
         self,
@@ -361,3 +383,18 @@ class DataHandler:
                 df.to_csv(path, index=False, mode="a", header=False)
         else:
             raise ValueError(f"Filetype {file_type} not implemented.")
+
+
+## functionality for registers ##
+# Select columns via rename columns
+# Fill missing values (probably not needed)
+# Sometimes combining data and time columns into one timestamp
+# Convert to numeric (probably not needed)
+# Optionally map to PID via a secondary mapping file
+# For each unroll column, make a copy of the df together with PID, timestamp and the chosen column, rename the chosen column to code (keep only columns in here that will not be unrolled),stre dfs in list, when finished, concat the list.
+# Concat and prefix code
+# Convert numeirc (probably not needed)
+# Map to SP PIDs
+# Map to integer subject_ids using computed mapping
+# Clean by dropping nans and duplicates
+# Save
