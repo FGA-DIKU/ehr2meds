@@ -249,7 +249,8 @@ class MEDSPreprocessor:
     def _factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
         """Factorize the subject_id column into an integer mapping."""
         df["integer_id"], unique_vals = pd.factorize(df[SUBJECT_ID])
-        hash_to_int_map = dict(zip(unique_vals, range(len(unique_vals))))
+        shifted_indices = df["integer_id"] + 1 # +1 to avoid binary dtype
+        hash_to_int_map = dict(zip(unique_vals, shifted_indices))
         # Overwrite subject_id with the factorized integer and drop the helper column.
         df[SUBJECT_ID] = df["integer_id"]
         df.drop(columns=["integer_id"], inplace=True)
