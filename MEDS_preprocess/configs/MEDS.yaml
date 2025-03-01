@@ -12,6 +12,12 @@ data_path:
   concepts:
     datastore: researcher_data
     dump_path: 'data-backup/SP-dumps/2024-09-10'
+  register_concepts:
+    datastore: researcher_data
+    dump_path: 'FSEID'
+  mapping: # maps from register PIDs to sp hashes
+    datastore: researcher_data
+    dump_path: 'maskerede_data'
 
 concepts:
   admissions:
