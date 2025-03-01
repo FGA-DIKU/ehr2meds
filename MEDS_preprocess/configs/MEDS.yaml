@@ -12,6 +12,13 @@ data_path:
   concepts:
     datastore: researcher_data
     dump_path: 'data-backup/SP-dumps/2024-09-10'
+  register_concepts:
+    datastore: researcher_data
+    dump_path: 'FSEID'
+  mapping:
+    datastore: researcher_data
+    dump_path: 'maskerede_data'
+
 
 concepts:
   admissions:
@@ -79,6 +86,21 @@ concepts:
         column: fill_timestamp
     code_prefix: "L_"
     numeric_columns: [numeric_value]
+
+register_concepts:
+  diagnosis:
+    filename: CPMI_Diagnoser.parquet
+    columns_map:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Noteret_dato: timestamp
+      CPR_hash: subject_id
+    fillna:
+      code:
+        column: fill_code
+        regex: '\((D[^)]+)\)'
+    code_prefix: "D_"
+
 
 patients_info:
   filename: CPMI_PatientInfo.parquet
