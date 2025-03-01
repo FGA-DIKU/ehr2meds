@@ -1,18 +1,13 @@
-from os.path import dirname, join, realpath
-import shutil
-from preprocessors.load import instantiate, load_config
 import logging
-from azure_run.run import Run
-from azure_run import datastore
-from azureml.core import Dataset
-
 import pathlib
-import subprocess
+import shutil
+from os.path import dirname, join, realpath
+
+from azure_run.run import Run
+from preprocessors.load import instantiate, load_config
 
 run = Run
 run.name(f"MEDS")
-ds_sp = datastore("researcher_data")
-blob_ds = datastore("workspaceblobstore")
 
 config_name = "MEDS"
 def run_pre_MEDS(config_name):
@@ -25,7 +20,7 @@ def run_pre_MEDS(config_name):
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     logger = logging.getLogger(__name__)
-    preprocessor = instantiate(cfg.preprocessor, {'cfg':cfg, 'logger':logger, 'datastore':ds_sp, 'dump_path': cfg.paths.dump_path, 'file_datastore':blob_ds})
+    preprocessor = instantiate(cfg.preprocessor, {'cfg':cfg, 'logger':logger})
     preprocessor()
     return config_path, cfg
 

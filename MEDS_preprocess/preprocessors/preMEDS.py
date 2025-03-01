@@ -1,281 +1,364 @@
-import pandas as pd
 import os
-from azureml.core import Dataset
-from tqdm import tqdm
-import hashlib
-from azureml.core import Workspace, Dataset, Datastore
-from os.path import join
+import pickle
+from dataclasses import dataclass
 from datetime import timedelta
-import torch 
+from typing import Dict, Iterator, Optional, Tuple
 
-def setup_azure(run_name, datastore_name='workspaceblobstore', dataset_name='BREAST_CANCER'):
-    from azure_run import datastore
-    from azure_run.run import Run
-    from azureml.core import Dataset
-    
-    run = Run
-    run.name(run_name)
-    ds = datastore(datastore_name)
-    dataset = Dataset.File.from_files(path=(ds, dataset_name))
-    mount_context = dataset.mount()
-    mount_context.start()  # this will mount the file streams
-    return run, mount_context
+import pandas as pd
+from azureml.core import Dataset
+from MEDS_preprocess.azure_run import datastore
+from tqdm import tqdm
+
+from MEDS_preprocess.preprocessors.constants import (ADMISSION, CODE,
+                                                     DISCHARGE, FILENAME,
+                                                     MANDATORY_COLUMNS,
+                                                     SUBJECT_ID, TIMESTAMP)
 
 
-class MEDSPreprocessor():
-    def __init__(self, cfg, logger, datastore, dump_path, file_datastore=None) -> None:
+@dataclass
+class DataConfig:
+    """Configuration for data handling"""
+
+    datastore: str
+    dump_path: Optional[str]
+    output_dir: str
+    file_type: str
+
+
+class ConceptProcessor:
+    """Handles the processing of medical concepts"""
+
+    @staticmethod
+    def process_concept(
+        df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]
+    ) -> pd.DataFrame:
+        """
+        Main method for processing a single concept's data
+        """
+        df = ConceptProcessor._select_and_rename_columns(
+            df, concept_config.get("columns_map", {})
+        )
+        df = ConceptProcessor._process_codes(df, concept_config)
+        df = ConceptProcessor._convert_and_clean_data(
+            df, concept_config, subject_id_mapping
+        )
+
+        postprocess = concept_config.get("postprocess")
+        if postprocess:
+            df = ConceptProcessor._postprocess_switch(df, postprocess)
+
+        return df
+
+    @staticmethod
+    def _select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
+        """Select and rename columns based on columns_map."""
+        ConceptProcessor.check_columns(df, columns_map)
+        df = df[list(columns_map.keys())]
+        df = df.rename(columns=columns_map)
+        return df
+
+    @staticmethod
+    def _process_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+        """Filling missing values, and adding prefixes."""
+        # Fill missing values
+        fillna_cfg = concept_config.get("fillna")
+        if fillna_cfg:
+            df = ConceptProcessor._fill_missing_values(df, fillna_cfg)
+
+        # Add code prefix if configured
+        code_prefix = concept_config.get("code_prefix", "")
+        if code_prefix and CODE in df.columns:
+            df[CODE] = code_prefix + df[CODE].astype(str)
+
+        return df
+
+    @staticmethod
+    def _convert_and_clean_data(
+        df: pd.DataFrame, concept_config: dict, subject_id_mapping: dict
+    ) -> pd.DataFrame:
+        """Convert numeric columns, map subject IDs, and clean the data."""
+        # Convert numeric columns
+        numeric_cols = concept_config.get("numeric_columns", [])
+        for col in numeric_cols:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        # Map subject_id if available
+        if SUBJECT_ID in df.columns:
+            df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
+
+        # Clean data
+        if all(col in df.columns for col in MANDATORY_COLUMNS):
+            df.dropna(subset=MANDATORY_COLUMNS, how="any", inplace=True)
+        df.drop_duplicates(inplace=True)
+
+        return df
+
+    @staticmethod
+    def _fill_missing_values(df: pd.DataFrame, fillna_cfg: dict):
+        """
+        Fill missing values using specified columns and regex patterns.
+        Drop the columns used to fill missing values.
+        """
+        for target_col, fill_config in fillna_cfg.items():
+            fill_col = fill_config.get("column")
+            if fill_col:
+                fillna_regex = fill_config.get("regex")
+                if fillna_regex:
+                    fill_vals = df[fill_col].str.extract(fillna_regex, expand=False)
+                else:
+                    fill_vals = df[fill_col]
+                df[target_col] = df[target_col].fillna(fill_vals)
+                df = df.drop(columns=[fill_col])
+        return df
+
+    @staticmethod
+    def _postprocess_switch(
+        df: pd.DataFrame, postprocess_func_name: str
+    ) -> pd.DataFrame:
+        """
+        Route to the appropriate postprocessing function.
+        Example: for admissions, we handle merges of overlapping intervals.
+        """
+        if postprocess_func_name == "merge_admissions":
+            return ConceptProcessor._merge_admissions(df)
+        else:
+            # Potentially handle other postprocesses or raise an error
+            raise ValueError(f"Unknown postprocess function: {postprocess_func_name}")
+
+    @staticmethod
+    def _merge_admissions(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Merge overlapping admission intervals for each subject:
+        - Group by subject_id
+        - Sort by admission start time
+        - Merge intervals that overlap or are within 24h
+        """
+        # Drop rows where admission or discharge is missing
+        df.dropna(subset=[ADMISSION, DISCHARGE], inplace=True)
+        df[ADMISSION] = pd.to_datetime(df[ADMISSION], errors="coerce")
+        df[DISCHARGE] = pd.to_datetime(df[DISCHARGE], errors="coerce")
+
+        # Sort by subject_id and admission time
+        df = df.sort_values(by=[SUBJECT_ID, ADMISSION])
+        
+        merged = []
+        
+        # Process each subject separately
+        for _, subject_df in df.groupby(SUBJECT_ID):
+            current = None
+            
+            for _, row in subject_df.iterrows():
+                if current is None:
+                    current = row.copy()
+                    continue
+                    
+                # If next admission is within 24h of current discharge
+                if row[ADMISSION] <= current[DISCHARGE] + timedelta(hours=24):
+                    # Extend discharge if needed
+                    if row[DISCHARGE] > current[DISCHARGE]:
+                        current[DISCHARGE] = row[DISCHARGE]
+                else:
+                    # Add the completed admission
+                    merged.append(current)
+                    current = row.copy()
+                    
+            if current is not None:
+                merged.append(current)
+
+        final_df = pd.DataFrame(merged)
+        final_df[TIMESTAMP] = final_df[ADMISSION]
+        return final_df
+
+    @staticmethod
+    def check_columns(df: pd.DataFrame, columns_map: dict):
+        """Check if all columns in columns_map are present in df."""
+        missing_columns = set(columns_map.keys()) - set(df.columns)
+        if missing_columns:
+            available_columns = pd.DataFrame({"Available Columns": sorted(df.columns)})
+            requested_columns = pd.DataFrame(
+                {"Requested Columns": sorted(columns_map.keys())}
+            )
+            error_msg = f"\nMissing columns: {sorted(missing_columns)}\n\n"
+            error_msg += "Columns comparison:\n"
+            error_msg += f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
+            raise ValueError(error_msg)
+
+
+class MEDSPreprocessor:
+    """
+    Preprocessor for MEDS (Medical Event Data Set) that handles patient data and medical concepts.
+
+    This class processes medical data by:
+    1. Building subject ID mappings
+    2. Processing various medical concepts (diagnoses, procedures, etc.)
+    3. Formatting and cleaning the data according to specified configurations
+    """
+
+    def __init__(self, cfg, logger):
         self.cfg = cfg
         self.logger = logger
-        self.datastore =  datastore
-        self.dump_path = dump_path if dump_path is not None else None
         self.test = cfg.test
         self.logger.info(f"test {self.test}")
         self.initial_patients = set()
         self.formatted_patients = set()
 
+        data_config = DataConfig(
+            datastore=cfg.data_path.concepts.datastore,
+            dump_path=cfg.data_path.concepts.dump_path,
+            output_dir=cfg.paths.output_dir,
+            file_type=cfg.paths.file_type,
+        )
+        self.data_handler = DataHandler(data_config, logger)
+        self.concept_processor = ConceptProcessor()
+
     def __call__(self):
-        subject_id_mapping = self.patients_info()
-        self.format_concepts(subject_id_mapping)        
+        subject_id_mapping = self.format_patients_info()
+        self.format_concepts(subject_id_mapping)
 
-    def filter_dates(self):
-        self.logger.info("Filter dates")
-        for concept_type, concept_config in tqdm(self.cfg.concepts.items(), desc="Concepts"):
-            if concept_type not in ['diagnosis', 'medication', 'labtest', 'procedure', 'admissions']:
-                raise ValueError(f'{concept_type} not implemented yet')
-            self.logger.info(f"INFO: Filter {concept_type}")            
-            df = self.load_pandas(concept_config)
-            if self.test:
-                df = df.sample(100000)
-            df = self.select_columns(df, concept_config)
-            df = self.change_dtype(df, concept_config)
-            df = self.filter_dates_pipeline(df, concept_config)
-            self.save(df, concept_config, f'{concept_type}')
+    def format_patients_info(self) -> Dict[str, int]:
+        """
+        Load and process patient information, creating a mapping of patient IDs.
 
-    def iterate_through_file(self, concept_type, concept_config, subject_id_mapping, first=True):
-        for chunk in tqdm(self.load_chunks(concept_config), desc='Chunks'):
-            # process each chunk here.
-            chunk_processed = self.concepts_process_pipeline(chunk, concept_type, subject_id_mapping)
-            if first:
-                self.save(chunk_processed, concept_config, f'{concept_type}', mode='w')
-                first = False
-            else:
-                self.save(chunk_processed, concept_config, f'{concept_type}', mode='a')
-
-    def format_concepts(self, subject_id_mapping):
-        """Loop over all top-level concepts (diagnosis, medication, procedures, etc.) and call processing"""
-        for concept_type, concept_config in tqdm(self.cfg.concepts.items(), desc="Concepts"):
-            if concept_type not in ['diagnosis', 'medication', 'labtest', 'procedure', 'admissions']:
-                raise ValueError(f'{concept_type} not implemented yet')
-            self.logger.info(f"INFO: Preprocess {concept_type}")
-            first = True
-
-            if type(concept_config.filename) == list:
-                for file_name in concept_config.filename:
-                    concept_config.filename = file_name
-                    self.iterate_through_file(concept_type, concept_config, subject_id_mapping, first=first)
-                    first=False
-            else:
-                self.iterate_through_file(concept_type, concept_config, subject_id_mapping)
-
-    def concepts_process_pipeline(self, concepts, concept_type, subject_id_mapping):
-        if isinstance(self.cfg.filtering, dict) and 'filter_date' in self.cfg.filtering:
-            filter_date = self.cfg.filtering['filter_date']
-        else:
-            filter_date = False
-        """Process concepts"""
-        formatter = getattr(self, f"format_{concept_type}")
-        concepts = formatter(concepts, subject_id_mapping)
-        self.initial_patients = self.initial_patients | set(concepts.subject_id.unique())
-        self.logger.info(f"{len(self.initial_patients)} before cleaning")
-        self.logger.info(f"{len(concepts)} concepts")
-        concepts = concepts.dropna()
-        self.logger.info(f"{len(concepts)} concepts after removing nans")
-        concepts = concepts.drop_duplicates()
-        self.logger.info(f"{len(concepts)} concepts after dropping duplicates nans")
-        if filter_date:
-            concepts = self.filter_dates_pipeline(concepts, filter_date)
-        self.logger.info(f"{len(concepts)} concepts after filtering on date")
-        self.formatted_patients = self.formatted_patients | set(concepts.subject_id.unique())
-        self.logger.info(f"{len(self.formatted_patients)} after cleaning")
-        return concepts
-
-    def filter_dates_pipeline(self, chunk, filter_date):
-        chunk['timestamp'] = pd.to_datetime(chunk['timestamp'], errors='coerce', infer_datetime_format=True)
-        filter_date_dt = pd.to_datetime(filter_date)
-        filtered_chunk = chunk[chunk['timestamp'] < filter_date_dt]
-        return filtered_chunk
-
-    @staticmethod
-    def format_diagnosis(diag, subject_id_mapping):
-        diag['code'] = diag['Diagnose'].str.extract(r'\((D.*?)\)', expand=False)
-        diag['CONCEPT'] = diag.Diagnosekode.fillna(diag.code)
-        diag = diag.drop(['code', 'Diagnose', 'Diagnosekode'], axis=1)
-        diag = diag.rename(columns={'CPR_hash':'subject_id', 'Noteret_dato':'timestamp', 'CONCEPT':'code'})
-        diag['subject_id'] = diag['subject_id'].map(subject_id_mapping)
-        return diag
-
-    @staticmethod
-    def format_procedure(proc, subject_id_mapping):
-        proc['code'] = proc['ProcedureCode'].str.replace(' ', '')
-        proc = proc.drop(['ProcedureCode'], axis=1)
-        proc = proc.rename(columns={'CPR_hash':'subject_id', 'ServiceDatetime':'timestamp', 'ProcedureName':'description'})
-        proc['code'] = proc['code'].map(lambda x: 'P'+x)
-        proc['subject_id'] = proc['subject_id'].map(subject_id_mapping)
-        return proc
-
-    @staticmethod
-    def format_labtest(labs, subject_id_mapping):
-        labs = labs.rename(columns={'CPR_hash':'subject_id', 'BestOrd':'code', 'Prøvetagningstidspunkt': 'timestamp', 'Resultatværdi':'numeric_value'})
-        labs['code'] = labs['code'].map(lambda x: 'LAB_'+x)
-        labs['numeric_value'] = pd.to_numeric(labs['numeric_value'], errors='coerce')
-        labs = labs.dropna(subset=['numeric_value'])
-        labs['subject_id'] = labs['subject_id'].map(subject_id_mapping)
-        return labs
-    
-    @staticmethod
-    def format_medication(med, subject_id_mapping):
-        med.loc[:, 'CONCEPT'] = med.ATC.fillna('Ordineret_lægemiddel')
-        med.loc[:, 'TIMESTAMP'] = med.Administrationstidspunkt.fillna("Bestillingsdato")
-        med = med.rename(columns={'CPR_hash':'PID'})
-        med = med[['PID','CONCEPT','TIMESTAMP']]
-        med['CONCEPT'] = med['CONCEPT'].map(lambda x: 'M'+x)
-        med = med.rename(columns={'PID':'subject_id', 'TIMESTAMP':'timestamp', 'CONCEPT':'code'})
-        med['subject_id'] = med['subject_id'].map(subject_id_mapping)
-        return med
-    
-    @staticmethod
-    def format_admissions(adm, subject_id_mapping):
-        adm['Flyt_ind'] = pd.to_datetime(adm['Flyt_ind'])
-        adm['Flyt_ud'] = pd.to_datetime(adm['Flyt_ud'])
-        
-        adm.sort_values(by=['CPR_hash', 'Flyt_ind'], inplace=True)
-        merged_admissions = []
-        current_row = None
-        for index, row in adm.iterrows():
-            if current_row is None:
-                current_row = row
-                continue
-
-            # Check for overlap or if next admission is within 24 hours after the current admission's discharge
-            if row['Flyt_ind'] <= current_row['Flyt_ud'] + timedelta(hours=24):
-                # Extend the current admission's discharge time if the next admission's discharge time is later
-                current_row['Flyt_ud'] = max(current_row['Flyt_ud'], row['Flyt_ud'])
-            else:
-                # No overlap within 24 hours, add the current admission to merged_admissions and start a new current admission
-                merged_admissions.append(current_row.to_dict())
-                current_row = row
-        merged_admissions.append(current_row.to_dict())
-
-        events = []
-        for admission in merged_admissions:
-            events.append({'subject_id': admission['CPR_hash'], 
-                           'admission': admission['Flyt_ind'], 
-                           'discharge': admission['Flyt_ud'],
-                           'timestamp': admission['Flyt_ind']})
-        final_df = pd.DataFrame(events)
-        final_df['subject_id'] = final_df['subject_id'].map(subject_id_mapping)
-        return final_df
-
-    def patients_info(self):
-        """Load patients info and rename columns"""
+        Returns:
+            Dict[str, int]: Mapping from original patient IDs to integer IDs
+        """
         self.logger.info("Load patients info")
-        df = self.load_pandas(self.cfg.patients_info)
+        df = self.data_handler.load_pandas(self.cfg.patients_info, self.test)
         if self.test:
             df = df.sample(100000)
-        df = self.select_columns(df, self.cfg.patients_info)
+
+        # Use columns_map to subset and rename the columns.
+        df = ConceptProcessor._select_and_rename_columns(
+            df, self.cfg.patients_info.get("columns_map", {})
+        )
+
         self.logger.info(f"Number of patients after selecting columns: {len(df)}")
-        df = df.rename(columns={'PID':'subject_id'})
 
-        df['integer_id'], unique_values = pd.factorize(df['subject_id'])
-        hash_to_integer_map = dict(zip(unique_values, range(len(unique_values))))
+        df, hash_to_int_map = self._factorize_subject_id(df)
+        # Save the mapping for reference.
+        with open(f"{self.cfg.paths.output_dir}/hash_to_integer_map.pkl", "wb") as f:
+            pickle.dump(hash_to_int_map, f)
 
-        torch.save(hash_to_integer_map, f'{self.cfg.paths.output_dir}/hash_to_integer_map.pt')
-
-        df['subject_id'] = df['integer_id']
-        df = df.drop(columns=['integer_id'])
-
+        df.dropna(subset=[SUBJECT_ID], how="any", inplace=True)
         self.logger.info(f"Number of patients before saving: {len(df)}")
+        self.data_handler.save(df, "subject")
 
-        # Convert info dict to dataframe
-        self.save(df, self.cfg.patients_info, 'subject')
-        return hash_to_integer_map
+        return hash_to_int_map
 
     @staticmethod
-    def assign_hash(df):
-        return df.apply(lambda x: hashlib.sha256(str(x).encode()).hexdigest(), axis=1)
+    def _factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
+        """Factorize the subject_id column into an integer mapping."""
+        df["integer_id"], unique_vals = pd.factorize(df[SUBJECT_ID])
+        shifted_indices = df["integer_id"] + 1 # +1 to avoid binary dtype
+        hash_to_int_map = dict(zip(unique_vals, shifted_indices))
+        # Overwrite subject_id with the factorized integer and drop the helper column.
+        df[SUBJECT_ID] = df["integer_id"]
+        df.drop(columns=["integer_id"], inplace=True)
+        return df, hash_to_int_map
 
-    def change_dtype(self, df, cfg):
-        """Change column dtype"""
-        if 'dtypes' in cfg:
-            for col, dtype in cfg.dtypes.items():
-                df[col] = df[col].astype(dtype)
-        return df
+    def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
+        """Process all medical concepts"""
+        for concept_type, concept_config in tqdm(
+            self.cfg.concepts.items(), desc="Concepts"
+        ):
+            first_chunk = True
 
-    def select_columns(self, df, cfg):
-        """Select and Rename columns"""
-        columns = df.columns.tolist()
-        selected_columns = [columns[i] for i in cfg.usecols]
-        df = df[selected_columns]
-        df = df.rename(columns={old: new for old, new in zip(selected_columns, cfg.names)})
-        return df
-        
-    def load_pandas(self, cfg: dict):
-        ds = self.get_dataset(cfg)
-        df = ds.to_pandas_dataframe()
-        return df
-    
-    def load_dask(self, cfg: dict):
-        ds = self.get_dataset(cfg)
-        df = ds.to_dask_dataframe()
-        return df
+            filenames = concept_config.get(FILENAME)
+            if isinstance(filenames, list):
+                for file_name in filenames:
+                    concept_config[FILENAME] = file_name
+                    self._process_concept_chunks(
+                        concept_type, concept_config, subject_id_mapping, first_chunk
+                    )
+                    first_chunk = False
+            else:
+                self._process_concept_chunks(
+                    concept_type, concept_config, subject_id_mapping, first_chunk
+                )
 
-    def load_chunks(self, cfg: dict, pandas=True):
-        """Generate chunks of the dataset and convert to pandas/dask df"""
-        ds = self.get_dataset(cfg)
-        if 'start_chunk' in cfg:
-            i = cfg.start_chunk
-        else:
-            i = 0
+    def _process_concept_chunks(
+        self,
+        concept_type: str,
+        concept_config: dict,
+        subject_id_mapping: Dict[str, int],
+        first_chunk: bool,
+    ) -> None:
+        for chunk in tqdm(
+            self.data_handler.load_chunks(concept_config, self.test),
+            desc=f"Chunks {concept_type}",
+        ):
+            processed_chunk = self.concept_processor.process_concept(
+                chunk, concept_config, subject_id_mapping
+            )
+            mode = "w" if first_chunk else "a"
+            self.data_handler.save(processed_chunk, concept_type, mode=mode)
+            first_chunk = False
+
+
+class DataHandler:
+    """Handles data loading and saving operations"""
+
+    def __init__(self, config: DataConfig, logger):
+        self.datastore = datastore(config.datastore)
+        self.dump_path = config.dump_path
+        self.output_dir = config.output_dir
+        self.file_type = config.file_type
+        self.logger = logger
+
+    def load_pandas(self, cfg: dict, test: bool = False) -> pd.DataFrame:
+        ds = self._get_dataset(cfg, test)
+        return ds.to_pandas_dataframe()
+
+    def load_chunks(self, cfg: dict, test: bool = False) -> Iterator[pd.DataFrame]:
+        ds = self._get_dataset(cfg, test)
+        chunk_size = cfg.get("chunksize", 100000)
+        i = cfg.get("start_chunk", 0)
+
         while True:
             self.logger.info(f"chunk {i}")
-            chunk = ds.skip(i * cfg.chunksize)
-            chunk = chunk.take(cfg.chunksize)
-            if pandas:
-                df = chunk.to_pandas_dataframe()
-            else:
-                df = chunk.to_dask_dataframe()
-            if len(df.index) == 0:
-                self.logger.info("empty")
+            chunk = ds.skip(i * chunk_size).take(chunk_size)
+            df = chunk.to_pandas_dataframe()
+            if df.empty:
+                self.logger.info("Reached empty chunk, done.")
                 break
             i += 1
             yield df
-            
-    def get_dataset(self, cfg: dict):
-        file_path = join(self.dump_path, cfg.filename) if self.dump_path is not None else cfg.filename
-        ds = Dataset.Tabular.from_parquet_files(path=(self.datastore,file_path))
-        if 'keep_cols' in cfg:
-            ds = ds.keep_columns(columns=cfg.keep_cols)
-        if self.test:
+
+    def _get_dataset(self, cfg: dict, test: bool) -> Dataset.Tabular:
+        file_path = (
+            os.path.join(self.dump_path, cfg[FILENAME])
+            if self.dump_path is not None
+            else cfg[FILENAME]
+        )
+        ds = Dataset.Tabular.from_parquet_files(path=(self.datastore, file_path))
+        if test:
             ds = ds.take(100000)
         return ds
-    
-    def save(self, df, cfg, filename, mode='w'):
-        self.logger.info(f"Save {filename}")
-        out = self.cfg.paths.output_dir
-        if 'file_type' in cfg:
-            file_type = cfg.file_type
-        else:
-            file_type = self.cfg.file_type
-        if not os.path.exists(out):
-            os.makedirs(out)
-        if file_type == 'parquet':
-            path = os.path.join(out, f'{filename}.parquet')
+
+    def save(self, df: pd.DataFrame, filename: str, mode: str = "w") -> None:
+        """
+        Save the processed data to a file.
+
+        Args:
+            df: DataFrame containing the processed data
+            filename: Name of the file to save
+            mode: Mode for saving the file ("w" for write, "a" for append)
+        """
+        self.logger.info(f"Saving {filename}")
+        out_dir = self.output_dir
+        os.makedirs(out_dir, exist_ok=True)
+
+        # Decide on filetype
+        file_type = self.file_type
+        path = os.path.join(out_dir, f"{filename}.{file_type}")
+
+        if file_type == "parquet":
             df.to_parquet(path)
-        elif file_type == 'csv':
-            path = os.path.join(out, f'{filename}.csv')
-            if mode == 'w':
-                df.to_csv(path, index=False, mode=mode)
-            else: 
-                df.to_csv(path, index=False, mode=mode, header=False)
+        elif file_type == "csv":
+            if mode == "w":
+                df.to_csv(path, index=False, mode="w")
+            else:
+                # append without header
+                df.to_csv(path, index=False, mode="a", header=False)
         else:
-            raise ValueError(f"Filetype {file_type} not implemented yet")
+            raise ValueError(f"Filetype {file_type} not implemented.")
