@@ -86,6 +86,98 @@ concepts:
     code_prefix: "L_"
     numeric_columns: [numeric_value]
 
+register_concepts:
+  register_diagnosis:
+    filename: Diagnoser.parquet
+    columns_map:
+      diagnosekode: code
+      diagnosetype: code_type
+    code_prefix: "RD_"
+    main_mapping:
+      filename: kontakter.parquet
+      left_on: dw_ek_kontakt
+      right_on: dw_ek_kontakt
+    
+  register_contacts:
+    filename: kontakter.parquet
+    columns_map:
+      PID: subject_id
+      dw_ek_kontakt: dw_ek_kontakt
+      dw_ek_forloeb: dw_ek_forloeb
+      dato_start: date_start
+      tidspunkt_start: time_start
+      dato_slut: date_end
+      tidspunkt_slut: time_end
+      aktionsdiagnose: action_diagnosis
+      kontaktaarsage: contact_reason
+    combine_datetime:
+      admission:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+      discharge:
+        date_col: date_end
+        time_col: time_end
+        drop_original: true
+    unroll_columns:
+      - column: enhedstype_ans
+        prefix: "RC_UNIT_"
+      - column: hovedspeciale_ans
+        prefix: "RC_SPEC_"
+      - column: regions_ans
+        prefix: "RC_REG_"
+      - column: action_diagnosis
+        prefix: "RC_DIAG_"
+      - column: contact_reason
+        prefix: "RC_REASON_"
+
+  register_medication:
+    filename: epikur.parquet
+    columns_map:
+      PID: subject_id
+      vnr: vnr_code
+    secondary_mapping:
+      filename: laegemiddeloplysninger.asc
+      left_on: vnr_code
+      right_on: VNR
+    code_prefix: "RM_"
+
+  register_procedures_surgery:
+    filename: procedurer_kirurgi.parquet
+    columns_map:
+      procedurekode: code
+      proceduretype: procedure_type
+      dato_start: date_start
+      tidspunkt_start: time_start
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+    code_prefix: "RPS_"
+    main_mapping:
+      filename: kontakter.parquet
+      left_on: dw_ek_kontakt
+      right_on: dw_ek_kontakt
+
+  register_procedures_other:
+    filename: procedurer_andre.parquet
+    columns_map:
+      procedurekode: code
+      proceduretype: procedure_type
+      dato_start: date_start
+      tidspunkt_start: time_start
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+    code_prefix: "RPO_"
+    main_mapping:
+      filename: kontakter.parquet
+      left_on: dw_ek_kontakt
+      right_on: dw_ek_kontakt
+
 patients_info:
   filename: CPMI_PatientInfo.parquet
   columns_map:
