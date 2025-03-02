@@ -442,7 +442,7 @@ class MEDSPreprocessor:
         shifted_indices = df["integer_id"] + 1  # +1 to avoid binary dtype
         hash_to_int_map = dict(zip(unique_vals, shifted_indices))
         # Overwrite subject_id with the factorized integer and drop the helper column.
-        df[SUBJECT_ID] = df["integer_id"]
+        df[SUBJECT_ID] = shifted_indices
         df.drop(columns=["integer_id"], inplace=True)
         return df, hash_to_int_map
 

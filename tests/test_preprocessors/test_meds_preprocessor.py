@@ -17,10 +17,12 @@ class TestMEDSPreprocessor(unittest.TestCase):
         self.assertEqual(len(mapping), 3)  # Three unique values
         self.assertTrue(all(isinstance(v, int) for v in mapping.values()))  # All values are integers
         self.assertTrue(all(v > 0 for v in mapping.values()))  # All values are positive
+        self.assertEqual(min(mapping.values()), 1)  # Minimum value should be 1
         
         # Check DataFrame properties
         self.assertEqual(result_df[SUBJECT_ID].nunique(), 3)  # Three unique values
         self.assertEqual(result_df[SUBJECT_ID].dtype, 'int64')  # Integer type
+        self.assertTrue(result_df[SUBJECT_ID].min() > 0)  # No zero values
         self.assertNotIn('integer_id', result_df.columns)  # Helper column was dropped
         self.assertEqual(len(result_df), len(input_df))  # No rows were lost
 
