@@ -1,6 +1,7 @@
 test: false
 env: azure
 run_name: MEDS
+chunksize: 500_000
 paths:
   output_dir: outputs/preMEDS
   file_type: csv 

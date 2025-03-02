@@ -49,66 +49,78 @@ class ConceptProcessor:
 
         return df
 
-    def process_register_concept(self, df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
+    def process_register_concept(
+        self, df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]
+    ) -> pd.DataFrame:
         """
         Process the register concepts.
-        
+
         This method orchestrates the entire register concept processing workflow by calling
         specialized helper methods for each step.
-        
+
         Args:
             df: The raw register dataframe
             concept_config: Configuration for processing
             subject_id_mapping: Mapping from original PIDs to integer subject_ids
-            
+
         Returns:
             Processed dataframe with standardized columns
         """
         # Step 1: Select and rename columns
         df = self._select_and_rename_columns(df, concept_config.get("columns_map", {}))
-        
+
         # Step 2: Combine date and time columns if needed
         df = self._combine_datetime_columns(df, concept_config)
-        
+
         # Step 3: Apply secondary mapping if needed
         df = self._apply_secondary_mapping(df, concept_config)
-        
+
         # Step 4: Convert numeric columns
         df = self._convert_numeric_columns(df, concept_config)
-        
+
         # Step 5: Unroll columns or apply code prefix
         processed_dfs = self._unroll_columns(df, concept_config)
-        
+
         # Step 6: Concatenate all processed dataframes
-        result_df = pd.concat(processed_dfs, ignore_index=True) if len(processed_dfs) > 0 else df
-        
+        result_df = (
+            pd.concat(processed_dfs, ignore_index=True)
+            if len(processed_dfs) > 0
+            else df
+        )
+
         # Step 7: Apply main mapping to get SP PIDs
         result_df = self._apply_main_mapping(result_df, concept_config)
-        
+
         # Step 8: Map to integer subject IDs and clean data
         result_df = self._map_and_clean_data(result_df, subject_id_mapping)
-        
+
         return result_df
-    
+
     @staticmethod
-    def _combine_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    def _combine_datetime_columns(
+        df: pd.DataFrame, concept_config: dict
+    ) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
         if "combine_datetime" in concept_config:
-            for target_col, date_time_cols in concept_config["combine_datetime"].items():
+            for target_col, date_time_cols in concept_config[
+                "combine_datetime"
+            ].items():
                 date_col = date_time_cols.get("date_col")
                 time_col = date_time_cols.get("time_col")
                 if date_col in df.columns and time_col in df.columns:
                     df[target_col] = pd.to_datetime(
-                        df[date_col].astype(str) + ' ' + df[time_col].astype(str),
-                        errors='coerce'
+                        df[date_col].astype(str) + " " + df[time_col].astype(str),
+                        errors="coerce",
                     )
                     # Drop original columns if requested
                     if date_time_cols.get("drop_original", True):
                         df = df.drop(columns=[date_col, time_col])
         return df
-    
+
     @staticmethod
-    def _apply_secondary_mapping(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    def _apply_secondary_mapping(
+        df: pd.DataFrame, concept_config: dict
+    ) -> pd.DataFrame:
         """Apply secondary mapping to map records to PIDs if needed."""
         if "secondary_mapping" in concept_config:
             mapping_cfg = concept_config["secondary_mapping"]
@@ -118,57 +130,59 @@ class ConceptProcessor:
                 mapping_df,
                 left_on=mapping_cfg.get("left_on"),
                 right_on=mapping_cfg.get("right_on"),
-                how="inner"
+                how="inner",
             )
             df = df.drop(columns=[mapping_cfg.get("left_on")])
         return df
-    
+
     @staticmethod
-    def _convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    def _convert_numeric_columns(
+        df: pd.DataFrame, concept_config: dict
+    ) -> pd.DataFrame:
         """Convert specified columns to numeric type."""
         numeric_cols = concept_config.get("numeric_columns", [])
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
         return df
-    
+
     @staticmethod
     def _unroll_columns(df: pd.DataFrame, concept_config: dict) -> List[pd.DataFrame]:
         """
         Unroll specified columns into separate dataframes with code format.
-        
+
         Returns a list of dataframes, each representing an unrolled column.
         If no unrolling is configured, returns a list containing the original dataframe
         with code prefix applied (if configured).
         """
         processed_dfs = []
-        
+
         # If we have columns to unroll
         if "unroll_columns" in concept_config:
             required_cols = [SUBJECT_ID]
             if "timestamp" in concept_config.get("columns_map", {}).values():
                 required_cols.append("timestamp")
-            
+
             # Keep only the columns that exist in the dataframe
             required_cols = [col for col in required_cols if col in df.columns]
-            
+
             # For each column to unroll, create a separate df with it as CODE
             for col_info in concept_config["unroll_columns"]:
                 col_name = col_info.get("column")
                 if col_name in df.columns:
                     # Create a copy with just the required columns and the unroll column
                     unroll_df = df[required_cols + [col_name]].copy()
-                    
+
                     # Apply prefix if specified
                     prefix = col_info.get("prefix", "")
-                    
+
                     # Rename to CODE
                     unroll_df = unroll_df.rename(columns={col_name: CODE})
-                    
+
                     # Add prefix to codes
                     if prefix:
                         unroll_df[CODE] = prefix + unroll_df[CODE].astype(str)
-                    
+
                     processed_dfs.append(unroll_df)
         else:
             # If no unrolling, just add code prefix if specified
@@ -176,9 +190,9 @@ class ConceptProcessor:
             if code_prefix and CODE in df.columns:
                 df[CODE] = code_prefix + df[CODE].astype(str)
             processed_dfs.append(df)
-        
+
         return processed_dfs
-    
+
     @staticmethod
     def _apply_main_mapping(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
         """Map to SP PIDs via main mapping if needed."""
@@ -190,27 +204,27 @@ class ConceptProcessor:
                 mapping_df,
                 left_on=mapping_cfg.get("left_on"),
                 right_on=mapping_cfg.get("right_on"),
-                how="inner"
+                how="inner",
             )
             # Use the mapped SUBJECT_ID and drop the original
             df = df.rename(columns={mapping_cfg.get("right_on"): SUBJECT_ID})
             df = df.drop(columns=[mapping_cfg.get("left_on")])
         return df
-    
+
     @staticmethod
     def _map_and_clean_data(df: pd.DataFrame, subject_id_mapping: dict) -> pd.DataFrame:
         """Map from SP PIDs to integer subject_ids and clean the data."""
         # Map from SP PIDs to integer subject_ids
         if SUBJECT_ID in df.columns:
             df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
-        
+
         # Clean data
         if all(col in df.columns for col in MANDATORY_COLUMNS):
             df.dropna(subset=MANDATORY_COLUMNS, how="any", inplace=True)
         df.drop_duplicates(inplace=True)
-        
+
         return df
-    
+
     @staticmethod
     def _load_mapping_file(mapping_cfg: dict) -> pd.DataFrame:
         """Load a mapping file based on configuration."""
@@ -402,8 +416,6 @@ class MEDSPreprocessor:
         """
         self.logger.info("Load patients info")
         df = self.data_handler.load_pandas(self.cfg.patients_info, self.test)
-        if self.test:
-            df = df.sample(100000)
 
         # Use columns_map to subset and rename the columns.
         df = ConceptProcessor._select_and_rename_columns(
@@ -427,7 +439,7 @@ class MEDSPreprocessor:
     def _factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
         """Factorize the subject_id column into an integer mapping."""
         df["integer_id"], unique_vals = pd.factorize(df[SUBJECT_ID])
-        shifted_indices = df["integer_id"] + 1 # +1 to avoid binary dtype
+        shifted_indices = df["integer_id"] + 1  # +1 to avoid binary dtype
         hash_to_int_map = dict(zip(unique_vals, shifted_indices))
         # Overwrite subject_id with the factorized integer and drop the helper column.
         df[SUBJECT_ID] = df["integer_id"]
@@ -451,7 +463,9 @@ class MEDSPreprocessor:
         for concept_type, concept_config in tqdm(
             self.cfg.register_concepts.items(), desc="Register concepts"
         ):
-            self._process_register_concept_chunks(concept_type, concept_config, subject_id_mapping, first_chunk=True)
+            self._process_register_concept_chunks(
+                concept_type, concept_config, subject_id_mapping, first_chunk=True
+            )
 
     def format_admissions(
         self, admissions_config: dict, subject_id_mapping: Dict[str, int]
@@ -517,15 +531,21 @@ class DataHandler:
         self.logger = logger
 
     def load_pandas(self, cfg: dict, test: bool = False) -> pd.DataFrame:
-        ds = self._get_dataset(cfg, test)
+        ds: Dataset.Tabular = self._get_dataset(cfg[FILENAME])
+        if test:
+            ds = ds.take(500_000)
         return ds.to_pandas_dataframe()
 
     def load_chunks(self, cfg: dict, test: bool = False) -> Iterator[pd.DataFrame]:
-        ds = self._get_dataset(cfg, test)
-        chunk_size = cfg.get("chunksize", 100000)
+        ds = self._get_dataset(cfg[FILENAME])
+        chunk_size = cfg.get("chunksize", 500_000)
         i = cfg.get("start_chunk", 0)
 
-        while True:
+        # Add a safety limit for test mode
+        max_chunks = 2 if test else float("inf")
+        chunks_processed = 0
+
+        while chunks_processed < max_chunks:
             self.logger.info(f"chunk {i}")
             chunk = ds.skip(i * chunk_size).take(chunk_size)
             df = chunk.to_pandas_dataframe()
@@ -533,17 +553,16 @@ class DataHandler:
                 self.logger.info("Reached empty chunk, done.")
                 break
             i += 1
+            chunks_processed += 1
             yield df
 
-    def _get_dataset(self, cfg: dict, test: bool) -> Dataset.Tabular:
+    def _get_dataset(self, filename: str) -> Dataset.Tabular:
         file_path = (
-            os.path.join(self.dump_path, cfg[FILENAME])
+            os.path.join(self.dump_path, filename)
             if self.dump_path is not None
-            else cfg[FILENAME]
+            else filename
         )
         ds = Dataset.Tabular.from_parquet_files(path=(self.datastore, file_path))
-        if test:
-            ds = ds.take(100000)
         return ds
 
     def save(self, df: pd.DataFrame, filename: str, mode: str = "w") -> None:
@@ -573,5 +592,3 @@ class DataHandler:
                 df.to_csv(path, index=False, mode="a", header=False)
         else:
             raise ValueError(f"Filetype {file_type} not implemented.")
-
-
