@@ -198,7 +198,7 @@ def generate_register_diagnosis_csv(save_dir, mapping, kont, seed=0, n_concepts=
         'senere_afkraeftet': [random.choices(['Nej', 'Ja'], weights = [99,1])[0] for _ in range(n_total)],
         'lpindberetningssystem': ['LPR3' for _ in range(n_total)],
     })
-    df.to_csv(f'{save_dir}/concept.register_diagnosis.csv', index=False)    
+    df.to_csv(f'{save_dir}/diagnoser.asc', index=False)    
 
 def generate_forloeb(mapping_merged):
     filtered_pids = mapping_merged[(mapping_merged['forloeb'] == True) & (mapping_merged['CPR_hash'].isna())]['PID'].values
@@ -271,7 +271,7 @@ def generate_kontakter(mapping_merged, forloeb, n_visits=3):
     })
     return kontakter
 
-def generate_map_forl_kont(pids, patients_info, seed=0):
+def generate_mapping(pids, patients_info):
     pts_with_register_data = np.random.choice(pids, size=len(pids) // 2, replace=False)
     pts_with_epikur = np.random.choice(pts_with_register_data, size=len(pts_with_register_data) // 2, replace=False)
     pts_with_forl = np.random.choice(pts_with_register_data, size=(len(pts_with_epikur) // 5)*4, replace=False)
@@ -306,7 +306,7 @@ def generate_map_forl_kont(pids, patients_info, seed=0):
 
     return mapping_merged, mapping
 
-def generate_register_medication(save_dir, mapping, kont, seed=0, n_concepts=3):
+def generate_register_medication(save_dir, kont, n_concepts=3):
     pids = kont['PID'].tolist()
     pids_lst = np.tile(pids, n_concepts)
     n_total = len(pids_lst)
@@ -332,7 +332,7 @@ def generate_register_medication(save_dir, mapping, kont, seed=0, n_concepts=3):
 
     
     os.makedirs(save_dir, exist_ok=True)
-    df.to_csv(f'{save_dir}/concept.register_medication.csv', index=False)
+    df.to_parquet(f'{save_dir}/epikur.parquet', index=False)
 
 def generate_laegemiddeloplysninger(save_dir):
     # Generate a reasonable number of unique medications
@@ -400,13 +400,13 @@ def main_write(n_patients=DEFAULT_N, n_concepts=DEFAULT_N_CONCEPTS, write_dir=DE
     generate_medication_csv(sp_dir, hashes, birthdates, deathdates)
     generate_procedure_csv(sp_dir, hashes, birthdates, deathdates)
     generate_labtest_csv(sp_dir, hashes, birthdates, deathdates)
-    mapping_merged, mapping = generate_map_forl_kont(pids, patients_info)
+    mapping_merged, mapping = generate_mapping(pids, patients_info)
     forl = generate_forloeb(mapping_merged)
     kont = generate_kontakter(mapping_merged, forl, n_visits=3)
     generate_register_diagnosis_csv(register_dir, mapping, kont, n_concepts=n_concepts)
-    generate_register_medication(register_dir, mapping, kont, n_concepts=n_concepts)
+    generate_register_medication(register_dir, kont, n_concepts=n_concepts)
     generate_laegemiddeloplysninger(register_dir)
-    kont.to_parquet(f'{register_dir}/CPMI_Kontakter.parquet', index=False)
+    kont.to_parquet(f'{register_dir}/kontakter.parquet', index=False)
     mapping.to_csv(f'{mapping_dir}/mapping.csv', index=False)
 
 if __name__ == "__main__":
