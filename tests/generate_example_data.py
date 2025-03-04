@@ -716,7 +716,7 @@ def generate_procedures_csv(save_dir, kont, forloeb, n_concepts=3):
     kirurgi_df.to_csv(f"{save_dir}/procedurer_kirurgi.asc", index=False)
     andre_df.to_csv(f"{save_dir}/procedurer_andre.asc", index=False)
 
-
+# !TODO; generate ADTHaendelser.parquet
 def main_write(
     n_patients=DEFAULT_N, n_concepts=DEFAULT_N_CONCEPTS, write_dir=DEFAULT_WRITE_DIR
 ):
@@ -728,8 +728,8 @@ def main_write(
     os.makedirs(mapping_dir, exist_ok=True)
     np.random.seed(0)
     patients_info = generate_patients_info(n_patients)
-    # patients_info.to_parquet(f"{sp_dir}/CPMI_Patientinfo.parquet", index=False)
-    patients_info.to_csv(f"{sp_dir}/CPMI_Patientinfo.csv", index=False)
+    patients_info.to_parquet(f"{sp_dir}/CPMI_PatientInfo.parquet", index=False)
+    
 
     # Getting lists for the CPR_hash, birthdate, and deathdate
     pids = patients_info["CPR_hash"]
