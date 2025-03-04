@@ -99,8 +99,7 @@ def generate_diagnosis_csv(save_dir, hashes, birthdates, deathdates, seed=0):
         }
     )
     os.makedirs(save_dir, exist_ok=True)
-    # df.to_parquet(f"{save_dir}/CPMI_Diagnoser.parquet", index=False)
-    df.to_csv(f"{save_dir}/CPMI_Diagnoser.csv", index=False)
+    df.to_parquet(f"{save_dir}/CPMI_Diagnoser.parquet", index=False)
 
 
 def generate_medication_csv(save_dir, hashes, birthdates, deathdates, seed=0):
@@ -153,8 +152,7 @@ def generate_medication_csv(save_dir, hashes, birthdates, deathdates, seed=0):
             "Handling": [random.choice(MED_ACTIONS) for _ in range(total_concepts)],
         }
     )
-    # df.to_parquet(f"{save_dir}/CPMI_Medicin.parquet", index=False)
-    df.to_csv(f"{save_dir}/CPMI_Medicin.csv", index=False)
+    df.to_parquet(f"{save_dir}/CPMI_Medicin.parquet", index=False)
 
 
 def generate_procedure_csv(save_dir, hashes, birthdates, deathdates, seed=0):
@@ -177,8 +175,7 @@ def generate_procedure_csv(save_dir, hashes, birthdates, deathdates, seed=0):
             "ServiceDatetime": dates,
         }
     )
-    # df.to_parquet(f"{save_dir}/CPMI_Procedurer.parquet", index=False)
-    df.to_csv(f"{save_dir}/CPMI_Procedurer.csv", index=False)
+    df.to_parquet(f"{save_dir}/CPMI_Procedurer.parquet", index=False)
 
 
 def generate_labtest_csv(save_dir, hashes, birthdates, deathdates, seed=0):
@@ -204,8 +201,7 @@ def generate_labtest_csv(save_dir, hashes, birthdates, deathdates, seed=0):
             "Organisme": [random.choice(LAB_ORGANISMS) for _ in range(total_concepts)],
         }
     )
-    # df.to_parquet(f"{save_dir}/CPMI_Labsvar.parquet", index=False)
-    df.to_csv(f"{save_dir}/CPMI_Labsvar.csv", index=False)
+    df.to_parquet(f"{save_dir}/CPMI_Labsvar.parquet", index=False)
 
 
 def generate_patients_info(n_patients):
@@ -463,15 +459,16 @@ def generate_mapping(pids, patients_info):
     # Generate new unique PIDs different from CPR_hash values
     new_pids = generate_cpr_hash(len(pids))
 
-    pts_with_register_data = np.random.choice(
-        new_pids, size=len(new_pids) // 2, replace=False
-    )
+    # Ensure at least some patients get data even with small counts
+    n_register = max(len(new_pids) // 2, 1)  # At least 1 patient
+    n_epikur = max(n_register // 2, 1)  # At least 1 patient
+    n_forl = max((n_epikur * 4) // 5, 1)  # At least 1 patient
+
+    pts_with_register_data = np.random.choice(new_pids, size=n_register, replace=False)
     pts_with_epikur = np.random.choice(
-        pts_with_register_data, size=len(pts_with_register_data) // 2, replace=False
+        pts_with_register_data, size=n_epikur, replace=False
     )
-    pts_with_forl = np.random.choice(
-        pts_with_register_data, size=(len(pts_with_epikur) // 5) * 4, replace=False
-    )
+    pts_with_forl = np.random.choice(pts_with_register_data, size=n_forl, replace=False)
 
     # Create mapping between PIDs and CPR_hash
     pids_mapping = {pid: cpr_hash for pid, cpr_hash in zip(new_pids, pids)}
@@ -545,8 +542,7 @@ def generate_register_medication(save_dir, kont, n_concepts=3):
     )
 
     os.makedirs(save_dir, exist_ok=True)
-    # df.to_parquet(f"{save_dir}/epikur.parquet", index=False)
-    df.to_csv(f"{save_dir}/epikur.csv", index=False)
+    df.to_parquet(f"{save_dir}/epikur.parquet", index=False)
 
 
 def generate_laegemiddeloplysninger(save_dir):
@@ -766,8 +762,7 @@ def main_write(
     generate_procedures_csv(register_dir, kont, forl, n_concepts=n_concepts)
 
     # Save kontakter to parquet
-    # kont.to_parquet(f"{register_dir}/kontakter.parquet", index=False)
-    kont.to_csv(f"{register_dir}/kontakter.csv", index=False)
+    kont.to_parquet(f"{register_dir}/kontakter.parquet", index=False)
 
     # Save mapping
     mapping.to_csv(f"{mapping_dir}/mapping.csv", index=False)
