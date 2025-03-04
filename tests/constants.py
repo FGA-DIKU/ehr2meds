@@ -4,7 +4,7 @@ Note: All data has been anonymized and any resemblance to actual patient informa
 Version: 2024.1  
 """  
 
-MAPPING_DIR = "mapping"
+MAPPING_DIR = "maskerede_data"
 SP_DIR = "sp_dump"
 REGISTER_DIR = "registers"
 
