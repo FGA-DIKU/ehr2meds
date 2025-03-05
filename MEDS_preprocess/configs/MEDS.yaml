@@ -1,5 +1,5 @@
 test: false
-env: azure
+env: local
 run_name: MEDS
 chunksize: 500_000
 paths:
@@ -7,7 +7,7 @@ paths:
   file_type: csv 
 
 preprocessor:
-  _target_: preprocessors.preMEDS.MEDSPreprocessor
+  _target_: MEDS_preprocess.preprocessors.preMEDS.MEDSPreprocessor
 
 data_path:
   concepts:
@@ -16,7 +16,7 @@ data_path:
   register_concepts:
     datastore: researcher_data
     dump_path: 'FSEID'
-  mapping: # maps from register PIDs to sp hashes
+  pid_link: 
     datastore: researcher_data
     dump_path: 'maskerede_data'
 
@@ -89,95 +89,115 @@ concepts:
 
 register_concepts:
   register_diagnosis:
-    filename: Diagnoser.parquet
+    filename: diagnoser.asc
     columns_map:
       diagnosekode: code
       diagnosetype: code_type
+      dw_ek_kontakt: contact_id
+
     code_prefix: "RD_"
-    main_mapping:
-      filename: kontakter.parquet
-      left_on: dw_ek_kontakt
-      right_on: dw_ek_kontakt
-    
+    mappings:
+      - source_column: contact_id
+        via:
+          filename: kontakter.parquet
+          join_on: dw_ek_kontakt
+        target: 
+          column: PID
+          rename_to: subject_id
+      - source_column: contact_id
+        via:
+          filename: kontakter.parquet
+          join_on: dw_ek_kontakt
+        target: 
+          column: dato_slut
+          rename_to: timestamp
+        
+        drop_original: true
+
   register_contacts:
     filename: kontakter.parquet
     columns_map:
       PID: subject_id
-      dw_ek_kontakt: dw_ek_kontakt
-      dw_ek_forloeb: dw_ek_forloeb
       dato_start: date_start
       tidspunkt_start: time_start
-      dato_slut: date_end
-      tidspunkt_slut: time_end
-      aktionsdiagnose: action_diagnosis
-      kontaktaarsage: contact_reason
+      aktionsdiagnose: code
+      kontaktaarsag: contact_reason
+      hovedspeciale_ans: clinical_specialty
+      regions_ans: region_code
+
     combine_datetime:
-      admission:
+      timestamp:
         date_col: date_start
         time_col: time_start
         drop_original: true
-      discharge:
-        date_col: date_end
-        time_col: time_end
-        drop_original: true
     unroll_columns:
-      - column: enhedstype_ans
-        prefix: "RC_UNIT_"
-      - column: hovedspeciale_ans
-        prefix: "RC_SPEC_"
-      - column: regions_ans
-        prefix: "RC_REG_"
-      - column: action_diagnosis
-        prefix: "RC_DIAG_"
       - column: contact_reason
         prefix: "RC_REASON_"
+      - column: clinical_specialty
+        prefix: "RC_SPEC_"
+      - column: region_code
+        prefix: "RC_REG_"
 
   register_medication:
     filename: epikur.parquet
     columns_map:
       PID: subject_id
       vnr: vnr_code
-    secondary_mapping:
-      filename: laegemiddeloplysninger.asc
-      left_on: vnr_code
-      right_on: VNR
+      eksd: timestamp
+    mappings:
+      - source_column: vnr_code
+        via:
+          filename: laegemiddeloplysninger.asc
+          join_on: VNR
+        target:
+          column: PNAME
+          rename_to: code
     code_prefix: "RM_"
 
   register_procedures_surgery:
-    filename: procedurer_kirurgi.parquet
+    filename: procedurer_kirurgi.asc
     columns_map:
       procedurekode: code
-      proceduretype: procedure_type
       dato_start: date_start
       tidspunkt_start: time_start
+      dw_ek_kontakt: contact_id
     combine_datetime:
       timestamp:
         date_col: date_start
         time_col: time_start
         drop_original: true
     code_prefix: "RPS_"
-    main_mapping:
-      filename: kontakter.parquet
-      left_on: dw_ek_kontakt
-      right_on: dw_ek_kontakt
-
+    mappings:
+      - source_column: contact_id
+        via:
+          filename: kontakter.parquet
+          join_on: dw_ek_kontakt
+        target: 
+          column: PID
+          rename_to: subject_id
+    
   register_procedures_other:
-    filename: procedurer_andre.parquet
+    filename: procedurer_andre.asc
     columns_map:
       procedurekode: code
       proceduretype: procedure_type
       dato_start: date_start
       tidspunkt_start: time_start
+      dw_ek_kontakt: contact_id
     combine_datetime:
       timestamp:
         date_col: date_start
         time_col: time_start
         drop_original: true
     code_prefix: "RPO_"
-    main_mapping:
-      filename: kontakter.parquet
-      left_on: dw_ek_kontakt
-      right_on: dw_ek_kontakt
+    mappings:
+      - source_column: contact_id
+        via:
+          filename: kontakter.parquet
+          join_on: dw_ek_kontakt
+        target:
+          column: PID
+          rename_to: subject_id
 
 patients_info:
   filename: CPMI_PatientInfo.parquet
