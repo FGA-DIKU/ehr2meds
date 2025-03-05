@@ -2,10 +2,12 @@ import json
 import time
 import numpy as np
 import random
+
 # from sklearn.metrics import confusion_matrix
 from azureml.core import Run as AzureRun, ScriptRunConfig, Environment
 
 from . import workspace, log
+
 
 class Run:
     _INSTANCE = None
@@ -15,9 +17,9 @@ class Run:
     def __init__(self, remote=None, callback=None):
         self._children = dict()
 
-        self.remote    = remote
-        self.callback  = callback
-        self._seed     = None
+        self.remote = remote
+        self.callback = callback
+        self._seed = None
 
     @staticmethod
     def init():
@@ -52,7 +54,9 @@ class Run:
         R = Run.init()
         if seed is not None:
             if R._seed is not None:
-                log().warning(f"Seed already set (= {R._seed}), ignoring new seed {seed}...")
+                log().warning(
+                    f"Seed already set (= {R._seed}), ignoring new seed {seed}..."
+                )
             else:
                 R._seed = seed
                 random.seed(seed)
@@ -62,33 +66,35 @@ class Run:
         return R._seed
 
     @staticmethod
-    def submit_child(
-            script,
-            arguments=[],
-            callback=None,
-            name=None,
-            tags=None):
+    def submit_child(script, arguments=[], callback=None, name=None, tags=None):
         R = Run.init()
         if R.remote is None:
             raise Exception("Local childs not supported yet...")
-        
+
         # Wait until there are less than MAX_ACTIVE_CHILDREN.
-        while Run.active_children()>=Run.MAX_ACTIVE_CHILDREN:
+        while Run.active_children() >= Run.MAX_ACTIVE_CHILDREN:
             time.sleep(5)
 
         # There are +1 available spots, create run
         ws = workspace()
         env = R.remote.get_environment()
-        ct  = "local"
-        src = ScriptRunConfig(source_directory=".", script=script, arguments=arguments, compute_target=ct, environment=env)
+        ct = "local"
+        src = ScriptRunConfig(
+            source_directory=".",
+            script=script,
+            arguments=arguments,
+            compute_target=ct,
+            environment=env,
+        )
         aRc = R.remote.submit_child(src, tags=tags)
-        if name is not None: aRc.display_name = name
+        if name is not None:
+            aRc.display_name = name
         log().debug(f"Child run started, name = {name}.")
         Rc = Run(remote=aRc, callback=callback)
         rid = aRc.get_details()["runId"]
 
         R._children[rid] = Rc
-    
+
     @staticmethod
     def active_children():
         R = Run.init()
@@ -100,14 +106,14 @@ class Run:
         R = Run.init()
         joined = 0
         rnd = 0
-        while len(R._children)>0:
+        while len(R._children) > 0:
             rnd += 1
             ncmp = dict()
-            for rid,Rc in R._children.items():
+            for rid, Rc in R._children.items():
                 status = Rc.remote.get_status()
-                if status in ("Completed","Failed","Canceled"):
+                if status in ("Completed", "Failed", "Canceled"):
                     metrics = Rc.remote.get_metrics()
-                    tags    = Rc.remote.get_tags()
+                    tags = Rc.remote.get_tags()
                     # Callback
                     log().debug(f"Child joined! RID = {rid}, tags = {tags}")
                     if Rc.callback is not None:
@@ -116,14 +122,19 @@ class Run:
                 else:
                     ncmp[rid] = Rc
             R._children = ncmp
-            if not block: break
-            log().debug(f"Waiting for children to join ({len(R._children)}), sleeping...")
+            if not block:
+                break
+            log().debug(
+                f"Waiting for children to join ({len(R._children)}), sleeping..."
+            )
             time.sleep(5)
-        
+
         return joined
 
     @staticmethod
-    def register_model(model_name, model_path, datasets=[], tags=dict(), properties=dict()):
+    def register_model(
+        model_name, model_path, datasets=[], tags=dict(), properties=dict()
+    ):
         R = Run.init()
         if R.remote is not None:
             return R.remote.register_model(
@@ -131,7 +142,7 @@ class Run:
                 model_path=model_path,
                 datasets=datasets,
                 tags=tags,
-                properties=properties
+                properties=properties,
             )
         else:
             raise Exception(f"Error: cannot register model with run - no remote run...")
@@ -159,4 +170,3 @@ class Run:
             R.remote.set_tags(tags)
         else:
             log().info(f"Tags = {tags}")
-    

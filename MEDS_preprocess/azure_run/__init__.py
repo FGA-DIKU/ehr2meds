@@ -7,6 +7,7 @@ making backups to a separate datastore, and more...
 from azureml.core import Dataset, Datastore, Workspace, Model
 import pandas as pd
 
+
 def log():
     return logger.log(name=__name__)
 
@@ -15,14 +16,15 @@ _DATASTORES = {
     "workspaceblobstore",
     "sp_data",
     "researcher_data",
-    "workspaceartifactstore"
+    "workspaceartifactstore",
 }
 _WS_CONFIG = {
     "subscription_id": "",
     "resource_group": "forskerpl-n0ybkr-rg",
-    "workspace_name": "forskerpl-n0ybkr-mlw"
+    "workspace_name": "forskerpl-n0ybkr-mlw",
 }
 _WS = None
+
 
 def workspace() -> Workspace:
     """Load workspace with authentication
@@ -38,8 +40,13 @@ def workspace() -> Workspace:
         if Run.is_remote():
             _WS = Run.init().remote.experiment.workspace
         else:
-            _WS = Workspace(_WS_CONFIG["subscription_id"], _WS_CONFIG["resource_group"], _WS_CONFIG["workspace_name"])
+            _WS = Workspace(
+                _WS_CONFIG["subscription_id"],
+                _WS_CONFIG["resource_group"],
+                _WS_CONFIG["workspace_name"],
+            )
     return _WS
+
 
 def datastore(name: str = "workspaceblobstore") -> Datastore:
     """Load requested datastore.
@@ -60,6 +67,7 @@ def datastore(name: str = "workspaceblobstore") -> Datastore:
     ws = workspace()
     return Datastore.get(ws, name)
 
+
 def dataset(name: str, version: int = None) -> Dataset:
     """Load requested dataset
 
@@ -76,10 +84,14 @@ def dataset(name: str, version: int = None) -> Dataset:
         An AzureML dataset object.
     """
     return Dataset.get_by_name(workspace(), name, version=version)
-    
+
+
 _DS_LIST_CACHE = None
 
-def dataset_save(df: pd.DataFrame, name: str, tags: dict = None, description: str = None):
+
+def dataset_save(
+    df: pd.DataFrame, name: str, tags: dict = None, description: str = None
+):
     """Save given dataset.
 
     Parameters
@@ -99,11 +111,20 @@ def dataset_save(df: pd.DataFrame, name: str, tags: dict = None, description: st
         The AzureML dataset object created for the dataset.
     """
     global _DS_LIST_CACHE
-    _DS_LIST_CACHE = None # Invalidate cache
-    return Dataset.Tabular.register_pandas_dataframe(df, datastore(), name, show_progress=False, tags=tags, description=description)
+    _DS_LIST_CACHE = None  # Invalidate cache
+    return Dataset.Tabular.register_pandas_dataframe(
+        df, datastore(), name, show_progress=False, tags=tags, description=description
+    )
 
 
-def file_dataset_save(local_path: str, tags: dict = None, description: str = None, datastore_name = "workspaceblobstore", remote_path = "PHAIR", overwrite=False):
+def file_dataset_save(
+    local_path: str,
+    tags: dict = None,
+    description: str = None,
+    datastore_name="workspaceblobstore",
+    remote_path="PHAIR",
+    overwrite=False,
+):
     """Save given file dataset (given as txt files in a local directory).
 
     Parameters
@@ -123,14 +144,23 @@ def file_dataset_save(local_path: str, tags: dict = None, description: str = Non
         The AzureML dataset object created for the dataset.
     """
     global _DS_LIST_CACHE
-    _DS_LIST_CACHE = None # Invalidate cache
+    _DS_LIST_CACHE = None  # Invalidate cache
 
     dtst = datastore(name=datastore_name)
 
-    ds = Dataset.File.upload_directory(local_path, (dtst, remote_path), overwrite=overwrite)
-    
+    ds = Dataset.File.upload_directory(
+        local_path, (dtst, remote_path), overwrite=overwrite
+    )
+
     # Register
-    return ds.register(workspace=workspace(), name=split(remote_path)[1], tags=tags, description=description, create_new_version=True)
+    return ds.register(
+        workspace=workspace(),
+        name=split(remote_path)[1],
+        tags=tags,
+        description=description,
+        create_new_version=True,
+    )
+
 
 def dataset_list(tags=None):
     """List datasets registered with the default workspace.
@@ -151,23 +181,29 @@ def dataset_list(tags=None):
         # Update cache
         log().debug(f"Fetching dataset list cache...")
         _DS_LIST_CACHE = Dataset.get_all(workspace())
-    
+
     # Prepare filter
     filt = lambda ts: True
-    if type(tags)==set:
-        filt = lambda ts: len(ts.keys()&tags)>0
-    elif type(tags)==list:
-        filt = lambda ts: any([ts.get(t)==v for t,v in tags])
+    if type(tags) == set:
+        filt = lambda ts: len(ts.keys() & tags) > 0
+    elif type(tags) == list:
+        filt = lambda ts: any([ts.get(t) == v for t, v in tags])
     res = []
     for ds_name, ds in _DS_LIST_CACHE.items():
         if filt(ds.tags):
-            res.append({"name":ds_name,"tags":ds.tags,"version":ds.version,"description":ds.description})
+            res.append(
+                {
+                    "name": ds_name,
+                    "tags": ds.tags,
+                    "version": ds.version,
+                    "description": ds.description,
+                }
+            )
     return res
-    
+
 
 from . import backup
 from . import logger
 from .run import Run
 from .model import Model
 from .validation import validate
-
