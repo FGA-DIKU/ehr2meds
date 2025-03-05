@@ -62,18 +62,34 @@ def generate_medical_code(n, start=100, end=999, mix_letters=False, prefix=None)
 
 
 def generate_timestamps(birthdates, deathdates, n=1000):
-    birthdates = birthdates.astype(np.int64) // 10**9
-    deathdates = deathdates.astype(np.int64) // 10**9
+    # Convert inputs to numpy arrays if they aren't already
+    birthdates = np.array(birthdates)
+    deathdates = np.array(deathdates)
+
+    # Convert to timestamps if they aren't already
+    if not isinstance(birthdates[0], (np.datetime64, pd.Timestamp)):
+        birthdates = pd.to_datetime(birthdates)
+    if not isinstance(deathdates[0], (np.datetime64, pd.Timestamp)):
+        deathdates = pd.to_datetime(deathdates)
+
+    # Convert to unix timestamps (nanoseconds since epoch)
+    birth_timestamps = pd.Series(birthdates).apply(lambda x: x.timestamp())
+    death_timestamps = pd.Series(deathdates).apply(
+        lambda x: (
+            x.timestamp() if pd.notna(x) else pd.Timestamp("2025-01-01").timestamp()
+        )
+    )
+
     random_timestamps = [
-        np.random.randint(birthdate, deathdate)
-        for birthdate, deathdate in zip(birthdates, deathdates)
+        np.random.randint(int(birth), int(death))
+        for birth, death in zip(birth_timestamps, death_timestamps)
     ]
     timestamps = pd.to_datetime(random_timestamps, unit="s")
     return timestamps
 
 
-def generate_diagnosis_csv(save_dir, hashes, birthdates, deathdates, seed=0):
-    def generate_diagnosis(n=1000, diag_codes=None):
+def generate_diagnosis(save_dir, hashes, birthdates, deathdates, seed=0):
+    def generate_diagnosis_description(n=1000, diag_codes=None):
         diagnoses = []
         if diag_codes is not None:
             n = len(diag_codes)
@@ -93,16 +109,16 @@ def generate_diagnosis_csv(save_dir, hashes, birthdates, deathdates, seed=0):
         {
             "CPR_hash": hashes,
             "Diagnosekode": diag_codes,
-            "Diagnose": generate_diagnosis(total_concepts, diag_codes),
+            "Diagnose": generate_diagnosis_description(total_concepts, diag_codes),
             "Noteret_dato": generate_timestamps(birthdates, deathdates, total_concepts),
             "Løst_dato": generate_timestamps(birthdates, deathdates, total_concepts),
         }
     )
     os.makedirs(save_dir, exist_ok=True)
-    df.to_parquet(f"{save_dir}/CPMI_Diagnoser.parquet", index=False)
+    df.to_csv(f"{save_dir}/CPMI_Diagnoser.csv", index=False)
 
 
-def generate_medication_csv(save_dir, hashes, birthdates, deathdates, seed=0):
+def generate_medication(save_dir, hashes, birthdates, deathdates, seed=0):
     def generate_medication_description(n=1000):
         dose = [random.randint(10, 1000) for _ in range(n)]
         unit = [random.choice(MED_UNITS) for _ in range(n)]
@@ -155,7 +171,7 @@ def generate_medication_csv(save_dir, hashes, birthdates, deathdates, seed=0):
     df.to_parquet(f"{save_dir}/CPMI_Medicin.parquet", index=False)
 
 
-def generate_procedure_csv(save_dir, hashes, birthdates, deathdates, seed=0):
+def generate_procedures(save_dir, hashes, birthdates, deathdates, seed=0):
     total_concepts = len(hashes)
     dates = pd.Series(generate_timestamps(birthdates, deathdates, total_concepts))
     df = pd.DataFrame(
@@ -178,7 +194,7 @@ def generate_procedure_csv(save_dir, hashes, birthdates, deathdates, seed=0):
     df.to_parquet(f"{save_dir}/CPMI_Procedurer.parquet", index=False)
 
 
-def generate_labtest_csv(save_dir, hashes, birthdates, deathdates, seed=0):
+def generate_labtests(save_dir, hashes, birthdates, deathdates, seed=0):
     total_concepts = len(hashes)
     dates = pd.Series(generate_timestamps(birthdates, deathdates, total_concepts))
     time_for_results = np.random.randint(0, 4, total_concepts)
@@ -202,6 +218,110 @@ def generate_labtest_csv(save_dir, hashes, birthdates, deathdates, seed=0):
         }
     )
     df.to_parquet(f"{save_dir}/CPMI_Labsvar.parquet", index=False)
+
+
+def generate_adt_events(save_dir, hashes, birthdates, deathdates, seed=0):
+    all_events = []
+
+    # Convert inputs to pandas Series for easier filtering
+    hash_series = pd.Series(hashes)
+    birth_series = pd.Series(birthdates)
+    death_series = pd.Series(deathdates)
+
+    # For each patient, generate 1-3 admission episodes
+    for patient_hash in set(hashes):
+        n_admissions = random.randint(1, 3)
+
+        # Find this patient's birth and death dates
+        patient_indices = hash_series[hash_series == patient_hash].index
+        patient_birth = birth_series.iloc[patient_indices[0]]
+        patient_death = death_series.iloc[patient_indices[0]]
+
+        for _ in range(n_admissions):
+            # Start with admission event (Indlæggelse)
+            admission_start = generate_timestamps(
+                np.array([patient_birth]), np.array([patient_death]), 1
+            )[0]
+            initial_dept = f"Afdeling {random.choice(['A', 'B', 'C', 'D', 'E'])}{random.randint(1, 5)}"
+
+            # Length of entire admission episode (in hours)
+            total_stay_hours = random.randint(24, 240)  # 1-10 days
+
+            # Initial admission event
+            current_time = admission_start
+            next_time = current_time + pd.Timedelta(hours=random.randint(2, 8))
+            events = [
+                {
+                    "CPR_hash": patient_hash,
+                    "Flyt_ind": current_time,
+                    "Flyt_ud": next_time,
+                    "Afsnit": initial_dept,
+                    "ADT_haendelse": "Indlæggelse",
+                }
+            ]
+
+            # Generate chain of Flyt Ind events
+            current_dept = initial_dept
+            current_time = next_time
+
+            # Number of transfers during this admission
+            n_transfers = random.randint(2, 5)
+
+            for _ in range(n_transfers):
+                # Ensure we don't exceed total stay duration
+                if (
+                    current_time - admission_start
+                ).total_seconds() / 3600 >= total_stay_hours:
+                    break
+
+                # Generate new department different from current
+                new_dept = current_dept
+                while new_dept == current_dept:
+                    new_dept = f"Afdeling {random.choice(['A', 'B', 'C', 'D', 'E'])}{random.randint(1, 5)}"
+
+                # Calculate next movement time
+                next_time = min(
+                    current_time + pd.Timedelta(hours=random.randint(4, 48)),
+                    admission_start + pd.Timedelta(hours=total_stay_hours),
+                )
+
+                # Add Flyt Ind event
+                events.append(
+                    {
+                        "CPR_hash": patient_hash,
+                        "Flyt_ind": current_time,
+                        "Flyt_ud": next_time,
+                        "Afsnit": new_dept,
+                        "ADT_haendelse": "Flyt Ind",
+                    }
+                )
+
+                # Randomly insert "Tilbage fra orlov" events (10% chance)
+                if random.random() < 0.1:
+                    leave_return_time = current_time + pd.Timedelta(
+                        hours=random.randint(1, 4)
+                    )
+                    if leave_return_time < next_time:
+                        events.append(
+                            {
+                                "CPR_hash": patient_hash,
+                                "Flyt_ind": leave_return_time,
+                                "Flyt_ud": leave_return_time,  # Same timestamp for leave returns
+                                "Afsnit": new_dept,
+                                "ADT_haendelse": "Tilbage fra orlov",
+                            }
+                        )
+
+                current_dept = new_dept
+                current_time = next_time
+
+            all_events.extend(events)
+
+    # Convert to DataFrame and sort by patient and timestamp
+    df = pd.DataFrame(all_events)
+    df = df.sort_values(["CPR_hash", "Flyt_ind"])
+
+    df.to_parquet(f"{save_dir}/CPMI_ADTHaendelser.parquet", index=False)
 
 
 def generate_patients_info(n_patients):
@@ -251,7 +371,7 @@ def generate_patients_info(n_patients):
     )
 
 
-def generate_register_diagnosis_csv(save_dir, mapping, kont, seed=0, n_concepts=3):
+def generate_register_diagnosis(save_dir, mapping, kont, seed=0, n_concepts=3):
     pids = kont["PID"].tolist()
     pids_lst = np.tile(pids, n_concepts)
     dw_eks_kontakt = np.tile(kont["dw_ek_kontakt"].tolist(), n_concepts)
@@ -545,7 +665,7 @@ def generate_register_medication(save_dir, kont, n_concepts=3):
     df.to_parquet(f"{save_dir}/epikur.parquet", index=False)
 
 
-def generate_laegemiddeloplysninger(save_dir):
+def generate_laegemidler(save_dir):
     # Generate a reasonable number of unique medications
     n_medications = 1000
 
@@ -618,7 +738,7 @@ def generate_laegemiddeloplysninger(save_dir):
     df.to_csv(f"{save_dir}/laegemiddeloplysninger.asc", index=False)
 
 
-def generate_procedures_csv(save_dir, kont, forloeb, n_concepts=3):
+def generate_register_procedures(save_dir, kont, forloeb, n_concepts=3):
     # Get unique kontakt IDs and forloeb IDs
     dw_eks_kontakt = kont["dw_ek_kontakt"].tolist()
     dw_eks_forloeb = kont["dw_ek_forloeb"].tolist()
@@ -716,7 +836,7 @@ def generate_procedures_csv(save_dir, kont, forloeb, n_concepts=3):
     kirurgi_df.to_csv(f"{save_dir}/procedurer_kirurgi.asc", index=False)
     andre_df.to_csv(f"{save_dir}/procedurer_andre.asc", index=False)
 
-# !TODO; generate ADTHaendelser.parquet
+
 def main_write(
     n_patients=DEFAULT_N, n_concepts=DEFAULT_N_CONCEPTS, write_dir=DEFAULT_WRITE_DIR
 ):
@@ -729,7 +849,6 @@ def main_write(
     np.random.seed(0)
     patients_info = generate_patients_info(n_patients)
     patients_info.to_parquet(f"{sp_dir}/CPMI_PatientInfo.parquet", index=False)
-    
 
     # Getting lists for the CPR_hash, birthdate, and deathdate
     pids = patients_info["CPR_hash"]
@@ -744,10 +863,11 @@ def main_write(
     for birth, death in zip(birthdates, deathdates):
         assert birth < death, f"Birthdate {birth} is not before deathdate {death}"
 
-    generate_diagnosis_csv(sp_dir, hashes, birthdates, deathdates)
-    generate_medication_csv(sp_dir, hashes, birthdates, deathdates)
-    generate_procedure_csv(sp_dir, hashes, birthdates, deathdates)
-    generate_labtest_csv(sp_dir, hashes, birthdates, deathdates)
+    generate_diagnosis(sp_dir, hashes, birthdates, deathdates)
+    generate_medication(sp_dir, hashes, birthdates, deathdates)
+    generate_procedures(sp_dir, hashes, birthdates, deathdates)
+    generate_labtests(sp_dir, hashes, birthdates, deathdates)
+    generate_adt_events(sp_dir, hashes, birthdates, deathdates)
     mapping_merged, mapping = generate_mapping(pids, patients_info)
     forl = generate_forloeb(mapping_merged)
     kont = generate_kontakter(mapping_merged, forl, n_visits=3)
@@ -756,10 +876,10 @@ def main_write(
     forl.to_parquet(f"{register_dir}/forloeb.parquet", index=False)
 
     # Generate and save register data
-    generate_register_diagnosis_csv(register_dir, mapping, kont, n_concepts=n_concepts)
+    generate_register_diagnosis(register_dir, mapping, kont, n_concepts=n_concepts)
     generate_register_medication(register_dir, kont, n_concepts=n_concepts)
-    generate_laegemiddeloplysninger(register_dir)
-    generate_procedures_csv(register_dir, kont, forl, n_concepts=n_concepts)
+    generate_laegemidler(register_dir)
+    generate_register_procedures(register_dir, kont, forl, n_concepts=n_concepts)
 
     # Save kontakter to parquet
     kont.to_parquet(f"{register_dir}/kontakter.parquet", index=False)
