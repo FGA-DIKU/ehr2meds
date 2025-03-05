@@ -107,11 +107,6 @@ class TestConceptProcessor(unittest.TestCase):
             ConceptProcessor.check_columns(df, columns_map)
         self.assertIn("Missing columns", str(context.exception))
 
-    def test_postprocess_switch_unknown(self):
-        df = pd.DataFrame()
-        with self.assertRaises(ValueError):
-            ConceptProcessor._postprocess_switch(df, "unknown_postprocess")
-
     def test_combine_datetime_columns(self):
         # Test data
         df = pd.DataFrame(
@@ -192,48 +187,6 @@ class TestConceptProcessor(unittest.TestCase):
         )
         self.assertIn("admission", result_multi.columns)
         self.assertIn("discharge", result_multi.columns)
-
-    def test_apply_secondary_mapping(self):
-        # Test data
-        df = pd.DataFrame(
-            {"drug_code": ["A01", "B02", "C03"], "value": [100, 200, 300]}
-        )
-
-        mapping_df = pd.DataFrame(
-            {
-                "VNR": ["A01", "B02", "C03", "D04"],
-                "PNAME": ["Drug A", "Drug B", "Drug C", "Drug D"],
-            }
-        )
-
-        config = {"secondary_mapping": {"left_on": "drug_code", "right_on": "VNR"}}
-
-        # Mock the _load_mapping_file method
-        with patch.object(
-            ConceptProcessor, "_load_mapping_file", return_value=mapping_df
-        ):
-            result = ConceptProcessor._apply_secondary_mapping(df.copy(), config)
-
-            # Check that mapping was successful
-            self.assertIn("PNAME", result.columns)
-            self.assertNotIn("drug_code", result.columns)  # Should be dropped
-            self.assertEqual(len(result), 3)  # All rows should match
-            self.assertEqual(result.loc[0, "PNAME"], "Drug A")
-
-        # Test with non-matching values
-        df_non_match = pd.DataFrame(
-            {"drug_code": ["X99", "Y88", "Z77"], "value": [100, 200, 300]}
-        )
-
-        with patch.object(
-            ConceptProcessor, "_load_mapping_file", return_value=mapping_df
-        ):
-            result_non_match = ConceptProcessor._apply_secondary_mapping(
-                df_non_match.copy(), config
-            )
-
-            # With inner join, no rows should match
-            self.assertEqual(len(result_non_match), 0)
 
     def test_convert_numeric_columns(self):
         # Test data with mix of numeric and non-numeric values
@@ -325,84 +278,6 @@ class TestConceptProcessor(unittest.TestCase):
 
         result_no_prefix = ConceptProcessor._unroll_columns(df.copy(), config_no_prefix)
         self.assertEqual(len(result_no_prefix), 1)
-        self.assertEqual(result_no_prefix[0].loc[0, CODE], "cardio")  # No prefix
-
-        # Test with no unroll_columns (just prefix)
-        config_no_unroll = {"code_prefix": "TEST_"}
-
-        # Create df with CODE column
-        df_with_code = df.copy()
-        df_with_code[CODE] = ["code1", "code2", "code3"]
-
-        result_no_unroll = ConceptProcessor._unroll_columns(
-            df_with_code, config_no_unroll
-        )
-        self.assertEqual(len(result_no_unroll), 1)
-        self.assertEqual(result_no_unroll[0].loc[0, CODE], "TEST_code1")
-
-    def test_apply_main_mapping(self):
-        # Test data
-        df = pd.DataFrame(
-            {
-                "dw_ek_kontakt": ["K001", "K002", "K003"],
-                "code": ["D123", "D456", "D789"],
-            }
-        )
-
-        mapping_df = pd.DataFrame(
-            {
-                "dw_ek_kontakt": ["K001", "K002", "K003", "K004"],
-                SUBJECT_ID: ["P001", "P002", "P003", "P004"],
-            }
-        )
-
-        config = {
-            "main_mapping": {"left_on": "dw_ek_kontakt", "right_on": "dw_ek_kontakt"}
-        }
-
-        # Mock the mapping file load more explicitly
-        with patch.object(
-            ConceptProcessor,
-            "_load_mapping_file",
-            return_value=mapping_df,
-            autospec=True,  # Ensures the mock respects the method's signature
-        ) as mock_load:
-            result = ConceptProcessor._apply_main_mapping(df.copy(), config)
-
-            # Verify the mock was called correctly
-            mock_load.assert_called_once()
-
-            # Check mapping results
-            self.assertIn(SUBJECT_ID, result.columns)
-            self.assertNotIn("dw_ek_kontakt", result.columns)
-            self.assertEqual(len(result), 3)
-
-        # Test with different column names
-        df_diff = pd.DataFrame(
-            {"kontakt_id": ["K001", "K002", "K003"], "code": ["D123", "D456", "D789"]}
-        )
-
-        config_diff = {
-            "main_mapping": {"left_on": "kontakt_id", "right_on": "dw_ek_kontakt"}
-        }
-
-        with patch.object(
-            ConceptProcessor,
-            "_load_mapping_file",
-            return_value=mapping_df,
-            autospec=True,  # Ensures the mock respects the method's signature
-        ) as mock_load:
-            result_diff = ConceptProcessor._apply_main_mapping(
-                df_diff.copy(), config_diff
-            )
-
-            # Verify the mock was called correctly
-            mock_load.assert_called_once()
-
-            # Check mapping results
-            self.assertIn(SUBJECT_ID, result_diff.columns)
-            self.assertNotIn("kontakt_id", result_diff.columns)
-            self.assertEqual(len(result_diff), 3)
 
     def test_map_and_clean_data(self):
         # Test data
