@@ -24,5 +24,5 @@ jobs:
             - name: main.create_data
               run: |
                 source .venv/bin/activate
-                python -m MEDS_preprocess.main.py --config MEDS_local
+                python -m MEDS_preprocess.main --config MEDS_local
   

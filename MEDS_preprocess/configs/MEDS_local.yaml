@@ -1,0 +1,206 @@
+test: false
+env: local
+run_name: MEDS
+chunksize: 500_000
+paths:
+  output_dir: outputs/preMEDS
+  file_type: csv 
+
+preprocessor:
+  _target_: MEDS_preprocess.preprocessors.preMEDS.MEDSPreprocessor
+
+data_path:
+  concepts:
+    dump_path: 'tests/example_data/sp_dump'
+  register_concepts:
+    dump_path: 'tests/example_data/registers'
+  pid_link: 
+    dump_path: 'tests/example_data/maskerede_data'
+
+concepts:
+  admissions:
+    filename: CPMI_ADTHaendelser.parquet
+    # columns to keep, rename, and the final names
+    columns_map:
+      CPR_hash: subject_id
+      Flyt_ind: admission
+      Flyt_ud: discharge
+      # Afsnit: section 
+      # ADT_haendelse: type
+    # some special post-processing function for merges
+    postprocess: "merge_admissions"
+
+  diagnosis:
+    filename: CPMI_Diagnoser.parquet
+    columns_map:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Noteret_dato: timestamp
+      CPR_hash: subject_id
+    fillna:
+      code:
+        column: fill_code
+        regex: '\((D[^)]+)\)'
+    code_prefix: "D_"
+
+  procedure:
+    filename: CPMI_Procedurer.parquet
+    columns_map:
+      ProcedureCode: code
+      ProcedureName: fill_code
+      ServiceDatetime: timestamp
+      ServiceDate: fill_timestamp
+      CPR_hash: subject_id
+    fillna:
+      code:
+        column: fill_code
+      timestamp:
+        column: fill_timestamp
+    code_prefix: "P_"
+
+  medication:
+    filename: CPMI_Medicin.parquet
+    columns_map:
+      ATC: code
+      Administrationstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      CPR_hash: subject_id
+    fillna:
+      timestamp:
+        column: fill_timestamp
+    code_prefix: "M_"
+
+  labtest:
+    filename: CPMI_Labsvar.parquet
+    columns_map:
+      BestOrd: code
+      Prøvetagningstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      Resultatværdi: numeric_value
+      CPR_hash: subject_id
+    fillna:
+      timestamp:
+        column: fill_timestamp
+    code_prefix: "L_"
+    numeric_columns: [numeric_value]
+
+register_concepts:
+  register_diagnosis:
+    filename: diagnoser.asc
+    columns_map:
+      diagnosekode: code
+      diagnosetype: code_type
+      dw_ek_kontakt: contact_id
+
+    code_prefix: "RD_"
+    mappings:
+      - source_column: contact_id
+        via:
+          filename: kontakter.parquet
+          join_on: dw_ek_kontakt
+        target: 
+          column: PID
+          rename_to: subject_id
+      - source_column: contact_id
+        via:
+          filename: kontakter.parquet
+          join_on: dw_ek_kontakt
+        target: 
+          column: dato_slut
+          rename_to: timestamp
+        
+        drop_original: true
+
+  register_contacts:
+    filename: kontakter.parquet
+    columns_map:
+      PID: subject_id
+      dato_start: date_start
+      tidspunkt_start: time_start
+      aktionsdiagnose: code
+      kontaktaarsag: contact_reason
+      hovedspeciale_ans: clinical_specialty
+      regions_ans: region_code
+
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+    unroll_columns:
+      - column: contact_reason
+        prefix: "RC_REASON_"
+      - column: clinical_specialty
+        prefix: "RC_SPEC_"
+      - column: region_code
+        prefix: "RC_REG_"
+
+  register_medication:
+    filename: epikur.parquet
+    columns_map:
+      PID: subject_id
+      vnr: vnr_code
+      eksd: timestamp
+    mappings:
+      - source_column: vnr_code
+        via:
+          filename: laegemiddeloplysninger.asc
+          join_on: VNR
+        target:
+          column: PNAME
+          rename_to: code
+    code_prefix: "RM_"
+
+  register_procedures_surgery:
+    filename: procedurer_kirurgi.asc
+    columns_map:
+      procedurekode: code
+      dato_start: date_start
+      tidspunkt_start: time_start
+      dw_ek_kontakt: contact_id
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+    code_prefix: "RPS_"
+    mappings:
+      - source_column: contact_id
+        via:
+          filename: kontakter.parquet
+          join_on: dw_ek_kontakt
+        target: 
+          column: PID
+          rename_to: subject_id
+    
+  register_procedures_other:
+    filename: procedurer_andre.asc
+    columns_map:
+      procedurekode: code
+      proceduretype: procedure_type
+      dato_start: date_start
+      tidspunkt_start: time_start
+      dw_ek_kontakt: contact_id
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+    code_prefix: "RPO_"
+    mappings:
+      - source_column: contact_id
+        via:
+          filename: kontakter.parquet
+          join_on: dw_ek_kontakt
+        target:
+          column: PID
+          rename_to: subject_id
+
+patients_info:
+  filename: CPMI_PatientInfo.parquet
+  columns_map:
+    CPR_hash: subject_id
+    Fødselsdato: birthdate
+    Dødsdato: deathdate
+    Køn: gender
+  file_type: parquet
