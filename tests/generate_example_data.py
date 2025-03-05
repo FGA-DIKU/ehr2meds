@@ -115,7 +115,7 @@ def generate_diagnosis(save_dir, hashes, birthdates, deathdates, seed=0):
         }
     )
     os.makedirs(save_dir, exist_ok=True)
-    df.to_csv(f"{save_dir}/CPMI_Diagnoser.csv", index=False)
+ 
 
 
 def generate_medication(save_dir, hashes, birthdates, deathdates, seed=0):
