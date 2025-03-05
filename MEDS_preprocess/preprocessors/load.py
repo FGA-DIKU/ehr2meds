@@ -1,23 +1,23 @@
 import importlib
-from os.path import join
-
 import yaml
-from azureml.core import Datastore, Workspace
+
 
 def instantiate(config, kwargs={}):
     module_path, class_name = config._target_.rsplit(".", 1)
     module = importlib.import_module(module_path)
     class_ = getattr(module, class_name)
-    #params = {k: v for k, v in config.items() if k != "_target"}
+    # params = {k: v for k, v in config.items() if k != "_target"}
     instance = class_(**kwargs)
     return instance
 
+
 def load_config(config_file):
-    with open(config_file, 'r') as ymlfile:
+    with open(config_file, "r", encoding="utf-8") as ymlfile:
         cfg = yaml.safe_load(ymlfile)
     cfg = Config(cfg)
     return cfg
-    
+
+
 class Config(dict):
     def __init__(self, dictionary=None):
         super(Config, self).__init__()
