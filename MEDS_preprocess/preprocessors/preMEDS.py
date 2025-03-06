@@ -1,7 +1,6 @@
 import os
 import pickle
 from dataclasses import dataclass
-from datetime import timedelta
 from typing import Dict, Iterator, Optional, Tuple, List
 
 import pandas as pd
@@ -361,74 +360,132 @@ class ConceptProcessor:
         return df
 
     @staticmethod
-    def process_admissions(
-        df: pd.DataFrame, admissions_config: dict, subject_id_mapping: Dict[str, int]
-    ) -> pd.DataFrame:
+    def process_adt_admissions(
+        df: pd.DataFrame, 
+        admissions_config: dict, 
+        subject_id_mapping: Dict[str, int],
+        last_patient_data: Optional[dict] = None
+    ) -> Tuple[pd.DataFrame, Optional[dict]]:
         """
-        Process admissions data.
-        Expected final columns: subject_id, admission, discharge (and optionally timestamp).
+        Process ADT admissions data to create admission/discharge events and department transfers.
+        Handles patients that span across chunks.
+        
+        Args:
+            df: Input DataFrame
+            admissions_config: Configuration for admissions processing
+            subject_id_mapping: Mapping from original IDs to integer IDs
+            last_patient_data: Data from the last patient in previous chunk
+        
+        Returns:
+            Tuple containing:
+            - Processed DataFrame with events
+            - Data for the last patient if it's incomplete (spans to next chunk)
         """
-        # For admissions, we only select & rename columns.
+        # First select and rename columns
         df = ConceptProcessor._select_and_rename_columns(
             df, admissions_config.get("columns_map", {})
         )
-        # For admissions, we do not process codes or convert numeric columns.
-        # But we still allow a postprocessing step (e.g., merging overlapping intervals).
-        df = ConceptProcessor._merge_admissions(df)
-        # Map subject_id if available
+        # Map subject_id
         if SUBJECT_ID in df.columns:
             df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
-            # Drop rows where mapping failed
             df = df.dropna(subset=[SUBJECT_ID])
-            # Convert to integer
             df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
 
-        # Clean data
-        df = df.dropna(subset=[ADMISSION, DISCHARGE], how="any")
-        df = df.drop_duplicates()
-        return df
+        # Sort by patient and timestamp
+        df = df.sort_values([SUBJECT_ID, "timestamp_in"])
+        
+        # Initialize lists to store the processed events
+        events = []
+        
+        # If we have data from last chunk's patient, initialize with that
+        current_patient_id = None
+        admission_start = None
+        last_transfer = None
+        
+        if last_patient_data:
+            current_patient_id = last_patient_data["subject_id"]
+            admission_start = last_patient_data["admission_start"]
+            last_transfer = last_patient_data["last_transfer"]
+        
+        # Process each patient's events
+        for subject_id, patient_df in df.groupby(SUBJECT_ID):
+            # If this is a new patient and we had a previous patient's data,
+            # finalize the previous patient's events
+            if current_patient_id is not None and subject_id != current_patient_id:
+                if admission_start is not None and last_transfer is not None:
+                    events.append({
+                        SUBJECT_ID: current_patient_id,
+                        "timestamp": last_transfer["timestamp_out"],
+                        CODE: "DISCHARGE_ADT"
+                    })
+                
+                # Reset for new patient
+                admission_start = None
+                last_transfer = None
+            
+            current_patient_id = subject_id
+            for _, row in patient_df.iterrows():
+                event_type = row["type"]
+                dept = row["section"]
+                timestamp_in = row["timestamp_in"]
 
-    @staticmethod
-    def _merge_admissions(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Merge overlapping admission intervals for each subject:
-        - Group by subject_id
-        - Sort by admission start time
-        - Merge intervals that overlap or are within 24h
-        """
-        # Drop rows where admission or discharge is missing
-        df = df.dropna(subset=[ADMISSION, DISCHARGE])
-        df[ADMISSION] = pd.to_datetime(df[ADMISSION], errors="coerce")
-        df[DISCHARGE] = pd.to_datetime(df[DISCHARGE], errors="coerce")
-
-        # Sort by subject_id and admission time
-        df = df.sort_values(by=[SUBJECT_ID, ADMISSION])
-
-        merged = []
-
-        # Process each subject separately
-        for _, subject_df in df.groupby(SUBJECT_ID):
-            current = None
-
-            for _, row in subject_df.iterrows():
-                if current is None:
-                    current = row.copy()
-                    continue
-
-                # If next admission is within 24h of current discharge
-                if row[ADMISSION] <= current[DISCHARGE] + timedelta(hours=24):
-                    # Extend discharge if needed
-                    if row[DISCHARGE] > current[DISCHARGE]:
-                        current[DISCHARGE] = row[DISCHARGE]
-                else:
-                    # Add the completed admission
-                    merged.append(current)
-                    current = row.copy()
-
-            if current is not None:
-                merged.append(current)
-
-        return pd.DataFrame(merged)
+                if event_type.lower() == "indlaeggelse":
+                    # If there was a previous admission, add discharge at last transfer
+                    if admission_start is not None and last_transfer is not None:
+                        events.append({
+                            SUBJECT_ID: subject_id,
+                            "timestamp": last_transfer["timestamp_out"],
+                            CODE: "DISCHARGE_ADT"
+                        })
+                    
+                    # Start new admission
+                    admission_start = row
+                    events.append({
+                        SUBJECT_ID: subject_id,
+                        "timestamp": timestamp_in,
+                        CODE: "ADMISSION_ADT"
+                    })
+                    
+                    # Add department code
+                    events.append({
+                        SUBJECT_ID: subject_id,
+                        "timestamp": timestamp_in,
+                        CODE: f"AFSNIT_ADT_{dept}"
+                    })
+                    
+                elif event_type.lower() == "flyt ind" and admission_start is not None:
+                    # Record transfer
+                    if admissions_config.get("save_adm_move", True):
+                        events.append({
+                            SUBJECT_ID: subject_id,
+                            "timestamp": timestamp_in,
+                            CODE: "ADM_move"
+                        })
+                    # Add department code for the new department
+                    events.append({
+                        SUBJECT_ID: subject_id,
+                        "timestamp": timestamp_in,
+                        CODE: f"AFSNIT_ADT_{dept}"
+                    })
+                    last_transfer = row
+        
+        # Convert events to DataFrame
+        result_df = pd.DataFrame(events)
+        # Sort by patient and timestamp
+        if not result_df.empty:
+            result_df = result_df.sort_values([SUBJECT_ID, "timestamp"])
+        
+        # Prepare data for the last patient if their events might continue in next chunk
+        last_patient_info = None
+        if current_patient_id is not None and admission_start is not None:
+            last_patient_info = {
+                "subject_id": current_patient_id,
+                "admission_start": admission_start,
+                "last_transfer": last_transfer,
+                "events": []  # Will be populated if this is the final chunk
+            }
+        
+        return result_df, last_patient_info
 
     @staticmethod
     def check_columns(df: pd.DataFrame, columns_map: dict):
@@ -475,19 +532,19 @@ class MEDSPreprocessor:
             env=cfg.env,
             test=self.test,
         )
-
-        # Create data handler for register concepts
-        self.register_data_handler = DataHandler(
-            DataConfig(
-                output_dir=cfg.paths.output_dir,
-                file_type=cfg.paths.file_type,
-                datastore=cfg.data_path.register_concepts.get("datastore"),
-                dump_path=cfg.data_path.register_concepts.dump_path,
-            ),
-            logger,
-            env=cfg.env,
-            test=self.test,
-        )
+        if cfg.get("register_concepts"):
+            # Create data handler for register concepts
+            self.register_data_handler = DataHandler(
+                DataConfig(
+                    output_dir=cfg.paths.output_dir,
+                    file_type=cfg.paths.file_type,
+                    datastore=cfg.data_path.register_concepts.get("datastore"),
+                    dump_path=cfg.data_path.register_concepts.dump_path,
+                ),
+                logger,
+                env=cfg.env,
+                test=self.test,
+            )
 
         # Create data handler for mappings
         self.mapping_data_handler = DataHandler(
@@ -506,7 +563,8 @@ class MEDSPreprocessor:
 
     def __call__(self):
         subject_id_mapping = self.format_patients_info()
-        self.format_register_concepts(subject_id_mapping)
+        if self.cfg.get("register_concepts"):
+            self.format_register_concepts(subject_id_mapping)
         self.format_concepts(subject_id_mapping)
 
     def format_patients_info(self) -> Dict[str, int]:
@@ -610,18 +668,29 @@ class MEDSPreprocessor:
     def format_admissions(
         self, admissions_config: dict, subject_id_mapping: Dict[str, int]
     ) -> None:
-        """Process the admissions concept separately."""
+        """Process the admissions concept separately, handling patients across chunks."""
         first_chunk = True
+        last_patient_data = None  # Store data for patient that spans chunks
+        
         for chunk in tqdm(
             self.data_handler.load_chunks(admissions_config),
             desc="Chunks admissions",
         ):
-            processed_chunk = ConceptProcessor.process_admissions(
-                chunk, admissions_config, subject_id_mapping
+            # Process the chunk with any carried over patient data
+            processed_chunk, last_patient_data = ConceptProcessor.process_adt_admissions(
+                chunk, admissions_config, subject_id_mapping, last_patient_data
             )
-            mode = "w" if first_chunk else "a"
-            self.data_handler.save(processed_chunk, "admissions", mode=mode)
-            first_chunk = False
+            
+            if not processed_chunk.empty:
+                mode = "w" if first_chunk else "a"
+                self.data_handler.save(processed_chunk, "admissions", mode=mode)
+                first_chunk = False
+        
+        # Process any remaining last patient data
+        if last_patient_data and last_patient_data["events"]:
+            final_df = pd.DataFrame(last_patient_data["events"])
+            if not final_df.empty:
+                self.data_handler.save(final_df, "admissions", mode="a")
 
     def _process_concept_chunks(
         self,
