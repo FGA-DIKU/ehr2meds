@@ -4,28 +4,10 @@ import pandas as pd
 
 from MEDS_preprocess.preprocessors.constants import CODE, MANDATORY_COLUMNS, SUBJECT_ID
 from MEDS_preprocess.preprocessors.helpers import DataHandler
+from MEDS_preprocess.preprocessors.concept_processor_utils import select_and_rename_columns, process_codes
+    
 
-
-class ConceptProcessor:
-    """Handles the processing of medical concepts"""
-
-    @staticmethod
-    def process_concept(
-        df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]
-    ) -> pd.DataFrame:
-        """
-        Main method for processing a single concept's data
-        """
-        df = ConceptProcessor._select_and_rename_columns(
-            df, concept_config.get("columns_map", {})
-        )
-        df = ConceptProcessor._process_codes(df, concept_config)
-        df = ConceptProcessor._convert_and_clean_data(
-            df, concept_config, subject_id_mapping
-        )
-
-        return df
-
+class RegisterConceptProcessor:
     @staticmethod
     def process_register_concept(
         df: pd.DataFrame,
@@ -36,7 +18,7 @@ class ConceptProcessor:
     ) -> pd.DataFrame:
         """Process the register concepts."""
         # Step 1: Initial processing
-        df = ConceptProcessor._process_initial_register_data(df, concept_config)
+        df = RegisterConceptProcessor._process_initial_register_data(df, concept_config)
 
         # Step 2: Apply secondary mapping if needed
         df = ConceptProcessor._apply_secondary_mapping(df, concept_config, data_handler)
@@ -45,30 +27,118 @@ class ConceptProcessor:
         df = ConceptProcessor._convert_numeric_columns(df, concept_config)
 
         # Step 4: Apply main mapping and register mapping
-        df = ConceptProcessor._apply_main_and_register_mapping(
+        df = RegisterConceptProcessor._apply_main_and_register_mapping(
             df, concept_config, data_handler, register_sp_mapping
         )
 
         # Step 5: Process codes (unroll or prefix)
-        df = ConceptProcessor._process_register_codes(df, concept_config)
+        df = RegisterConceptProcessor._process_register_codes(df, concept_config)
 
         # Step 6: Final cleanup and mapping
         df = ConceptProcessor._map_and_clean_data(df, subject_id_mapping)
 
         return df
-
+        #
     @staticmethod
     def _process_initial_register_data(
         df: pd.DataFrame, concept_config: dict
     ) -> pd.DataFrame:
         """Handle initial data processing steps."""
         # Select and rename columns
-        df = ConceptProcessor._select_and_rename_columns(
+        df = select_and_rename_columns(
             df, concept_config.get("columns_map", {})
         )
 
         # Combine datetime columns if needed
-        df = ConceptProcessor._combine_datetime_columns(df, concept_config)
+        df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
+
+        return df
+    
+    @staticmethod
+    def _apply_main_and_register_mapping(
+        df: pd.DataFrame,
+        concept_config: dict,
+        data_handler: "DataHandler",
+        register_sp_mapping: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """Apply main mapping and register mapping to get final subject IDs."""
+        if "main_mapping" not in concept_config:
+            return df
+
+        mapping_cfg = concept_config["main_mapping"]
+        mapping_df = ConceptProcessor._load_mapping_file(mapping_cfg, data_handler)
+
+        # Apply main mapping
+        df = pd.merge(
+            df,
+            mapping_df,
+            left_on=mapping_cfg.get("left_on"),
+            right_on=mapping_cfg.get("right_on"),
+            how="inner",
+        )
+
+        # Apply register mapping if possible
+        if "PID" in df.columns and "PID" in register_sp_mapping.columns:
+            df = pd.merge(df, register_sp_mapping, on="PID", how="inner")
+            if SUBJECT_ID in register_sp_mapping.columns:
+                df = df.drop(columns=[mapping_cfg.get("left_on"), "PID"])
+                df = df.rename(columns={"SP_HASH": SUBJECT_ID})
+        else:
+            df = df.drop(columns=[mapping_cfg.get("left_on")])
+
+        return df
+
+    @staticmethod
+    def _process_register_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+        """Process codes through unrolling or adding prefixes."""
+        if "unroll_columns" in concept_config:
+            processed_dfs = ConceptProcessor._unroll_columns(df, concept_config)
+            return pd.concat(processed_dfs, ignore_index=True) if processed_dfs else df
+
+        # Add code prefix if specified
+        code_prefix = concept_config.get("code_prefix", "")
+        if code_prefix and CODE in df.columns:
+            df[CODE] = code_prefix + df[CODE].astype(str)
+
+        return df
+    
+    @staticmethod
+    def _combine_datetime_columns(
+        df: pd.DataFrame, concept_config: dict
+    ) -> pd.DataFrame:
+        """Combine date and time columns into datetime columns."""
+        if "combine_datetime" in concept_config:
+            for target_col, date_time_cols in concept_config[
+                "combine_datetime"
+            ].items():
+                date_col = date_time_cols.get("date_col")
+                time_col = date_time_cols.get("time_col")
+                if date_col in df.columns and time_col in df.columns:
+                    df[target_col] = pd.to_datetime(
+                        df[date_col].astype(str) + " " + df[time_col].astype(str),
+                        errors="coerce",
+                    )
+                    # Drop original columns if requested
+                    if date_time_cols.get("drop_original", True):
+                        df = df.drop(columns=[date_col, time_col])
+        return df
+
+class ConceptProcessor:
+    """Handles the processing of medical concepts"""
+    @staticmethod
+    def process_concept(
+        df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]
+    ) -> pd.DataFrame:
+        """
+        Main method for processing a single concept's data
+        """
+        df = select_and_rename_columns(
+            df, concept_config.get("columns_map", {})
+        )
+        df = process_codes(df, concept_config)
+        df = ConceptProcessor._convert_and_clean_data(
+            df, concept_config, subject_id_mapping
+        )
 
         return df
 
@@ -124,74 +194,6 @@ class ConceptProcessor:
         df = df.drop(columns=[mapping_cfg.get("left_on")])
         return df
 
-    @staticmethod
-    def _apply_main_and_register_mapping(
-        df: pd.DataFrame,
-        concept_config: dict,
-        data_handler: "DataHandler",
-        register_sp_mapping: pd.DataFrame,
-    ) -> pd.DataFrame:
-        """Apply main mapping and register mapping to get final subject IDs."""
-        if "main_mapping" not in concept_config:
-            return df
-
-        mapping_cfg = concept_config["main_mapping"]
-        mapping_df = ConceptProcessor._load_mapping_file(mapping_cfg, data_handler)
-
-        # Apply main mapping
-        df = pd.merge(
-            df,
-            mapping_df,
-            left_on=mapping_cfg.get("left_on"),
-            right_on=mapping_cfg.get("right_on"),
-            how="inner",
-        )
-
-        # Apply register mapping if possible
-        if "PID" in df.columns and "PID" in register_sp_mapping.columns:
-            df = pd.merge(df, register_sp_mapping, on="PID", how="inner")
-            if SUBJECT_ID in register_sp_mapping.columns:
-                df = df.drop(columns=[mapping_cfg.get("left_on"), "PID"])
-                df = df.rename(columns={"SP_HASH": SUBJECT_ID})
-        else:
-            df = df.drop(columns=[mapping_cfg.get("left_on")])
-
-        return df
-
-    @staticmethod
-    def _process_register_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-        """Process codes through unrolling or adding prefixes."""
-        if "unroll_columns" in concept_config:
-            processed_dfs = ConceptProcessor._unroll_columns(df, concept_config)
-            return pd.concat(processed_dfs, ignore_index=True) if processed_dfs else df
-
-        # Add code prefix if specified
-        code_prefix = concept_config.get("code_prefix", "")
-        if code_prefix and CODE in df.columns:
-            df[CODE] = code_prefix + df[CODE].astype(str)
-
-        return df
-
-    @staticmethod
-    def _combine_datetime_columns(
-        df: pd.DataFrame, concept_config: dict
-    ) -> pd.DataFrame:
-        """Combine date and time columns into datetime columns."""
-        if "combine_datetime" in concept_config:
-            for target_col, date_time_cols in concept_config[
-                "combine_datetime"
-            ].items():
-                date_col = date_time_cols.get("date_col")
-                time_col = date_time_cols.get("time_col")
-                if date_col in df.columns and time_col in df.columns:
-                    df[target_col] = pd.to_datetime(
-                        df[date_col].astype(str) + " " + df[time_col].astype(str),
-                        errors="coerce",
-                    )
-                    # Drop original columns if requested
-                    if date_time_cols.get("drop_original", True):
-                        df = df.drop(columns=[date_col, time_col])
-        return df
 
     @staticmethod
     def _convert_numeric_columns(
@@ -271,28 +273,6 @@ class ConceptProcessor:
         # If data_handler is provided, use it to load from datastore
         return data_handler.load_pandas({"filename": filename})
 
-    @staticmethod
-    def _select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
-        """Select and rename columns based on columns_map."""
-        ConceptProcessor.check_columns(df, columns_map)
-        df = df[list(columns_map.keys())]
-        df = df.rename(columns=columns_map)
-        return df
-
-    @staticmethod
-    def _process_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-        """Filling missing values, and adding prefixes."""
-        # Fill missing values
-        fillna_cfg = concept_config.get("fillna")
-        if fillna_cfg:
-            df = ConceptProcessor._fill_missing_values(df, fillna_cfg)
-
-        # Add code prefix if configured
-        code_prefix = concept_config.get("code_prefix", "")
-        if code_prefix and CODE in df.columns:
-            df[CODE] = code_prefix + df[CODE].astype(str)
-
-        return df
 
     @staticmethod
     def _convert_and_clean_data(
@@ -321,24 +301,6 @@ class ConceptProcessor:
         return df
 
     @staticmethod
-    def _fill_missing_values(df: pd.DataFrame, fillna_cfg: dict) -> pd.DataFrame:
-        """
-        Fill missing values using specified columns and regex patterns.
-        Drop the columns used to fill missing values.
-        """
-        for target_col, fill_config in fillna_cfg.items():
-            fill_col = fill_config.get("column")
-            if fill_col and fill_col in df.columns:
-                fillna_regex = fill_config.get("regex")
-                if fillna_regex:
-                    fill_vals = df[fill_col].str.extract(fillna_regex, expand=False)
-                else:
-                    fill_vals = df[fill_col]
-                df[target_col] = df[target_col].fillna(fill_vals)
-                df = df.drop(columns=[fill_col])
-        return df
-
-    @staticmethod
     def process_adt_admissions(
         df: pd.DataFrame,
         admissions_config: dict,
@@ -361,7 +323,7 @@ class ConceptProcessor:
             - Data for the last patient if it's incomplete (spans to next chunk)
         """
         # First select and rename columns
-        df = ConceptProcessor._select_and_rename_columns(
+        df = select_and_rename_columns(
             df, admissions_config.get("columns_map", {})
         )
         # Map subject_id
@@ -478,16 +440,3 @@ class ConceptProcessor:
 
         return result_df, last_patient_info
 
-    @staticmethod
-    def check_columns(df: pd.DataFrame, columns_map: dict):
-        """Check if all columns in columns_map are present in df."""
-        missing_columns = set(columns_map.keys()) - set(df.columns)
-        if missing_columns:
-            available_columns = pd.DataFrame({"Available Columns": sorted(df.columns)})
-            requested_columns = pd.DataFrame(
-                {"Requested Columns": sorted(columns_map.keys())}
-            )
-            error_msg = f"\nMissing columns: {sorted(missing_columns)}\n\n"
-            error_msg += "Columns comparison:\n"
-            error_msg += f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
-            raise ValueError(error_msg)

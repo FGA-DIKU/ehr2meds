@@ -7,7 +7,7 @@ from tqdm import tqdm
 from MEDS_preprocess.preprocessors.concept_processor import ConceptProcessor
 from MEDS_preprocess.preprocessors.constants import SUBJECT_ID
 from MEDS_preprocess.preprocessors.helpers import DataConfig, DataHandler
-
+from MEDS_preprocess.preprocessors.concept_processor_utils import select_and_rename_columns
 
 class MEDSPreprocessor:
     """
@@ -85,7 +85,7 @@ class MEDSPreprocessor:
         df = self.data_handler.load_pandas(self.cfg.patients_info)
 
         # Use columns_map to subset and rename the columns.
-        df = ConceptProcessor._select_and_rename_columns(
+        df = select_and_rename_columns(
             df, self.cfg.patients_info.get("columns_map", {})
         )
 
