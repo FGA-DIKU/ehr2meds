@@ -4,10 +4,13 @@ from typing import Dict, Tuple
 import pandas as pd
 from tqdm import tqdm
 
-from MEDS_preprocess.preprocessors.concept_processor import ConceptProcessor
-from MEDS_preprocess.preprocessors.constants import SUBJECT_ID
-from MEDS_preprocess.preprocessors.helpers import DataConfig, DataHandler
-from MEDS_preprocess.preprocessors.concept_processor_utils import select_and_rename_columns
+from MEDS_preprocess.preprocessing.constants import SUBJECT_ID
+from MEDS_preprocess.preprocessing.io.data_handling import DataConfig, DataHandler
+from MEDS_preprocess.preprocessing.premeds.concept_funcs import (
+    select_and_rename_columns,
+)
+from MEDS_preprocess.preprocessing.premeds.concepts import ConceptProcessor
+
 
 class MEDSPreprocessor:
     """

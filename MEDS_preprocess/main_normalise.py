@@ -1,11 +1,13 @@
-from os.path import dirname, join, realpath
-import shutil
-from preprocessors.load import instantiate, load_config
 import logging
-from azure_run.run import Run
-from azure_run import datastore
-
 import pathlib
+import shutil
+from os.path import dirname, join, realpath
+
+from azure_run import datastore
+from azure_run.run import Run
+
+from MEDS_preprocess.preprocessing.io.config import load_config
+from MEDS_preprocess.preprocessing.normalisation.normaliser import Normaliser
 
 run = Run
 run.name(f"norm_MEDS")
@@ -31,7 +33,7 @@ def my_app(config_name):
     )
 
     logger = logging.getLogger(__name__)
-    preprocessor = instantiate(cfg.preprocessor, {"cfg": cfg, "logger": logger})
+    preprocessor = Normaliser(cfg, logger)
     preprocessor()
 
     if cfg.env == "azure":

@@ -5,8 +5,8 @@ import shutil
 from os.path import dirname, join, realpath
 
 from MEDS_preprocess.azure_run.run import Run
-from MEDS_preprocess.preprocessors.load import load_config
-from MEDS_preprocess.preprocessors.preMEDS import MEDSPreprocessor
+from MEDS_preprocess.preprocessing.io.config import load_config
+from MEDS_preprocess.preprocessing.premeds.extractor import MEDSPreprocessor
 
 run = Run
 run.name(f"MEDS")

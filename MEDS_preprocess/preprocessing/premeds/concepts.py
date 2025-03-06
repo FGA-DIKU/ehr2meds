@@ -2,10 +2,13 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from MEDS_preprocess.preprocessors.constants import CODE, MANDATORY_COLUMNS, SUBJECT_ID
-from MEDS_preprocess.preprocessors.helpers import DataHandler
-from MEDS_preprocess.preprocessors.concept_processor_utils import select_and_rename_columns, process_codes
-    
+from MEDS_preprocess.preprocessing.constants import CODE, MANDATORY_COLUMNS, SUBJECT_ID
+from MEDS_preprocess.preprocessing.io.data_handling import DataHandler
+from MEDS_preprocess.preprocessing.premeds.concept_funcs import (
+    process_codes,
+    select_and_rename_columns,
+)
+
 
 class RegisterConceptProcessor:
     @staticmethod
@@ -39,21 +42,20 @@ class RegisterConceptProcessor:
 
         return df
         #
+
     @staticmethod
     def _process_initial_register_data(
         df: pd.DataFrame, concept_config: dict
     ) -> pd.DataFrame:
         """Handle initial data processing steps."""
         # Select and rename columns
-        df = select_and_rename_columns(
-            df, concept_config.get("columns_map", {})
-        )
+        df = select_and_rename_columns(df, concept_config.get("columns_map", {}))
 
         # Combine datetime columns if needed
         df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
 
         return df
-    
+
     @staticmethod
     def _apply_main_and_register_mapping(
         df: pd.DataFrame,
@@ -101,7 +103,7 @@ class RegisterConceptProcessor:
             df[CODE] = code_prefix + df[CODE].astype(str)
 
         return df
-    
+
     @staticmethod
     def _combine_datetime_columns(
         df: pd.DataFrame, concept_config: dict
@@ -123,8 +125,10 @@ class RegisterConceptProcessor:
                         df = df.drop(columns=[date_col, time_col])
         return df
 
+
 class ConceptProcessor:
     """Handles the processing of medical concepts"""
+
     @staticmethod
     def process_concept(
         df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]
@@ -132,9 +136,7 @@ class ConceptProcessor:
         """
         Main method for processing a single concept's data
         """
-        df = select_and_rename_columns(
-            df, concept_config.get("columns_map", {})
-        )
+        df = select_and_rename_columns(df, concept_config.get("columns_map", {}))
         df = process_codes(df, concept_config)
         df = ConceptProcessor._convert_and_clean_data(
             df, concept_config, subject_id_mapping
@@ -193,7 +195,6 @@ class ConceptProcessor:
         )
         df = df.drop(columns=[mapping_cfg.get("left_on")])
         return df
-
 
     @staticmethod
     def _convert_numeric_columns(
@@ -273,7 +274,6 @@ class ConceptProcessor:
         # If data_handler is provided, use it to load from datastore
         return data_handler.load_pandas({"filename": filename})
 
-
     @staticmethod
     def _convert_and_clean_data(
         df: pd.DataFrame, concept_config: dict, subject_id_mapping: dict
@@ -323,9 +323,7 @@ class ConceptProcessor:
             - Data for the last patient if it's incomplete (spans to next chunk)
         """
         # First select and rename columns
-        df = select_and_rename_columns(
-            df, admissions_config.get("columns_map", {})
-        )
+        df = select_and_rename_columns(df, admissions_config.get("columns_map", {}))
         # Map subject_id
         if SUBJECT_ID in df.columns:
             df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
@@ -439,4 +437,3 @@ class ConceptProcessor:
             }
 
         return result_df, last_patient_info
-

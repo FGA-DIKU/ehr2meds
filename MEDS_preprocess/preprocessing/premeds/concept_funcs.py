@@ -1,5 +1,7 @@
 import pandas as pd
-from MEDS_preprocess.preprocessors.constants import CODE
+
+from MEDS_preprocess.preprocessing.constants import CODE
+
 
 def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
     """Select and rename columns based on columns_map."""
@@ -7,6 +9,7 @@ def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFra
     df = df[list(columns_map.keys())]
     df = df.rename(columns=columns_map)
     return df
+
 
 def process_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Filling missing values, and adding prefixes."""
@@ -21,6 +24,7 @@ def process_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
         df[CODE] = code_prefix + df[CODE].astype(str)
 
     return df
+
 
 def fill_missing_values(df: pd.DataFrame, fillna_cfg: dict) -> pd.DataFrame:
     """
@@ -39,6 +43,7 @@ def fill_missing_values(df: pd.DataFrame, fillna_cfg: dict) -> pd.DataFrame:
             df = df.drop(columns=[fill_col])
     return df
 
+
 def check_columns(df: pd.DataFrame, columns_map: dict):
     """Check if all columns in columns_map are present in df."""
     missing_columns = set(columns_map.keys()) - set(df.columns)
@@ -49,5 +54,7 @@ def check_columns(df: pd.DataFrame, columns_map: dict):
         )
         error_msg = f"\nMissing columns: {sorted(missing_columns)}\n\n"
         error_msg += "Columns comparison:\n"
-        error_msg += f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
+        error_msg += (
+            f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
+        )
         raise ValueError(error_msg)

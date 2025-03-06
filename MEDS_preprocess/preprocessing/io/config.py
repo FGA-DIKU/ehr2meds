@@ -1,14 +1,4 @@
-import importlib
 import yaml
-
-
-def instantiate(config, kwargs={}):
-    module_path, class_name = config._target_.rsplit(".", 1)
-    module = importlib.import_module(module_path)
-    class_ = getattr(module, class_name)
-    # params = {k: v for k, v in config.items() if k != "_target"}
-    instance = class_(**kwargs)
-    return instance
 
 
 def load_config(config_file):
