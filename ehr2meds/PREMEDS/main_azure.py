@@ -4,9 +4,9 @@ import pathlib
 import shutil
 from os.path import dirname, join, realpath
 
-from MEDS_preprocess.azure_run.run import Run
-from MEDS_preprocess.preprocessing.io.config import load_config
-from MEDS_preprocess.preprocessing.premeds.extractor import MEDSPreprocessor
+from ehr2meds.PREMEDS.azure_run.run import Run
+from ehr2meds.PREMEDS.preprocessing.io.config import load_config
+from ehr2meds.PREMEDS.preprocessing.premeds.extractor import MEDSPreprocessor
 
 run = Run
 run.name(f"MEDS")

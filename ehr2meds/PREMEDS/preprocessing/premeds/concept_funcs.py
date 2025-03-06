@@ -1,6 +1,6 @@
 import pandas as pd
 
-from MEDS_preprocess.preprocessing.constants import CODE
+from ehr2meds.PREMEDS.preprocessing.constants import CODE
 
 
 def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:

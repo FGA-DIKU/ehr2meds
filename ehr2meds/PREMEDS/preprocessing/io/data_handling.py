@@ -4,8 +4,8 @@ from typing import Iterator, Optional
 
 import pandas as pd
 
-from MEDS_preprocess.preprocessing.constants import FILENAME
-from MEDS_preprocess.preprocessing.io.azure import get_data_loader
+from ehr2meds.PREMEDS.preprocessing.constants import FILENAME
+from ehr2meds.PREMEDS.preprocessing.io.azure import get_data_loader
 
 
 @dataclass

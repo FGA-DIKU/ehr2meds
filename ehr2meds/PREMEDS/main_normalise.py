@@ -6,8 +6,8 @@ from os.path import dirname, join, realpath
 from azure_run import datastore
 from azure_run.run import Run
 
-from MEDS_preprocess.preprocessing.io.config import load_config
-from MEDS_preprocess.preprocessing.normalisation.normaliser import Normaliser
+from ehr2meds.PREMEDS.preprocessing.io.config import load_config
+from ehr2meds.PREMEDS.preprocessing.normalisation.normaliser import Normaliser
 
 run = Run
 run.name(f"norm_MEDS")

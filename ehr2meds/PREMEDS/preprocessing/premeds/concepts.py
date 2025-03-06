@@ -2,9 +2,9 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from MEDS_preprocess.preprocessing.constants import CODE, MANDATORY_COLUMNS, SUBJECT_ID
-from MEDS_preprocess.preprocessing.io.data_handling import DataHandler
-from MEDS_preprocess.preprocessing.premeds.concept_funcs import (
+from ehr2meds.PREMEDS.preprocessing.constants import CODE, MANDATORY_COLUMNS, SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.io.data_handling import DataHandler
+from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     process_codes,
     select_and_rename_columns,
 )
