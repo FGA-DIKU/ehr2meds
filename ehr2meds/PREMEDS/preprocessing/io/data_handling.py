@@ -84,3 +84,10 @@ class DataHandler:
                 df.to_csv(path, index=False, mode="a", header=False)
         else:
             raise ValueError(f"Filetype {file_type} not implemented.")
+
+
+def load_mapping_file(mapping_cfg: dict, data_handler: "DataHandler") -> pd.DataFrame:
+    """Load a mapping file based on configuration."""
+    filename = mapping_cfg.get("filename")
+    # If data_handler is provided, use it to load from datastore
+    return data_handler.load_pandas({"filename": filename})

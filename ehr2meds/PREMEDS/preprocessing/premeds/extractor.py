@@ -1,5 +1,5 @@
 import pickle
-from typing import Dict, Tuple
+from typing import Dict
 
 import pandas as pd
 from tqdm import tqdm
@@ -7,9 +7,11 @@ from tqdm import tqdm
 from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
 from ehr2meds.PREMEDS.preprocessing.io.data_handling import DataConfig, DataHandler
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
+    factorize_subject_id,
     select_and_rename_columns,
 )
-from ehr2meds.PREMEDS.preprocessing.premeds.concepts import ConceptProcessor
+from ehr2meds.PREMEDS.preprocessing.premeds.registers import RegisterConceptProcessor
+from ehr2meds.PREMEDS.preprocessing.premeds.sp import ConceptProcessor
 
 
 class MEDSPreprocessor:
@@ -70,6 +72,7 @@ class MEDSPreprocessor:
         )
 
         self.concept_processor = ConceptProcessor()
+        self.register_concept_processor = RegisterConceptProcessor()
 
     def __call__(self):
         subject_id_mapping = self.format_patients_info()
@@ -94,7 +97,7 @@ class MEDSPreprocessor:
 
         self.logger.info(f"Number of patients after selecting columns: {len(df)}")
 
-        df, hash_to_int_map = self._factorize_subject_id(df)
+        df, hash_to_int_map = factorize_subject_id(df)
         # Save the mapping for reference.
         with open(f"{self.cfg.paths.output_dir}/hash_to_integer_map.pkl", "wb") as f:
             pickle.dump(hash_to_int_map, f)
@@ -104,17 +107,6 @@ class MEDSPreprocessor:
         self.data_handler.save(df, "subject")
 
         return hash_to_int_map
-
-    @staticmethod
-    def _factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
-        """Factorize the subject_id column into an integer mapping."""
-        df["integer_id"], unique_vals = pd.factorize(df[SUBJECT_ID])
-        shifted_indices = df["integer_id"] + 1  # +1 to avoid binary dtype
-        hash_to_int_map = dict(zip(unique_vals, shifted_indices))
-        # Overwrite subject_id with the factorized integer and drop the helper column.
-        df[SUBJECT_ID] = shifted_indices
-        df = df.drop(columns=["integer_id"])
-        return df, hash_to_int_map
 
     def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process all medical concepts"""
