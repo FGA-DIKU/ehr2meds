@@ -1,11 +1,12 @@
+import argparse
 import logging
 import pathlib
 import shutil
-import argparse
 from os.path import dirname, join, realpath
 
 from MEDS_preprocess.azure_run.run import Run
-from MEDS_preprocess.preprocessors.load import instantiate, load_config
+from MEDS_preprocess.preprocessors.load import load_config
+from MEDS_preprocess.preprocessors.preMEDS import MEDSPreprocessor
 
 run = Run
 run.name(f"MEDS")
@@ -38,7 +39,7 @@ def run_pre_MEDS(config_name):
     )
 
     logger = logging.getLogger(__name__)
-    preprocessor = instantiate(cfg.preprocessor, {"cfg": cfg, "logger": logger})
+    preprocessor = MEDSPreprocessor(cfg, logger)
     preprocessor()
     return config_path, cfg
 

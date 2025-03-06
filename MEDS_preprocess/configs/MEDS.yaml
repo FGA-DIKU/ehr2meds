@@ -6,9 +6,6 @@ paths:
   output_dir: outputs/preMEDS
   file_type: csv 
 
-preprocessor:
-  _target_: MEDS_preprocess.preprocessors.preMEDS.MEDSPreprocessor
-
 data_path:
   concepts:
     datastore: researcher_data
