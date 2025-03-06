@@ -21,6 +21,12 @@ jobs:
                 source .venv/bin/activate
                 pip install -r requirements.txt
 
+            - name: Generate example data
+              run: |
+                source .venv/bin/activate
+                mkdir -p tests/example_data
+                python -m tests.generate_example_data.generate_example_data 1000 10 tests/example_data
+
             - name: main.create_data
               run: |
                 source .venv/bin/activate
