@@ -1,16 +1,11 @@
 import unittest
-from unittest.mock import patch
 
 import pandas as pd
 
-from MEDS_preprocess.preprocessors.constants import (
-    ADMISSION,
-    CODE,
-    DISCHARGE,
-    SUBJECT_ID,
-    TIMESTAMP,
-)
-from MEDS_preprocess.preprocessors.preMEDS import ConceptProcessor
+from ehr2meds.PREMEDS.preprocessing.constants import (ADMISSION, CODE,
+                                                      DISCHARGE, SUBJECT_ID,
+                                                      TIMESTAMP)
+from ehr2meds.PREMEDS.preprocessing.premeds.concepts import ConceptProcessor
 
 
 class TestConceptProcessor(unittest.TestCase):

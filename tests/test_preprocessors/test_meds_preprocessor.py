@@ -1,7 +1,9 @@
 import unittest
+
 import pandas as pd
-from MEDS_preprocess.preprocessors.preMEDS import MEDSPreprocessor
-from MEDS_preprocess.preprocessors.constants import SUBJECT_ID
+
+from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.premeds.extractor import MEDSPreprocessor
 
 
 class TestMEDSPreprocessor(unittest.TestCase):
