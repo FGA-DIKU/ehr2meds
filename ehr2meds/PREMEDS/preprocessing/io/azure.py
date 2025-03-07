@@ -147,12 +147,12 @@ class AzureDataLoader:
         self,
         filename: str,
         test: bool = False,
-        n_rows: int = 1_000_000,
+        test_rows: int = 1_000_000,
         cols: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         ds = self._get_azure_dataset(filename)
         if test:
-            ds = ds.take(n_rows)
+            ds = ds.take(test_rows)
         if cols:
             ds = ds.keep_columns(cols)
         return ds.to_pandas_dataframe()
