@@ -1,12 +1,11 @@
-import json
 import time
 import numpy as np
 import random
 
 # from sklearn.metrics import confusion_matrix
-from azureml.core import Run as AzureRun, ScriptRunConfig, Environment
+from azureml.core import Run as AzureRun, ScriptRunConfig
 
-from . import workspace, log
+from . import log
 
 
 class Run:
@@ -76,7 +75,6 @@ class Run:
             time.sleep(5)
 
         # There are +1 available spots, create run
-        ws = workspace()
         env = R.remote.get_environment()
         ct = "local"
         src = ScriptRunConfig(

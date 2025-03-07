@@ -4,8 +4,9 @@ Core functionality includes e.g. loading and saving of datasets, manipulating ru
 making backups to a separate datastore, and more...
 """
 
-from azureml.core import Dataset, Datastore, Workspace, Model
+from azureml.core import Dataset, Datastore, Workspace
 import pandas as pd
+from os.path import split
 
 
 def log():
@@ -184,9 +185,9 @@ def dataset_list(tags=None):
 
     # Prepare filter
     filt = lambda ts: True
-    if type(tags) == set:
+    if isinstance(tags, set):
         filt = lambda ts: len(ts.keys() & tags) > 0
-    elif type(tags) == list:
+    elif isinstance(tags, list):
         filt = lambda ts: any([ts.get(t) == v for t, v in tags])
     res = []
     for ds_name, ds in _DS_LIST_CACHE.items():
@@ -202,8 +203,5 @@ def dataset_list(tags=None):
     return res
 
 
-from . import backup
 from . import logger
 from .run import Run
-from .model import Model
-from .validation import validate
