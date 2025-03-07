@@ -2,9 +2,13 @@ from typing import Dict, Optional, Tuple
 
 import pandas as pd
 
-from ehr2meds.PREMEDS.preprocessing.constants import CODE, MANDATORY_COLUMNS, SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
-    process_codes,
+    clean_data,
+    convert_numeric_columns,
+    fill_missing_values,
+    map_pids_to_ints,
+    prefix_codes,
     select_and_rename_columns,
 )
 
@@ -13,43 +17,21 @@ class ConceptProcessor:
     """Handles the processing of medical concepts"""
 
     @staticmethod
-    def process_concept(
+    def process(
         df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]
     ) -> pd.DataFrame:
         """
         Main method for processing a single concept's data
         """
         df = select_and_rename_columns(df, concept_config.get("columns_map", {}))
-        df = process_codes(df, concept_config)
-        df = ConceptProcessor._convert_and_clean_data(
-            df, concept_config, subject_id_mapping
-        )
+        if concept_config.get("fillna"):
+            df = fill_missing_values(df, concept_config.fillna)
 
-        return df
+        df = prefix_codes(df, concept_config.get("code_prefix", None))
 
-    @staticmethod
-    def _convert_and_clean_data(
-        df: pd.DataFrame, concept_config: dict, subject_id_mapping: dict
-    ) -> pd.DataFrame:
-        """Convert numeric columns, map subject IDs, and clean the data."""
-        # Convert numeric columns
-        numeric_cols = concept_config.get("numeric_columns", [])
-        for col in numeric_cols:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-
-        # Map subject_id if available
-        if SUBJECT_ID in df.columns:
-            df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
-            # Drop rows where mapping failed
-            df = df.dropna(subset=[SUBJECT_ID])
-            # Convert to integer
-            df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
-
-        # Clean data
-        if all(col in df.columns for col in MANDATORY_COLUMNS):
-            df = df.dropna(subset=MANDATORY_COLUMNS, how="any")
-        df = df.drop_duplicates()
+        df = convert_numeric_columns(df, concept_config)
+        df = map_pids_to_ints(df, subject_id_mapping)
+        df = clean_data(df)
 
         return df
 

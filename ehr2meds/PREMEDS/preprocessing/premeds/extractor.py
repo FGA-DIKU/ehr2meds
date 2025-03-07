@@ -122,18 +122,11 @@ class MEDSPreprocessor:
 
     def format_register_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process the register concepts using the register-specific data handler"""
-        try:
-            # Load the register-SP mapping once - this maps register PIDs to SP hashes
-            register_sp_mapping = self.mapping_data_handler.load_pandas(
-                {"filename": "register_sp_mapping.parquet"}
-            )
-            self.logger.info(
-                f"Loaded register-SP mapping with {len(register_sp_mapping)} rows"
-            )
-        except Exception as e:
-            self.logger.error(f"Failed to load register-SP mapping: {e}")
-            self.logger.warning("Processing register concepts without SP mapping!")
-            register_sp_mapping = pd.DataFrame(columns=["PID", "SP_HASH"])
+        # Load the register-SP mapping once - this maps register PIDs to SP hashes
+        pid_link_cfg = self.cfg.data_path.pid_link
+        register_sp_link = self.mapping_data_handler.load_pandas(
+            pid_link_cfg, cols=[pid_link_cfg.join_col, pid_link_cfg.target_col]
+        )
 
         for concept_type, concept_config in tqdm(
             self.cfg.register_concepts.items(), desc="Register concepts"
@@ -146,12 +139,12 @@ class MEDSPreprocessor:
                     self.register_data_handler.load_chunks(concept_config),
                     desc=f"Chunks {concept_type}",
                 ):
-                    processed_chunk = self.concept_processor.process_register_concept(
+                    processed_chunk = self.register_concept_processor.process(
                         chunk,
                         concept_config,
                         subject_id_mapping,
                         self.register_data_handler,
-                        register_sp_mapping,
+                        register_sp_link,
                     )
 
                     # Only save if we have data
@@ -207,7 +200,7 @@ class MEDSPreprocessor:
             self.data_handler.load_chunks(concept_config),
             desc=f"Chunks {concept_type}",
         ):
-            processed_chunk = self.concept_processor.process_concept(
+            processed_chunk = self.concept_processor.process(
                 chunk, concept_config, subject_id_mapping
             )
             mode = "w" if first_chunk else "a"
