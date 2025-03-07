@@ -9,13 +9,13 @@ paths:
 data_path:
   concepts:
     datastore: researcher_data
-    dump_path: 'tests/example_data/sp_dump'
+    dump_path: 'data-backup/SP-dumps/2024-09-10'
   register_concepts:
     datastore: researcher_data
-    dump_path: 'tests/example_data/registers'
+    dump_path: 'FSEID'
   pid_link: 
     datastore: researcher_data
-    dump_path: 'tests/example_data/maskerede_data'
+    dump_path: 'maskerede_data'
     filename: mapping.csv
     join_col: PID
     target_col: CPR_hash
