@@ -17,18 +17,10 @@ def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFra
     return df
 
 
-def process_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-    """Filling missing values, and adding prefixes."""
-    # Fill missing values
-    fillna_cfg = concept_config.get("fillna")
-    if fillna_cfg:
-        df = fill_missing_values(df, fillna_cfg)
-
-    # Add code prefix if configured
-    code_prefix = concept_config.get("code_prefix", "")
+def prefix_codes(df: pd.DataFrame, code_prefix: str = None) -> pd.DataFrame:
+    """Add a prefix to the codes."""
     if code_prefix and CODE in df.columns:
         df[CODE] = code_prefix + df[CODE].astype(str)
-
     return df
 
 
@@ -197,16 +189,18 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
     return df
 
 
-def map_and_clean_data(df: pd.DataFrame, subject_id_mapping: dict) -> pd.DataFrame:
-    """Map from SP PIDs to integer subject_ids and clean the data."""
-    # Map from SP PIDs to integer subject_ids
-    if SUBJECT_ID in df.columns:
-        df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
-        # Drop rows where mapping failed (subject_id is NaN)
-        df = df.dropna(subset=[SUBJECT_ID])
-        # Convert subject_id to integer
-        df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+def map_pids_to_ints(
+    df: pd.DataFrame, subject_id_mapping: Dict[str, int]
+) -> pd.DataFrame:
+    """Map PIDs to integers."""
+    df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
+    df = df.dropna(subset=[SUBJECT_ID])
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+    return df
 
+
+def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Clean the data."""
     # Clean data
     if all(col in df.columns for col in MANDATORY_COLUMNS):
         df = df.dropna(subset=MANDATORY_COLUMNS, how="any")

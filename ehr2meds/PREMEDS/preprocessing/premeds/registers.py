@@ -2,15 +2,15 @@ from typing import Dict
 
 import pandas as pd
 
-from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID
-from ehr2meds.PREMEDS.preprocessing.io.data_handling import (
-    DataHandler,
-    load_mapping_file,
-)
+from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.io.data_handling import DataHandler
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
-    apply_secondary_mapping,
+    apply_mapping,
+    clean_data,
     convert_numeric_columns,
-    map_and_clean_data,
+    fill_missing_values,
+    map_pids_to_ints,
+    prefix_codes,
     select_and_rename_columns,
     unroll_columns,
 )
@@ -18,100 +18,109 @@ from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
 
 class RegisterConceptProcessor:
     @staticmethod
-    def process_register_concept(
+    def process(
         df: pd.DataFrame,
         concept_config: dict,
         subject_id_mapping: Dict[str, int],
         data_handler: "DataHandler",
-        register_sp_mapping: pd.DataFrame,
+        register_sp_link: pd.DataFrame,
+        join_link_col: str,
+        target_link_col: str,
     ) -> pd.DataFrame:
         """Process the register concepts.
         1. Select and rename columns
-        
-        
+        2. apply columns map
+        3. fill missing values
+        4. combine datetime columns
+        5. unroll columns (process codes)
+        6. apply prefixes (process codes)
+        7. convert numeric columns
+        8. apply pid linking
+        9. apply pid integer mapping
+        10. clean data
         """
         # Step 1: Select columns
         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
 
+        # Step 2: Apply columns map
+        df = RegisterConceptProcessor._apply_mappings(df, concept_config, data_handler)
+
+        df = fill_missing_values(df, concept_config.get("fillna", {}))
+
         # Combine datetime columns if needed
         df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
 
-        # Step 2: Apply secondary mapping if needed
-        df = apply_secondary_mapping(df, concept_config, data_handler)
+        # Unroll columns if needed
+        df = RegisterConceptProcessor._unroll_columns(df, concept_config)
+
+        # Apply code prefix if needed
+        df = prefix_codes(df, concept_config.get("code_prefix", None))
 
         # Step 3: Convert numeric columns
         df = convert_numeric_columns(df, concept_config)
 
-        # Step 4: Apply main mapping and register mapping
-        df = RegisterConceptProcessor._apply_main_and_register_mapping(
-            df, concept_config, data_handler, register_sp_mapping
+        # Step 4: apply sp pid link
+        df = RegisterConceptProcessor._apply_sp_pid_link(
+            df, register_sp_link, join_link_col, target_link_col
         )
 
-        # Step 5: Process codes (unroll or prefix)
-        df = RegisterConceptProcessor._process_register_codes(df, concept_config)
+        df = map_pids_to_ints(df, subject_id_mapping)
 
         # Step 6: Final cleanup and mapping
-        df = map_and_clean_data(df, subject_id_mapping)
+        df = clean_data(df)
 
         return df
         #
 
-    @staticmethod
-    def _process_initial_register_data(
-        df: pd.DataFrame, concept_config: dict
-    ) -> pd.DataFrame:
-        """Handle initial data processing steps."""
-        # Select and rename columns
-
-
-        return df
-
-    @staticmethod
-    def _apply_main_and_register_mapping(
+    def _apply_sp_pid_link(
         df: pd.DataFrame,
-        concept_config: dict,
-        data_handler: "DataHandler",
-        register_sp_mapping: pd.DataFrame,
+        register_sp_link: pd.DataFrame,
+        join_link_col: str,
+        target_link_col: str,
     ) -> pd.DataFrame:
-        """Apply main mapping and register mapping to get final subject IDs."""
-        if "main_mapping" not in concept_config:
-            return df
-
-        mapping_cfg = concept_config["main_mapping"]
-        mapping_df = load_mapping_file(mapping_cfg, data_handler)
-
-        # Apply main mapping
-        df = pd.merge(
+        """
+        Apply SP PID link.
+        We can expect the subject_id is present in df at the end of processing.
+        The column names in the link file will be provided via config. There will be a join column and a target column and we can essentially reuse our apply_mapping function, just accessing args differently.
+        """
+        return apply_mapping(
             df,
-            mapping_df,
-            left_on=mapping_cfg.get("left_on"),
-            right_on=mapping_cfg.get("right_on"),
+            register_sp_link,
+            join_col=join_link_col,
+            source_col=join_link_col,
+            target_col=target_link_col,
             how="inner",
+            rename_to=SUBJECT_ID,
+            drop_source=True,
         )
 
-        # Apply register mapping if possible
-        if "PID" in df.columns and "PID" in register_sp_mapping.columns:
-            df = pd.merge(df, register_sp_mapping, on="PID", how="inner")
-            if SUBJECT_ID in register_sp_mapping.columns:
-                df = df.drop(columns=[mapping_cfg.get("left_on"), "PID"])
-                df = df.rename(columns={"SP_HASH": SUBJECT_ID})
-        else:
-            df = df.drop(columns=[mapping_cfg.get("left_on")])
-
+    @staticmethod
+    def _apply_mappings(
+        df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler"
+    ) -> pd.DataFrame:
+        if concept_config.get("mappings"):
+            for mapping in concept_config.mappings:
+                map_table = data_handler.load_pandas(
+                    mapping.via_file, cols=[mapping.join_on, mapping.target_col]
+                )
+                df = apply_mapping(
+                    df,
+                    map_table,
+                    join_col=mapping.join_on,
+                    source_col=mapping.source_column,
+                    target_col=mapping.target_column,
+                    rename_to=mapping.rename_to,
+                    how=mapping.get("how", "inner"),
+                    drop_source=mapping.get("drop_source", False),
+                )
         return df
 
     @staticmethod
-    def _process_register_codes(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-        """Process codes through unrolling or adding prefixes."""
+    def _unroll_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+        """Unroll columns if needed."""
         if "unroll_columns" in concept_config:
             processed_dfs = unroll_columns(df, concept_config)
             return pd.concat(processed_dfs, ignore_index=True) if processed_dfs else df
-
-        # Add code prefix if specified
-        code_prefix = concept_config.get("code_prefix", "")
-        if code_prefix and CODE in df.columns:
-            df[CODE] = code_prefix + df[CODE].astype(str)
-
         return df
 
     @staticmethod
