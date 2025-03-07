@@ -39,38 +39,28 @@ class RegisterConceptProcessor:
         9. apply pid integer mapping
         10. clean data
         """
-        # Step 1: Select columns
         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
-
-        # Step 2: Apply columns map
         df = RegisterConceptProcessor._apply_mappings(df, concept_config, data_handler)
-
         df = fill_missing_values(df, concept_config.get("fillna", {}))
-
-        # Combine datetime columns if needed
         df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
 
-        # Unroll columns if needed
-        df = RegisterConceptProcessor._unroll_columns(df, concept_config)
-
-        # Apply code prefix if needed
+        # Apply code prefix to the original code column before other columns are unrolled
+        # the unrolled columns can get their own prefixes
         df = prefix_codes(df, concept_config.get("code_prefix", None))
 
-        # Step 3: Convert numeric columns
+        df = RegisterConceptProcessor._unroll_columns(df, concept_config)
+
         df = convert_numeric_columns(df, concept_config)
 
-        # Step 4: apply sp pid link
         df = RegisterConceptProcessor._apply_sp_pid_link(
             df, register_sp_link, join_link_col, target_link_col
         )
 
         df = map_pids_to_ints(df, subject_id_mapping)
 
-        # Step 6: Final cleanup and mapping
         df = clean_data(df)
 
         return df
-        #
 
     def _apply_sp_pid_link(
         df: pd.DataFrame,
@@ -83,11 +73,13 @@ class RegisterConceptProcessor:
         We can expect the subject_id is present in df at the end of processing.
         The column names in the link file will be provided via config. There will be a join column and a target column and we can essentially reuse our apply_mapping function, just accessing args differently.
         """
+        if SUBJECT_ID not in df.columns:
+            raise ValueError(f"SUBJECT_ID column not found in df: {df.columns}")
         return apply_mapping(
             df,
             register_sp_link,
             join_col=join_link_col,
-            source_col=join_link_col,
+            source_col=SUBJECT_ID,
             target_col=target_link_col,
             how="inner",
             rename_to=SUBJECT_ID,

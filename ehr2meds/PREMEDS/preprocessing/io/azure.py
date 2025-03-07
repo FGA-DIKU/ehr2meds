@@ -16,7 +16,6 @@ class StandardDataLoader:
         self, filename: str, test: bool = False, test_rows: int = 1_000_000, cols=None
     ) -> pd.DataFrame:
         file_path = join(self.dump_path, filename)
-
         if file_path.endswith(".parquet"):
             df = pd.read_parquet(file_path, columns=cols)
         elif file_path.endswith((".csv", ".asc")):
@@ -46,10 +45,13 @@ class StandardDataLoader:
                 break  # Break out of the outer loop if a valid DataFrame was read
         if df is None:
             raise ValueError(f"Unable to read file {file_path} with any encoding")
+        return df
 
-    def load_chunks(self, filename: str, cols: Optional[list[str]] = None, test: bool = False) -> Iterator[pd.DataFrame]:
+    def load_chunks(
+        self, filename: str, cols: Optional[list[str]] = None, test: bool = False
+    ) -> Iterator[pd.DataFrame]:
         file_path = join(self.dump_path, filename)
-        
+
         if file_path.endswith(".parquet"):
             yield from self._load_parquet_chunks(file_path, cols, test)
         elif file_path.endswith((".csv", ".asc")):
@@ -57,7 +59,9 @@ class StandardDataLoader:
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
 
-    def _load_parquet_chunks(self, file_path: str, cols: Optional[list[str]], test: bool) -> Iterator[pd.DataFrame]:
+    def _load_parquet_chunks(
+        self, file_path: str, cols: Optional[list[str]], test: bool
+    ) -> Iterator[pd.DataFrame]:
         df = pd.read_parquet(file_path, columns=cols)
         if test:
             # In test mode, only yield up to two chunks based on self.chunksize
@@ -68,26 +72,33 @@ class StandardDataLoader:
         else:
             yield df
 
-    def _load_csv_chunks(self, file_path: str, cols: Optional[list[str]], test: bool) -> Iterator[pd.DataFrame]:
+    def _load_csv_chunks(
+        self, file_path: str, cols: Optional[list[str]], test: bool
+    ) -> Iterator[pd.DataFrame]:
         for encoding in ["iso88591", "utf8", "latin1"]:
-            try:
-                for i, chunk in enumerate(pd.read_csv(
-                    file_path,
-                    sep=";",
-                    encoding=encoding,
-                    chunksize=self.chunksize,
-                    usecols=cols,
-                )):
-                    if test:
-                        if i >= 3:  # Yield only first two chunks in test mode
+            for sep in [";", ","]:
+                try:
+                    chunk_iter = pd.read_csv(
+                        file_path,
+                        sep=sep,
+                        encoding=encoding,
+                        chunksize=self.chunksize,
+                        usecols=cols,
+                    )
+                    for i, chunk in enumerate(chunk_iter):
+                        if (
+                            test and i >= 3
+                        ):  # In test mode, yield only the first three chunks
                             break
-                    yield chunk
-                # If reading succeeded with the current encoding, break out of the loop
-                break
-            except UnicodeDecodeError:
-                continue
-        else:
-            raise ValueError(f"Unable to read file {file_path} with any encoding")
+                        yield chunk
+                    # If we reached here without an exception, reading succeeded; exit the function.
+                    return
+                except Exception as e:
+                    self.logger.info(
+                        f"Failed with encoding {encoding} and sep {sep}: {str(e)}"
+                    )
+                    continue
+        raise ValueError(f"Unable to read file {file_path} with any encoding")
 
 
 class AzureDataLoader:
@@ -123,10 +134,13 @@ class AzureDataLoader:
                         separator=delimiter,
                         encoding=encoding,
                     )
-                except UnicodeDecodeError:
+                except Exception as e:
+                    self.logger.info(
+                        f"Failed with encoding {encoding} and sep {delimiter}: {str(e)}"
+                    )
                     continue
         raise ValueError(
-            f"Unable to read file {file_path} with any of the provided encodings"
+            f"Unable to read file {file_path} with any of the provided encodings and delimiters"
         )
 
     def load_dataframe(
@@ -143,9 +157,7 @@ class AzureDataLoader:
             ds = ds.keep_columns(cols)
         return ds.to_pandas_dataframe()
 
-    def load_chunks(
-        self, filename: str, test: bool = False
-    ) -> Iterator[pd.DataFrame]:
+    def load_chunks(self, filename: str, test: bool = False) -> Iterator[pd.DataFrame]:
         ds = self._get_azure_dataset(filename)
         i = 0
         max_chunks = 2 if test else float("inf")
@@ -163,7 +175,11 @@ class AzureDataLoader:
 
 
 def get_data_loader(
-    env: str, datastore: Optional[str], dump_path: Optional[str], chunksize: Optional[int], logger
+    env: str,
+    datastore: Optional[str],
+    dump_path: Optional[str],
+    chunksize: Optional[int],
+    logger,
 ):
     """Factory function to create the appropriate data loader"""
     if env == "azure":

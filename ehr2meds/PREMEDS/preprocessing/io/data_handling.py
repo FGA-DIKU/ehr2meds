@@ -19,7 +19,6 @@ class DataConfig:
     chunksize: Optional[int] = None
 
 
-
 class DataHandler:
     """Handles data loading and saving operations"""
 
@@ -37,12 +36,13 @@ class DataHandler:
             dump_path=config.dump_path,
             chunksize=config.chunksize,
             logger=logger,
- 
-        ) # return azure or standard data loader
+        )  # return azure or standard data loader
 
-    def load_pandas(self, cfg: dict, cols: Optional[list[str]] = None) -> pd.DataFrame:
+    def load_pandas(
+        self, filename: str, cols: Optional[list[str]] = None
+    ) -> pd.DataFrame:
         return self.data_loader.load_dataframe(
-            filename=cfg[FILENAME], test=self.test, test_rows=1_000_000, cols=cols
+            filename=filename, test=self.test, test_rows=1_000_000, cols=cols
         )
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:
@@ -90,10 +90,3 @@ class DataHandler:
                 df.to_csv(path, index=False, mode="a", header=False)
         else:
             raise ValueError(f"Filetype {file_type} not implemented.")
-
-
-def load_mapping_file(mapping_cfg: dict, data_handler: "DataHandler") -> pd.DataFrame:
-    """Load a mapping file based on configuration."""
-    filename = mapping_cfg.get("filename")
-    # If data_handler is provided, use it to load from datastore
-    return data_handler.load_pandas({"filename": filename})
