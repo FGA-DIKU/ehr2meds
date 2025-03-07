@@ -14,7 +14,7 @@ from ehr2meds.PREMEDS.preprocessing.premeds.registers import RegisterConceptProc
 from ehr2meds.PREMEDS.preprocessing.premeds.sp import ConceptProcessor
 
 
-class MEDSPreprocessor:
+class PREMEDSExtractor:
     """
     Preprocessor for MEDS (Medical Event Data Set) that handles patient data and medical concepts.
 

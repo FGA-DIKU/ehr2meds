@@ -6,7 +6,7 @@ from os.path import dirname, join, realpath
 
 from ehr2meds.PREMEDS.azure_run.run import Run
 from ehr2meds.PREMEDS.preprocessing.io.config import load_config
-from ehr2meds.PREMEDS.preprocessing.premeds.extractor import MEDSPreprocessor
+from ehr2meds.PREMEDS.preprocessing.premeds.extractor import PREMEDSExtractor
 
 run = Run
 run.name(f"MEDS")
@@ -39,8 +39,8 @@ def run_pre_MEDS(config_name):
     )
 
     logger = logging.getLogger(__name__)
-    preprocessor = MEDSPreprocessor(cfg, logger)
-    preprocessor()
+    extractor = PREMEDSExtractor(cfg, logger)
+    extractor()
     return config_path, cfg
 
 
