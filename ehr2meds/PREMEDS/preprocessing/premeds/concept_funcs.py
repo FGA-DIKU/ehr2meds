@@ -55,13 +55,27 @@ def check_columns(df: pd.DataFrame, columns_map: dict):
 
 
 def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
-    """Factorize the subject_id column into an integer mapping."""
-    df["integer_id"], unique_vals = pd.factorize(df[SUBJECT_ID])
-    shifted_indices = df["integer_id"] + 1  # +1 to avoid binary dtype
-    hash_to_int_map = dict(zip(unique_vals, shifted_indices))
-    # Overwrite subject_id with the factorized integer and drop the helper column.
-    df[SUBJECT_ID] = shifted_indices
-    df = df.drop(columns=["integer_id"])
+    """Factorize the subject_id column into an integer mapping.
+
+    Args:
+        df: DataFrame containing SUBJECT_ID column
+
+    Returns:
+        Tuple[pd.DataFrame, Dict[str, int]]:
+            - DataFrame with integer subject IDs
+            - Mapping from original IDs to integer IDs
+
+    Example:
+        Input df[SUBJECT_ID]: ['A', 'B', 'C', 'D']
+        Output mapping: {'A': 1, 'B': 2, 'C': 3, 'D': 4}
+    """
+    # Get unique values and create sequential mapping
+    unique_vals = df[SUBJECT_ID].unique()
+    hash_to_int_map = {val: idx + 1 for idx, val in enumerate(sorted(unique_vals))}
+
+    # Apply mapping to DataFrame
+    df[SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
+
     return df, hash_to_int_map
 
 
