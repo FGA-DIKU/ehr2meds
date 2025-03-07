@@ -21,7 +21,7 @@ class Normaliser:
         # Initialize data loader based on environment
         self.data_loader = get_data_loader(
             env=cfg.env,
-            datastore=cfg.data.get("data_store"),
+            datastore_name=cfg.data.get("data_store"),
             dump_path=cfg.data.get("data_dir"),
             logger=logger,
         )

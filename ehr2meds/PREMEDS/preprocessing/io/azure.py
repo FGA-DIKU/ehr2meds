@@ -104,8 +104,12 @@ class StandardDataLoader:
 class AzureDataLoader:
     """Azure-specific data loader"""
 
-    def __init__(self, datastore: str, dump_path: str, logger, chunksize: int = None):
-        self.datastore = datastore
+    def __init__(
+        self, datastore_name: str, dump_path: str, logger, chunksize: int = None
+    ):
+        from ehr2meds.PREMEDS.azure_run import datastore
+
+        self.datastore = datastore(name=datastore_name)
         self.dump_path = dump_path
         self.logger = logger
         self.chunksize = chunksize
@@ -114,6 +118,7 @@ class AzureDataLoader:
         from azureml.core import Dataset
 
         file_path = join(self.dump_path, filename)
+        self.logger.info(f"Loading dataset from {self.datastore} at {file_path}")
         if filename.endswith(".parquet"):
             return Dataset.Tabular.from_parquet_files(path=(self.datastore, file_path))
         elif filename.endswith((".csv", ".asc")):
@@ -176,16 +181,16 @@ class AzureDataLoader:
 
 def get_data_loader(
     env: str,
-    datastore: Optional[str],
+    datastore_name: Optional[str],
     dump_path: Optional[str],
     chunksize: Optional[int],
     logger,
 ):
     """Factory function to create the appropriate data loader"""
     if env == "azure":
-        if datastore is None:
-            raise ValueError("datastore must be provided when env is 'azure'")
-        return AzureDataLoader(datastore, dump_path, logger, chunksize)
+        if datastore_name is None:
+            raise ValueError("datastore_name must be provided when env is 'azure'")
+        return AzureDataLoader(datastore_name, dump_path, logger, chunksize)
     else:
         if dump_path is None:
             raise ValueError("dump_path must be provided when env is not 'azure'")

@@ -32,7 +32,7 @@ class DataHandler:
         # Initialize the appropriate data loader
         self.data_loader = get_data_loader(
             env=self.env,
-            datastore=config.datastore,
+            datastore_name=config.datastore,
             dump_path=config.dump_path,
             chunksize=config.chunksize,
             logger=logger,
