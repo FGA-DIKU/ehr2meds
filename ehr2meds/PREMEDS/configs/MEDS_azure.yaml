@@ -8,10 +8,13 @@ paths:
 
 data_path:
   concepts:
+    datastore: researcher_data
     dump_path: 'tests/example_data/sp_dump'
   register_concepts:
+    datastore: researcher_data
     dump_path: 'tests/example_data/registers'
   pid_link: 
+    datastore: researcher_data
     dump_path: 'tests/example_data/maskerede_data'
     filename: mapping.csv
     join_col: PID
