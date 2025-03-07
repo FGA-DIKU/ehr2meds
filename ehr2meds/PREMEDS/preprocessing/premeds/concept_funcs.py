@@ -111,6 +111,57 @@ def apply_code_mapping(
     df = df.drop(columns=[mapping_cfg.get("left_on"), code_col])
     return df
 
+def apply_mapping(df, map_table, join_col, source_col, target_col, rename_to=None, how="inner", drop_source=False):
+    """
+    Apply a mapping between two dataframes by joining them and optionally renaming/dropping columns.
+
+    Args:
+        df (pd.DataFrame): The main dataframe to apply the mapping to
+        map_table (pd.DataFrame): The mapping table containing the values to map to
+        join_col (str): The column in map_table to join on
+        source_col (str): The column in df to join on
+        target_col (str): The column from map_table to keep after joining
+        rename_to (str, optional): New name for the target column after joining. Defaults to None.
+        how (str, optional): Type of join to perform ('inner', 'left', etc). Defaults to "inner".
+        drop_source (bool, optional): Whether to drop the source column after joining. Defaults to False.
+
+    Returns:
+        pd.DataFrame: The input dataframe with the mapping applied - joined with map_table
+                     and cleaned up according to the parameters.
+
+    Example:
+        # Map patient IDs from one system to another
+        df = apply_mapping(df, 
+                         id_mapping_table,
+                         join_col='old_id',
+                         source_col='patient_id', 
+                         target_col='new_id',
+                         rename_to='patient_id',
+                         drop_source=True)
+    """
+    # Perform the mapping
+    df = pd.merge(
+        df,
+        map_table[[join_col, target_col]],  # Only select needed columns
+        left_on=source_col,
+        right_on=join_col,
+        how=how
+    )
+
+    # Clean up intermediate columns
+    if join_col != source_col:  # Avoid dropping if they're the same
+        df = df.drop(columns=[join_col])
+
+    # Optionally remove the original source column
+    if drop_source:
+        df = df.drop(columns=[source_col])
+    
+    # Rename the target column if requested
+    if rename_to:
+        df = df.rename(columns={target_col: rename_to})
+
+    return df
+
 
 def apply_simple_mapping(
     df: pd.DataFrame, mapping_df: pd.DataFrame, mapping_cfg: dict
