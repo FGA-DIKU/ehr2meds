@@ -100,11 +100,13 @@ class AzureDataLoader:
         return ds
 
     def load_dataframe(
-        self, filename: str, test: bool = False, n_rows: int = 1_000_000
+        self, filename: str, test: bool = False, n_rows: int = 1_000_000, cols: Optional[list[str]] = None
     ) -> pd.DataFrame:
         ds = self._get_azure_dataset(filename)
         if test:
             ds = ds.take(n_rows)
+        if cols:
+            ds = ds.keep_columns(cols)
         return ds.to_pandas_dataframe()
 
     def load_chunks(

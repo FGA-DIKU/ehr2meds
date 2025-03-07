@@ -36,9 +36,9 @@ class DataHandler:
             logger=logger,
         )
 
-    def load_pandas(self, cfg: dict) -> pd.DataFrame:
+    def load_pandas(self, cfg: dict, cols: Optional[list[str]] = None) -> pd.DataFrame:
         return self.data_loader.load_dataframe(
-            filename=cfg[FILENAME], test=self.test, n_rows=1_000_000
+            filename=cfg[FILENAME], test=self.test, n_rows=1_000_000, cols=cols
         )
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:
