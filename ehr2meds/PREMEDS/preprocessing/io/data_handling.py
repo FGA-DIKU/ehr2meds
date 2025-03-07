@@ -16,6 +16,8 @@ class DataConfig:
     file_type: str
     datastore: Optional[str] = None
     dump_path: Optional[str] = None
+    chunksize: Optional[int] = None
+
 
 
 class DataHandler:
@@ -33,21 +35,21 @@ class DataHandler:
             env=self.env,
             datastore=config.datastore,
             dump_path=config.dump_path,
+            chunksize=config.chunksize,
             logger=logger,
-        )
+ 
+        ) # return azure or standard data loader
 
     def load_pandas(self, cfg: dict, cols: Optional[list[str]] = None) -> pd.DataFrame:
         return self.data_loader.load_dataframe(
-            filename=cfg[FILENAME], test=self.test, n_rows=1_000_000, cols=cols
+            filename=cfg[FILENAME], test=self.test, test_rows=1_000_000, cols=cols
         )
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:
-        chunk_size = cfg.get("chunksize", 500_000)
         cols = cfg.get("rename_columns", {}).keys()
         return self.data_loader.load_chunks(
             filename=cfg[FILENAME],
             cols=cols if len(cols) > 0 else None,
-            chunk_size=chunk_size,
             test=self.test,
         )
 

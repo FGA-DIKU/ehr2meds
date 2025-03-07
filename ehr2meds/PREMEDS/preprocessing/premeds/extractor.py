@@ -31,7 +31,7 @@ class MEDSPreprocessor:
         self.logger.info(f"test {self.test}")
         self.initial_patients = set()
         self.formatted_patients = set()
-
+        self.chunksize = cfg.get("chunksize", 500_000)
         # Create data handler for concepts
         self.data_handler = DataHandler(
             DataConfig(
@@ -39,6 +39,7 @@ class MEDSPreprocessor:
                 file_type=cfg.paths.file_type,
                 datastore=cfg.data_path.concepts.get("datastore"),
                 dump_path=cfg.data_path.concepts.dump_path,
+                chunksize=self.chunksize,
             ),
             logger,
             env=cfg.env,
@@ -52,6 +53,7 @@ class MEDSPreprocessor:
                     file_type=cfg.paths.file_type,
                     datastore=cfg.data_path.register_concepts.get("datastore"),
                     dump_path=cfg.data_path.register_concepts.dump_path,
+                    chunksize=self.chunksize,
                 ),
                 logger,
                 env=cfg.env,
@@ -65,6 +67,7 @@ class MEDSPreprocessor:
                 file_type=cfg.paths.file_type,
                 datastore=cfg.data_path.pid_link.get("datastore"),
                 dump_path=cfg.data_path.pid_link.dump_path,
+                chunksize=None,
             ),
             logger,
             env=cfg.env,

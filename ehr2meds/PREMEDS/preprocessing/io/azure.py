@@ -7,12 +7,13 @@ import pandas as pd
 class StandardDataLoader:
     """Local file system data loader"""
 
-    def __init__(self, dump_path: str, logger):
+    def __init__(self, dump_path: str, logger, chunksize: int = None):
         self.dump_path = dump_path
         self.logger = logger
+        self.chunksize = chunksize
 
     def load_dataframe(
-        self, filename: str, test: bool = False, n_rows: int = 1_000_000, cols=None
+        self, filename: str, test: bool = False, test_rows: int = 1_000_000, cols=None
     ) -> pd.DataFrame:
         file_path = join(self.dump_path, filename)
 
@@ -24,7 +25,7 @@ class StandardDataLoader:
             raise ValueError(f"Unsupported file type: {file_path}")
         if test:
             if df is not None:
-                df = df.head(n_rows)
+                df = df.head(test_rows)
         return df
 
     @staticmethod
@@ -46,49 +47,57 @@ class StandardDataLoader:
         if df is None:
             raise ValueError(f"Unable to read file {file_path} with any encoding")
 
-    def load_chunks(
-        self,
-        filename: str,
-        cols: Optional[list[str]] = None,
-        chunk_size: int = 500_000,
-        test: bool = False,
-    ) -> Iterator[pd.DataFrame]:
+    def load_chunks(self, filename: str, cols: Optional[list[str]] = None, test: bool = False) -> Iterator[pd.DataFrame]:
         file_path = join(self.dump_path, filename)
-
+        
         if file_path.endswith(".parquet"):
-            df = pd.read_parquet(file_path, columns=cols)
-            for i in range(0, len(df), chunk_size):
-                if test and i >= 2 * chunk_size:
-                    break
-                yield df.iloc[i : i + chunk_size]
+            yield from self._load_parquet_chunks(file_path, cols, test)
         elif file_path.endswith((".csv", ".asc")):
-            for encoding in ["iso88591", "utf8", "latin1"]:
-                try:
-                    for chunk in pd.read_csv(
-                        file_path,
-                        sep=";",
-                        encoding=encoding,
-                        chunksize=chunk_size,
-                        usecols=cols,
-                    ):
-                        if test:
-                            yield chunk.head(chunk_size)
-                            break
-                        yield chunk
+            yield from self._load_csv_chunks(file_path, cols, test)
+        else:
+            raise ValueError(f"Unsupported file type: {file_path}")
+
+    def _load_parquet_chunks(self, file_path: str, cols: Optional[list[str]], test: bool) -> Iterator[pd.DataFrame]:
+        df = pd.read_parquet(file_path, columns=cols)
+        if test:
+            # In test mode, only yield up to two chunks based on self.chunksize
+            for i in range(0, len(df), self.chunksize):
+                if i >= 3 * self.chunksize:
                     break
-                except UnicodeDecodeError:
-                    continue
-            else:
-                raise ValueError(f"Unable to read file {file_path} with any encoding")
+                yield df.iloc[i : i + self.chunksize]
+        else:
+            yield df
+
+    def _load_csv_chunks(self, file_path: str, cols: Optional[list[str]], test: bool) -> Iterator[pd.DataFrame]:
+        for encoding in ["iso88591", "utf8", "latin1"]:
+            try:
+                for i, chunk in enumerate(pd.read_csv(
+                    file_path,
+                    sep=";",
+                    encoding=encoding,
+                    chunksize=self.chunksize,
+                    usecols=cols,
+                )):
+                    if test:
+                        if i >= 3:  # Yield only first two chunks in test mode
+                            break
+                    yield chunk
+                # If reading succeeded with the current encoding, break out of the loop
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            raise ValueError(f"Unable to read file {file_path} with any encoding")
 
 
 class AzureDataLoader:
     """Azure-specific data loader"""
 
-    def __init__(self, datastore: str, dump_path: str, logger):
+    def __init__(self, datastore: str, dump_path: str, logger, chunksize: int = None):
         self.datastore = datastore
         self.dump_path = dump_path
         self.logger = logger
+        self.chunksize = chunksize
 
     def _get_azure_dataset(self, filename: str):
         from azureml.core import Dataset
@@ -135,7 +144,7 @@ class AzureDataLoader:
         return ds.to_pandas_dataframe()
 
     def load_chunks(
-        self, filename: str, chunk_size: int = 500_000, test: bool = False
+        self, filename: str, test: bool = False
     ) -> Iterator[pd.DataFrame]:
         ds = self._get_azure_dataset(filename)
         i = 0
@@ -144,7 +153,7 @@ class AzureDataLoader:
 
         while chunks_processed < max_chunks:
             self.logger.info(f"Loading chunk {i}")
-            chunk = ds.skip(i * chunk_size).take(chunk_size)
+            chunk = ds.skip(i * self.chunksize).take(self.chunksize)
             df = chunk.to_pandas_dataframe()
             if df.empty:
                 break
@@ -154,14 +163,14 @@ class AzureDataLoader:
 
 
 def get_data_loader(
-    env: str, datastore: Optional[str], dump_path: Optional[str], logger
+    env: str, datastore: Optional[str], dump_path: Optional[str], chunksize: Optional[int], logger
 ):
     """Factory function to create the appropriate data loader"""
     if env == "azure":
         if datastore is None:
             raise ValueError("datastore must be provided when env is 'azure'")
-        return AzureDataLoader(datastore, dump_path, logger)
+        return AzureDataLoader(datastore, dump_path, logger, chunksize)
     else:
         if dump_path is None:
             raise ValueError("dump_path must be provided when env is not 'azure'")
-        return StandardDataLoader(dump_path, logger)
+        return StandardDataLoader(dump_path, logger, chunksize)
