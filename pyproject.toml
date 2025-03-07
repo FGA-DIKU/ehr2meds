@@ -22,7 +22,9 @@ dependencies = [
     "numpy",
     "pyarrow",
     "tqdm",
-    "azureml-core"
+    "azureml-core",
+    "pyarrow",
+    "fastparquet"
 ]
 
 [project.optional-dependencies]
