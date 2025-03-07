@@ -27,7 +27,7 @@ jobs:
                 mkdir -p tests/example_data
                 python -m tests.generate_example_data.generate_example_data 1000 10 tests/example_data
 
-            - name: main.create_data
+            - name: Extract data
               run: |
                 source .venv/bin/activate
                 python -m ehr2meds.PREMEDS.main_azure --config MEDS_local

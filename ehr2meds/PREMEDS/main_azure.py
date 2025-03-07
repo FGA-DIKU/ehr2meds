@@ -4,12 +4,16 @@ import pathlib
 import shutil
 from os.path import dirname, join, realpath
 
-from ehr2meds.PREMEDS.azure_run.run import Run
+try:
+    from ehr2meds.PREMEDS.azure_run.run import Run
+
+    run = Run
+    run.name(f"MEDS")
+except ImportError:
+    pass
+
 from ehr2meds.PREMEDS.preprocessing.io.config import load_config
 from ehr2meds.PREMEDS.preprocessing.premeds.extractor import PREMEDSExtractor
-
-run = Run
-run.name(f"MEDS")
 
 
 def parse_args():
