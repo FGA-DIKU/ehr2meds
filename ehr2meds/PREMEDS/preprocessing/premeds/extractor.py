@@ -88,13 +88,14 @@ class MEDSPreprocessor:
             Dict[str, int]: Mapping from original patient IDs to integer IDs
         """
         self.logger.info("Load patients info")
-        df = self.data_handler.load_pandas(self.cfg.patients_info)
-
+        df = self.data_handler.load_pandas(
+            self.cfg.patients_info,
+            cols=self.cfg.patients_info.get("rename_columns", {}).keys(),
+        )
         # Use columns_map to subset and rename the columns.
         df = select_and_rename_columns(
-            df, self.cfg.patients_info.get("columns_map", {})
+            df, self.cfg.patients_info.get("rename_columns", {})
         )
-
         self.logger.info(f"Number of patients after selecting columns: {len(df)}")
 
         df, hash_to_int_map = factorize_subject_id(df)
@@ -110,9 +111,7 @@ class MEDSPreprocessor:
 
     def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process all medical concepts"""
-        for concept_type, concept_config in tqdm(
-            self.cfg.concepts.items(), desc="Concepts"
-        ):
+        for concept_type, concept_config in self.cfg.concepts.items():
             if concept_type == "admissions":
                 self.format_admissions(concept_config, subject_id_mapping)
                 continue
@@ -128,9 +127,7 @@ class MEDSPreprocessor:
             pid_link_cfg, cols=[pid_link_cfg.join_col, pid_link_cfg.target_col]
         )
 
-        for concept_type, concept_config in tqdm(
-            self.cfg.register_concepts.items(), desc="Register concepts"
-        ):
+        for concept_type, concept_config in self.cfg.register_concepts.items():
             self.logger.info(f"Processing register concept: {concept_type}")
             first_chunk = True
 

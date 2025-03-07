@@ -22,9 +22,9 @@ class StandardDataLoader:
             df = StandardDataLoader._load_csv(file_path, cols)
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
-
         if test:
-            df = df.head(n_rows)
+            if df is not None:
+                df = df.head(n_rows)
         return df
 
     @staticmethod
