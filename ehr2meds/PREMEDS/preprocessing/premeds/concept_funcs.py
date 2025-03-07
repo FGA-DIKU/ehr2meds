@@ -111,7 +111,17 @@ def apply_code_mapping(
     df = df.drop(columns=[mapping_cfg.get("left_on"), code_col])
     return df
 
-def apply_mapping(df, map_table, join_col, source_col, target_col, rename_to=None, how="inner", drop_source=False):
+
+def apply_mapping(
+    df,
+    map_table,
+    join_col,
+    source_col,
+    target_col,
+    rename_to=None,
+    how="inner",
+    drop_source=False,
+):
     """
     Apply a mapping between two dataframes by joining them and optionally renaming/dropping columns.
 
@@ -131,10 +141,10 @@ def apply_mapping(df, map_table, join_col, source_col, target_col, rename_to=Non
 
     Example:
         # Map patient IDs from one system to another
-        df = apply_mapping(df, 
+        df = apply_mapping(df,
                          id_mapping_table,
                          join_col='old_id',
-                         source_col='patient_id', 
+                         source_col='patient_id',
                          target_col='new_id',
                          rename_to='patient_id',
                          drop_source=True)
@@ -145,7 +155,7 @@ def apply_mapping(df, map_table, join_col, source_col, target_col, rename_to=Non
         map_table[[join_col, target_col]],  # Only select needed columns
         left_on=source_col,
         right_on=join_col,
-        how=how
+        how=how,
     )
 
     # Clean up intermediate columns
@@ -155,7 +165,7 @@ def apply_mapping(df, map_table, join_col, source_col, target_col, rename_to=Non
     # Optionally remove the original source column
     if drop_source:
         df = df.drop(columns=[source_col])
-    
+
     # Rename the target column if requested
     if rename_to:
         df = df.rename(columns={target_col: rename_to})
