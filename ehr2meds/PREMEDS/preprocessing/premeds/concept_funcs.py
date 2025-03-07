@@ -3,10 +3,6 @@ from typing import Dict, List, Tuple
 import pandas as pd
 
 from ehr2meds.PREMEDS.preprocessing.constants import CODE, MANDATORY_COLUMNS, SUBJECT_ID
-from ehr2meds.PREMEDS.preprocessing.io.data_handling import (
-    DataHandler,
-    load_mapping_file,
-)
 
 
 def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
@@ -18,7 +14,7 @@ def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFra
 
 
 def prefix_codes(df: pd.DataFrame, code_prefix: str = None) -> pd.DataFrame:
-    """Add a prefix to the codes."""
+    """Add a prefix to the entries in the code column."""
     if code_prefix and CODE in df.columns:
         df[CODE] = code_prefix + df[CODE].astype(str)
     return df
@@ -67,41 +63,6 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
     df[SUBJECT_ID] = shifted_indices
     df = df.drop(columns=["integer_id"])
     return df, hash_to_int_map
-
-
-def apply_secondary_mapping(
-    df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler"
-) -> pd.DataFrame:
-    """Apply secondary mapping (e.g., vnr to drug name)."""
-    if "secondary_mapping" not in concept_config:
-        return df
-
-    mapping_cfg = concept_config["secondary_mapping"]
-    mapping_df = load_mapping_file(mapping_cfg, data_handler)
-
-    code_col = mapping_cfg.get("code_column")
-    if code_col:
-        df = apply_code_mapping(df, mapping_df, mapping_cfg, code_col)
-    else:
-        df = apply_simple_mapping(df, mapping_df, mapping_cfg)
-
-    return df
-
-
-def apply_code_mapping(
-    df: pd.DataFrame, mapping_df: pd.DataFrame, mapping_cfg: dict, code_col: str
-) -> pd.DataFrame:
-    """Apply mapping with specific code column handling."""
-    df = pd.merge(
-        df,
-        mapping_df[[mapping_cfg.get("right_on"), code_col]],
-        left_on=mapping_cfg.get("left_on"),
-        right_on=mapping_cfg.get("right_on"),
-        how="inner",
-    )
-    df[CODE] = df[code_col]
-    df = df.drop(columns=[mapping_cfg.get("left_on"), code_col])
-    return df
 
 
 def apply_mapping(
@@ -162,21 +123,6 @@ def apply_mapping(
     if rename_to:
         df = df.rename(columns={target_col: rename_to})
 
-    return df
-
-
-def apply_simple_mapping(
-    df: pd.DataFrame, mapping_df: pd.DataFrame, mapping_cfg: dict
-) -> pd.DataFrame:
-    """Apply simple mapping without code column."""
-    df = pd.merge(
-        df,
-        mapping_df,
-        left_on=mapping_cfg.get("left_on"),
-        right_on=mapping_cfg.get("right_on"),
-        how="inner",
-    )
-    df = df.drop(columns=[mapping_cfg.get("left_on")])
     return df
 
 
