@@ -48,12 +48,12 @@ def generate_register_diagnosis(save_dir, mapping, kont, seed=0, n_concepts=3):
 
 def generate_forloeb(mapping_merged):
     filtered_pids = mapping_merged[
-        (mapping_merged["forloeb"] == True) & (mapping_merged["CPR_hash"].isna())
+        (mapping_merged["forloeb"]) & (mapping_merged["CPR_hash"].isna())
     ]["PID"].values
     subset_size = int(0.1 * len(filtered_pids))
     random_subset = np.random.choice(filtered_pids, subset_size, replace=False)
     pids_to_nan = random_subset.tolist()
-    forloeb_pids = mapping_merged[mapping_merged["forloeb"] == True][
+    forloeb_pids = mapping_merged[mapping_merged["forloeb"]][
         ["PID", "Fødselsdato", "Dødsdato"]
     ].copy()
     forloeb_pids["PID"] = forloeb_pids["PID"].apply(
@@ -130,12 +130,12 @@ def generate_forloeb(mapping_merged):
 
 def generate_kontakter(mapping_merged, forloeb, n_visits=3):
     filtered_pids = mapping_merged[
-        (mapping_merged["kontakter"] == True) & (mapping_merged["CPR_hash"].isna())
+        (mapping_merged["kontakter"]) & (mapping_merged["CPR_hash"].isna())
     ]["PID"].values
     subset_size = int(0.1 * len(filtered_pids))
     random_subset = np.random.choice(filtered_pids, subset_size, replace=False)
     pids_to_nan = random_subset.tolist()
-    kont_pids = mapping_merged[mapping_merged["forloeb"] == True][
+    kont_pids = mapping_merged[mapping_merged["forloeb"]][
         ["PID", "Fødselsdato", "Dødsdato"]
     ].copy()
     kont_pids["PID"] = kont_pids["PID"].apply(
@@ -247,7 +247,7 @@ def generate_mapping(pids, patients_info):
     mapping["forloeb"] = mapping["PID"].apply(lambda x: x in pts_with_forl)
 
     for col in ["epikur", "kontakter", "forloeb"]:
-        mask = (mapping[col] == False) & (mapping["CPR_hash"].isna())
+        mask = (mapping[col]) & (mapping["CPR_hash"].isna())
         mapping.loc[mask, col] = np.random.choice([True, False], size=mask.sum())
 
     mapping["t_adm"] = [np.random.choice([True, False]) for _ in range(len(mapping))]
