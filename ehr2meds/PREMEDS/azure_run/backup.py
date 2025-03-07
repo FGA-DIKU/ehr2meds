@@ -18,9 +18,9 @@ def dataset(
     from . import log, datastore, dataset as load_dataset
 
     # Validate
-    if type(name) != str:
+    if not isinstance(name, str):
         raise Exception(f"Invalid parameter 'name', expected type str.")
-    if type(remote_path) != str:
+    if not isinstance(remote_path, str):
         raise Exception(f"Invalid parameter 'remote_name', expected type str.")
     # Clean path
     if remote_path[0] == "/":
@@ -136,8 +136,3 @@ def dataset(
                 raise Exception("Post-validation  (custom) failed!")
             log().info("Validation (custom) passed!")
 
-
-def file(path, remote_location, overwrite_ok=False):
-    from . import log
-
-    raise Exception("Not implemented!")
