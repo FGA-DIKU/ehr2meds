@@ -18,7 +18,7 @@ concepts:
   admissions:
     filename: CPMI_ADTHaendelser.parquet
     # columns to keep, rename, and the final names
-    columns_map:
+    rename_columns:
       CPR_hash: subject_id
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
@@ -28,7 +28,7 @@ concepts:
 
   diagnosis:
     filename: CPMI_Diagnoser.parquet
-    columns_map:
+    rename_columns:
       Diagnosekode: code
       Diagnose: fill_code
       Noteret_dato: timestamp
@@ -41,7 +41,7 @@ concepts:
 
   procedure:
     filename: CPMI_Procedurer.parquet
-    columns_map:
+    rename_columns:
       ProcedureCode: code
       ProcedureName: fill_code
       ServiceDatetime: timestamp
@@ -56,7 +56,7 @@ concepts:
 
   medication:
     filename: CPMI_Medicin.parquet
-    columns_map:
+    rename_columns:
       ATC: code
       Administrationstidspunkt: timestamp
       Bestillingsdato: fill_timestamp
@@ -68,7 +68,7 @@ concepts:
 
   labtest:
     filename: CPMI_Labsvar.parquet
-    columns_map:
+    rename_columns:
       BestOrd: code
       Prøvetagningstidspunkt: timestamp
       Bestillingsdato: fill_timestamp
@@ -83,7 +83,7 @@ concepts:
 register_concepts:
   register_diagnosis:
     filename: diagnoser.asc
-    columns_map:
+    rename_columns:
       diagnosekode: code
       diagnosetype: code_type
       dw_ek_kontakt: contact_id
@@ -109,7 +109,7 @@ register_concepts:
 
 #   register_contacts:
 #     filename: kontakter.parquet
-#     columns_map:
+#     rename_columns:
 #       PID: subject_id
 #       dato_start: date_start
 #       tidspunkt_start: time_start
@@ -133,7 +133,7 @@ register_concepts:
 
 #   register_medication:
 #     filename: epikur.parquet
-#     columns_map:
+#     rename_columns:
 #       PID: subject_id
 #       vnr: vnr_code
 #       eksd: timestamp
@@ -149,7 +149,7 @@ register_concepts:
 
 #   register_procedures_surgery:
 #     filename: procedurer_kirurgi.asc
-#     columns_map:
+#     rename_columns:
 #       procedurekode: code
 #       dato_start: date_start
 #       tidspunkt_start: time_start
@@ -171,7 +171,7 @@ register_concepts:
     
 #   register_procedures_other:
 #     filename: procedurer_andre.asc
-#     columns_map:
+#     rename_columns:
 #       procedurekode: code
 #       proceduretype: procedure_type
 #       dato_start: date_start

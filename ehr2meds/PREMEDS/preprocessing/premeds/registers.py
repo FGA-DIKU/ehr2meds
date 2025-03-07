@@ -25,9 +25,16 @@ class RegisterConceptProcessor:
         data_handler: "DataHandler",
         register_sp_mapping: pd.DataFrame,
     ) -> pd.DataFrame:
-        """Process the register concepts."""
-        # Step 1: Initial processing
-        df = RegisterConceptProcessor._process_initial_register_data(df, concept_config)
+        """Process the register concepts.
+        1. Select and rename columns
+        
+        
+        """
+        # Step 1: Select columns
+        df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
+
+        # Combine datetime columns if needed
+        df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
 
         # Step 2: Apply secondary mapping if needed
         df = apply_secondary_mapping(df, concept_config, data_handler)
@@ -55,10 +62,7 @@ class RegisterConceptProcessor:
     ) -> pd.DataFrame:
         """Handle initial data processing steps."""
         # Select and rename columns
-        df = select_and_rename_columns(df, concept_config.get("columns_map", {}))
 
-        # Combine datetime columns if needed
-        df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
 
         return df
 

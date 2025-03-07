@@ -76,7 +76,7 @@ class ConceptProcessor:
             - Data for the last patient if it's incomplete (spans to next chunk)
         """
         # First select and rename columns
-        df = select_and_rename_columns(df, admissions_config.get("columns_map", {}))
+        df = select_and_rename_columns(df, admissions_config.get("rename_columns", {}))
         # Map subject_id
         if SUBJECT_ID in df.columns:
             df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
