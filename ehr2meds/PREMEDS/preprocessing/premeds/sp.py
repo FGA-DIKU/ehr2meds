@@ -23,7 +23,7 @@ class ConceptProcessor:
         """
         Main method for processing a single concept's data
         """
-        df = select_and_rename_columns(df, concept_config.get("columns_map", {}))
+        df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
         if concept_config.get("fillna"):
             df = fill_missing_values(df, concept_config.fillna)
 

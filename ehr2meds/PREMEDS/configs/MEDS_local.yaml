@@ -13,6 +13,9 @@ data_path:
     dump_path: 'tests/example_data/registers'
   pid_link: 
     dump_path: 'tests/example_data/maskerede_data'
+    filename: mapping.csv
+    join_col: PID
+    target_col: CPR_hash
 
 concepts:
   admissions:
@@ -105,7 +108,7 @@ register_concepts:
 #           column: dato_slut
 #           rename_to: timestamp
         
-#         drop_original: true
+#         drop_source: true
 
 #   register_contacts:
 #     filename: kontakter.parquet
@@ -139,12 +142,12 @@ register_concepts:
 #       eksd: timestamp
 #     mappings:
 #       - source_column: vnr_code
-#         via:
-#           filename: laegemiddeloplysninger.asc
-#           join_on: VNR
-#         target:
-#           column: PNAME
-#           rename_to: code
+#         how: left
+#         via_file: laegemiddeloplysninger.asc
+#         join_on: VNR
+#         target_column: PNAME
+#         rename_to: code
+#         drop_source: false
 #     code_prefix: "RM_"
 
 #   register_procedures_surgery:

@@ -12,22 +12,14 @@ class StandardDataLoader:
         self.logger = logger
 
     def load_dataframe(
-        self, filename: str, test: bool = False, n_rows: int = 1_000_000
+        self, filename: str, test: bool = False, n_rows: int = 1_000_000, cols=None
     ) -> pd.DataFrame:
         file_path = join(self.dump_path, filename)
 
         if file_path.endswith(".parquet"):
-            df = pd.read_parquet(file_path)
+            df = pd.read_parquet(file_path, columns=cols)
         elif file_path.endswith((".csv", ".asc")):
-            # Try different encodings
-            for encoding in ["iso88591", "utf8", "latin1"]:
-                try:
-                    df = pd.read_csv(file_path, sep=";", encoding=encoding)
-                    break
-                except UnicodeDecodeError:
-                    continue
-            else:
-                raise ValueError(f"Unable to read file {file_path} with any encoding")
+            df = StandardDataLoader._load_csv(file_path, cols)
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
 
@@ -35,13 +27,36 @@ class StandardDataLoader:
             df = df.head(n_rows)
         return df
 
+    @staticmethod
+    def _load_csv(file_path: str, cols: Optional[list[str]] = None) -> pd.DataFrame:
+        separators = [";", ","]
+        encodings = ["iso88591", "utf8", "latin1"]
+        df = None
+        for encoding in encodings:
+            for sep in separators:
+                try:
+                    df = pd.read_csv(
+                        file_path, sep=sep, encoding=encoding, usecols=cols
+                    )
+                    break  # If successful, break out of the inner loop
+                except Exception:
+                    continue
+            if df is not None:
+                break  # Break out of the outer loop if a valid DataFrame was read
+        if df is None:
+            raise ValueError(f"Unable to read file {file_path} with any encoding")
+
     def load_chunks(
-        self, filename: str, chunk_size: int = 500_000, test: bool = False
+        self,
+        filename: str,
+        cols: Optional[list[str]] = None,
+        chunk_size: int = 500_000,
+        test: bool = False,
     ) -> Iterator[pd.DataFrame]:
         file_path = join(self.dump_path, filename)
 
         if file_path.endswith(".parquet"):
-            df = pd.read_parquet(file_path)
+            df = pd.read_parquet(file_path, columns=cols)
             for i in range(0, len(df), chunk_size):
                 if test and i >= 2 * chunk_size:
                     break
@@ -50,7 +65,11 @@ class StandardDataLoader:
             for encoding in ["iso88591", "utf8", "latin1"]:
                 try:
                     for chunk in pd.read_csv(
-                        file_path, sep=";", encoding=encoding, chunksize=chunk_size
+                        file_path,
+                        sep=";",
+                        encoding=encoding,
+                        chunksize=chunk_size,
+                        usecols=cols,
                     ):
                         if test:
                             yield chunk.head(chunk_size)
@@ -76,28 +95,30 @@ class AzureDataLoader:
 
         file_path = join(self.dump_path, filename)
         if filename.endswith(".parquet"):
-            ds = Dataset.Tabular.from_parquet_files(path=(self.datastore, file_path))
-        elif filename.endswith(".csv") or filename.endswith(".asc"):
-            # Try different encodings
-            encodings = ["iso88591", "utf8", "latin1"]
-            for encoding in encodings:
-                try:
-                    ds = Dataset.Tabular.from_delimited_files(
-                        path=(self.datastore, file_path),
-                        separator=";",
-                        encoding=encoding,
-                    )
-                    break
-                except UnicodeDecodeError:
-                    continue
-            else:
-                raise ValueError(
-                    f"Unable to read file {file_path} with any of the provided encodings"
-                )
+            return Dataset.Tabular.from_parquet_files(path=(self.datastore, file_path))
+        elif filename.endswith((".csv", ".asc")):
+            return self._get_csv_dataset(file_path)
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
 
-        return ds
+    def _get_csv_dataset(self, file_path: str):
+        from azureml.core import Dataset
+
+        encodings = ["iso88591", "utf8", "latin1"]
+        delimiters = [";", ","]
+        for encoding in encodings:
+            for delimiter in delimiters:
+                try:
+                    return Dataset.Tabular.from_delimited_files(
+                        path=(self.datastore, file_path),
+                        separator=delimiter,
+                        encoding=encoding,
+                    )
+                except UnicodeDecodeError:
+                    continue
+        raise ValueError(
+            f"Unable to read file {file_path} with any of the provided encodings"
+        )
 
     def load_dataframe(
         self,

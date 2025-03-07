@@ -43,8 +43,12 @@ class DataHandler:
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:
         chunk_size = cfg.get("chunksize", 500_000)
+        cols = cfg.get("rename_columns", {}).keys()
         return self.data_loader.load_chunks(
-            filename=cfg[FILENAME], chunk_size=chunk_size, test=self.test
+            filename=cfg[FILENAME],
+            cols=cols if len(cols) > 0 else None,
+            chunk_size=chunk_size,
+            test=self.test,
         )
 
     def save(self, df: pd.DataFrame, filename: str, mode: str = "w") -> None:
