@@ -93,15 +93,16 @@ class RegisterConceptProcessor:
         if concept_config.get("mappings"):
             for mapping in concept_config.mappings:
                 map_table = data_handler.load_pandas(
-                    mapping.via_file, cols=[mapping.join_on, mapping.target_col]
+                    mapping["via_file"],
+                    cols=[mapping["join_on"], mapping["target_column"]],
                 )
                 df = apply_mapping(
                     df,
                     map_table,
-                    join_col=mapping.join_on,
-                    source_col=mapping.source_column,
-                    target_col=mapping.target_column,
-                    rename_to=mapping.rename_to,
+                    join_col=mapping["join_on"],
+                    source_col=mapping["source_column"],
+                    target_col=mapping["target_column"],
+                    rename_to=mapping["rename_to"],
                     how=mapping.get("how", "inner"),
                     drop_source=mapping.get("drop_source", False),
                 )
