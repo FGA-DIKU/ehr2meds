@@ -2,3 +2,5 @@ azureml-core
 numpy
 pandas
 tqdm
+fastparquet
+pyarrow
