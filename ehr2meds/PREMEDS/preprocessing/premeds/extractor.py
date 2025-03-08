@@ -92,7 +92,7 @@ class PREMEDSExtractor:
         self.logger.info("Load patients info")
         df = self.data_handler.load_pandas(
             self.cfg.patients_info.filename,
-            cols=self.cfg.patients_info.get("rename_columns", {}).keys(),
+            cols=list(self.cfg.patients_info.get("rename_columns", {}).keys()),
         )
         # Use columns_map to subset and rename the columns.
         df = select_and_rename_columns(

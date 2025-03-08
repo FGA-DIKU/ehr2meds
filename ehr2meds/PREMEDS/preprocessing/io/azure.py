@@ -162,8 +162,12 @@ class AzureDataLoader:
             ds = ds.keep_columns(cols)
         return ds.to_pandas_dataframe()
 
-    def load_chunks(self, filename: str, test: bool = False) -> Iterator[pd.DataFrame]:
+    def load_chunks(
+        self, filename: str, test: bool = False, cols: Optional[list[str]] = None
+    ) -> Iterator[pd.DataFrame]:
         ds = self._get_azure_dataset(filename)
+        if cols:
+            ds = ds.keep_columns(cols)
         i = 0
         max_chunks = 2 if test else float("inf")
         chunks_processed = 0

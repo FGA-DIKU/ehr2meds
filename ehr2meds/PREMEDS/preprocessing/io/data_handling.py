@@ -46,7 +46,7 @@ class DataHandler:
         )
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:
-        cols = cfg.get("rename_columns", {}).keys()
+        cols = list(cfg.get("rename_columns", {}).keys())
         return self.data_loader.load_chunks(
             filename=cfg[FILENAME],
             cols=cols if len(cols) > 0 else None,
