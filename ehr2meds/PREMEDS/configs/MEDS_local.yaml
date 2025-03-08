@@ -40,7 +40,7 @@ concepts:
       code:
         column: fill_code
         regex: '\((D[^)]+)\)'
-    code_prefix: "D_"
+    code_prefix: "D/"
 
   procedure:
     filename: CPMI_Procedurer.parquet
@@ -55,7 +55,7 @@ concepts:
         column: fill_code
       timestamp:
         column: fill_timestamp
-    code_prefix: "P_"
+    code_prefix: "P/"
 
   medication:
     filename: CPMI_Medicin.parquet
@@ -67,7 +67,7 @@ concepts:
     fillna:
       timestamp:
         column: fill_timestamp
-    code_prefix: "M_"
+    code_prefix: "M/"
 
   labtest:
     filename: CPMI_Labsvar.parquet
@@ -80,7 +80,7 @@ concepts:
     fillna:
       timestamp:
         column: fill_timestamp
-    code_prefix: "L_"
+    code_prefix: "L/"
     numeric_columns: [numeric_value]
 
 register_concepts:
@@ -91,7 +91,7 @@ register_concepts:
       diagnosetype: code_type
       dw_ek_kontakt: contact_id
 
-    code_prefix: "RD_"
+    code_prefix: "RD/"
     mappings:
       - source_column: contact_id
         via_file: kontakter.parquet
@@ -124,12 +124,12 @@ register_concepts:
 
     unroll_columns:
       - column: contact_reason
-        prefix: "RC_REASON_"
+        prefix: "RC_REASON/"
       - column: clinical_specialty
-        prefix: "RC_SPEC_"
+        prefix: "RC_SPEC/"
       - column: region_code
-        prefix: "RC_REG_"
-    code_prefix: "RC_"
+        prefix: "RC_REG/"
+    code_prefix: "RC/"
 
   register_medication:
     filename: epikur.parquet
@@ -145,7 +145,7 @@ register_concepts:
         target_column: PNAME
         rename_to: code
         drop_source: false
-    code_prefix: "RM_"
+    code_prefix: "RM/"
 
   register_procedures_surgery:
     filename: procedurer_kirurgi.asc
@@ -159,7 +159,7 @@ register_concepts:
         date_col: date_start
         time_col: time_start
         drop_original: true
-    code_prefix: "RPS_"
+    code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
         via_file: kontakter.parquet
@@ -181,7 +181,7 @@ register_concepts:
         date_col: date_start
         time_col: time_start
         drop_original: true
-    code_prefix: "RPO_"
+    code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
         via_file: kontakter.parquet
