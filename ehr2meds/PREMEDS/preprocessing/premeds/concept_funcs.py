@@ -116,6 +116,11 @@ def apply_mapping(
                          rename_to='patient_id',
                          drop_source=True)
     """
+    # Ensure that join key columns are of the same type
+    if df[source_col].dtype != map_table[join_col].dtype:
+        df[source_col] = df[source_col].astype(str)
+        map_table[join_col] = map_table[join_col].astype(str)
+
     # Perform the mapping
     df = pd.merge(
         df,
