@@ -115,7 +115,7 @@ class PREMEDSExtractor:
                     self.format_admissions(concept_config, subject_id_mapping)
                     continue  # continue to next concept
                 self._process_concept_chunks(
-                    concept_type, concept_config, subject_id_mapping, first_chunk=True
+                    concept_type, concept_config, subject_id_mapping
                 )
             except Exception as e:
                 self.logger.warning(f"Error processing {concept_type}: {str(e)}")
@@ -133,7 +133,6 @@ class PREMEDSExtractor:
                     concept_config,
                     subject_id_mapping,
                     register_sp_link,
-                    first_chunk=True,
                 )
             except Exception as e:
                 self.logger.warning(f"Error processing {concept_type}: {str(e)}")
@@ -144,8 +143,8 @@ class PREMEDSExtractor:
         concept_config: dict,
         subject_id_mapping: Dict[str, int],
         register_sp_link: pd.DataFrame,
-        first_chunk: bool,
     ) -> None:
+        first_chunk = True
         for chunk in tqdm(
             self.register_data_handler.load_chunks(concept_config),
             desc=f"Chunks {concept_type}",
@@ -163,14 +162,15 @@ class PREMEDSExtractor:
             self._safe_save(
                 self.register_data_handler, processed_chunk, concept_type, first_chunk
             )
-
+            first_chunk = False
+            
     def _process_concept_chunks(
         self,
         concept_type: str,
         concept_config: dict,
         subject_id_mapping: Dict[str, int],
-        first_chunk: bool,
     ) -> None:
+        first_chunk = True
         for chunk in tqdm(
             self.data_handler.load_chunks(concept_config),
             desc=f"Chunks {concept_type}",
@@ -181,6 +181,7 @@ class PREMEDSExtractor:
             self._safe_save(
                 self.data_handler, processed_chunk, concept_type, first_chunk
             )
+            first_chunk = False
 
     def _safe_save(
         self, data_handler, processed_chunk, concept_type, first_chunk: bool
@@ -188,7 +189,6 @@ class PREMEDSExtractor:
         if not processed_chunk.empty:
             mode = "w" if first_chunk else "a"
             data_handler.save(processed_chunk, concept_type, mode=mode)
-            first_chunk = False
         else:
             self.logger.warning(
                 f"Empty processed chunk for {concept_type}, skipping save"
