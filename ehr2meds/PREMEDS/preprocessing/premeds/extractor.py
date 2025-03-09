@@ -223,10 +223,10 @@ class PREMEDSExtractor:
                 )
             )
 
-            if not processed_chunk.empty:
-                mode = "w" if first_chunk else "a"
-                self.data_handler.save(processed_chunk, "admissions", mode=mode)
-                first_chunk = False
+            self._safe_save(
+                self.data_handler, processed_chunk, "admissions", first_chunk
+            )
+            first_chunk = False
 
         # Process any remaining last patient data
         if last_patient_data and last_patient_data["events"]:
