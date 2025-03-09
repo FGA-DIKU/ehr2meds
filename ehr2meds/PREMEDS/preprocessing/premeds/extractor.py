@@ -117,7 +117,7 @@ class PREMEDSExtractor:
             try:
                 if concept_type == "admissions":
                     self.format_admissions(concept_config, subject_id_mapping)
-                    continue
+                    continue # continue to next concept
                 self._process_concept_chunks(
                     concept_type, concept_config, subject_id_mapping, first_chunk=True
                 )
