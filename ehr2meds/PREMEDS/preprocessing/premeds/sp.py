@@ -2,15 +2,14 @@ from typing import Dict, Optional, Tuple
 
 import pandas as pd
 
-from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
-    clean_data,
-    convert_numeric_columns,
-    fill_missing_values,
-    map_pids_to_ints,
-    prefix_codes,
-    select_and_rename_columns,
-)
+    clean_data, convert_numeric_columns, fill_missing_values, map_pids_to_ints,
+    prefix_codes, select_and_rename_columns)
+from ehr2meds.PREMEDS.preprocessing.premeds.helpers import (
+    create_events_dataframe, finalize_previous_patient,
+    initialize_patient_state, prepare_last_patient_info,
+    preprocess_admissions_df, process_patient_events)
 
 
 class ConceptProcessor:
@@ -57,118 +56,35 @@ class ConceptProcessor:
             - Processed DataFrame with events
             - Data for the last patient if it's incomplete (spans to next chunk)
         """
-        # First select and rename columns
-        df = select_and_rename_columns(df, admissions_config.get("rename_columns", {}))
-        # Map subject_id
-        if SUBJECT_ID in df.columns:
-            df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
-            df = df.dropna(subset=[SUBJECT_ID])
-            df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+        # Preprocess the dataframe
+        df = preprocess_admissions_df(df, admissions_config, subject_id_mapping)
 
-        # Sort by patient and timestamp
-        df = df.sort_values([SUBJECT_ID, "timestamp_in"])
+        # Initialize state from last chunk if available
+        patient_state = initialize_patient_state(last_patient_data)
 
-        # Initialize lists to store the processed events
+        # Process all patients and generate events
         events = []
 
-        # If we have data from last chunk's patient, initialize with that
-        current_patient_id = None
-        admission_start = None
-        last_transfer = None
-
-        if last_patient_data:
-            current_patient_id = last_patient_data["subject_id"]
-            admission_start = last_patient_data["admission_start"]
-            last_transfer = last_patient_data["last_transfer"]
-
-        # Process each patient's events
         for subject_id, patient_df in df.groupby(SUBJECT_ID):
-            # If this is a new patient and we had a previous patient's data,
-            # finalize the previous patient's events
-            if current_patient_id is not None and subject_id != current_patient_id:
-                if admission_start is not None and last_transfer is not None:
-                    events.append(
-                        {
-                            SUBJECT_ID: current_patient_id,
-                            "timestamp": last_transfer["timestamp_out"],
-                            CODE: "DISCHARGE_ADT",
-                        }
-                    )
+            # Handle patient transition if needed
+            if (
+                patient_state["current_patient_id"] is not None
+                and subject_id != patient_state["current_patient_id"]
+            ):
+                finalize_previous_patient(events, patient_state)
 
-                # Reset for new patient
-                admission_start = None
-                last_transfer = None
+            # Set current patient
+            patient_state["current_patient_id"] = subject_id
 
-            current_patient_id = subject_id
-            for _, row in patient_df.iterrows():
-                event_type = row["type"]
-                dept = row["section"]
-                timestamp_in = row["timestamp_in"]
+            # Process this patient's events
+            process_patient_events(
+                subject_id, patient_df, patient_state, events, admissions_config
+            )
 
-                if event_type.lower() == "indlaeggelse":
-                    # If there was a previous admission, add discharge at last transfer
-                    if admission_start is not None and last_transfer is not None:
-                        events.append(
-                            {
-                                SUBJECT_ID: subject_id,
-                                "timestamp": last_transfer["timestamp_out"],
-                                CODE: "DISCHARGE_ADT",
-                            }
-                        )
-
-                    # Start new admission
-                    admission_start = row
-                    events.append(
-                        {
-                            SUBJECT_ID: subject_id,
-                            "timestamp": timestamp_in,
-                            CODE: "ADMISSION_ADT",
-                        }
-                    )
-
-                    # Add department code
-                    events.append(
-                        {
-                            SUBJECT_ID: subject_id,
-                            "timestamp": timestamp_in,
-                            CODE: f"AFSNIT_ADT_{dept}",
-                        }
-                    )
-
-                elif event_type.lower() == "flyt ind" and admission_start is not None:
-                    # Record transfer
-                    if admissions_config.get("save_adm_move", True):
-                        events.append(
-                            {
-                                SUBJECT_ID: subject_id,
-                                "timestamp": timestamp_in,
-                                CODE: "ADM_move",
-                            }
-                        )
-                    # Add department code for the new department
-                    events.append(
-                        {
-                            SUBJECT_ID: subject_id,
-                            "timestamp": timestamp_in,
-                            CODE: f"AFSNIT_ADT_{dept}",
-                        }
-                    )
-                    last_transfer = row
-
-        # Convert events to DataFrame
-        result_df = pd.DataFrame(events)
-        # Sort by patient and timestamp
-        if not result_df.empty:
-            result_df = result_df.sort_values([SUBJECT_ID, "timestamp"])
+        # Convert events to DataFrame and sort
+        result_df = create_events_dataframe(events)
 
         # Prepare data for the last patient if their events might continue in next chunk
-        last_patient_info = None
-        if current_patient_id is not None and admission_start is not None:
-            last_patient_info = {
-                "subject_id": current_patient_id,
-                "admission_start": admission_start,
-                "last_transfer": last_transfer,
-                "events": [],  # Will be populated if this is the final chunk
-            }
+        last_patient_info = prepare_last_patient_info(patient_state)
 
         return result_df, last_patient_info
