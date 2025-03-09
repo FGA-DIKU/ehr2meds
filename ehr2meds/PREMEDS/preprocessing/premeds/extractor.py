@@ -10,6 +10,7 @@ from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     factorize_subject_id,
     select_and_rename_columns,
 )
+from ehr2meds.PREMEDS.preprocessing.premeds.helpers import add_discharge_to_last_patient
 from ehr2meds.PREMEDS.preprocessing.premeds.registers import RegisterConceptProcessor
 from ehr2meds.PREMEDS.preprocessing.premeds.sp import ConceptProcessor
 
@@ -110,10 +111,10 @@ class PREMEDSExtractor:
     def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process all medical concepts"""
         for concept_type, concept_config in self.cfg.concepts.items():
+            if concept_type == "admissions":
+                self.format_admissions(concept_config, subject_id_mapping)
+                continue  # continue to next concept
             try:
-                if concept_type == "admissions":
-                    self.format_admissions(concept_config, subject_id_mapping)
-                    continue  # continue to next concept
                 self._process_concept_chunks(
                     concept_type, concept_config, subject_id_mapping
                 )
@@ -163,7 +164,7 @@ class PREMEDSExtractor:
                 self.register_data_handler, processed_chunk, concept_type, first_chunk
             )
             first_chunk = False
-            
+
     def _process_concept_chunks(
         self,
         concept_type: str,
@@ -225,7 +226,6 @@ class PREMEDSExtractor:
             first_chunk = False
 
         # Process any remaining last patient data
-        if last_patient_data and last_patient_data["events"]:
-            final_df = pd.DataFrame(last_patient_data["events"])
-            if not final_df.empty:
-                self.data_handler.save(final_df, "admissions", mode="a")
+        final_df = add_discharge_to_last_patient(last_patient_data)
+        if not final_df.empty:
+            self.data_handler.save(final_df, "admissions", mode="a")

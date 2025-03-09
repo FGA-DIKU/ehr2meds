@@ -183,9 +183,42 @@ def prepare_last_patient_info(patient_state: dict) -> Optional[dict]:
         and patient_state["admission_start"] is not None
     ):
         return {
-            "subject_id": patient_state["current_patient_id"],
+            SUBJECT_ID: patient_state["current_patient_id"],
             "admission_start": patient_state["admission_start"],
             "last_transfer": patient_state["last_transfer"],
             "events": [],  # Will be populated if this is the final chunk
         }
     return None
+
+
+def add_discharge_to_last_patient(last_patient_data: Optional[dict]) -> pd.DataFrame:
+    """
+    Process any remaining last patient data by adding a discharge event.
+
+    Args:
+        last_patient_data: Dictionary containing information about the last patient
+                          from the previous chunk processing
+
+    Returns:
+        pd.DataFrame: DataFrame containing the final discharge event or empty DataFrame
+                     if there's no remaining patient data
+    """
+    if last_patient_data is None or last_patient_data["last_transfer"] is None:
+        return pd.DataFrame()  # No data to process
+
+    # Create discharge event for the last patient
+    events = last_patient_data.get("events", [])
+    events.append(
+        {
+            SUBJECT_ID: last_patient_data["subject_id"],
+            "timestamp": last_patient_data["last_transfer"]["timestamp_out"],
+            CODE: "DISCHARGE_ADT",
+        }
+    )
+
+    # Convert to DataFrame
+    final_df = pd.DataFrame(events)
+    if not final_df.empty:
+        final_df = final_df.sort_values([SUBJECT_ID, "timestamp"])
+
+    return final_df
