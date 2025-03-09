@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, ADMISSION_IND
 from ehr2meds.PREMEDS.preprocessing.premeds.sp import ConceptProcessor
 
 
@@ -29,7 +29,7 @@ class TestServiceProvider(unittest.TestCase):
         # Sample dataframe with two patients
         self.sample_df = pd.DataFrame(
             {
-                "original_col1": ["indlaeggelse", "flyt ind", "indlaeggelse"],
+                "original_col1": [ADMISSION_IND, "flyt ind", ADMISSION_IND],
                 "original_col2": ["dept1", "dept2", "dept3"],
                 "original_col3": ["2023-01-01", "2023-01-02", "2023-01-01"],
                 "original_col4": ["2023-01-02", "2023-01-03", "2023-01-02"],
@@ -40,7 +40,7 @@ class TestServiceProvider(unittest.TestCase):
     def test_process_adt_admissions_basic(self):
         """Test basic processing of ADT admissions without chunk spanning."""
         # Process the sample dataframe
-        result_df, last_patient_info = ConceptProcessor.process_adt_admissions(
+        result_df, _ = ConceptProcessor.process_adt_admissions(
             self.sample_df, self.admissions_config, self.subject_id_mapping
         )
 
@@ -67,7 +67,7 @@ class TestServiceProvider(unittest.TestCase):
             SUBJECT_ID: 1,
             "admission_start": pd.Series(
                 {
-                    "type": "indlaeggelse",
+                    "type": ADMISSION_IND,
                     "section": "prev_dept",
                     "timestamp_in": "2023-01-01",
                     "timestamp_out": "2023-01-02",
@@ -89,7 +89,7 @@ class TestServiceProvider(unittest.TestCase):
         )
 
         # Process with last patient data
-        result_df, new_last_patient_info = ConceptProcessor.process_adt_admissions(
+        result_df, _ = ConceptProcessor.process_adt_admissions(
             cont_df, self.admissions_config, self.subject_id_mapping, last_patient_data
         )
 
@@ -119,7 +119,7 @@ class TestServiceProvider(unittest.TestCase):
         # Create single patient dataframe
         single_patient_df = pd.DataFrame(
             {
-                "original_col1": ["indlaeggelse", "flyt ind"],
+                "original_col1": [ADMISSION_IND, "flyt ind"],
                 "original_col2": ["dept1", "dept2"],
                 "original_col3": ["2023-01-01", "2023-01-02"],
                 "original_col4": ["2023-01-02", "2023-01-03"],
@@ -127,7 +127,7 @@ class TestServiceProvider(unittest.TestCase):
             }
         )
 
-        result_df, last_patient_info = ConceptProcessor.process_adt_admissions(
+        result_df, _ = ConceptProcessor.process_adt_admissions(
             single_patient_df, self.admissions_config, self.subject_id_mapping
         )
 
@@ -149,7 +149,7 @@ class TestServiceProvider(unittest.TestCase):
         # First chunk: Patient admission and transfer
         first_chunk_df = pd.DataFrame(
             {
-                "original_col1": ["indlaeggelse", "flyt ind"],
+                "original_col1": [ADMISSION_IND, "flyt ind"],
                 "original_col2": ["dept1", "dept2"],
                 "original_col3": ["2023-01-01", "2023-01-02"],
                 "original_col4": ["2023-01-02", "2023-01-03"],
@@ -170,7 +170,7 @@ class TestServiceProvider(unittest.TestCase):
         # Second chunk: New patient starts, forcing discharge of previous patient
         second_chunk_df = pd.DataFrame(
             {
-                "original_col1": ["indlaeggelse"],
+                "original_col1": [ADMISSION_IND],
                 "original_col2": ["dept3"],
                 "original_col3": ["2023-01-04"],
                 "original_col4": ["2023-01-05"],
@@ -179,7 +179,7 @@ class TestServiceProvider(unittest.TestCase):
         )
 
         # Process second chunk with last_patient_info
-        result_df2, new_last_patient_info = ConceptProcessor.process_adt_admissions(
+        result_df2, _ = ConceptProcessor.process_adt_admissions(
             second_chunk_df,
             self.admissions_config,
             self.subject_id_mapping,

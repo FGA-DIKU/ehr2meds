@@ -2,7 +2,12 @@ from typing import Dict, Optional
 
 import pandas as pd
 
-from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, TIMESTAMP
+from ehr2meds.PREMEDS.preprocessing.constants import (
+    CODE,
+    SUBJECT_ID,
+    TIMESTAMP,
+    ADMISSION_IND,
+)
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     select_and_rename_columns,
 )
@@ -73,7 +78,7 @@ def process_patient_events(
         dept = row["section"]
         timestamp_in = row["timestamp_in"]
 
-        if event_type == "indlæggelse":
+        if event_type == ADMISSION_IND.lower():
             handle_admission_event(
                 subject_id, timestamp_in, dept, row, patient_state, events
             )

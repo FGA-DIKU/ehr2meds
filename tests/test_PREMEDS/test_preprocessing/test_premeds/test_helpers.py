@@ -3,7 +3,12 @@ import unittest
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, TIMESTAMP
+from ehr2meds.PREMEDS.preprocessing.constants import (
+    ADMISSION_IND,
+    CODE,
+    SUBJECT_ID,
+    TIMESTAMP,
+)
 from ehr2meds.PREMEDS.preprocessing.premeds.helpers import (
     add_discharge_to_last_patient,
     create_events_dataframe,
@@ -38,7 +43,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         # Sample dataframe
         self.sample_df = pd.DataFrame(
             {
-                "original_col1": ["indlaeggelse", "flyt ind"],
+                "original_col1": [ADMISSION_IND, "flyt ind"],
                 "original_col2": ["dept1", "dept2"],
                 "original_col3": ["2023-01-01", "2023-01-02"],
                 "original_col4": ["2023-01-02", "2023-01-03"],
@@ -51,7 +56,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
             "current_patient_id": 1,
             "admission_start": pd.Series(
                 {
-                    "type": "indlaeggelse",
+                    "type": ADMISSION_IND,
                     "section": "dept1",
                     "timestamp_in": "2023-01-01",
                     "timestamp_out": "2023-01-02",
@@ -155,7 +160,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         dept = "dept1"
         row = pd.Series(
             {
-                "type": "indlaeggelse",
+                "type": ADMISSION_IND,
                 "section": dept,
                 "timestamp_in": timestamp_in,
                 "timestamp_out": "2023-01-02",
@@ -183,7 +188,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         new_dept = "dept3"
         new_row = pd.Series(
             {
-                "type": "indlaeggelse",
+                "type": ADMISSION_IND,
                 "section": new_dept,
                 "timestamp_in": "2023-01-03",
                 "timestamp_out": "2023-01-04",
@@ -343,7 +348,7 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
             SUBJECT_ID: self.subject_id,
             "admission_start": {
                 "timestamp_in": pd.Timestamp("2023-01-01 10:00:00"),
-                "type": "indlaeggelse",
+                "type": ADMISSION_IND,
                 "section": "DEPT1",
             },
             "last_transfer": {

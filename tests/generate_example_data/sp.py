@@ -24,6 +24,7 @@ from tests.generate_example_data.constants import (
     LAB_SENSITIVITIES,
     LAB_ORGANISMS,
 )
+from ehr2meds.PREMEDS.preprocessing.constants import ADMISSION_IND
 
 
 def generate_diagnosis(save_dir, hashes, birthdates, deathdates, seed=0):
@@ -194,7 +195,7 @@ def generate_adt_events(save_dir, hashes, birthdates, deathdates, seed=0):
                     "Flyt_ind": current_time,
                     "Flyt_ud": next_time,
                     "Afsnit": initial_dept,
-                    "ADT_haendelse": "Indlæggelse",
+                    "ADT_haendelse": ADMISSION_IND,
                 }
             ]
 
