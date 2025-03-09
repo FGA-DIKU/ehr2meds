@@ -1,5 +1,4 @@
 import os
-from dataclasses import dataclass
 from typing import Iterator, Optional
 
 import pandas as pd
@@ -8,49 +7,59 @@ from ehr2meds.PREMEDS.preprocessing.constants import FILENAME
 from ehr2meds.PREMEDS.preprocessing.io.azure import get_data_loader
 
 
-@dataclass
-class DataConfig:
-    """Configuration for data handling"""
-
-    output_dir: str
-    file_type: str
-    datastore: Optional[str] = None
-    dump_path: Optional[str] = None
-    chunksize: Optional[int] = None
-
-
 class DataHandler:
-    """Handles data loading and saving operations"""
+    """Handles data loading and saving operations.
 
-    def __init__(self, config: DataConfig, logger, env: str, test: bool):
-        self.output_dir = config.output_dir
-        self.file_type = config.file_type
+    Args:
+        output_dir: Directory path for output files
+        file_type: Type of files to handle (e.g. 'csv', 'parquet')
+        env: Environment type ('azure' or local)
+        logger: Logger instance for logging messages
+        datastore: Optional Azure datastore name for cloud storage
+        dump_path: Optional local filesystem path for data files
+        chunksize: Optional size of chunks for processing large files
+        test: Optional flag to enable test mode with limited data
+        test_rows: Optional number of rows to load in test mode
+    """
+
+    def __init__(
+        self,
+        output_dir: str,
+        file_type: str,
+        env: str,
+        logger,
+        datastore: Optional[str] = None,
+        dump_path: Optional[str] = None,
+        chunksize: Optional[int] = None,
+        test: Optional[bool] = False,
+        test_rows: Optional[int] = 1_000_000,
+    ):
+        self.output_dir = output_dir
+        self.file_type = file_type
         self.env = env
         self.logger = logger
-        self.test = test
 
         # Initialize the appropriate data loader
         self.data_loader = get_data_loader(
             env=self.env,
-            datastore_name=config.datastore,
-            dump_path=config.dump_path,
-            chunksize=config.chunksize,
+            datastore_name=datastore,
+            dump_path=dump_path,
+            chunksize=chunksize,
+            test=test,
+            test_rows=test_rows,
             logger=logger,
         )  # return azure or standard data loader
 
     def load_pandas(
         self, filename: str, cols: Optional[list[str]] = None
     ) -> pd.DataFrame:
-        return self.data_loader.load_dataframe(
-            filename=filename, test=self.test, test_rows=1_000_000, cols=cols
-        )
+        return self.data_loader.load_dataframe(filename=filename, cols=cols)
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:
         cols = list(cfg.get("rename_columns", {}).keys())
         return self.data_loader.load_chunks(
             filename=cfg[FILENAME],
             cols=cols if len(cols) > 0 else None,
-            test=self.test,
         )
 
     def save(self, df: pd.DataFrame, filename: str, mode: str = "w") -> None:

@@ -1,11 +1,11 @@
 import pickle
-from typing import Dict, Optional, Iterator
+from typing import Dict
 
 import pandas as pd
 from tqdm import tqdm
 
 from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
-from ehr2meds.PREMEDS.preprocessing.io.data_handling import DataConfig, DataHandler
+from ehr2meds.PREMEDS.preprocessing.io.data_handling import DataHandler
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     factorize_subject_id,
     select_and_rename_columns,
@@ -27,50 +27,46 @@ class PREMEDSExtractor:
     def __init__(self, cfg, logger):
         self.cfg = cfg
         self.logger = logger
-        self.test = cfg.test
-        self.logger.info(f"test {self.test}")
-        self.initial_patients = set()
-        self.formatted_patients = set()
+        self.logger.info(f"test {cfg.test}")
         self.chunksize = cfg.get("chunksize", 500_000)
+
         # Create data handler for concepts
         self.data_handler = DataHandler(
-            DataConfig(
-                output_dir=cfg.paths.output_dir,
-                file_type=cfg.paths.file_type,
-                datastore=cfg.data_path.concepts.get("datastore"),
-                dump_path=cfg.data_path.concepts.dump_path,
-                chunksize=self.chunksize,
-            ),
-            logger,
+            output_dir=cfg.paths.output_dir,
+            file_type=cfg.paths.file_type,
+            datastore=cfg.data_path.concepts.get("datastore"),
+            dump_path=cfg.data_path.concepts.dump_path,
+            chunksize=self.chunksize,
+            test_rows=cfg.get("test_rows", 1_000_000),
+            test=cfg.test,
+            logger=logger,
             env=cfg.env,
-            test=self.test,
         )
         if cfg.get("register_concepts"):
             # Create data handler for register concepts
             self.register_data_handler = DataHandler(
-                DataConfig(
-                    output_dir=cfg.paths.output_dir,
-                    file_type=cfg.paths.file_type,
-                    datastore=cfg.data_path.register_concepts.get("datastore"),
-                    dump_path=cfg.data_path.register_concepts.dump_path,
-                    chunksize=self.chunksize,
-                ),
-                logger,
+                output_dir=cfg.paths.output_dir,
+                file_type=cfg.paths.file_type,
+                datastore=cfg.data_path.register_concepts.get("datastore"),
+                dump_path=cfg.data_path.register_concepts.dump_path,
+                chunksize=self.chunksize,
+                test_rows=cfg.get("test_rows", 1_000_000),
+                test=cfg.test,
+                logger=logger,
                 env=cfg.env,
-                test=self.test,
             )
 
             # Create data handler for mappings
             self.link_file_handler = DataHandler(
-                DataConfig(
-                    output_dir=cfg.paths.output_dir,
-                    file_type=cfg.paths.file_type,
-                    datastore=cfg.data_path.pid_link.get("datastore"),
-                    dump_path=cfg.data_path.pid_link.dump_path,
-                ),
-                logger,
+                output_dir=cfg.paths.output_dir,
+                file_type=cfg.paths.file_type,
+                datastore=cfg.data_path.pid_link.get("datastore"),
+                dump_path=cfg.data_path.pid_link.dump_path,
+                chunksize=self.chunksize,  # not used here
+                test_rows=cfg.get("test_rows", 1_000_000),
+                test=cfg.test,
+                logger=logger,
                 env=cfg.env,
-                test=self.test,
             )
 
         self.concept_processor = ConceptProcessor()
@@ -117,7 +113,7 @@ class PREMEDSExtractor:
             try:
                 if concept_type == "admissions":
                     self.format_admissions(concept_config, subject_id_mapping)
-                    continue # continue to next concept
+                    continue  # continue to next concept
                 self._process_concept_chunks(
                     concept_type, concept_config, subject_id_mapping, first_chunk=True
                 )
@@ -233,34 +229,3 @@ class PREMEDSExtractor:
             final_df = pd.DataFrame(last_patient_data["events"])
             if not final_df.empty:
                 self.data_handler.save(final_df, "admissions", mode="a")
-
-    def _load_csv_chunks(
-        self, file_path: str, cols: Optional[list[str]], test: bool
-    ) -> Iterator[pd.DataFrame]:
-        for encoding in ["iso88591", "utf8", "latin1"]:
-            for sep in [";", ","]:
-                try:
-                    # Try to read the entire CSV in chunks using a fixed encoding and delimiter
-                    for i, chunk in enumerate(
-                        pd.read_csv(
-                            file_path,
-                            sep=sep,
-                            encoding=encoding,
-                            chunksize=self.chunksize,
-                            usecols=cols,
-                        )
-                    ):
-                        if test and i >= 3:
-                            break
-                        yield chunk
-                    # If we get here, reading succeeded, so break out of the encoding loop.
-                    return
-                except Exception as e:
-                    self.logger.info(
-                        f"Failed with encoding {encoding} and sep {sep}: {str(e)}"
-                    )
-                    continue
-        # If none of the encoding/delimiter combinations work, raise an error.
-        raise ValueError(
-            f"Unable to read file {file_path} with any encoding and delimiter combination"
-        )

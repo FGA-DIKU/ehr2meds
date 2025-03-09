@@ -7,24 +7,22 @@ import pandas as pd
 class StandardDataLoader:
     """Local file system data loader"""
 
-    def __init__(self, dump_path: str, logger, chunksize: int = None):
+    def __init__(
+        self, dump_path: str, logger, chunksize: int = None, test: bool = False
+    ):
         self.dump_path = dump_path
         self.logger = logger
         self.chunksize = chunksize
+        self.test = test
 
-    def load_dataframe(
-        self, filename: str, test: bool = False, test_rows: int = 1_000_000, cols=None
-    ) -> pd.DataFrame:
+    def load_dataframe(self, filename: str, cols=None) -> pd.DataFrame:
         file_path = join(self.dump_path, filename)
         if file_path.endswith(".parquet"):
             df = pd.read_parquet(file_path, columns=cols)
         elif file_path.endswith((".csv", ".asc")):
-            df = StandardDataLoader._load_csv(file_path, cols)
+            df = self._load_csv(file_path, cols)
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
-        if test:
-            if df is not None:
-                df = df.head(test_rows)
         return df
 
     @staticmethod
@@ -48,23 +46,23 @@ class StandardDataLoader:
         return df
 
     def load_chunks(
-        self, filename: str, cols: Optional[list[str]] = None, test: bool = False
+        self, filename: str, cols: Optional[list[str]] = None
     ) -> Iterator[pd.DataFrame]:
         file_path = join(self.dump_path, filename)
 
         if file_path.endswith(".parquet"):
-            yield from self._load_parquet_chunks(file_path, cols, test)
+            yield from self._load_parquet_chunks(file_path, cols)
         elif file_path.endswith((".csv", ".asc")):
-            yield from self._load_csv_chunks(file_path, cols, test)
+            yield from self._load_csv_chunks(file_path, cols)
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
 
     def _load_parquet_chunks(
-        self, file_path: str, cols: Optional[list[str]], test: bool
+        self, file_path: str, cols: Optional[list[str]]
     ) -> Iterator[pd.DataFrame]:
         df = pd.read_parquet(file_path, columns=cols)
-        if test:
-            # In test mode, only yield up to two chunks based on self.chunksize
+        if self.test:
+            # In test mode, only yield up to two chunks based on self.chunksize for consistency with csv
             for i in range(0, len(df), self.chunksize):
                 if i >= 3 * self.chunksize:
                     break
@@ -73,7 +71,7 @@ class StandardDataLoader:
             yield df
 
     def _load_csv_chunks(
-        self, file_path: str, cols: Optional[list[str]], test: bool
+        self, file_path: str, cols: Optional[list[str]]
     ) -> Iterator[pd.DataFrame]:
         for encoding in ["iso88591", "utf8", "latin1"]:
             for sep in [";", ","]:
@@ -87,7 +85,7 @@ class StandardDataLoader:
                     )
                     for i, chunk in enumerate(chunk_iter):
                         if (
-                            test and i >= 3
+                            self.test and i >= 3
                         ):  # In test mode, yield only the first three chunks
                             break
                         yield chunk
@@ -105,7 +103,13 @@ class AzureDataLoader:
     """Azure-specific data loader"""
 
     def __init__(
-        self, datastore_name: str, dump_path: str, logger, chunksize: int = None
+        self,
+        datastore_name: str,
+        dump_path: str,
+        logger,
+        chunksize: int = None,
+        test: bool = False,
+        test_rows: int = 1_000_000,
     ):
         from ehr2meds.PREMEDS.azure_run import datastore
 
@@ -113,6 +117,10 @@ class AzureDataLoader:
         self.dump_path = dump_path
         self.logger = logger
         self.chunksize = chunksize
+        self.test = test
+        self.test_rows = (
+            test_rows  # used for testing load_dataframe (e.g. patient data)
+        )
 
     def _get_azure_dataset(self, filename: str):
         from azureml.core import Dataset
@@ -151,25 +159,23 @@ class AzureDataLoader:
     def load_dataframe(
         self,
         filename: str,
-        test: bool = False,
-        test_rows: int = 1_000_000,
         cols: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         ds = self._get_azure_dataset(filename)
-        if test:
-            ds = ds.take(test_rows)
+        if self.test:
+            ds = ds.take(self.test_rows)
         if cols:
             ds = ds.keep_columns(cols)
         return ds.to_pandas_dataframe()
 
     def load_chunks(
-        self, filename: str, test: bool = False, cols: Optional[list[str]] = None
+        self, filename: str, cols: Optional[list[str]] = None
     ) -> Iterator[pd.DataFrame]:
         ds = self._get_azure_dataset(filename)
         if cols:
             ds = ds.keep_columns(cols)
         i = 0
-        max_chunks = 2 if test else float("inf")
+        max_chunks = 3 if self.test else float("inf")
         chunks_processed = 0
 
         while chunks_processed < max_chunks:
@@ -188,14 +194,18 @@ def get_data_loader(
     datastore_name: Optional[str],
     dump_path: Optional[str],
     chunksize: Optional[int],
+    test: bool,
+    test_rows: Optional[int],
     logger,
 ):
     """Factory function to create the appropriate data loader"""
     if env == "azure":
         if datastore_name is None:
             raise ValueError("datastore_name must be provided when env is 'azure'")
-        return AzureDataLoader(datastore_name, dump_path, logger, chunksize)
+        return AzureDataLoader(
+            datastore_name, dump_path, logger, chunksize, test, test_rows
+        )
     else:
         if dump_path is None:
             raise ValueError("dump_path must be provided when env is not 'azure'")
-        return StandardDataLoader(dump_path, logger, chunksize)
+        return StandardDataLoader(dump_path, logger, chunksize, test)
