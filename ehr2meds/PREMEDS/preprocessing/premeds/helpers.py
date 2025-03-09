@@ -73,7 +73,7 @@ def process_patient_events(
         dept = row["section"]
         timestamp_in = row["timestamp_in"]
 
-        if event_type == "indlaeggelse":
+        if event_type == "indlæggelse":
             handle_admission_event(
                 subject_id, timestamp_in, dept, row, patient_state, events
             )

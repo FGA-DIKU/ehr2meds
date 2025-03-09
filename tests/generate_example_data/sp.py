@@ -194,7 +194,7 @@ def generate_adt_events(save_dir, hashes, birthdates, deathdates, seed=0):
                     "Flyt_ind": current_time,
                     "Flyt_ud": next_time,
                     "Afsnit": initial_dept,
-                    "ADT_haendelse": "Indlaeggelse",
+                    "ADT_haendelse": "Indlæggelse",
                 }
             ]
 
