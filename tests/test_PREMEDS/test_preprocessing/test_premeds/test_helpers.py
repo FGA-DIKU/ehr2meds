@@ -3,7 +3,7 @@ import unittest
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, TIMESTAMP
 from ehr2meds.PREMEDS.preprocessing.premeds.helpers import (
     add_discharge_to_last_patient,
     create_events_dataframe,
@@ -107,7 +107,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         """Test initialization of patient state."""
         # Test with last_patient_data provided
         last_patient = {
-            "subject_id": 1,
+            SUBJECT_ID: 1,
             "admission_start": "test_admission",
             "last_transfer": "test_transfer",
         }
@@ -131,7 +131,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0][CODE], "DISCHARGE_ADT")
         self.assertEqual(events[0][SUBJECT_ID], 1)
-        self.assertEqual(events[0]["timestamp"], "2023-01-03")
+        self.assertEqual(events[0][TIMESTAMP], "2023-01-03")
 
         # Test patient state is reset
         self.assertIsNone(self.patient_state["admission_start"])
@@ -257,9 +257,9 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         """Test creating events dataframe."""
         # Test with non-empty events list
         events = [
-            {SUBJECT_ID: 1, "timestamp": "2023-01-02", CODE: "ADMISSION_ADT"},
-            {SUBJECT_ID: 1, "timestamp": "2023-01-01", CODE: "DISCHARGE_ADT"},
-            {SUBJECT_ID: 2, "timestamp": "2023-01-03", CODE: "ADMISSION_ADT"},
+            {SUBJECT_ID: 1, TIMESTAMP: "2023-01-02", CODE: "ADMISSION_ADT"},
+            {SUBJECT_ID: 1, TIMESTAMP: "2023-01-01", CODE: "DISCHARGE_ADT"},
+            {SUBJECT_ID: 2, TIMESTAMP: "2023-01-03", CODE: "ADMISSION_ADT"},
         ]
 
         result = create_events_dataframe(events)
@@ -270,7 +270,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
 
         # Check sorting
         self.assertEqual(result.iloc[0][SUBJECT_ID], 1)
-        self.assertEqual(result.iloc[0]["timestamp"], "2023-01-01")
+        self.assertEqual(result.iloc[0][TIMESTAMP], "2023-01-01")
 
         # Test with empty events list
         empty_result = create_events_dataframe([])
@@ -281,7 +281,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         # Test with complete patient state
         result = prepare_last_patient_info(self.patient_state)
         self.assertIsNotNone(result)
-        self.assertEqual(result["subject_id"], 1)
+        self.assertEqual(result[SUBJECT_ID], 1)
         self.assertEqual(
             result["admission_start"].equals(self.patient_state["admission_start"]),
             True,
@@ -326,7 +326,7 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
     def test_no_transfer_data(self):
         """Test when last_transfer is None"""
         last_patient_data = {
-            "subject_id": self.subject_id,
+            SUBJECT_ID: self.subject_id,
             "admission_start": {"timestamp_in": pd.Timestamp("2023-01-01 10:00:00")},
             "last_transfer": None,
             "events": [],
@@ -340,7 +340,7 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
         """Test with valid last patient data containing transfer information"""
         # Create sample last patient data
         last_patient_data = {
-            "subject_id": self.subject_id,
+            SUBJECT_ID: self.subject_id,
             "admission_start": {
                 "timestamp_in": pd.Timestamp("2023-01-01 10:00:00"),
                 "type": "indlaeggelse",
@@ -355,22 +355,22 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
             "events": [
                 {
                     SUBJECT_ID: self.subject_id,
-                    "timestamp": pd.Timestamp("2023-01-01 10:00:00"),
+                    TIMESTAMP: pd.Timestamp("2023-01-01 10:00:00"),
                     CODE: "ADMISSION_ADT",
                 },
                 {
                     SUBJECT_ID: self.subject_id,
-                    "timestamp": pd.Timestamp("2023-01-01 10:00:00"),
+                    TIMESTAMP: pd.Timestamp("2023-01-01 10:00:00"),
                     CODE: "AFSNIT_ADT_DEPT1",
                 },
                 {
                     SUBJECT_ID: self.subject_id,
-                    "timestamp": pd.Timestamp("2023-01-01 12:00:00"),
+                    TIMESTAMP: pd.Timestamp("2023-01-01 12:00:00"),
                     CODE: "ADM_move",
                 },
                 {
                     SUBJECT_ID: self.subject_id,
-                    "timestamp": pd.Timestamp("2023-01-01 12:00:00"),
+                    TIMESTAMP: pd.Timestamp("2023-01-01 12:00:00"),
                     CODE: "AFSNIT_ADT_DEPT2",
                 },
             ],
@@ -381,13 +381,13 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
         expected_events.append(
             {
                 SUBJECT_ID: self.subject_id,
-                "timestamp": self.discharge_timestamp,
+                TIMESTAMP: self.discharge_timestamp,
                 CODE: "DISCHARGE_ADT",
             }
         )
         expected_df = (
             pd.DataFrame(expected_events)
-            .sort_values([SUBJECT_ID, "timestamp"])
+            .sort_values([SUBJECT_ID, TIMESTAMP])
             .reset_index(drop=True)
         )
 
@@ -404,7 +404,7 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
     def test_with_empty_events(self):
         """Test when events list is empty but we still need to add discharge"""
         last_patient_data = {
-            "subject_id": self.subject_id,
+            SUBJECT_ID: self.subject_id,
             "admission_start": {
                 "timestamp_in": pd.Timestamp("2023-01-01 10:00:00"),
             },
@@ -414,17 +414,6 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
             "events": [],
         }
 
-        # Expected result with just the discharge event
-        expected_df = pd.DataFrame(
-            [
-                {
-                    SUBJECT_ID: self.subject_id,
-                    "timestamp": self.discharge_timestamp,
-                    CODE: "DISCHARGE_ADT",
-                }
-            ]
-        )
-
         # Call the function
         result = add_discharge_to_last_patient(last_patient_data)
 
@@ -432,13 +421,13 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
         self.assertFalse(result.empty)
         self.assertEqual(len(result), 1)
         self.assertEqual(result.iloc[0][SUBJECT_ID], self.subject_id)
-        self.assertEqual(result.iloc[0]["timestamp"], self.discharge_timestamp)
+        self.assertEqual(result.iloc[0][TIMESTAMP], self.discharge_timestamp)
         self.assertEqual(result.iloc[0][CODE], "DISCHARGE_ADT")
 
     def test_missing_events_key(self):
         """Test when the events key is missing in the dictionary"""
         last_patient_data = {
-            "subject_id": self.subject_id,
+            SUBJECT_ID: self.subject_id,
             "admission_start": {
                 "timestamp_in": pd.Timestamp("2023-01-01 10:00:00"),
             },

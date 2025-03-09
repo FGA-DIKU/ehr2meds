@@ -64,7 +64,7 @@ class TestServiceProvider(unittest.TestCase):
         """Test processing with data from a previous chunk."""
         # Create last patient data
         last_patient_data = {
-            "subject_id": 1,
+            SUBJECT_ID: 1,
             "admission_start": pd.Series(
                 {
                     "type": "indlaeggelse",
@@ -165,7 +165,7 @@ class TestServiceProvider(unittest.TestCase):
         # Verify first chunk results
         self.assertEqual(result_df1.shape[0], 4)  # ADMISSION + dept1 + ADM_move + dept2
         self.assertIsNotNone(last_patient_info)
-        self.assertEqual(last_patient_info["subject_id"], 1)
+        self.assertEqual(last_patient_info[SUBJECT_ID], 1)
 
         # Second chunk: New patient starts, forcing discharge of previous patient
         second_chunk_df = pd.DataFrame(

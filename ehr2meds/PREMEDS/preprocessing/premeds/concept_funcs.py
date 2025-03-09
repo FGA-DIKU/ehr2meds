@@ -2,7 +2,12 @@ from typing import Dict, List, Tuple
 
 import pandas as pd
 
-from ehr2meds.PREMEDS.preprocessing.constants import CODE, MANDATORY_COLUMNS, SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.constants import (
+    CODE,
+    MANDATORY_COLUMNS,
+    SUBJECT_ID,
+    TIMESTAMP,
+)
 
 
 def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
@@ -186,8 +191,8 @@ def unroll_columns(df: pd.DataFrame, concept_config: dict) -> List[pd.DataFrame]
 
     # Required columns to keep in each unrolled dataframe
     required_cols = [SUBJECT_ID]
-    if "timestamp" in df.columns:
-        required_cols.append("timestamp")
+    if TIMESTAMP in df.columns:
+        required_cols.append(TIMESTAMP)
 
     # Keep only the columns that exist in the dataframe
     required_cols = [col for col in required_cols if col in df.columns]

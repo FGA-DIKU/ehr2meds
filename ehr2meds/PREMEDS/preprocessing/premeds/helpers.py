@@ -1,7 +1,8 @@
 from typing import Dict, Optional
+
 import pandas as pd
 
-from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID, CODE
+from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, TIMESTAMP
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     select_and_rename_columns,
 )
@@ -49,7 +50,7 @@ def finalize_previous_patient(events: list, patient_state: dict) -> None:
         events.append(
             {
                 SUBJECT_ID: patient_state["current_patient_id"],
-                "timestamp": patient_state["last_transfer"]["timestamp_out"],
+                TIMESTAMP: patient_state["last_transfer"]["timestamp_out"],
                 CODE: "DISCHARGE_ADT",
             }
         )
@@ -105,7 +106,7 @@ def handle_admission_event(
         events.append(
             {
                 SUBJECT_ID: subject_id,
-                "timestamp": patient_state["last_transfer"]["timestamp_out"],
+                TIMESTAMP: patient_state["last_transfer"]["timestamp_out"],
                 CODE: "DISCHARGE_ADT",
             }
         )
@@ -117,7 +118,7 @@ def handle_admission_event(
     events.append(
         {
             SUBJECT_ID: subject_id,
-            "timestamp": timestamp_in,
+            TIMESTAMP: timestamp_in,
             CODE: "ADMISSION_ADT",
         }
     )
@@ -126,7 +127,7 @@ def handle_admission_event(
     events.append(
         {
             SUBJECT_ID: subject_id,
-            "timestamp": timestamp_in,
+            TIMESTAMP: timestamp_in,
             CODE: f"AFSNIT_ADT_{dept}",
         }
     )
@@ -147,7 +148,7 @@ def handle_transfer_event(
         events.append(
             {
                 SUBJECT_ID: subject_id,
-                "timestamp": timestamp_in,
+                TIMESTAMP: timestamp_in,
                 CODE: "ADM_move",
             }
         )
@@ -156,7 +157,7 @@ def handle_transfer_event(
     events.append(
         {
             SUBJECT_ID: subject_id,
-            "timestamp": timestamp_in,
+            TIMESTAMP: timestamp_in,
             CODE: f"AFSNIT_ADT_{dept}",
         }
     )
@@ -171,7 +172,7 @@ def create_events_dataframe(events: list) -> pd.DataFrame:
 
     # Sort by patient and timestamp if not empty
     if not result_df.empty:
-        result_df = result_df.sort_values([SUBJECT_ID, "timestamp"])
+        result_df = result_df.sort_values([SUBJECT_ID, TIMESTAMP])
 
     return result_df
 
@@ -210,8 +211,8 @@ def add_discharge_to_last_patient(last_patient_data: Optional[dict]) -> pd.DataF
     events = last_patient_data.get("events", [])
     events.append(
         {
-            SUBJECT_ID: last_patient_data["subject_id"],
-            "timestamp": last_patient_data["last_transfer"]["timestamp_out"],
+            SUBJECT_ID: last_patient_data[SUBJECT_ID],
+            TIMESTAMP: last_patient_data["last_transfer"]["timestamp_out"],
             CODE: "DISCHARGE_ADT",
         }
     )
@@ -219,6 +220,6 @@ def add_discharge_to_last_patient(last_patient_data: Optional[dict]) -> pd.DataF
     # Convert to DataFrame
     final_df = pd.DataFrame(events)
     if not final_df.empty:
-        final_df = final_df.sort_values([SUBJECT_ID, "timestamp"])
+        final_df = final_df.sort_values([SUBJECT_ID, TIMESTAMP])
 
     return final_df

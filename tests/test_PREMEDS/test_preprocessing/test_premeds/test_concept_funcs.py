@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
+from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, TIMESTAMP
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     apply_mapping,
     check_columns,
@@ -82,7 +83,7 @@ class TestFactorizeSubjectId(unittest.TestCase):
     def setUp(self):
         self.df = pd.DataFrame(
             {
-                "subject_id": ["A", "B", "A", "C", "D"],
+                SUBJECT_ID: ["A", "B", "A", "C", "D"],
                 "value": ["a", "b", "c", "d", "e"],
             }
         )
@@ -90,7 +91,7 @@ class TestFactorizeSubjectId(unittest.TestCase):
     def test_factorize_subject_id(self):
         result, mapping = factorize_subject_id(self.df)
         expected = pd.DataFrame(
-            {"subject_id": [1, 2, 1, 3, 4], "value": ["a", "b", "c", "d", "e"]}
+            {SUBJECT_ID: [1, 2, 1, 3, 4], "value": ["a", "b", "c", "d", "e"]}
         )
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
         self.assertEqual(mapping, {"A": 1, "B": 2, "C": 3, "D": 4})
@@ -319,14 +320,14 @@ class TestConvertNumericColumns(unittest.TestCase):
 class TestMapPidsToInts(unittest.TestCase):
     def setUp(self):
         self.df = pd.DataFrame(
-            {"subject_id": ["A", "B", "A", "C", "B"], "other_col": [1, 2, 3, 4, 5]}
+            {SUBJECT_ID: ["A", "B", "A", "C", "B"], "other_col": [1, 2, 3, 4, 5]}
         )
 
     def test_map_pids_to_ints(self):
         mapping = {"A": 1, "B": 2, "C": 3, "D": 4}
         result = map_pids_to_ints(self.df, mapping)
         expected = pd.DataFrame(
-            {"subject_id": [1, 2, 1, 3, 2], "other_col": [1, 2, 3, 4, 5]}
+            {SUBJECT_ID: [1, 2, 1, 3, 2], "other_col": [1, 2, 3, 4, 5]}
         )
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
@@ -337,14 +338,14 @@ class TestCleanData(unittest.TestCase):
         # Example DataFrame based on MANDATORY_COLUMNS ['A', 'B']
         df = pd.DataFrame(
             {
-                "subject_id": [1, 2, None, 4],
-                "code": [None, 2, 3, 4],
-                "timestamp": [10, 20, 30, 40],
+                SUBJECT_ID: [1, 2, None, 4],
+                CODE: [None, 2, 3, 4],
+                TIMESTAMP: [10, 20, 30, 40],
             }
         )
         # Expected: only rows where both 'A' and 'B' are non-null (rows with index 1 and 3)
         expected = pd.DataFrame(
-            {"subject_id": [2.0, 4.0], "code": [2.0, 4.0], "timestamp": [20, 40]}
+            {SUBJECT_ID: [2.0, 4.0], CODE: [2.0, 4.0], TIMESTAMP: [20, 40]}
         )
         result = clean_data(df)
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
@@ -352,7 +353,7 @@ class TestCleanData(unittest.TestCase):
     def test_no_dropna_when_mandatory_missing(self):
         """Test that dropna is not applied when not all mandatory columns are present."""
         # Example DataFrame missing the 'B' column.
-        df = pd.DataFrame({"subject_id": [1, None, 3], "code": [10, 20, 30]})
+        df = pd.DataFrame({SUBJECT_ID: [1, None, 3], CODE: [10, 20, 30]})
         # Expected: no rows dropped based on NaN in 'B', only duplicates (if any) are removed.
         expected = df.drop_duplicates()
         result = clean_data(df)
@@ -365,15 +366,13 @@ class TestCleanData(unittest.TestCase):
         # Example DataFrame using MANDATORY_COLUMNS with duplicate rows.
         df = pd.DataFrame(
             {
-                "subject_id": [1, 1, 2, 2],
-                "code": [3, 3, 4, 4],
-                "timestamp": [10, 10, 20, 20],
+                SUBJECT_ID: [1, 1, 2, 2],
+                CODE: [3, 3, 4, 4],
+                TIMESTAMP: [10, 10, 20, 20],
             }
         )
         # Expected: one instance per duplicate row.
-        expected = pd.DataFrame(
-            {"subject_id": [1, 2], "code": [3, 4], "timestamp": [10, 20]}
-        )
+        expected = pd.DataFrame({SUBJECT_ID: [1, 2], CODE: [3, 4], TIMESTAMP: [10, 20]})
         result = clean_data(df)
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
@@ -382,15 +381,15 @@ class TestCleanData(unittest.TestCase):
         # Example DataFrame with some missing mandatory values and duplicate rows.
         df = pd.DataFrame(
             {
-                "subject_id": [1, 1, None, 2, 2, 2],
-                "code": [5, 5, 6, None, 7, 7],
-                "timestamp": [100, 100, 200, 300, 300, 300],
+                SUBJECT_ID: [1, 1, None, 2, 2, 2],
+                CODE: [5, 5, 6, None, 7, 7],
+                TIMESTAMP: [100, 100, 200, 300, 300, 300],
             }
         )
         # Expected: rows missing any mandatory value are removed and duplicates eliminated.
         # Only one row with (1,5) and one row with (2,7) should remain.
         expected = pd.DataFrame(
-            {"subject_id": [1.0, 2.0], "code": [5.0, 7.0], "timestamp": [100, 300]}
+            {SUBJECT_ID: [1.0, 2.0], CODE: [5.0, 7.0], TIMESTAMP: [100, 300]}
         )
         result = clean_data(df)
         pd.testing.assert_frame_equal(
@@ -403,8 +402,8 @@ class TestUnrollColumns(unittest.TestCase):
         """Test a single unroll column with a prefix and both required columns present."""
         df = pd.DataFrame(
             {
-                "subject_id": [1, 2],
-                "timestamp": ["2021-01-01", "2021-01-02"],
+                SUBJECT_ID: [1, 2],
+                TIMESTAMP: ["2021-01-01", "2021-01-02"],
                 "col1": ["A", "B"],
             }
         )
@@ -412,7 +411,7 @@ class TestUnrollColumns(unittest.TestCase):
         result = unroll_columns(df, concept_config)
         self.assertEqual(len(result), 1)
         unrolled_df = result[0]
-        expected_columns = ["subject_id", "timestamp", "code"]
+        expected_columns = [SUBJECT_ID, TIMESTAMP, CODE]
         self.assertEqual(list(unrolled_df.columns), expected_columns)
         self.assertListEqual(list(unrolled_df["code"]), ["P_A", "P_B"])
 
@@ -420,8 +419,8 @@ class TestUnrollColumns(unittest.TestCase):
         """Test a single unroll column without a prefix."""
         df = pd.DataFrame(
             {
-                "subject_id": [1, 2],
-                "timestamp": ["2021-01-01", "2021-01-02"],
+                SUBJECT_ID: [1, 2],
+                TIMESTAMP: ["2021-01-01", "2021-01-02"],
                 "col1": ["A", "B"],
             }
         )
@@ -429,18 +428,18 @@ class TestUnrollColumns(unittest.TestCase):
         result = unroll_columns(df, concept_config)
         self.assertEqual(len(result), 1)
         unrolled_df = result[0]
-        expected_columns = ["subject_id", "timestamp", "code"]
+        expected_columns = [SUBJECT_ID, TIMESTAMP, CODE]
         self.assertEqual(list(unrolled_df.columns), expected_columns)
         self.assertListEqual(list(unrolled_df["code"]), ["A", "B"])
 
     def test_unroll_without_timestamp(self):
         """Test that when the input DataFrame lacks a timestamp, only the subject_id and code columns are returned."""
-        df = pd.DataFrame({"subject_id": [1, 2], "col1": ["X", "Y"]})
+        df = pd.DataFrame({SUBJECT_ID: [1, 2], "col1": ["X", "Y"]})
         concept_config = {"unroll_columns": [{"column": "col1", "prefix": "Z_"}]}
         result = unroll_columns(df, concept_config)
         self.assertEqual(len(result), 1)
         unrolled_df = result[0]
-        expected_columns = ["subject_id", "code"]
+        expected_columns = [SUBJECT_ID, CODE]
         self.assertEqual(list(unrolled_df.columns), expected_columns)
         self.assertListEqual(list(unrolled_df["code"]), ["Z_X", "Z_Y"])
 
@@ -448,8 +447,8 @@ class TestUnrollColumns(unittest.TestCase):
         """Test unrolling multiple columns simultaneously."""
         df = pd.DataFrame(
             {
-                "subject_id": [1, 2, 3],
-                "timestamp": ["2021-01-01", "2021-01-02", "2021-01-03"],
+                SUBJECT_ID: [1, 2, 3],
+                TIMESTAMP: ["2021-01-01", "2021-01-02", "2021-01-03"],
                 "col1": ["A", "B", "C"],
                 "col2": ["D", "E", "F"],
             }
@@ -464,7 +463,7 @@ class TestUnrollColumns(unittest.TestCase):
         self.assertEqual(len(result), 2)
         # Validate first unrolled DataFrame (col1)
         unrolled_df1 = result[0]
-        expected_columns = ["subject_id", "timestamp", "code"]
+        expected_columns = [SUBJECT_ID, TIMESTAMP, CODE]
         self.assertEqual(list(unrolled_df1.columns), expected_columns)
         self.assertListEqual(list(unrolled_df1["code"]), ["P1_A", "P1_B", "P1_C"])
         # Validate second unrolled DataFrame (col2)
@@ -476,8 +475,8 @@ class TestUnrollColumns(unittest.TestCase):
         """Test that if the specified column does not exist in the DataFrame, it is ignored."""
         df = pd.DataFrame(
             {
-                "subject_id": [1, 2],
-                "timestamp": ["2021-01-01", "2021-01-02"],
+                SUBJECT_ID: [1, 2],
+                TIMESTAMP: ["2021-01-01", "2021-01-02"],
                 "col1": ["A", "B"],
             }
         )
@@ -489,8 +488,8 @@ class TestUnrollColumns(unittest.TestCase):
         """Test that an empty unroll_columns list returns an empty list."""
         df = pd.DataFrame(
             {
-                "subject_id": [1, 2],
-                "timestamp": ["2021-01-01", "2021-01-02"],
+                SUBJECT_ID: [1, 2],
+                TIMESTAMP: ["2021-01-01", "2021-01-02"],
                 "col1": ["A", "B"],
             }
         )
