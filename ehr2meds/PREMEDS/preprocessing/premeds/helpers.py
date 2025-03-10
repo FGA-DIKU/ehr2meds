@@ -7,6 +7,10 @@ from ehr2meds.PREMEDS.preprocessing.constants import (
     SUBJECT_ID,
     TIMESTAMP,
     ADMISSION_IND,
+    ADMISSION_ADT,
+    DISCHARGE_ADT,
+    MOVE_ADT,
+    DEPT_PREFIX,
 )
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     select_and_rename_columns,
@@ -56,7 +60,7 @@ def finalize_previous_patient(events: list, patient_state: dict) -> None:
             {
                 SUBJECT_ID: patient_state["current_patient_id"],
                 TIMESTAMP: patient_state["last_transfer"]["timestamp_out"],
-                CODE: "DISCHARGE_ADT",
+                CODE: DISCHARGE_ADT,
             }
         )
 
@@ -112,7 +116,7 @@ def handle_admission_event(
             {
                 SUBJECT_ID: subject_id,
                 TIMESTAMP: patient_state["last_transfer"]["timestamp_out"],
-                CODE: "DISCHARGE_ADT",
+                CODE: DISCHARGE_ADT,
             }
         )
 
@@ -124,7 +128,7 @@ def handle_admission_event(
         {
             SUBJECT_ID: subject_id,
             TIMESTAMP: timestamp_in,
-            CODE: "ADMISSION_ADT",
+            CODE: ADMISSION_ADT,
         }
     )
 
@@ -133,7 +137,7 @@ def handle_admission_event(
         {
             SUBJECT_ID: subject_id,
             TIMESTAMP: timestamp_in,
-            CODE: f"AFSNIT_ADT_{dept}",
+            CODE: f"{DEPT_PREFIX}{dept}",
         }
     )
 
@@ -154,7 +158,7 @@ def handle_transfer_event(
             {
                 SUBJECT_ID: subject_id,
                 TIMESTAMP: timestamp_in,
-                CODE: "ADM_move",
+                CODE: MOVE_ADT,
             }
         )
 
@@ -163,7 +167,7 @@ def handle_transfer_event(
         {
             SUBJECT_ID: subject_id,
             TIMESTAMP: timestamp_in,
-            CODE: f"AFSNIT_ADT_{dept}",
+            CODE: f"{DEPT_PREFIX}{dept}",
         }
     )
 
@@ -218,7 +222,7 @@ def add_discharge_to_last_patient(last_patient_data: Optional[dict]) -> pd.DataF
         {
             SUBJECT_ID: last_patient_data[SUBJECT_ID],
             TIMESTAMP: last_patient_data["last_transfer"]["timestamp_out"],
-            CODE: "DISCHARGE_ADT",
+            CODE: DISCHARGE_ADT,
         }
     )
 
