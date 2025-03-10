@@ -1,7 +1,7 @@
-test: false
+test: true
 env: local
 run_name: MEDS
-chunksize: 5_000
+chunksize: 1000
 paths:
   output_dir: outputs/preMEDS
   file_type: csv 

@@ -30,7 +30,7 @@ concepts:
       Flyt_ud: timestamp_out
       Afsnit: section
       ADT_haendelse: type
-    use_adm_move: false
+    use_adm_move: true # also save all move events
 
   diagnosis:
     filename: CPMI_Diagnoser.parquet
