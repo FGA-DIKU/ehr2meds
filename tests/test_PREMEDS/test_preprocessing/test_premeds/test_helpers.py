@@ -180,7 +180,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         # Should create 2 events (ADMISSION_ADT and department)
         self.assertEqual(len(events), 2)
         self.assertEqual(events[0][CODE], "ADMISSION_ADT")
-        self.assertEqual(events[1][CODE], f"AFSNIT_ADT_{dept}")
+        self.assertEqual(events[1][CODE], f"AFSNIT_ADT/{dept}")
 
         # Test with existing admission
         events = []
@@ -203,7 +203,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         self.assertEqual(len(events), 3)
         self.assertEqual(events[0][CODE], "DISCHARGE_ADT")
         self.assertEqual(events[1][CODE], "ADMISSION_ADT")
-        self.assertEqual(events[2][CODE], f"AFSNIT_ADT_{new_dept}")
+        self.assertEqual(events[2][CODE], f"AFSNIT_ADT/{new_dept}")
 
     def test_handle_transfer_event(self):
         """Test handling a transfer event."""
@@ -233,8 +233,8 @@ class TestAdtProcessingFunctions(unittest.TestCase):
 
         # Should create 2 events (ADM_move and department)
         self.assertEqual(len(events), 2)
-        self.assertEqual(events[0][CODE], "ADM_move")
-        self.assertEqual(events[1][CODE], f"AFSNIT_ADT_{dept}")
+        self.assertEqual(events[0][CODE], "MOVE_ADT")
+        self.assertEqual(events[1][CODE], f"AFSNIT_ADT/{dept}")
 
         # Test with save_adm_move=False
         events = []
@@ -253,7 +253,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
 
         # Should create only 1 event (department only)
         self.assertEqual(len(events), 1)
-        self.assertEqual(events[0][CODE], f"AFSNIT_ADT_{dept}")
+        self.assertEqual(events[0][CODE], f"AFSNIT_ADT/{dept}")
 
         # Verify last_transfer was updated
         self.assertEqual(self.patient_state["last_transfer"].equals(row), True)

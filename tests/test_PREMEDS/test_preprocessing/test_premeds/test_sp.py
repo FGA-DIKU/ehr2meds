@@ -94,12 +94,12 @@ class TestServiceProvider(unittest.TestCase):
         )
 
         # Check that events were generated correctly
-        self.assertEqual(result_df.shape[0], 2)  # ADM_move + AFSNIT_ADT_next_dept
+        self.assertEqual(result_df.shape[0], 2)  # ADM_move + AFSNIT_ADT/next_dept
 
         # Verify event types
         codes = list(result_df[CODE])
-        self.assertEqual(codes[0], "ADM_move")
-        self.assertEqual(codes[1], "AFSNIT_ADT_next_dept")
+        self.assertEqual(codes[0], "MOVE_ADT")
+        self.assertEqual(codes[1], "AFSNIT_ADT/next_dept")
 
     def test_process_adt_admissions_empty_df(self):
         """Test processing with an empty DataFrame."""
@@ -140,9 +140,9 @@ class TestServiceProvider(unittest.TestCase):
         # Check event sequence
         codes = list(result_df[CODE])
         self.assertEqual(codes[0], "ADMISSION_ADT")
-        self.assertEqual(codes[1], "AFSNIT_ADT_dept1")
-        self.assertEqual(codes[2], "ADM_move")
-        self.assertEqual(codes[3], "AFSNIT_ADT_dept2")
+        self.assertEqual(codes[1], "AFSNIT_ADT/dept1")
+        self.assertEqual(codes[2], "MOVE_ADT")
+        self.assertEqual(codes[3], "AFSNIT_ADT/dept2")
 
     def test_process_adt_admissions_discharge_handling(self):
         """Test that discharge information is correctly handled across chunks."""
@@ -201,7 +201,7 @@ class TestServiceProvider(unittest.TestCase):
         )  # Discharge event should be for patient1
         self.assertEqual(codes[1], "ADMISSION_ADT")  # Then admission of new patient
         self.assertEqual(
-            codes[2], f"AFSNIT_ADT_dept3"
+            codes[2], f"AFSNIT_ADT/dept3"
         )  # Then department for new patient
         self.assertEqual(
             result_df2[SUBJECT_ID].iloc[1], 2
