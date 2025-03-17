@@ -91,10 +91,10 @@ class TestFactorizeSubjectId(unittest.TestCase):
     def test_factorize_subject_id(self):
         result, mapping = factorize_subject_id(self.df)
         expected = pd.DataFrame(
-            {SUBJECT_ID: [1, 2, 1, 3, 4], "value": ["a", "b", "c", "d", "e"]}
+            {SUBJECT_ID: [2, 3, 2, 4, 5], "value": ["a", "b", "c", "d", "e"]}
         )
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
-        self.assertEqual(mapping, {"A": 1, "B": 2, "C": 3, "D": 4})
+        self.assertEqual(mapping, {"A": 2, "B": 3, "C": 4, "D": 5})
 
 
 class TestApplyMapping(unittest.TestCase):
