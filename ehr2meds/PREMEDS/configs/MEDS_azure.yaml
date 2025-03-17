@@ -49,13 +49,13 @@ concepts:
     filename: CPMI_Procedurer.parquet
     rename_columns:
       ProcedureCode: code
-      ProcedureName: fill_code
+      # ProcedureName: fill_code
       ServiceDatetime: timestamp
       ServiceDate: fill_timestamp
       CPR_hash: subject_id
     fillna:
-      code:
-        column: fill_code
+      #code:
+       # column: fill_code
       timestamp:
         column: fill_timestamp
     code_prefix: "P/"
@@ -77,12 +77,12 @@ concepts:
     rename_columns:
       BestOrd: code
       Prøvetagningstidspunkt: timestamp
-      Bestillingsdato: fill_timestamp
+      # Bestillingsdato: fill_timestamp
       Resultatværdi: numeric_value
       CPR_hash: subject_id
     fillna:
-      timestamp:
-        column: fill_timestamp
+      #timestamp:
+      #  column: fill_timestamp
     code_prefix: "L/"
     numeric_columns: [numeric_value]
 
@@ -91,7 +91,7 @@ register_concepts:
     filename: diagnoser.asc
     rename_columns:
       diagnosekode: code
-      diagnosetype: code_type
+      # diagnosetype: code_type
       dw_ek_kontakt: contact_id
 
     code_prefix: "RD/"
