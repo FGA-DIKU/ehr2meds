@@ -1,3 +1,4 @@
+import os
 from os.path import join
 from typing import Iterator, Optional
 
@@ -71,6 +72,8 @@ class StandardDataLoader:
     def _load_csv_chunks(
         self, file_path: str, cols: Optional[list[str]]
     ) -> Iterator[pd.DataFrame]:
+        if not os.path.exists(file_path):
+            raise ValueError(f"File {file_path} does not exist")
         for encoding in ["iso88591", "utf8", "latin1"]:
             for sep in [";", ","]:
                 try:
@@ -130,6 +133,8 @@ class AzureDataLoader:
     def _get_csv_dataset(self, file_path: str):
         import mltable
 
+        if not os.path.exists(join(self.path, file_path)):
+            raise ValueError(f"File {file_path} does not exist")
         encodings = ["iso88591", "utf8", "latin1"]
         delimiters = [";", ","]
         for encoding in encodings:
