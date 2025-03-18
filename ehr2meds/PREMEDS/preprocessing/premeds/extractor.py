@@ -3,7 +3,7 @@ from typing import Dict
 
 import pandas as pd
 from tqdm import tqdm
-
+from os.path import split
 from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
 from ehr2meds.PREMEDS.preprocessing.io.data_handling import DataHandler
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
@@ -59,7 +59,7 @@ class PREMEDSExtractor:
             self.link_file_handler = DataHandler(
                 output_dir=cfg.paths.output,
                 file_type=cfg.write_file_type,
-                path=cfg.paths.pid_link,
+                path=split(cfg.paths.pid_link)[0],
                 chunksize=self.chunksize,  # not used here
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,
@@ -153,8 +153,8 @@ class PREMEDSExtractor:
                 subject_id_mapping,
                 self.register_data_handler,
                 register_sp_link,
-                join_link_col=self.cfg.data_path.pid_link.join_col,  #  for linking to sp data
-                target_link_col=self.cfg.data_path.pid_link.target_col,  #  for linking to sp data
+                join_link_col=self.cfg.pid_link.join_col,  #  for linking to sp data
+                target_link_col=self.cfg.pid_link.target_col,  #  for linking to sp data
             )
 
             self._safe_save(
@@ -193,9 +193,10 @@ class PREMEDSExtractor:
             )
 
     def _get_register_sp_link(self) -> pd.DataFrame:
-        pid_link_cfg = self.cfg.data_path.pid_link
+        pid_link_cfg = self.cfg.pid_link
         register_sp_link = self.link_file_handler.load_pandas(
-            pid_link_cfg.filename, cols=[pid_link_cfg.join_col, pid_link_cfg.target_col]
+            split(self.cfg.paths.pid_link)[1],
+            cols=[pid_link_cfg.join_col, pid_link_cfg.target_col],
         )
         return register_sp_link
 
