@@ -19,19 +19,8 @@ OUTPUTS = {
     }
 }
 
-
-def main(config_path: str) -> None:
-    """
-    Main function for running the PREMEDS pipeline.
-
-    :param config_path: Path to configuration file.
-    """
-    from ehr2meds.PREMEDS import run_pipeline
-
-    run_pipeline(config_path)
-
-
 if __name__ == "__main__":
-    from ..util import run_main
+    from util import run_main
+    from ehr2meds.PREMEDS import main_azure
 
-    run_main(main, INPUTS, OUTPUTS)
+    run_main(main_azure.run_pre_MEDS, INPUTS, OUTPUTS)
