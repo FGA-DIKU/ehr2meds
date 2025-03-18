@@ -133,6 +133,7 @@ register_concepts:
     filename: epikur.parquet
     rename_columns:
       PID: subject_id
+      atc: code
       vnr: vnr_code
       eksd: timestamp
     mappings:
@@ -141,7 +142,7 @@ register_concepts:
         via_file: laegemiddeloplysninger.asc
         join_on: VNR
         target_column: PNAME
-        rename_to: code
+        rename_to: drugname
         drop_source: false
     code_prefix: "RM/"
 
@@ -170,7 +171,7 @@ register_concepts:
     filename: procedurer_andre.asc
     rename_columns:
       procedurekode: code
-      proceduretype: procedure_type
+      # proceduretype: procedure_type
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
