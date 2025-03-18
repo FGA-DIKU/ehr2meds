@@ -144,7 +144,7 @@ class AzureDataLoader:
             for delimiter in delimiters:
                 try:
                     return mltable.from_delimited_files(
-                        path=join(self.path, file_path),
+                        [{"file": join(self.path, file_path)}],
                         separator=delimiter,
                         encoding=encoding,
                     )
