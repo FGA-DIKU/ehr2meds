@@ -100,7 +100,8 @@ class StandardDataLoader:
                     continue
         raise ValueError(f"Unable to read file {file_path} with any encoding")
 
-    def _check_file_exists(self, file_path: str):
+    @staticmethod
+    def _check_file_exists(file_path: str):
         if not os.path.exists(file_path):
             raise ValueError(f"File {file_path} does not exist")
 
@@ -126,6 +127,7 @@ class AzureDataLoader:
         import mltable
 
         logger.info(f"Loading dataset from {self.path}")
+        StandardDataLoader._check_file_exists(join(self.path, filename))
         if filename.endswith(".parquet"):
             return mltable.from_parquet_files([{"file": join(self.path, filename)}])
         elif filename.endswith((".csv", ".asc")):
