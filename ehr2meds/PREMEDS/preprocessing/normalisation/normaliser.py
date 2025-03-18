@@ -1,4 +1,5 @@
 from os.path import dirname, join, split
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -27,52 +28,64 @@ class Normaliser:
 
         # Load distribution data
         print("Getting lab distribution")
-        dist = self.get_lab_dist()
+        dist = self.get_lab_values()
+        self._process_distribution_data(dist)
 
-        # Process distribution data based on normalization type
+    def _process_distribution_data(self, dist: Dict[str, List[float]]) -> None:
+        """Process distribution data based on normalization type."""
         if self.normalisation_type == "Min_max":
-            self.min_max_vals = {
-                concept: (
-                    (
-                        np.percentile(dist[concept], 0.01 * 100)
-                        if len(dist[concept]) > 1
-                        else dist[concept][0]
-                    ),
-                    (
-                        np.percentile(dist[concept], 0.99 * 100)
-                        if len(dist[concept]) > 1
-                        else dist[concept][0]
-                    ),
-                )
-                for concept in dist
-                if dist[concept]
-            }
+            self._process_minmax_distribution(dist)
         elif self.normalisation_type == "Categorise":
-            self.quantiles = {
-                concept: (
-                    np.percentile(sorted(dist[concept]), [25, 50, 75])
-                    if len(dist[concept]) > 0
-                    else (0, 0, 0)
-                )
-                for concept in dist
-            }
+            self._process_category_distribution(dist)
         elif self.normalisation_type == "Quantiles":
-            self.n_quantiles = cfg.data["n_quantiles"]
-            self.quantiles = {
-                concept: (
-                    [
-                        np.percentile(sorted(dist[concept]), i)
-                        for i in np.linspace(
-                            100 / self.n_quantiles, 100, self.n_quantiles
-                        )
-                    ]
-                    if len(dist[concept]) > 0
-                    else [0] * self.n_quantiles
-                )
-                for concept in dist
-            }
+            self._process_quantile_distribution(dist)
         else:
             raise ValueError("Invalid type of normalisation")
+
+    def _process_minmax_distribution(self, dist: Dict[str, List[float]]) -> None:
+        """Process distribution data for min-max normalization."""
+        self.min_max_vals = {
+            concept: (
+                (
+                    np.percentile(dist[concept], 0.01 * 100)
+                    if len(dist[concept]) > 1
+                    else dist[concept][0]
+                ),
+                (
+                    np.percentile(dist[concept], 0.99 * 100)
+                    if len(dist[concept]) > 1
+                    else dist[concept][0]
+                ),
+            )
+            for concept in dist
+            if dist[concept]
+        }
+
+    def _process_category_distribution(self, dist: Dict[str, List[float]]) -> None:
+        """Process distribution data for categorization."""
+        self.quantiles = {
+            concept: (
+                np.percentile(sorted(dist[concept]), [25, 50, 75])
+                if len(dist[concept]) > 0
+                else (0, 0, 0)
+            )
+            for concept in dist
+        }
+
+    def _process_quantile_distribution(self, dist: Dict[str, List[float]]) -> None:
+        """Process distribution data for quantile normalization."""
+        self.n_quantiles = self.cfg.data["n_quantiles"]
+        self.quantiles = {
+            concept: (
+                [
+                    np.percentile(sorted(dist[concept]), i)
+                    for i in np.linspace(100 / self.n_quantiles, 100, self.n_quantiles)
+                ]
+                if len(dist[concept]) > 0
+                else [0] * self.n_quantiles
+            )
+            for concept in dist
+        }
 
     def __call__(self):
         print("Normalising data")
@@ -84,23 +97,29 @@ class Normaliser:
             ),
             desc="Processing chunks",
         ):
-            if "Column1" in chunk.columns:
-                chunk = chunk.drop(columns="Column1")
-            chunk = chunk.reset_index(drop=True)
-            chunk_processed = self.process_chunk(chunk)
-
-            # Save processed chunk
-
-            mode = "w" if counter == 0 else "a"
-            save_path = join(cfg.paths.output_dir, cfg.file_name)
-            if cfg.file_name.endswith(".parquet"):
-                chunk_processed.to_parquet(save_path, index=False, mode=mode)
-            else:
-                chunk_processed.to_csv(save_path, index=False, mode=mode)
+            chunk = self._prepare_chunk(chunk, counter)
+            self._save_chunk(chunk, counter)
 
             counter += 1
 
-    def get_lab_dist(self):
+    def _prepare_chunk(self, chunk: pd.DataFrame, counter: int) -> pd.DataFrame:
+        """Prepare and process a single chunk of data."""
+        if "Column1" in chunk.columns:
+            chunk = chunk.drop(columns="Column1")
+        chunk = chunk.reset_index(drop=True)
+        self.logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+        return self.process_chunk(chunk)
+
+    def _save_chunk(self, chunk: pd.DataFrame, counter: int) -> None:
+        """Save a processed chunk to file."""
+        save_path = join(self.cfg.paths.output_dir, self.cfg.file_name)
+        mode = "w" if counter == 0 else "a"
+        if self.cfg.file_name.endswith(".parquet"):
+            chunk.to_parquet(save_path, index=False, mode=mode)
+        else:
+            chunk.to_csv(save_path, index=False, mode=mode)
+
+    def get_lab_values(self):
         self.logger.info("Getting lab distribution")
         lab_val_dict = {}
         counter = 0
