@@ -96,7 +96,7 @@ class PREMEDSExtractor:
 
         df, hash_to_int_map = factorize_subject_id(df)
         # Save the mapping for reference.
-        with open(f"{self.cfg.paths.output_dir}/hash_to_integer_map.pkl", "wb") as f:
+        with open(f"{self.cfg.paths.output}/hash_to_integer_map.pkl", "wb") as f:
             pickle.dump(hash_to_int_map, f)
 
         df = df.dropna(subset=[SUBJECT_ID], how="any")

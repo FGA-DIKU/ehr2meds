@@ -31,5 +31,5 @@ jobs:
             - name: Extract data
               run: |
                 source .venv/bin/activate
-                python -m ehr2meds.PREMEDS.main_azure --config MEDS_local
+                python -m ehr2meds.PREMEDS.main_azure --config ehr2meds/PREMEDS/configs/MEDS_local.yaml
   
