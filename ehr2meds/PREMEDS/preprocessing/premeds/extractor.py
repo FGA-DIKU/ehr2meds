@@ -33,10 +33,9 @@ class PREMEDSExtractor:
 
         # Create data handler for concepts
         self.data_handler = DataHandler(
-            output_dir=cfg.paths.output_dir,
-            file_type=cfg.paths.file_type,
-            datastore=cfg.data_path.concepts.get("datastore"),
-            dump_path=cfg.data_path.concepts.dump_path,
+            output_dir=cfg.paths.output,
+            file_type=cfg.write_file_type,
+            path=cfg.paths.concepts,
             chunksize=self.chunksize,
             test_rows=cfg.get("test_rows", 1_000_000),
             test=cfg.test,
@@ -46,10 +45,9 @@ class PREMEDSExtractor:
         if cfg.get("register_concepts"):
             # Create data handler for register concepts
             self.register_data_handler = DataHandler(
-                output_dir=cfg.paths.output_dir,
-                file_type=cfg.paths.file_type,
-                datastore=cfg.data_path.register_concepts.get("datastore"),
-                dump_path=cfg.data_path.register_concepts.dump_path,
+                output_dir=cfg.paths.output,
+                file_type=cfg.write_file_type,
+                path=cfg.paths.register_concepts,
                 chunksize=self.chunksize,
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,
@@ -59,10 +57,9 @@ class PREMEDSExtractor:
 
             # Create data handler for mappings
             self.link_file_handler = DataHandler(
-                output_dir=cfg.paths.output_dir,
-                file_type=cfg.paths.file_type,
-                datastore=cfg.data_path.pid_link.get("datastore"),
-                dump_path=cfg.data_path.pid_link.dump_path,
+                output_dir=cfg.paths.output,
+                file_type=cfg.write_file_type,
+                path=cfg.paths.pid_link,
                 chunksize=self.chunksize,  # not used here
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,

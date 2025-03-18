@@ -7,16 +7,14 @@ import pandas as pd
 class StandardDataLoader:
     """Local file system data loader"""
 
-    def __init__(
-        self, dump_path: str, logger, chunksize: int = None, test: bool = False
-    ):
-        self.dump_path = dump_path
+    def __init__(self, path: str, logger, chunksize: int = None, test: bool = False):
+        self.path = path
         self.logger = logger
         self.chunksize = chunksize
         self.test = test
 
     def load_dataframe(self, filename: str, cols=None) -> pd.DataFrame:
-        file_path = join(self.dump_path, filename)
+        file_path = join(self.path, filename)
         if file_path.endswith(".parquet"):
             df = pd.read_parquet(file_path, columns=cols)
         elif file_path.endswith((".csv", ".asc")):
@@ -48,7 +46,7 @@ class StandardDataLoader:
     def load_chunks(
         self, filename: str, cols: Optional[list[str]] = None
     ) -> Iterator[pd.DataFrame]:
-        file_path = join(self.dump_path, filename)
+        file_path = join(self.path, filename)
 
         if file_path.endswith(".parquet"):
             yield from self._load_parquet_chunks(file_path, cols)
@@ -104,17 +102,13 @@ class AzureDataLoader:
 
     def __init__(
         self,
-        datastore_name: str,
-        dump_path: str,
+        path: str,
         logger,
         chunksize: int = None,
         test: bool = False,
         test_rows: int = 1_000_000,
     ):
-        from ehr2meds.PREMEDS.azure_run import datastore
-
-        self.datastore = datastore(name=datastore_name)
-        self.dump_path = dump_path
+        self.path = path
         self.logger = logger
         self.chunksize = chunksize
         self.test = test
@@ -123,27 +117,26 @@ class AzureDataLoader:
         )
 
     def _get_azure_dataset(self, filename: str):
-        from azureml.core import Dataset
+        import mltable
 
-        file_path = join(self.dump_path, filename)
-        self.logger.info(f"Loading dataset from {self.datastore} at {file_path}")
+        self.logger.info(f"Loading dataset from {self.path}")
         if filename.endswith(".parquet"):
-            return Dataset.Tabular.from_parquet_files(path=(self.datastore, file_path))
+            return mltable.from_parquet_files([{"file": join(self.path, filename)}])
         elif filename.endswith((".csv", ".asc")):
-            return self._get_csv_dataset(file_path)
+            return self._get_csv_dataset(filename)
         else:
-            raise ValueError(f"Unsupported file type: {file_path}")
+            raise ValueError(f"Unsupported file type: {filename}")
 
     def _get_csv_dataset(self, file_path: str):
-        from azureml.core import Dataset
+        import mltable
 
         encodings = ["iso88591", "utf8", "latin1"]
         delimiters = [";", ","]
         for encoding in encodings:
             for delimiter in delimiters:
                 try:
-                    return Dataset.Tabular.from_delimited_files(
-                        path=(self.datastore, file_path),
+                    return mltable.from_delimited_files(
+                        path=join(self.path, file_path),
                         separator=delimiter,
                         encoding=encoding,
                     )
@@ -161,26 +154,30 @@ class AzureDataLoader:
         filename: str,
         cols: Optional[list[str]] = None,
     ) -> pd.DataFrame:
-        ds = self._get_azure_dataset(filename)
+        import mltable
+
+        tbl: mltable.MLTable = self._get_azure_dataset(filename)
         if self.test:
-            ds = ds.take(self.test_rows)
+            tbl = tbl.take(self.test_rows)
         if cols:
-            ds = ds.keep_columns(cols)
-        return ds.to_pandas_dataframe()
+            tbl = tbl.keep_columns(cols)
+        return tbl.to_pandas_dataframe()
 
     def load_chunks(
         self, filename: str, cols: Optional[list[str]] = None
     ) -> Iterator[pd.DataFrame]:
-        ds = self._get_azure_dataset(filename)
+        import mltable
+
+        tbl: mltable.MLTable = self._get_azure_dataset(filename)
         if cols:
-            ds = ds.keep_columns(cols)
+            tbl = tbl.keep_columns(cols)
         i = 0
         max_chunks = 3 if self.test else float("inf")
         chunks_processed = 0
 
         while chunks_processed < max_chunks:
             self.logger.info(f"Loading chunk {i}")
-            chunk = ds.skip(i * self.chunksize).take(self.chunksize)
+            chunk = tbl.skip(i * self.chunksize).take(self.chunksize)
             df = chunk.to_pandas_dataframe()
             if df.empty:
                 break
@@ -191,8 +188,7 @@ class AzureDataLoader:
 
 def get_data_loader(
     env: str,
-    datastore_name: Optional[str],
-    dump_path: Optional[str],
+    path: str,
     chunksize: Optional[int],
     test: bool,
     test_rows: Optional[int],
@@ -200,12 +196,6 @@ def get_data_loader(
 ):
     """Factory function to create the appropriate data loader"""
     if env == "azure":
-        if datastore_name is None:
-            raise ValueError("datastore_name must be provided when env is 'azure'")
-        return AzureDataLoader(
-            datastore_name, dump_path, logger, chunksize, test, test_rows
-        )
+        return AzureDataLoader(path, logger, chunksize, test, test_rows)
     else:
-        if dump_path is None:
-            raise ValueError("dump_path must be provided when env is not 'azure'")
-        return StandardDataLoader(dump_path, logger, chunksize, test)
+        return StandardDataLoader(path, logger, chunksize, test)

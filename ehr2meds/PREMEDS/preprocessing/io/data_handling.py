@@ -28,8 +28,7 @@ class DataHandler:
         file_type: str,
         env: str,
         logger,
-        datastore: Optional[str] = None,
-        dump_path: Optional[str] = None,
+        path: str,
         chunksize: Optional[int] = None,
         test: Optional[bool] = False,
         test_rows: Optional[int] = 1_000_000,
@@ -42,8 +41,7 @@ class DataHandler:
         # Initialize the appropriate data loader
         self.data_loader = get_data_loader(
             env=self.env,
-            datastore_name=datastore,
-            dump_path=dump_path,
+            path=path,
             chunksize=chunksize,
             test=test,
             test_rows=test_rows,
