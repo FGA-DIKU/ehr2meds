@@ -18,6 +18,7 @@ class StandardDataLoader:
 
     def load_dataframe(self, filename: str, cols=None) -> pd.DataFrame:
         file_path = join(self.path, filename)
+        self._check_file_exists(file_path)
         if file_path.endswith(".parquet"):
             df = pd.read_parquet(file_path, columns=cols)
         elif file_path.endswith((".csv", ".asc")):
@@ -50,7 +51,7 @@ class StandardDataLoader:
         self, filename: str, cols: Optional[list[str]] = None
     ) -> Iterator[pd.DataFrame]:
         file_path = join(self.path, filename)
-
+        self._check_file_exists(file_path)
         if file_path.endswith(".parquet"):
             yield from self._load_parquet_chunks(file_path, cols)
         elif file_path.endswith((".csv", ".asc")):
@@ -74,8 +75,6 @@ class StandardDataLoader:
     def _load_csv_chunks(
         self, file_path: str, cols: Optional[list[str]]
     ) -> Iterator[pd.DataFrame]:
-        if not os.path.exists(file_path):
-            raise ValueError(f"File {file_path} does not exist")
         for encoding in ["iso88591", "utf8", "latin1"]:
             for sep in [";", ","]:
                 try:
@@ -100,6 +99,10 @@ class StandardDataLoader:
                     )
                     continue
         raise ValueError(f"Unable to read file {file_path} with any encoding")
+
+    def _check_file_exists(self, file_path: str):
+        if not os.path.exists(file_path):
+            raise ValueError(f"File {file_path} does not exist")
 
 
 class AzureDataLoader:
