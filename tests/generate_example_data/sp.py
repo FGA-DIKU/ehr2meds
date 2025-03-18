@@ -147,7 +147,9 @@ def generate_labtests(save_dir, hashes, birthdates, deathdates, seed=0):
             "Bestillingsdato": dates.dt.date,
             "Prøvetagningstidspunkt": dates,
             "Resultatdato": results_date,
-            "Resultatværdi": [random.choice(LAB_RESULTS) for _ in range(total_concepts)],
+            "Resultatværdi": [
+                random.choice(LAB_RESULTS) for _ in range(total_concepts)
+            ],
             "Antibiotika": [
                 random.choice(LAB_ANTIBIOTICS) for _ in range(total_concepts)
             ],
