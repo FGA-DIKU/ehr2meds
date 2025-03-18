@@ -1,5 +1,4 @@
 import argparse
-import logging
 import pathlib
 import shutil
 from os.path import join
