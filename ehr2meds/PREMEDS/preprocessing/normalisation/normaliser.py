@@ -16,20 +16,42 @@ class Normaliser:
         self.logger.info(f"test {self.test}")
         self.normalisation_type = cfg.data["norm_type"]
 
-        # Initialize data loader based on environment
+        self._init_data_loader()
+
+        # Initialize distribution data placeholders
+        self.min_max_vals = None
+        self.quantiles = None
+        self.n_quantiles = None
+
+    def _init_data_loader(self):
         self.data_loader = get_data_loader(
-            path=dirname(cfg.paths.input),
-            env=cfg.env,
-            chunksize=cfg.data.chunksize,
+            path=dirname(self.cfg.paths.input),
+            env=self.cfg.env,
+            chunksize=self.cfg.data.chunksize,
             test=self.test,
-            test_rows=cfg.data.get("test_rows", 100_000),
-            logger=logger,
+            test_rows=self.cfg.data.get("test_rows", 100_000),
+            logger=self.logger,
         )
 
-        # Load distribution data
+    def __call__(self):
         print("Getting lab distribution")
         dist = self.get_lab_values()
         self._process_distribution_data(dist)
+        print("Normalising data")
+        self.normalise_data()
+
+    def normalise_data(self):
+        counter = 0
+        for chunk in tqdm(
+            self.data_loader.load_chunks(
+                filename=split(self.cfg.paths.input)[1],
+            ),
+            desc="Processing chunks",
+        ):
+            chunk = self._prepare_chunk(chunk, counter)
+            self._save_chunk(chunk, counter)
+
+            counter += 1
 
     def _process_distribution_data(self, dist: Dict[str, List[float]]) -> None:
         """Process distribution data based on normalization type."""
@@ -86,21 +108,6 @@ class Normaliser:
             )
             for concept in dist
         }
-
-    def __call__(self):
-        print("Normalising data")
-        counter = 0
-        cfg = self.cfg
-        for chunk in tqdm(
-            self.data_loader.load_chunks(
-                filename=split(self.cfg.paths.input)[1],
-            ),
-            desc="Processing chunks",
-        ):
-            chunk = self._prepare_chunk(chunk, counter)
-            self._save_chunk(chunk, counter)
-
-            counter += 1
 
     def _prepare_chunk(self, chunk: pd.DataFrame, counter: int) -> pd.DataFrame:
         """Prepare and process a single chunk of data."""
