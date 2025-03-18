@@ -23,6 +23,7 @@ from tests.generate_example_data.constants import (
     LAB_ANTIBIOTICS,
     LAB_SENSITIVITIES,
     LAB_ORGANISMS,
+    LAB_RESULTS,
 )
 from ehr2meds.PREMEDS.preprocessing.constants import ADMISSION_IND
 
@@ -146,7 +147,7 @@ def generate_labtests(save_dir, hashes, birthdates, deathdates, seed=0):
             "Bestillingsdato": dates.dt.date,
             "Prøvetagningstidspunkt": dates,
             "Resultatdato": results_date,
-            "Resultatværdi": [random.choice(LAB_TESTS) for _ in range(total_concepts)],
+            "Resultatværdi": [random.choice(LAB_RESULTS) for _ in range(total_concepts)],
             "Antibiotika": [
                 random.choice(LAB_ANTIBIOTICS) for _ in range(total_concepts)
             ],
