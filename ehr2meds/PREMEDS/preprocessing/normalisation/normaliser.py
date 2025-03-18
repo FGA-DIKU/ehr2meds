@@ -1,6 +1,4 @@
-import pickle
-from os.path import join
-from pathlib import Path
+from os.path import dirname, join, split
 
 import numpy as np
 import pandas as pd
@@ -15,29 +13,21 @@ class Normaliser:
         self.logger = logger
         self.test = cfg.test
         self.logger.info(f"test {self.test}")
-        self.firstRound = True
         self.normalisation_type = cfg.data["norm_type"]
 
         # Initialize data loader based on environment
         self.data_loader = get_data_loader(
+            path=dirname(cfg.paths.input),
             env=cfg.env,
-            datastore_name=cfg.data.get("data_store"),
-            dump_path=cfg.data.get("data_dir"),
+            chunksize=cfg.data.chunksize,
+            test=self.test,
+            test_rows=cfg.data.get("test_rows", 100_000),
             logger=logger,
         )
 
         # Load distribution data
-        if "dist_path" not in cfg.data:
-            dist = self.get_lab_dist()
-            dist_save_path = join(cfg.paths.output_dir, "lab_val_dict.pkl")
-            with open(dist_save_path, "wb") as f:
-                pickle.dump(dist, f)
-            self.logger.info(f"Saved lab distribution to {dist_save_path}")
-        else:
-            with open(join(cfg.data.dist_path, "lab_val_dict.pkl"), "rb") as f:
-                dist = pickle.load(f)
-            with open(join(cfg.data.dist_path, "vocabulary.pkl"), "rb") as f:
-                self.vocab = pickle.load(f)
+        print("Getting lab distribution")
+        dist = self.get_lab_dist()
 
         # Process distribution data based on normalization type
         if self.normalisation_type == "Min_max":
@@ -85,46 +75,43 @@ class Normaliser:
             raise ValueError("Invalid type of normalisation")
 
     def __call__(self):
+        print("Normalising data")
+        counter = 0
         cfg = self.cfg
-        save_name = cfg.data.save_name
-        if not Path(join(cfg.paths.output_dir, save_name)).exists():
-            counter = 0
-            # Iterate over chunks of the CSV file
-            for chunk in tqdm(
-                self.data_loader.load_chunks(
-                    cfg.data.filename, chunk_size=cfg.data.chunksize, test=self.test
-                ),
-                desc="Processing chunks",
-            ):
-                if "Column1" in chunk.columns:
-                    chunk = chunk.drop(columns="Column1")
-                chunk = chunk.reset_index(drop=True)
-                self.logger.info(f"Loaded {cfg.data.chunksize*counter}")
-                chunk_processed = self.process_chunk(chunk)
+        for chunk in tqdm(
+            self.data_loader.load_chunks(
+                filename=split(self.cfg.paths.input)[1],
+            ),
+            desc="Processing chunks",
+        ):
+            if "Column1" in chunk.columns:
+                chunk = chunk.drop(columns="Column1")
+            chunk = chunk.reset_index(drop=True)
+            chunk_processed = self.process_chunk(chunk)
 
-                # Save processed chunk
-                output_path = join(cfg.paths.output_dir, f"concept.{save_name}")
-                mode = "w" if counter == 0 else "a"
-                if output_path.endswith(".parquet"):
-                    chunk_processed.to_parquet(output_path, index=False, mode=mode)
-                else:
-                    chunk_processed.to_csv(output_path, index=False, mode=mode)
+            # Save processed chunk
 
-                counter += 1
+            mode = "w" if counter == 0 else "a"
+            save_path = join(cfg.paths.output_dir, cfg.file_name)
+            if cfg.file_name.endswith(".parquet"):
+                chunk_processed.to_parquet(save_path, index=False, mode=mode)
+            else:
+                chunk_processed.to_csv(save_path, index=False, mode=mode)
+
+            counter += 1
 
     def get_lab_dist(self):
         self.logger.info("Getting lab distribution")
-        cfg = self.cfg
         lab_val_dict = {}
         counter = 0
 
         for chunk in tqdm(
             self.data_loader.load_chunks(
-                cfg.data.filename, chunk_size=cfg.data.chunksize, test=self.test
+                filename=split(self.cfg.paths.input)[1],
             ),
             desc="Building lab distribution",
         ):
-            self.logger.info(f"Loaded {cfg.data.chunksize*counter}")
+            self.logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
             chunk["numeric_value"] = pd.to_numeric(
                 chunk["numeric_value"], errors="coerce"
             )
