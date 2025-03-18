@@ -81,7 +81,7 @@ def setup_job(
         command=cmd,
         inputs=input_values,
         outputs=output_values,
-        environment="MEDS@latest",
+        environment="MEDS:2",
         compute=compute,
         name=f"{job}_{ts}",
     )

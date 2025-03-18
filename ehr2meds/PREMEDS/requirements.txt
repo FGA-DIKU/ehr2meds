@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - anaconda
+dependencies:
+  - python=3.11
+  - pip:
+      - mlflow
+      - pynvml
+      - azureml-mlflow
+      - pandas
+      - tqdm
+name: preMEDS
