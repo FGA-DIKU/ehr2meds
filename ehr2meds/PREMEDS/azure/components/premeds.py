@@ -31,7 +31,7 @@ OUTPUTS = {
 }
 
 if __name__ == "__main__":
-    from util import run_main
+    from ehr2meds.PREMEDS.azure.util import run_main
     from ehr2meds.PREMEDS import main_azure
 
     run_main(main_azure.run_pre_MEDS, INPUTS, OUTPUTS)
