@@ -4,17 +4,28 @@ Component for running the PREMEDS pipeline on Azure.
 
 # Input/Output configurations
 INPUTS = {
-    "input_dir": {
+    "concepts": {
         "type": "uri_folder",
-        "key": "paths.input_dir",
-        "description": "Input directory containing EHR data",
-    }
+        "key": "paths.concepts",
+        "description": "Input directory containing SP-dumps data",
+    },
+    "register_concepts": {
+        "type": "uri_folder",
+        "key": "paths.register_concepts",
+        "optional": True,
+        "description": "Input directory containing FSEID data (optional)",
+    },
+    "pid_link": {
+        "type": "uri_file",
+        "key": "paths.pid_link",
+        "description": "Path to mapping.csv file",
+    },
 }
 
 OUTPUTS = {
-    "output_dir": {
+    "output": {
         "type": "uri_folder",
-        "key": "paths.output_dir",
+        "key": "paths.output",
         "description": "Output directory for processed data",
     }
 }
