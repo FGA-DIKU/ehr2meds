@@ -1,3 +1,4 @@
+import logging
 from os.path import dirname, join, split
 from typing import Dict, List
 
@@ -7,15 +8,15 @@ from tqdm import tqdm
 
 from ehr2meds.PREMEDS.preprocessing.io.azure import get_data_loader
 
+logger = logging.getLogger(__name__)
+
 
 class Normaliser:
-    def __init__(self, cfg, logger) -> None:
+    def __init__(self, cfg) -> None:
         self.cfg = cfg
-        self.logger = logger
         self.test = cfg.test
-        self.logger.info(f"test {self.test}")
+        logger.info(f"test {self.test}")
         self.normalisation_type = cfg.data["norm_type"]
-
         self._init_data_loader()
 
         # Initialize distribution data placeholders
@@ -30,7 +31,6 @@ class Normaliser:
             chunksize=self.cfg.data.chunksize,
             test=self.test,
             test_rows=self.cfg.data.get("test_rows", 100_000),
-            logger=self.logger,
         )
 
     def __call__(self):
@@ -114,7 +114,7 @@ class Normaliser:
         if "Column1" in chunk.columns:
             chunk = chunk.drop(columns="Column1")
         chunk = chunk.reset_index(drop=True)
-        self.logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+        logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
         return self.process_chunk(chunk)
 
     def _save_chunk(self, chunk: pd.DataFrame, counter: int) -> None:
@@ -127,7 +127,7 @@ class Normaliser:
             chunk.to_csv(save_path, index=False, mode=mode)
 
     def get_lab_values(self):
-        self.logger.info("Getting lab distribution")
+        logger.info("Getting lab distribution")
         lab_val_dict = {}
         counter = 0
 
@@ -137,7 +137,7 @@ class Normaliser:
             ),
             desc="Building lab distribution",
         ):
-            self.logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+            logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
             chunk["numeric_value"] = pd.to_numeric(
                 chunk["numeric_value"], errors="coerce"
             )

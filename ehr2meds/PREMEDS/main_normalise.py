@@ -5,6 +5,7 @@ from os.path import join, dirname
 
 from ehr2meds.PREMEDS.preprocessing.io.config import load_config
 from ehr2meds.PREMEDS.preprocessing.normalisation.normaliser import Normaliser
+from ehr2meds.PREMEDS.preprocessing.io.logging import setup_logging
 
 
 def my_app(config_path):
@@ -27,14 +28,12 @@ def my_app(config_path):
     )
 
     # Setup logging
-    logging.basicConfig(
-        filename=join(output_dir, cfg.run_name + ".log"),
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    setup_logging(
+        log_dir=cfg.get("logging", {}).get("path"),
+        log_level=cfg.get("logging", {}).get("level"),
     )
 
-    logger = logging.getLogger(__name__)
-    preprocessor = Normaliser(cfg, logger)
+    preprocessor = Normaliser(cfg)
     preprocessor()
     return cfg
 

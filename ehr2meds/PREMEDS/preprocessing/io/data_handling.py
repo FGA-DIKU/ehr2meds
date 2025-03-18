@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Iterator, Optional
 
@@ -5,6 +6,8 @@ import pandas as pd
 
 from ehr2meds.PREMEDS.preprocessing.constants import FILENAME
 from ehr2meds.PREMEDS.preprocessing.io.azure import get_data_loader
+
+logger = logging.getLogger(__name__)
 
 
 class DataHandler:
@@ -27,7 +30,6 @@ class DataHandler:
         output_dir: str,
         file_type: str,
         env: str,
-        logger,
         path: str,
         chunksize: Optional[int] = None,
         test: Optional[bool] = False,
@@ -36,7 +38,6 @@ class DataHandler:
         self.output_dir = output_dir
         self.file_type = file_type
         self.env = env
-        self.logger = logger
 
         # Initialize the appropriate data loader
         self.data_loader = get_data_loader(
@@ -45,7 +46,6 @@ class DataHandler:
             chunksize=chunksize,
             test=test,
             test_rows=test_rows,
-            logger=logger,
         )  # return azure or standard data loader
 
     def load_pandas(
@@ -70,10 +70,10 @@ class DataHandler:
             mode: Mode for saving the file ("w" for write, "a" for append)
         """
         if df.empty:
-            self.logger.warning(f"Empty DataFrame for {filename}, skipping save")
+            logger.warning(f"Empty DataFrame for {filename}, skipping save")
             return
 
-        self.logger.info(f"Saving {filename} with {len(df)} rows")
+        logger.info(f"Saving {filename} with {len(df)} rows")
         out_dir = self.output_dir
         os.makedirs(out_dir, exist_ok=True)
 

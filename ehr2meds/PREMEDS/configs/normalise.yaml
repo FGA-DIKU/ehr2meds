@@ -1,3 +1,7 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
 test: false
 env: local
 run_name: normalise_labs
@@ -7,7 +11,6 @@ paths:
 
 file_name: labtest_norm_min_max.csv
   
-
 data:
   norm_type: Min_max
   chunksize: 30000000

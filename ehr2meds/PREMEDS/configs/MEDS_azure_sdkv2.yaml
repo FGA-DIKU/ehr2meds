@@ -1,3 +1,7 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
 test: true
 env: azure
 run_name: MEDS

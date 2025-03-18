@@ -6,6 +6,7 @@ from os.path import join
 
 from ehr2meds.PREMEDS.preprocessing.io.config import load_config
 from ehr2meds.PREMEDS.preprocessing.premeds.extractor import PREMEDSExtractor
+from ehr2meds.PREMEDS.preprocessing.io.logging import setup_logging
 
 
 def parse_args():
@@ -39,15 +40,12 @@ def run_pre_MEDS(config_path):
         join(cfg.paths.output, "config.yaml"),
     )
 
-    # Setup logging
-    logging.basicConfig(
-        filename=join(cfg.paths.output, cfg.run_name + ".log"),
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    setup_logging(
+        log_dir=cfg.get("logging", {}).get("path"),
+        log_level=cfg.get("logging", {}).get("level"),
     )
 
-    logger = logging.getLogger(__name__)
-    extractor = PREMEDSExtractor(cfg, logger)
+    extractor = PREMEDSExtractor(cfg)
     extractor()
     return cfg
 

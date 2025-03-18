@@ -3,14 +3,16 @@ from os.path import join
 from typing import Iterator, Optional
 
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class StandardDataLoader:
     """Local file system data loader"""
 
-    def __init__(self, path: str, logger, chunksize: int = None, test: bool = False):
+    def __init__(self, path: str, chunksize: int = None, test: bool = False):
         self.path = path
-        self.logger = logger
         self.chunksize = chunksize
         self.test = test
 
@@ -93,7 +95,7 @@ class StandardDataLoader:
                     # If we reached here without an exception, reading succeeded; exit the function.
                     return
                 except Exception as e:
-                    self.logger.info(
+                    logger.info(
                         f"Failed with encoding {encoding} and sep {sep}: {str(e)}"
                     )
                     continue
@@ -106,13 +108,11 @@ class AzureDataLoader:
     def __init__(
         self,
         path: str,
-        logger,
         chunksize: int = None,
         test: bool = False,
         test_rows: int = 1_000_000,
     ):
         self.path = path
-        self.logger = logger
         self.chunksize = chunksize
         self.test = test
         self.test_rows = (
@@ -122,7 +122,7 @@ class AzureDataLoader:
     def _get_azure_dataset(self, filename: str):
         import mltable
 
-        self.logger.info(f"Loading dataset from {self.path}")
+        logger.info(f"Loading dataset from {self.path}")
         if filename.endswith(".parquet"):
             return mltable.from_parquet_files([{"file": join(self.path, filename)}])
         elif filename.endswith((".csv", ".asc")):
@@ -146,7 +146,7 @@ class AzureDataLoader:
                         encoding=encoding,
                     )
                 except Exception as e:
-                    self.logger.info(
+                    logger.info(
                         f"Failed with encoding {encoding} and sep {delimiter}: {str(e)}"
                     )
                     continue
@@ -181,7 +181,7 @@ class AzureDataLoader:
         chunks_processed = 0
 
         while chunks_processed < max_chunks:
-            self.logger.info(f"Loading chunk {i}")
+            logger.info(f"Loading chunk {i}")
             chunk = tbl.skip(i * self.chunksize).take(self.chunksize)
             df = chunk.to_pandas_dataframe()
             if df.empty:
@@ -197,10 +197,9 @@ def get_data_loader(
     chunksize: Optional[int],
     test: bool,
     test_rows: Optional[int],
-    logger,
 ):
     """Factory function to create the appropriate data loader"""
     if env == "azure":
-        return AzureDataLoader(path, logger, chunksize, test, test_rows)
+        return AzureDataLoader(path, chunksize, test, test_rows)
     else:
-        return StandardDataLoader(path, logger, chunksize, test)
+        return StandardDataLoader(path, chunksize, test)
