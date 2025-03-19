@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from ehr2meds.PREMEDS.preprocessing.io.dataloader import get_data_loader
-from ehr2meds.PREMEDS.preprocessing.constants import CODE
+from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID
 
 logger = logging.getLogger(__name__)
 
@@ -114,8 +114,8 @@ class Normaliser:
 
     def _prepare_chunk(self, chunk: pd.DataFrame, counter: int) -> pd.DataFrame:
         """Prepare and process a single chunk of data."""
-        if "Column1" in chunk.columns:
-            chunk = chunk.drop(columns="Column1")
+        # Ensure subject_id is treated as integer
+        chunk[SUBJECT_ID] = pd.to_numeric(chunk[SUBJECT_ID]).astype("Int64")
         chunk = chunk.reset_index(drop=True)
         logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
         return self.process_chunk(chunk)
