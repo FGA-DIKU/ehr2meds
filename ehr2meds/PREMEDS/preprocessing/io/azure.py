@@ -88,16 +88,25 @@ class StandardDataLoader(BaseDataLoader):
             raise ValueError(f"Unsupported file type: {file_path}")
 
     def _load_parquet_chunks(
-        self, file_path: str, cols: Optional[List[str]] = None
+        self, file_path: str, cols: Optional[list[str]]
     ) -> Iterator[pd.DataFrame]:
-        df = pd.read_parquet(file_path, columns=cols)
-        if self.test:
-            # In test mode, yield only a few chunks based on self.chunksize
-            for i in range(0, len(df), self.chunksize):
-                if i >= 3 * self.chunksize:
-                    break
-                yield df.iloc[i : i + self.chunksize]
-        else:
+        import pyarrow.parquet as pq
+
+        # Open the ParquetFile to enable reading by row groups
+        pf = pq.ParquetFile(file_path)
+
+        # Calculate how many row groups to read
+        max_chunks = 3 if self.test else float("inf")
+        chunks_read = 0
+
+        # Read and yield row groups
+        for i, batch in enumerate(
+            pf.iter_batches(batch_size=self.chunksize, columns=cols)
+        ):
+            if chunks_read >= max_chunks:
+                break
+            df = batch.to_pandas()
+            chunks_read += 1
             yield df
 
     def _load_csv_chunks(
