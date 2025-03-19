@@ -8,6 +8,8 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+N_TEST_CHUNKS = 2
+
 
 class BaseDataLoader(ABC):
     CSV_ENCODINGS = ["iso88591", "utf8", "latin1"]
@@ -96,7 +98,7 @@ class StandardDataLoader(BaseDataLoader):
         pf = pq.ParquetFile(file_path)
 
         # Calculate how many row groups to read
-        max_chunks = 3 if self.test else float("inf")
+        max_chunks = N_TEST_CHUNKS if self.test else float("inf")
         chunks_read = 0
 
         # Read and yield row groups
@@ -124,7 +126,7 @@ class StandardDataLoader(BaseDataLoader):
                     )
                     for i, chunk in enumerate(chunk_iter):
                         if (
-                            self.test and i >= 3
+                            self.test and i >= N_TEST_CHUNKS
                         ):  # In test mode, yield only first three chunks.
                             break
                         yield chunk
@@ -206,7 +208,7 @@ class AzureDataLoader(BaseDataLoader):
         if cols:
             tbl = tbl.keep_columns(cols)
 
-        max_chunks = 3 if self.test else float("inf")
+        max_chunks = N_TEST_CHUNKS if self.test else float("inf")
         chunks_processed = 0
         offset = 0
 
