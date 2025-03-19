@@ -81,7 +81,7 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
     }  # +2 to prevent subject ids being read in as binary.
 
     # Apply mapping to DataFrame
-    df[SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
+    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
 
     return df, hash_to_int_map
 
@@ -165,9 +165,9 @@ def map_pids_to_ints(
     df: pd.DataFrame, subject_id_mapping: Dict[str, int]
 ) -> pd.DataFrame:
     """Map PIDs to integers."""
-    df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
+    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
     df = df.dropna(subset=[SUBJECT_ID])
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(float).astype(int)
     return df
 
 
