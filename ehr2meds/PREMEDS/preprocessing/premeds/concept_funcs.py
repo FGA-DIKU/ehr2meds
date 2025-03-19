@@ -82,7 +82,7 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
 
     # Apply mapping to DataFrame
     df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
-
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
     return df, hash_to_int_map
 
 
