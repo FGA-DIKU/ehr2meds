@@ -164,7 +164,7 @@ class AzureDataLoader(BaseDataLoader):
                 try:
                     return mltable.from_delimited_files(
                         [{"file": file_path}],
-                        separator=delimiter,
+                        delimiter=delimiter,
                         encoding=encoding,
                     )
                 except Exception as e:
