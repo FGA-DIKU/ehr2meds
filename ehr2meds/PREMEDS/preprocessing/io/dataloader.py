@@ -13,7 +13,7 @@ N_TEST_CHUNKS = 2
 
 class BaseDataLoader(ABC):
     CSV_ENCODINGS = ["iso88591", "utf8", "latin1"]
-    CSV_SEPARATORS = [";", ","]
+    CSV_SEPARATORS = [",", ";"]
 
     def __init__(self, path: str, chunksize: Optional[int] = None, test: bool = False):
         self.path = path

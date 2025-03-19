@@ -16,3 +16,4 @@ data:
   chunksize: 30000000
   test_rows: 1000000
   dist_path: null  # Optional path to distribution data
+  numeric_value: numeric_value

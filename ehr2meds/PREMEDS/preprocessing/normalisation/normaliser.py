@@ -7,6 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from ehr2meds.PREMEDS.preprocessing.io.dataloader import get_data_loader
+from ehr2meds.PREMEDS.preprocessing.constants import CODE
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,8 @@ class Normaliser:
         self.min_max_vals = None
         self.quantiles = None
         self.n_quantiles = None
+
+        self.numeric_value = cfg.data["numeric_value"]
 
     def _init_data_loader(self):
         self.data_loader = get_data_loader(
@@ -137,12 +140,16 @@ class Normaliser:
             ),
             desc="Building lab distribution",
         ):
+            if self.numeric_value not in chunk.columns or CODE not in chunk.columns:
+                raise ValueError(
+                    f"Missing required columns. Available columns: {chunk.columns}"
+                )
             logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
-            chunk["numeric_value"] = pd.to_numeric(
-                chunk["numeric_value"], errors="coerce"
+            chunk[self.numeric_value] = pd.to_numeric(
+                chunk[self.numeric_value], errors="coerce"
             )
-            chunk = chunk.dropna(subset=["numeric_value"])
-            grouped = chunk.groupby("code")["numeric_value"].apply(list).to_dict()
+            chunk = chunk.dropna(subset=[self.numeric_value])
+            grouped = chunk.groupby(CODE)[self.numeric_value].apply(list).to_dict()
 
             for key, values in grouped.items():
                 if key in lab_val_dict:
@@ -154,12 +161,12 @@ class Normaliser:
         return lab_val_dict
 
     def process_chunk(self, chunk):
-        chunk["numeric_value"] = chunk.apply(self.normalise, axis=1)
+        chunk[self.numeric_value] = chunk.apply(self.normalise, axis=1)
         return chunk
 
     def normalise(self, row):
-        concept = row["code"]
-        value = row["numeric_value"]
+        concept = row[CODE]
+        value = row[self.numeric_value]
         if not pd.notnull(pd.to_numeric(value, errors="coerce")):
             return value
         else:
