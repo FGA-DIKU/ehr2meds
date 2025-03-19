@@ -42,6 +42,7 @@ def run_pre_MEDS(config_path):
     setup_logging(
         log_dir=cfg.get("logging", {}).get("path"),
         log_level=cfg.get("logging", {}).get("level"),
+        name="preMEDS.log",
     )
 
     extractor = PREMEDSExtractor(cfg)

@@ -30,6 +30,7 @@ def my_app(config_path):
     setup_logging(
         log_dir=cfg.get("logging", {}).get("path"),
         log_level=cfg.get("logging", {}).get("level"),
+        name="normalise.log",
     )
 
     preprocessor = Normaliser(cfg)
