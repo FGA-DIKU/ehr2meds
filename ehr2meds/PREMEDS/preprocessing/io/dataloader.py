@@ -205,17 +205,24 @@ class AzureDataLoader(BaseDataLoader):
         tbl: mltable.MLTable = self._get_azure_dataset(filename)
         if cols:
             tbl = tbl.keep_columns(cols)
-        i = 0
+
         max_chunks = 3 if self.test else float("inf")
         chunks_processed = 0
+        offset = 0
 
         while chunks_processed < max_chunks:
-            logger.info(f"Loading chunk {i}")
-            chunk = tbl.skip(i * self.chunksize).take(self.chunksize)
+            logger.info(f"Loading chunk {chunks_processed}")
+            # Take directly from the current offset instead of using skip with i * chunksize
+            chunk = (
+                tbl.skip(offset).take(self.chunksize)
+                if offset > 0
+                else tbl.take(self.chunksize)
+            )
             df = chunk.to_pandas_dataframe()
             if df.empty:
                 break
-            i += 1
+
+            offset += self.chunksize
             chunks_processed += 1
             yield df
 
