@@ -30,13 +30,16 @@ python -m ehr2meds.PREMEDS.azure premeds <compute> [options]
 
 ```bash
 # Basic run
-python -m ehr2meds.PREMEDS.azure premeds CPU-20-LP
+python -m ehr2meds.PREMEDS.azure premeds CPU-20-LP -c configs/MEDS_azure.yaml
 
 # With custom config and experiment name
 python -m ehr2meds.PREMEDS.azure premeds CPU-20-LP -c configs/MEDS_azure.yaml -e premeds
 
 # Register output as Azure ML asset
-python -m ehr2meds.PREMEDS.azure premeds CPU-20-LP -o output_dir=premeds_v01
+python -m ehr2meds.PREMEDS.azure premeds CPU-20-LP -c configs/MEDS_azure.yaml -o output_dir=premeds_v01
+
+# Normalize labtests
+python -m ehr2meds.PREMEDS.azure normalise CPU-20-LP -c configs/normalise.yaml -o normalised_labtests
 ```
 
 ## Configuration File

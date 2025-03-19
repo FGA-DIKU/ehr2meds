@@ -24,7 +24,7 @@ def parse_register_output(register_output_args: list) -> dict:
 
 def create_and_run_job(args) -> None:
     """Run the job from the given arguments."""
-    cfg_path = args.config or "./configs/premeds.yaml"
+    cfg_path = args.config
     with open(cfg_path, "r") as cfg_file:
         cfg = yaml.safe_load(cfg_file)
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "JOB",
         type=str,
-        choices={"premeds"},
+        choices={"premeds", "normalise"},
         help="Job to run.",
     )
     parser.add_argument(
