@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ehr2meds.PREMEDS.preprocessing.io.azure import get_data_loader
+from ehr2meds.PREMEDS.preprocessing.io.dataloader import get_data_loader
 
 logger = logging.getLogger(__name__)
 
