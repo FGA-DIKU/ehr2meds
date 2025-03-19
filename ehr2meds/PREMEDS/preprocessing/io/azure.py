@@ -1,23 +1,51 @@
+import logging
 import os
+from abc import ABC, abstractmethod
 from os.path import join
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional
 
 import pandas as pd
-import logging
 
 logger = logging.getLogger(__name__)
 
 
-class StandardDataLoader:
-    """Local file system data loader"""
+class BaseDataLoader(ABC):
+    CSV_ENCODINGS = ["iso88591", "utf8", "latin1"]
+    CSV_SEPARATORS = [";", ","]
 
-    def __init__(self, path: str, chunksize: int = None, test: bool = False):
+    def __init__(self, path: str, chunksize: Optional[int] = None, test: bool = False):
         self.path = path
         self.chunksize = chunksize
         self.test = test
 
-    def load_dataframe(self, filename: str, cols=None) -> pd.DataFrame:
-        file_path = join(self.path, filename)
+    @abstractmethod
+    def load_dataframe(
+        self, filename: str, cols: Optional[List[str]] = None
+    ) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    def load_chunks(
+        self, filename: str, cols: Optional[List[str]] = None
+    ) -> Iterator[pd.DataFrame]:
+        pass
+
+    def _get_file_path(self, filename: str) -> str:
+        return join(self.path, filename)
+
+    @staticmethod
+    def _check_file_exists(file_path: str):
+        if not os.path.exists(file_path):
+            raise ValueError(f"File {file_path} does not exist")
+
+
+class StandardDataLoader(BaseDataLoader):
+    """Local file system data loader using pandas"""
+
+    def load_dataframe(
+        self, filename: str, cols: Optional[List[str]] = None
+    ) -> pd.DataFrame:
+        file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
         if file_path.endswith(".parquet"):
             df = pd.read_parquet(file_path, columns=cols)
@@ -27,30 +55,30 @@ class StandardDataLoader:
             raise ValueError(f"Unsupported file type: {file_path}")
         return df
 
-    @staticmethod
-    def _load_csv(file_path: str, cols: Optional[list[str]] = None) -> pd.DataFrame:
-        separators = [";", ","]
-        encodings = ["iso88591", "utf8", "latin1"]
+    @classmethod
+    def _load_csv(
+        cls, file_path: str, cols: Optional[List[str]] = None
+    ) -> pd.DataFrame:
         df = None
-        for encoding in encodings:
-            for sep in separators:
+        for encoding in cls.CSV_ENCODINGS:
+            for sep in cls.CSV_SEPARATORS:
                 try:
                     df = pd.read_csv(
                         file_path, sep=sep, encoding=encoding, usecols=cols
                     )
-                    break  # If successful, break out of the inner loop
+                    break  # Successful read; break out of inner loop.
                 except Exception:
                     continue
             if df is not None:
-                break  # Break out of the outer loop if a valid DataFrame was read
+                break  # Exit outer loop if a valid DataFrame was read.
         if df is None:
             raise ValueError(f"Unable to read file {file_path} with any encoding")
         return df
 
     def load_chunks(
-        self, filename: str, cols: Optional[list[str]] = None
+        self, filename: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
-        file_path = join(self.path, filename)
+        file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
         if file_path.endswith(".parquet"):
             yield from self._load_parquet_chunks(file_path, cols)
@@ -60,11 +88,11 @@ class StandardDataLoader:
             raise ValueError(f"Unsupported file type: {file_path}")
 
     def _load_parquet_chunks(
-        self, file_path: str, cols: Optional[list[str]]
+        self, file_path: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
         df = pd.read_parquet(file_path, columns=cols)
         if self.test:
-            # In test mode, only yield up to two chunks based on self.chunksize for consistency with csv
+            # In test mode, yield only a few chunks based on self.chunksize
             for i in range(0, len(df), self.chunksize):
                 if i >= 3 * self.chunksize:
                     break
@@ -73,10 +101,10 @@ class StandardDataLoader:
             yield df
 
     def _load_csv_chunks(
-        self, file_path: str, cols: Optional[list[str]]
+        self, file_path: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
-        for encoding in ["iso88591", "utf8", "latin1"]:
-            for sep in [";", ","]:
+        for encoding in self.CSV_ENCODINGS:
+            for sep in self.CSV_SEPARATORS:
                 try:
                     chunk_iter = pd.read_csv(
                         file_path,
@@ -88,11 +116,10 @@ class StandardDataLoader:
                     for i, chunk in enumerate(chunk_iter):
                         if (
                             self.test and i >= 3
-                        ):  # In test mode, yield only the first three chunks
+                        ):  # In test mode, yield only first three chunks.
                             break
                         yield chunk
-                    # If we reached here without an exception, reading succeeded; exit the function.
-                    return
+                    return  # Exit if reading was successful.
                 except Exception as e:
                     logger.info(
                         f"Failed with encoding {encoding} and sep {sep}: {str(e)}"
@@ -100,53 +127,43 @@ class StandardDataLoader:
                     continue
         raise ValueError(f"Unable to read file {file_path} with any encoding")
 
-    @staticmethod
-    def _check_file_exists(file_path: str):
-        if not os.path.exists(file_path):
-            raise ValueError(f"File {file_path} does not exist")
 
-
-class AzureDataLoader:
-    """Azure-specific data loader"""
+class AzureDataLoader(BaseDataLoader):
+    """Azure-specific data loader using mltable"""
 
     def __init__(
         self,
         path: str,
-        chunksize: int = None,
+        chunksize: Optional[int] = None,
         test: bool = False,
         test_rows: int = 1_000_000,
     ):
-        self.path = path
-        self.chunksize = chunksize
-        self.test = test
-        self.test_rows = (
-            test_rows  # used for testing load_dataframe (e.g. patient data)
-        )
+        super().__init__(path, chunksize, test)
+        self.test_rows = test_rows
 
     def _get_azure_dataset(self, filename: str):
         import mltable
 
         logger.info(f"Loading dataset from {self.path}")
-        StandardDataLoader._check_file_exists(join(self.path, filename))
+        file_path = self._get_file_path(filename)
+        self._check_file_exists(file_path)
         if filename.endswith(".parquet"):
-            return mltable.from_parquet_files([{"file": join(self.path, filename)}])
+            return mltable.from_parquet_files([{"file": file_path}])
         elif filename.endswith((".csv", ".asc")):
             return self._get_csv_dataset(filename)
         else:
             raise ValueError(f"Unsupported file type: {filename}")
 
-    def _get_csv_dataset(self, file_path: str):
+    def _get_csv_dataset(self, filename: str):
         import mltable
 
-        if not os.path.exists(join(self.path, file_path)):
-            raise ValueError(f"File {file_path} does not exist")
-        encodings = ["iso88591", "utf8", "latin1"]
-        delimiters = [";", ","]
-        for encoding in encodings:
-            for delimiter in delimiters:
+        file_path = self._get_file_path(filename)
+        self._check_file_exists(file_path)
+        for encoding in self.CSV_ENCODINGS:
+            for delimiter in self.CSV_SEPARATORS:
                 try:
                     return mltable.from_delimited_files(
-                        [{"file": join(self.path, file_path)}],
+                        [{"file": file_path}],
                         separator=delimiter,
                         encoding=encoding,
                     )
@@ -156,13 +173,11 @@ class AzureDataLoader:
                     )
                     continue
         raise ValueError(
-            f"Unable to read file {file_path} with any of the provided encodings and delimiters"
+            f"Unable to read file {filename} with any of the provided encodings and delimiters"
         )
 
     def load_dataframe(
-        self,
-        filename: str,
-        cols: Optional[list[str]] = None,
+        self, filename: str, cols: Optional[List[str]] = None
     ) -> pd.DataFrame:
         import mltable
 
@@ -174,7 +189,7 @@ class AzureDataLoader:
         return tbl.to_pandas_dataframe()
 
     def load_chunks(
-        self, filename: str, cols: Optional[list[str]] = None
+        self, filename: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
         import mltable
 
@@ -197,11 +212,7 @@ class AzureDataLoader:
 
 
 def get_data_loader(
-    env: str,
-    path: str,
-    chunksize: Optional[int],
-    test: bool,
-    test_rows: Optional[int],
+    env: str, path: str, chunksize: Optional[int], test: bool, test_rows: Optional[int]
 ):
     """Factory function to create the appropriate data loader"""
     if env == "azure":
