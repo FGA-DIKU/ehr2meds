@@ -1,0 +1,35 @@
+name: 'Pipeline test'
+
+on:
+    workflow_dispatch:
+    pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+    tests:
+        runs-on: "ubuntu-latest"
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup dependencies.
+              run: |
+                python -m venv .venv
+                source .venv/bin/activate
+                pip install -r requirements.txt
+                pip install -e .  # Install package in development mode
+
+            - name: Generate example data
+              run: |
+                source .venv/bin/activate
+                mkdir -p tests/example_data
+                python -m tests.generate_example_data.generate_example_data 1000 10 tests/example_data
+
+            - name: Extract data
+              run: |
+                source .venv/bin/activate
+                python -m ehr2meds.PREMEDS.main_azure --config MEDS_local
+  

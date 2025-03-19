@@ -1,0 +1,15 @@
+CODE = "code"
+SUBJECT_ID = "subject_id"
+ADMISSION = "admission"
+DISCHARGE = "discharge"
+TIMESTAMP = "timestamp"
+FILENAME = "filename"
+MANDATORY_COLUMNS = [SUBJECT_ID, CODE, TIMESTAMP]
+
+
+## ADT codes
+ADMISSION_IND = "Indlæggelse"
+ADMISSION_ADT = "ADMISSION_ADT"
+DISCHARGE_ADT = "DISCHARGE_ADT"
+MOVE_ADT = "MOVE_ADT"
+DEPT_PREFIX = "AFSNIT_ADT/"

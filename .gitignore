@@ -140,3 +140,5 @@ mimic-iii-clinical-database-1.4
 /data/interim/mimic_iii_ml_for_health/all_hourly_data.h5
 /notebooks/*test*
 /notebooks/synthea_test.ipynb
+
+tests/example_data/*
