@@ -1,24 +1,23 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
 test: true
 env: azure
 run_name: MEDS
 chunksize: 500_000
 paths:
-  output_dir: outputs/preMEDS
-  file_type: csv 
+  concepts: researcher_data:data-backup/SP-dumps/2024-09-10
+  register_concepts: researcher_data:FSEID
+  pid_link: researcher_data:maskerede_data/mapping.csv
+  
+  output: outputs/preMEDS
 
-data_path:
-  concepts:
-    datastore: researcher_data
-    dump_path: 'data-backup/SP-dumps/2024-09-10'
-  register_concepts:
-    datastore: researcher_data
-    dump_path: 'FSEID'
-  pid_link: 
-    datastore: researcher_data
-    dump_path: 'maskerede_data'
-    filename: mapping.csv
-    join_col: PID
-    target_col: CPR_hash
+write_file_type: csv 
+
+pid_link: 
+  join_col: PID
+  target_col: CPR_hash
 
 concepts:
   admissions:
@@ -138,6 +137,7 @@ register_concepts:
     filename: epikur.parquet
     rename_columns:
       PID: subject_id
+      atc: code
       vnr: vnr_code
       eksd: timestamp
     mappings:
@@ -146,7 +146,7 @@ register_concepts:
         via_file: laegemiddeloplysninger.asc
         join_on: VNR
         target_column: PNAME
-        rename_to: code
+        rename_to: drugname
         drop_source: false
     code_prefix: "RM/"
 
@@ -175,7 +175,7 @@ register_concepts:
     filename: procedurer_andre.asc
     rename_columns:
       procedurekode: code
-      proceduretype: procedure_type
+      # proceduretype: procedure_type
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id

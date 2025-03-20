@@ -1,22 +1,19 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
 test: false
-env: azure
+env: local
 run_name: normalise_labs
 paths:
-  output_dir: outputs/data
-  dump_path: 'data-backup/SP-dumps/2024-09-10'    
-preprocessor:
-  _target_: preprocessors.normaliser.Normaliser
+  input: outputs/preMEDS/labtest.csv
+  output_dir: outputs/preMEDS
 
+file_name: labtest_norm_min_max.csv
+  
 data:
   norm_type: Min_max
   chunksize: 30000000
-  data_store: "workspaceblobstore"
-  file_type: csv
-  save_name: "min_max_labtest"
-  data_path: "MEDS/data_2024_09_10/preMEDS/concept.labtest.csv"
-  save_path: "MEDS/data_2024_09_10/preMEDS/"
-
-# data:
-#   norm_type: Min_max
-#   n_quantiles: 1000
-#   chunksize: 30000000
+  test_rows: 1000000
+  dist_path: null  # Optional path to distribution data
+  numeric_value: numeric_value

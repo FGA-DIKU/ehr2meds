@@ -3,16 +3,17 @@ from typing import Dict, Optional
 import pandas as pd
 
 from ehr2meds.PREMEDS.preprocessing.constants import (
-    CODE,
-    SUBJECT_ID,
-    TIMESTAMP,
-    ADMISSION_IND,
     ADMISSION_ADT,
+    ADMISSION_IND,
+    CODE,
+    DEPT_PREFIX,
     DISCHARGE_ADT,
     MOVE_ADT,
-    DEPT_PREFIX,
+    SUBJECT_ID,
+    TIMESTAMP,
 )
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
+    map_pids_to_ints,
     select_and_rename_columns,
 )
 
@@ -26,9 +27,7 @@ def preprocess_admissions_df(
 
     # Map subject_id to integers
     if SUBJECT_ID in df.columns:
-        df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
-        df = df.dropna(subset=[SUBJECT_ID])
-        df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+        df = map_pids_to_ints(df, subject_id_mapping)
 
     # Sort by patient and timestamp
     return df.sort_values([SUBJECT_ID, "timestamp_in"])

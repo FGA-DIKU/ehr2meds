@@ -1,21 +1,24 @@
+
+logging:
+  level: INFO
+  path: ./outputs/logs
+
 test: true
 env: local
 run_name: MEDS
 chunksize: 1000
 paths:
-  output_dir: outputs/preMEDS
+  output: outputs/preMEDS
+  concepts: tests/example_data/sp_dump
+  register_concepts: tests/example_data/registers
+  pid_link: tests/example_data/maskerede_data/mapping.csv
   file_type: csv 
 
-data_path:
-  concepts:
-    dump_path: 'tests/example_data/sp_dump'
-  register_concepts:
-    dump_path: 'tests/example_data/registers'
-  pid_link: 
-    dump_path: 'tests/example_data/maskerede_data'
-    filename: mapping.csv
-    join_col: PID
-    target_col: CPR_hash
+write_file_type: csv
+
+pid_link: 
+  join_col: PID
+  target_col: CPR_hash
 
 concepts:
   admissions:

@@ -1,135 +1,155 @@
-import pickle
-from os.path import join
-from pathlib import Path
+import logging
+from os.path import dirname, join, split
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ehr2meds.PREMEDS.preprocessing.io.azure import get_data_loader
+from ehr2meds.PREMEDS.preprocessing.io.dataloader import get_data_loader
+from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID
+
+logger = logging.getLogger(__name__)
 
 
 class Normaliser:
-    def __init__(self, cfg, logger) -> None:
+    def __init__(self, cfg) -> None:
         self.cfg = cfg
-        self.logger = logger
         self.test = cfg.test
-        self.logger.info(f"test {self.test}")
-        self.firstRound = True
+        logger.info(f"test {self.test}")
         self.normalisation_type = cfg.data["norm_type"]
+        self._init_data_loader()
 
-        # Initialize data loader based on environment
+        # Initialize distribution data placeholders
+        self.min_max_vals = None
+        self.quantiles = None
+        self.n_quantiles = None
+
+        self.numeric_value = cfg.data["numeric_value"]
+
+    def _init_data_loader(self):
         self.data_loader = get_data_loader(
-            env=cfg.env,
-            datastore_name=cfg.data.get("data_store"),
-            dump_path=cfg.data.get("data_dir"),
-            logger=logger,
+            path=dirname(self.cfg.paths.input),
+            env=self.cfg.env,
+            chunksize=self.cfg.data.chunksize,
+            test=self.test,
+            test_rows=self.cfg.data.get("test_rows", 100_000),
         )
 
-        # Load distribution data
-        if "dist_path" not in cfg.data:
-            dist = self.get_lab_dist()
-            dist_save_path = join(cfg.paths.output_dir, "lab_val_dict.pkl")
-            with open(dist_save_path, "wb") as f:
-                pickle.dump(dist, f)
-            self.logger.info(f"Saved lab distribution to {dist_save_path}")
-        else:
-            with open(join(cfg.data.dist_path, "lab_val_dict.pkl"), "rb") as f:
-                dist = pickle.load(f)
-            with open(join(cfg.data.dist_path, "vocabulary.pkl"), "rb") as f:
-                self.vocab = pickle.load(f)
+    def __call__(self):
+        print("Getting lab distribution")
+        dist = self.get_lab_values()
+        self._process_distribution_data(dist)
+        print("Normalising data")
+        self.normalise_data()
 
-        # Process distribution data based on normalization type
+    def normalise_data(self):
+        counter = 0
+        for chunk in tqdm(
+            self.data_loader.load_chunks(
+                filename=split(self.cfg.paths.input)[1],
+            ),
+            desc="Processing chunks",
+        ):
+            chunk = self._prepare_chunk(chunk, counter)
+            self._save_chunk(chunk, counter)
+
+            counter += 1
+
+    def _process_distribution_data(self, dist: Dict[str, List[float]]) -> None:
+        """Process distribution data based on normalization type."""
         if self.normalisation_type == "Min_max":
-            self.min_max_vals = {
-                concept: (
-                    (
-                        np.percentile(dist[concept], 0.01 * 100)
-                        if len(dist[concept]) > 1
-                        else dist[concept][0]
-                    ),
-                    (
-                        np.percentile(dist[concept], 0.99 * 100)
-                        if len(dist[concept]) > 1
-                        else dist[concept][0]
-                    ),
-                )
-                for concept in dist
-                if dist[concept]
-            }
+            self._process_minmax_distribution(dist)
         elif self.normalisation_type == "Categorise":
-            self.quantiles = {
-                concept: (
-                    np.percentile(sorted(dist[concept]), [25, 50, 75])
-                    if len(dist[concept]) > 0
-                    else (0, 0, 0)
-                )
-                for concept in dist
-            }
+            self._process_category_distribution(dist)
         elif self.normalisation_type == "Quantiles":
-            self.n_quantiles = cfg.data["n_quantiles"]
-            self.quantiles = {
-                concept: (
-                    [
-                        np.percentile(sorted(dist[concept]), i)
-                        for i in np.linspace(
-                            100 / self.n_quantiles, 100, self.n_quantiles
-                        )
-                    ]
-                    if len(dist[concept]) > 0
-                    else [0] * self.n_quantiles
-                )
-                for concept in dist
-            }
+            self._process_quantile_distribution(dist)
         else:
             raise ValueError("Invalid type of normalisation")
 
-    def __call__(self):
-        cfg = self.cfg
-        save_name = cfg.data.save_name
-        if not Path(join(cfg.paths.output_dir, save_name)).exists():
-            counter = 0
-            # Iterate over chunks of the CSV file
-            for chunk in tqdm(
-                self.data_loader.load_chunks(
-                    cfg.data.filename, chunk_size=cfg.data.chunksize, test=self.test
+    def _process_minmax_distribution(self, dist: Dict[str, List[float]]) -> None:
+        """Process distribution data for min-max normalization."""
+        self.min_max_vals = {
+            concept: (
+                (
+                    np.percentile(dist[concept], 0.01 * 100)
+                    if len(dist[concept]) > 1
+                    else dist[concept][0]
                 ),
-                desc="Processing chunks",
-            ):
-                if "Column1" in chunk.columns:
-                    chunk = chunk.drop(columns="Column1")
-                chunk = chunk.reset_index(drop=True)
-                self.logger.info(f"Loaded {cfg.data.chunksize*counter}")
-                chunk_processed = self.process_chunk(chunk)
+                (
+                    np.percentile(dist[concept], 0.99 * 100)
+                    if len(dist[concept]) > 1
+                    else dist[concept][0]
+                ),
+            )
+            for concept in dist
+            if dist[concept]
+        }
 
-                # Save processed chunk
-                output_path = join(cfg.paths.output_dir, f"concept.{save_name}")
-                mode = "w" if counter == 0 else "a"
-                if output_path.endswith(".parquet"):
-                    chunk_processed.to_parquet(output_path, index=False, mode=mode)
-                else:
-                    chunk_processed.to_csv(output_path, index=False, mode=mode)
+    def _process_category_distribution(self, dist: Dict[str, List[float]]) -> None:
+        """Process distribution data for categorization."""
+        self.quantiles = {
+            concept: (
+                np.percentile(sorted(dist[concept]), [25, 50, 75])
+                if len(dist[concept]) > 0
+                else (0, 0, 0)
+            )
+            for concept in dist
+        }
 
-                counter += 1
+    def _process_quantile_distribution(self, dist: Dict[str, List[float]]) -> None:
+        """Process distribution data for quantile normalization."""
+        self.n_quantiles = self.cfg.data["n_quantiles"]
+        self.quantiles = {
+            concept: (
+                [
+                    np.percentile(sorted(dist[concept]), i)
+                    for i in np.linspace(100 / self.n_quantiles, 100, self.n_quantiles)
+                ]
+                if len(dist[concept]) > 0
+                else [0] * self.n_quantiles
+            )
+            for concept in dist
+        }
 
-    def get_lab_dist(self):
-        self.logger.info("Getting lab distribution")
-        cfg = self.cfg
+    def _prepare_chunk(self, chunk: pd.DataFrame, counter: int) -> pd.DataFrame:
+        """Prepare and process a single chunk of data."""
+        # Ensure subject_id is treated as integer
+        chunk[SUBJECT_ID] = pd.to_numeric(chunk[SUBJECT_ID]).astype("Int64")
+        chunk = chunk.reset_index(drop=True)
+        logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+        return self.process_chunk(chunk)
+
+    def _save_chunk(self, chunk: pd.DataFrame, counter: int) -> None:
+        """Save a processed chunk to file."""
+        save_path = join(self.cfg.paths.output_dir, self.cfg.file_name)
+        mode = "w" if counter == 0 else "a"
+        if self.cfg.file_name.endswith(".parquet"):
+            chunk.to_parquet(save_path, index=False, mode=mode)
+        else:
+            chunk.to_csv(save_path, index=False, mode=mode)
+
+    def get_lab_values(self):
+        logger.info("Getting lab distribution")
         lab_val_dict = {}
         counter = 0
 
         for chunk in tqdm(
             self.data_loader.load_chunks(
-                cfg.data.filename, chunk_size=cfg.data.chunksize, test=self.test
+                filename=split(self.cfg.paths.input)[1],
             ),
             desc="Building lab distribution",
         ):
-            self.logger.info(f"Loaded {cfg.data.chunksize*counter}")
-            chunk["numeric_value"] = pd.to_numeric(
-                chunk["numeric_value"], errors="coerce"
+            if self.numeric_value not in chunk.columns or CODE not in chunk.columns:
+                raise ValueError(
+                    f"Missing required columns. Available columns: {chunk.columns}"
+                )
+            logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+            chunk[self.numeric_value] = pd.to_numeric(
+                chunk[self.numeric_value], errors="coerce"
             )
-            chunk = chunk.dropna(subset=["numeric_value"])
-            grouped = chunk.groupby("code")["numeric_value"].apply(list).to_dict()
+            chunk = chunk.dropna(subset=[self.numeric_value])
+            grouped = chunk.groupby(CODE)[self.numeric_value].apply(list).to_dict()
 
             for key, values in grouped.items():
                 if key in lab_val_dict:
@@ -141,12 +161,12 @@ class Normaliser:
         return lab_val_dict
 
     def process_chunk(self, chunk):
-        chunk["numeric_value"] = chunk.apply(self.normalise, axis=1)
+        chunk[self.numeric_value] = chunk.apply(self.normalise, axis=1)
         return chunk
 
     def normalise(self, row):
-        concept = row["code"]
-        value = row["numeric_value"]
+        concept = row[CODE]
+        value = row[self.numeric_value]
         if not pd.notnull(pd.to_numeric(value, errors="coerce")):
             return value
         else:
