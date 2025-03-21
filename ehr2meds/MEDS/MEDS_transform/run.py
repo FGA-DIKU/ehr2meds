@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 
 import yaml
 from azure.ai.ml import Input, MLClient, Output, command
@@ -31,7 +32,7 @@ def main():
     event_config_fp = config.get("event_config_path")
 
     # Use the command-line compute target if provided; otherwise, use the config file value.
-    compute_target = args.compute 
+    compute_target = args.compute
 
     # Create the ML client using the default Azure credential.
     ml_client = MLClient.from_config(DefaultAzureCredential())
@@ -42,11 +43,17 @@ def main():
         "output_dir": Output(path=output_uri, type="uri_folder", mode="rw_mount")
     }
 
+    # Get the directory where the run.py script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Full path to run.sh
+    run_sh_path = os.path.join(script_dir, "run.sh")
+
     # Define and submit the job.
     job = command(
         code=".",  # Folder with source code.
         # Pass the input, pipeline config, event config, and output paths as arguments.
-        command=f'bash run_premeds_transform.sh ${{inputs.input_dir}} "{pipeline_config_fp}" "{event_config_fp}" ${{outputs.output_dir}}',
+        command=f'bash {run_sh_path} ${{inputs.input_dir}} "{pipeline_config_fp}" "{event_config_fp}" ${{outputs.output_dir}}',
         inputs=inputs,
         outputs=outputs,
         environment="MEDS_transform@latest",
