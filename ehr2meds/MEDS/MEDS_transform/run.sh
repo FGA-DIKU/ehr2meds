@@ -18,7 +18,7 @@
 #   (OPTIONAL) do_unzip flag: Set do_unzip=true to unzip CSV.GZ files before processing.
 #
 # Example:
-#   bash run_premeds_transform.sh /data/raw /configs/pipeline.yaml /configs/event.yaml /data/output do_unzip=true
+#   bash run.sh /data/raw /configs/pipeline.yaml /configs/event.yaml /data/output do_unzip=true
 # -----------------------------------------------------------------------------
 
 # Exit immediately if any command exits with a non-zero status.
@@ -115,7 +115,7 @@ export EVENT_CONFIG_FP
 echo "Running extraction pipeline."
 # Execute the PREMEDS transform runner with the pipeline configuration.
 # Any additional arguments are forwarded.
-PREMEDS_transform-runner "pipeline_config_fp=${PIPELINE_CONFIG_FP}" "$@"
+MEDS_transform-runner "pipeline_config_fp=${PIPELINE_CONFIG_FP}" "$@"
 
 echo "Starting cleanup..."
 # Example cleanup: List any empty files or directories.
