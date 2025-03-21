@@ -9,12 +9,12 @@ description: |-
 
   export EVENT_CONVERSION_CONFIG_FP=event_configs.yaml       # Path to your event conversion config
   export PREMEDS_INPUT_DIR=../preMEDS_w_meta                 # Path to the output dir of the pre-MEDS step
-  export PREMEDS_MEDS_COHORT_DIR=../MEDS_new_data            # Path to where you want the dataset to live
+  export MEDS_OUTPUT_DIR=../MEDS_new_data            # Path to where you want the dataset to live
 
 event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
 
 input_dir: ${oc.env:PREMEDS_INPUT_DIR}
-cohort_dir: ${oc.env:PREMEDS_MEDS_COHORT_DIR}
+cohort_dir: ${oc.env:MEDS_OUTPUT_DIR}
 
 etl_metadata:
   dataset_name: preMEDS

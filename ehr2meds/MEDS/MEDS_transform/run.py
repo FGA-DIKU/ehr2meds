@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import os
 
 import yaml
 from azure.ai.ml import Input, MLClient, Output, command
@@ -19,6 +18,12 @@ def main():
         default="CPU-20-LP",
         help="Optional compute target.",
     )
+    parser.add_argument(
+        "--experiment",
+        type=str,
+        default="MEDS",
+        help="Optional experiment name.",
+    )
     args = parser.parse_args()
 
     # Load the configuration from the provided YAML file.
@@ -29,10 +34,13 @@ def main():
     input_uri = config.get("input_uri")
     output_uri = config.get("output_uri")
     pipeline_config_fp = config.get("pipeline_config_path")
-    event_config_fp = config.get("event_config_path")
+    event_conversion_config_fp = config.get("event_conversion_config_path")
 
     # Use the command-line compute target if provided; otherwise, use the config file value.
     compute_target = args.compute
+
+    # Use the command-line experiment name if provided
+    experiment_name = args.experiment
 
     # Create the ML client using the default Azure credential.
     ml_client = MLClient.from_config(DefaultAzureCredential())
@@ -43,24 +51,21 @@ def main():
         "output_dir": Output(path=output_uri, type="uri_folder", mode="rw_mount")
     }
 
-    # Get the directory where the run.py script is located
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Full path to run.sh
-    run_sh_path = os.path.join(script_dir, "run.sh")
+    # Use path relative to the root directory instead of script directory
+    run_sh_path = "ehr2meds/MEDS/MEDS_transform/run.sh"
 
     # Define and submit the job.
     job = command(
         code=".",  # Folder with source code.
-        # Pass the input, pipeline config, event config, and output paths as arguments.
-        command=f'bash {run_sh_path} ${{inputs.input_dir}} "{pipeline_config_fp}" "{event_config_fp}" ${{outputs.output_dir}}',
+        # Use the path relative to root
+        command=f'bash {run_sh_path} ${{inputs.input_dir}} "{pipeline_config_fp}" "{event_conversion_config_fp}" ${{outputs.output_dir}}',
         inputs=inputs,
         outputs=outputs,
         environment="MEDS_transform@latest",
         compute=compute_target,
     )
 
-    ml_client.create_or_update(job, experiment_name="MEDS")
+    ml_client.create_or_update(job, experiment_name=experiment_name)
 
 
 if __name__ == "__main__":
