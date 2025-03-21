@@ -15,8 +15,8 @@ def main():
     parser.add_argument(
         "--compute",
         type=str,
-        default=None,
-        help="Optional compute target to override the config.",
+        default="CPU-20-LP",
+        help="Optional compute target.",
     )
     args = parser.parse_args()
 
@@ -31,7 +31,7 @@ def main():
     event_config_fp = config.get("event_config_path")
 
     # Use the command-line compute target if provided; otherwise, use the config file value.
-    compute_target = args.compute if args.compute else "CPU-20-LP"
+    compute_target = args.compute 
 
     # Create the ML client using the default Azure credential.
     ml_client = MLClient.from_config(DefaultAzureCredential())
