@@ -174,7 +174,7 @@ register_contacts:
     time_format: "%Y-%m-%d %H:%M:%S"
 ```
 
-When executed, `run.py` will submit a job to your Azure ML workspace. The job calls the `run_premeds_transform.sh` bash script with the following parameters:
+When executed, `run.py` will submit a job to your Azure ML workspace. The job calls the `run.sh` bash script with the following parameters:
 
 - **Input Directory:** Path to raw PREMEDS data.
 - **Pipeline Config File Path:** Path to the pipeline configuration.
