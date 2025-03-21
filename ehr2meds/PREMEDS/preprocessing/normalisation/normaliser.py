@@ -127,7 +127,8 @@ class Normaliser:
         if self.cfg.file_name.endswith(".parquet"):
             chunk.to_parquet(save_path, index=False, mode=mode)
         else:
-            chunk.to_csv(save_path, index=False, mode=mode)
+            # Write header only for the first chunk
+            chunk.to_csv(save_path, index=False, mode=mode, header=(counter == 0))
 
     def get_lab_values(self):
         logger.info("Getting lab distribution")
