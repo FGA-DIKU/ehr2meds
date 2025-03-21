@@ -1,0 +1,12 @@
+# Directory containing raw PREMEDS data (input).
+input_uri: "outputs/preMEDS/"
+
+# Directory where processed PREMEDS data will be stored (output).
+output_uri: "outputs/MEDS/"
+
+# File path to the pipeline configuration for data processing.
+pipeline_config_path: "configs/extract_SP.yaml"
+
+# File path to the event conversion configuration.
+event_conversion_config_path: "configs/event_configs.yaml"
+

@@ -4,3 +4,5 @@ pandas
 tqdm
 fastparquet
 pyarrow
+PyYAML
+meds
