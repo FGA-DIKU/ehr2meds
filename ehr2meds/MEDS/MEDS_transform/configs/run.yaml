@@ -1,0 +1,14 @@
+# Directory containing raw PREMEDS data (input).
+input_uri: ""
+
+# Directory where processed PREMEDS data will be stored (output).
+output_uri: ""
+
+# File path to the pipeline configuration for data processing.
+pipeline_config_path: "/path/to/configs/pipeline.yaml"
+
+# File path to the event conversion configuration.
+event_config_path: "/path/to/configs/event.yaml"
+
+# Optional compute target. This can be overridden on the command line.
+compute_target: "CPU-20-LP"
