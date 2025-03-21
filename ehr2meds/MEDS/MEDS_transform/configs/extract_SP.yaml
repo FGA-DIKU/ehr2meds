@@ -23,6 +23,11 @@ etl_metadata:
 stage_configs:
   shard_events:
     infer_schema_length: 999999999
+  split_and_shard_subjects:
+    split_fracs:
+      train: 0.8
+      tuning: 0.1
+      held_out: 0.1
 
 stages:
   - shard_events
