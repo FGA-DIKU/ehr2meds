@@ -21,7 +21,7 @@ def main():
     parser.add_argument(
         "--experiment",
         type=str,
-        default="MEDS",
+        default="MEDS@latest",
         help="Optional experiment name.",
     )
     args = parser.parse_args()
@@ -42,6 +42,8 @@ def main():
     # Use the command-line experiment name if provided
     experiment_name = args.experiment
 
+    environment = args.environment
+
     # Create the ML client using the default Azure credential.
     ml_client = MLClient.from_config(DefaultAzureCredential())
 
@@ -61,7 +63,7 @@ def main():
         command=f'bash {run_sh_path} ${{inputs.input_dir}} "{pipeline_config_fp}" "{event_conversion_config_fp}" ${{outputs.output_dir}}',
         inputs=inputs,
         outputs=outputs,
-        environment="MEDS_transform@latest",
+        environment=environment,
         compute=compute_target,
     )
 
