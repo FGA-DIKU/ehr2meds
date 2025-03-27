@@ -21,8 +21,14 @@ def main():
     parser.add_argument(
         "--experiment",
         type=str,
-        default="MEDS@latest",
+        default="MEDS",
         help="Optional experiment name.",
+    )
+    parser.add_argument(
+        "--environment",
+        type=str,
+        default="MEDS@latest",
+        help="Optional environment name.",
     )
     args = parser.parse_args()
 
