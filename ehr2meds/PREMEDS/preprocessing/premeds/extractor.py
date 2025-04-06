@@ -106,7 +106,7 @@ class PREMEDSExtractor:
 
     def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process all medical concepts"""
-        for concept_type, concept_config in self.cfg.concepts.items():
+        for concept_type, concept_config in self.cfg.get("concepts", {}).items():
             if concept_type == "admissions":
                 self.format_admissions(concept_config, subject_id_mapping)
                 continue  # continue to next concept
@@ -122,7 +122,9 @@ class PREMEDSExtractor:
         # Load the register-SP mapping once - this maps register PIDs to SP hashes
         register_sp_link = self._get_register_sp_link()
 
-        for concept_type, concept_config in self.cfg.register_concepts.items():
+        for concept_type, concept_config in self.cfg.get(
+            "register_concepts", {}
+        ).items():
             logger.info(f"Processing register concept: {concept_type}")
             try:
                 self.process_register_concept_chunks(

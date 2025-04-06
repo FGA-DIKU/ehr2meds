@@ -12,24 +12,72 @@ N_TEST_CHUNKS = 2
 
 
 class BaseDataLoader(ABC):
+    PRIMARY_SEPARATOR = ";"
+    FALLBACK_SEPARATOR = ","  # Only use coma as fallback, in the opposite case it will load the file with ";" and collapse all into one column
+    KNOWN_SEPARATORS = [PRIMARY_SEPARATOR, FALLBACK_SEPARATOR]
     CSV_ENCODINGS = ["iso88591", "utf8", "latin1"]
-    CSV_SEPARATORS = [",", ";"]
 
-    def __init__(self, path: str, chunksize: Optional[int] = None, test: bool = False):
+    def __init__(
+        self,
+        path: str,
+        chunksize: Optional[int] = None,
+        test: bool = False,
+    ):
         self.path = path
         self.chunksize = chunksize
         self.test = test
 
-    @abstractmethod
     def load_dataframe(
         self, filename: str, cols: Optional[List[str]] = None
     ) -> pd.DataFrame:
-        pass
+        """Default implementation for loading entire files using pandas."""
+        file_path = self._get_file_path(filename)
+        self._check_file_exists(file_path)
+        if file_path.endswith(".parquet"):
+            return pd.read_parquet(file_path, columns=cols)
+        elif file_path.endswith((".csv", ".asc")):
+            return self._load_csv(file_path, cols)
+        else:
+            raise ValueError(f"Unsupported file type: {file_path}")
+
+    def _detect_separator(self, file_path: str, encoding: str) -> str:
+        """Detect the correct separator by checking first few lines."""
+        try:
+            with open(file_path, "r", encoding=encoding) as f:
+                first_line = f.readline().strip()
+                # Count occurrences of each separator
+                counts = {sep: first_line.count(sep) for sep in self.KNOWN_SEPARATORS}
+                # Choose separator with most occurrences
+                best_sep = max(counts.items(), key=lambda x: x[1])[0]
+                if counts[best_sep] > 0:
+                    return best_sep
+        except Exception:
+            pass
+        return self.KNOWN_SEPARATORS[0]  # Default to first separator if detection fails
+
+    def _load_csv(
+        self, file_path: str, cols: Optional[List[str]] = None
+    ) -> pd.DataFrame:
+        """Try primary separator first, then fallback."""
+        for encoding in self.CSV_ENCODINGS:
+            for separator in self.KNOWN_SEPARATORS:
+                # Try primary separator first
+                try:
+                    return pd.read_csv(
+                        file_path,
+                        sep=separator,
+                        encoding=encoding,
+                        usecols=cols,
+                    )
+                except Exception:
+                    continue
+        raise ValueError(f"Unable to read file {file_path} with any encoding")
 
     @abstractmethod
     def load_chunks(
         self, filename: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
+        """Abstract method for chunk loading - implementations will differ."""
         pass
 
     def _get_file_path(self, filename: str) -> str:
@@ -44,39 +92,7 @@ class BaseDataLoader(ABC):
 class StandardDataLoader(BaseDataLoader):
     """Local file system data loader using pandas"""
 
-    def load_dataframe(
-        self, filename: str, cols: Optional[List[str]] = None
-    ) -> pd.DataFrame:
-        file_path = self._get_file_path(filename)
-        self._check_file_exists(file_path)
-        if file_path.endswith(".parquet"):
-            df = pd.read_parquet(file_path, columns=cols)
-        elif file_path.endswith((".csv", ".asc")):
-            df = self._load_csv(file_path, cols)
-        else:
-            raise ValueError(f"Unsupported file type: {file_path}")
-        return df
-
-    @classmethod
-    def _load_csv(
-        cls, file_path: str, cols: Optional[List[str]] = None
-    ) -> pd.DataFrame:
-        df = None
-        for encoding in cls.CSV_ENCODINGS:
-            for sep in cls.CSV_SEPARATORS:
-                try:
-                    df = pd.read_csv(
-                        file_path, sep=sep, encoding=encoding, usecols=cols
-                    )
-                    break  # Successful read; break out of inner loop.
-                except Exception:
-                    continue
-            if df is not None:
-                break  # Exit outer loop if a valid DataFrame was read.
-        if df is None:
-            raise ValueError(f"Unable to read file {file_path} with any encoding")
-        return df
-
+    # Now only needs to implement chunk loading
     def load_chunks(
         self, filename: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
@@ -114,33 +130,35 @@ class StandardDataLoader(BaseDataLoader):
     def _load_csv_chunks(
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
+        """Load CSV in chunks, trying separators in priority order."""
         for encoding in self.CSV_ENCODINGS:
-            for sep in self.CSV_SEPARATORS:
+            for separator in self.KNOWN_SEPARATORS:
                 try:
                     chunk_iter = pd.read_csv(
                         file_path,
-                        sep=sep,
+                        sep=separator,
                         encoding=encoding,
                         chunksize=self.chunksize,
                         usecols=cols,
                     )
                     for i, chunk in enumerate(chunk_iter):
-                        if (
-                            self.test and i >= N_TEST_CHUNKS
-                        ):  # In test mode, yield only first three chunks.
+                        if self.test and i >= N_TEST_CHUNKS:
                             break
                         yield chunk
-                    return  # Exit if reading was successful.
+                    return  # Exit if reading was successful
                 except Exception as e:
                     logger.info(
-                        f"Failed with encoding {encoding} and sep {sep}: {str(e)}"
+                        f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}"
                     )
                     continue
-        raise ValueError(f"Unable to read file {file_path} with any encoding")
+
+        raise ValueError(
+            f"Unable to read file {file_path} with any encoding/separator combination"
+        )
 
 
 class AzureDataLoader(BaseDataLoader):
-    """Azure-specific data loader using mltable"""
+    """Azure-specific data loader using mltable for chunking"""
 
     def __init__(
         self,
@@ -171,7 +189,7 @@ class AzureDataLoader(BaseDataLoader):
         file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
         for encoding in self.CSV_ENCODINGS:
-            for delimiter in self.CSV_SEPARATORS:
+            for delimiter in self.KNOWN_SEPARATORS:
                 try:
                     return mltable.from_delimited_files(
                         [{"file": file_path}],
@@ -186,18 +204,6 @@ class AzureDataLoader(BaseDataLoader):
         raise ValueError(
             f"Unable to read file {filename} with any of the provided encodings and delimiters"
         )
-
-    def load_dataframe(
-        self, filename: str, cols: Optional[List[str]] = None
-    ) -> pd.DataFrame:
-        import mltable
-
-        tbl: mltable.MLTable = self._get_azure_dataset(filename)
-        if self.test:
-            tbl = tbl.take(self.test_rows)
-        if cols:
-            tbl = tbl.keep_columns(cols)
-        return tbl.to_pandas_dataframe()
 
     def load_chunks(
         self, filename: str, cols: Optional[List[str]] = None
@@ -214,7 +220,6 @@ class AzureDataLoader(BaseDataLoader):
 
         while chunks_processed < max_chunks:
             logger.info(f"Loading chunk {chunks_processed}")
-            # Take directly from the current offset instead of using skip with i * chunksize
             chunk = (
                 tbl.skip(offset).take(self.chunksize)
                 if offset > 0
