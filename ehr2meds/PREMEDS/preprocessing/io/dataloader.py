@@ -14,6 +14,7 @@ N_TEST_CHUNKS = 2
 class BaseDataLoader(ABC):
     PRIMARY_SEPARATOR = ";"
     FALLBACK_SEPARATOR = ","  # Only use coma as fallback, in the opposite case it will load the file with ";" and collapse all into one column
+    KNOWN_SEPARATORS = [PRIMARY_SEPARATOR, FALLBACK_SEPARATOR]
     CSV_ENCODINGS = ["iso88591", "utf8", "latin1"]
 
     def __init__(
@@ -59,26 +60,17 @@ class BaseDataLoader(ABC):
     ) -> pd.DataFrame:
         """Try primary separator first, then fallback."""
         for encoding in self.CSV_ENCODINGS:
-            # Try primary separator first
-            try:
-                return pd.read_csv(
-                    file_path,
-                    sep=self.PRIMARY_SEPARATOR,
-                    encoding=encoding,
-                    usecols=cols,
-                )
-            except Exception:
-                # Try fallback separator
+            for separator in self.KNOWN_SEPARATORS:
+                # Try primary separator first
                 try:
                     return pd.read_csv(
                         file_path,
-                        sep=self.FALLBACK_SEPARATOR,
+                        sep=separator,
                         encoding=encoding,
                         usecols=cols,
                     )
                 except Exception:
                     continue
-
         raise ValueError(f"Unable to read file {file_path} with any encoding")
 
     @abstractmethod
@@ -138,29 +130,31 @@ class StandardDataLoader(BaseDataLoader):
     def _load_csv_chunks(
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
+        """Load CSV in chunks, trying separators in priority order."""
         for encoding in self.CSV_ENCODINGS:
-            for sep in self.FALLBACK_SEPARATORS:
+            for separator in self.KNOWN_SEPARATORS:
                 try:
                     chunk_iter = pd.read_csv(
                         file_path,
-                        sep=sep,
+                        sep=separator,
                         encoding=encoding,
                         chunksize=self.chunksize,
                         usecols=cols,
                     )
                     for i, chunk in enumerate(chunk_iter):
-                        if (
-                            self.test and i >= N_TEST_CHUNKS
-                        ):  # In test mode, yield only first three chunks.
+                        if self.test and i >= N_TEST_CHUNKS:
                             break
                         yield chunk
-                    return  # Exit if reading was successful.
+                    return  # Exit if reading was successful
                 except Exception as e:
                     logger.info(
-                        f"Failed with encoding {encoding} and sep {sep}: {str(e)}"
+                        f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}"
                     )
                     continue
-        raise ValueError(f"Unable to read file {file_path} with any encoding")
+
+        raise ValueError(
+            f"Unable to read file {file_path} with any encoding/separator combination"
+        )
 
 
 class AzureDataLoader(BaseDataLoader):
@@ -195,7 +189,7 @@ class AzureDataLoader(BaseDataLoader):
         file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
         for encoding in self.CSV_ENCODINGS:
-            for delimiter in self.FALLBACK_SEPARATORS:
+            for delimiter in self.KNOWN_SEPARATORS:
                 try:
                     return mltable.from_delimited_files(
                         [{"file": file_path}],
