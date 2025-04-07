@@ -1,0 +1,90 @@
+subject_id_col: subject_id
+
+subject:
+  subject_id_col: subject_id
+  dob:
+    code: 
+      - DOB
+    time: col(birthdate)
+    time_format: "%Y-%m-%d %H:%M:%S"
+  dod:
+    code: 
+      - DOD
+    time: col(deathdate)
+    time_format: "%Y-%m-%d %H:%M:%S"
+  gender:
+    code:
+      - "GENDER"
+      - col(gender)
+    time: null    
+    
+admissions:
+  admissions:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+diagnosis:
+  diagnosis:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d"
+
+medication:
+  medication:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format:  "%Y-%m-%d %H:%M:%S"
+
+procedure:
+  procedure:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+labtest_norm_min_max:
+  labtest_norm_min_max:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    numeric_value: col(numeric_value)
+
+register_medication:
+  register_medication:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+register_diagnosis:
+  register_diagnosis:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    
+register_procedures_other:
+  register_procedures_other:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+register_procedures_surgery:
+  register_procedures_surgery:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+register_contacts:
+  register_contacts:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
