@@ -12,9 +12,7 @@ N_TEST_CHUNKS = 2
 
 
 class BaseDataLoader(ABC):
-    PRIMARY_SEPARATOR = ";"
-    FALLBACK_SEPARATOR = ","  # Only use coma as fallback, in the opposite case it will load the file with ";" and collapse all into one column
-    KNOWN_SEPARATORS = [PRIMARY_SEPARATOR, FALLBACK_SEPARATOR]
+    KNOWN_SEPARATORS = [";", ","]
     CSV_ENCODINGS = ["iso88591", "utf8", "latin1"]
 
     def __init__(
@@ -40,20 +38,16 @@ class BaseDataLoader(ABC):
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
 
-    def _detect_separator(self, file_path: str, encoding: str) -> str:
+    def _detect_separator(self, file_path: str) -> str:
         """Detect the correct separator by checking first few lines."""
-        try:
-            with open(file_path, "r", encoding=encoding) as f:
-                first_line = f.readline().strip()
-                # Count occurrences of each separator
-                counts = {sep: first_line.count(sep) for sep in self.KNOWN_SEPARATORS}
-                # Choose separator with most occurrences
-                best_sep = max(counts.items(), key=lambda x: x[1])[0]
-                if counts[best_sep] > 0:
-                    return best_sep
-        except Exception:
-            pass
-        return self.KNOWN_SEPARATORS[0]  # Default to first separator if detection fails
+        with open(file_path, "r") as f:
+            first_line = f.readline()
+            # Count occurrences of each separator
+            counts = {sep: first_line.count(sep) for sep in self.KNOWN_SEPARATORS}
+            # Choose separator with most occurrences
+            best_sep = max(counts.items(), key=lambda x: x[1])[0]
+            if counts[best_sep] > 0:
+                return best_sep
 
     def _load_csv(
         self, file_path: str, cols: Optional[List[str]] = None
@@ -131,26 +125,26 @@ class StandardDataLoader(BaseDataLoader):
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
         """Load CSV in chunks, trying separators in priority order."""
+        separator = self._detect_separator(file_path)
         for encoding in self.CSV_ENCODINGS:
-            for separator in self.KNOWN_SEPARATORS:
-                try:
-                    chunk_iter = pd.read_csv(
-                        file_path,
-                        sep=separator,
-                        encoding=encoding,
-                        chunksize=self.chunksize,
-                        usecols=cols,
-                    )
-                    for i, chunk in enumerate(chunk_iter):
-                        if self.test and i >= N_TEST_CHUNKS:
-                            break
-                        yield chunk
-                    return  # Exit if reading was successful
-                except Exception as e:
-                    logger.info(
-                        f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}"
-                    )
-                    continue
+            try:
+                chunk_iter = pd.read_csv(
+                    file_path,
+                    sep=separator,
+                    encoding=encoding,
+                    chunksize=self.chunksize,
+                    usecols=cols,
+                )
+                for i, chunk in enumerate(chunk_iter):
+                    if self.test and i >= N_TEST_CHUNKS:
+                        break
+                    yield chunk
+                return  # Exit if reading was successful
+            except Exception as e:
+                logger.info(
+                    f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}"
+                )
+                continue
 
         raise ValueError(
             f"Unable to read file {file_path} with any encoding/separator combination"
@@ -188,19 +182,19 @@ class AzureDataLoader(BaseDataLoader):
 
         file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
+        delimiter = self._detect_separator(file_path)
         for encoding in self.CSV_ENCODINGS:
-            for delimiter in self.KNOWN_SEPARATORS:
-                try:
-                    return mltable.from_delimited_files(
-                        [{"file": file_path}],
-                        delimiter=delimiter,
-                        encoding=encoding,
-                    )
-                except Exception as e:
-                    logger.info(
-                        f"Failed with encoding {encoding} and sep {delimiter}: {str(e)}"
-                    )
-                    continue
+            try:
+                return mltable.from_delimited_files(
+                    [{"file": file_path}],
+                    delimiter=delimiter,
+                    encoding=encoding,
+                )
+            except Exception as e:
+                logger.info(
+                    f"Failed with encoding {encoding} and sep {delimiter}: {str(e)}"
+                )
+                continue
         raise ValueError(
             f"Unable to read file {filename} with any of the provided encodings and delimiters"
         )
