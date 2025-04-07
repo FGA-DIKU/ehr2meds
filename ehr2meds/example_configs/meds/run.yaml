@@ -1,8 +1,12 @@
 # Directory containing raw PREMEDS data (input).
-input_uri: "researcher_data:<premeds_dir>"
+# To get the directory:
+# On azure go to Data -> Researcher Data -> Browse -> right click directory -> Copy usage code ->  job, sdkv2
+# Copy the uri. It looks like this: azureml://subscriptions/.../researcher_data/paths/<your_dir>
+
+input_uri: # Copy uri from azureml usage
 
 # Directory where processed PREMEDS data will be stored (output).
-output_uri: "researcher_data:<meds_dir>" # or azureml uri
+output_uri: # form uri as  azureml://subscriptions/.../researcher_data/paths/<save_path>. e.g. save_path = <your_dir>/MEDS/v01
 
 # File path to the pipeline configuration for data processing.
 pipeline_config_path: "ehr2meds/example_configs/meds/pipeline.yaml"
