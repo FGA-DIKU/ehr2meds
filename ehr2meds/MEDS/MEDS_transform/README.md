@@ -79,6 +79,7 @@ stages:
 ### Event Config File
 
 The event configuration file maps the columns and formats for various event types. Customize these mappings based on your dataset.
+!IMPORTANT: Specify the time_format correctly. Otherwise, meds-transforms will remove rows not matching the time_format.!
 
 Example: `event.yaml`
 

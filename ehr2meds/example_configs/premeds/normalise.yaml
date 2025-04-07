@@ -1,0 +1,17 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+test: true # Just for testing, use false for full conversion
+env: azure
+run_name: normalise_labs
+paths:
+  input: researcher_data:<labtest_path>
+  output_dir: researcher_data:<output_dir> # can be same directory that holds the input file
+
+file_name: labtest_norm_min_max.csv # file name to save the normalised data, make sure it's not already present in the output directory
+  
+data:
+  norm_type: Min_max
+  chunksize: 10_000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+  numeric_value: numeric_value

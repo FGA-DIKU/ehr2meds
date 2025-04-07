@@ -1,0 +1,11 @@
+# Directory containing raw PREMEDS data (input).
+input_uri: "researcher_data:<premeds_dir>"
+
+# Directory where processed PREMEDS data will be stored (output).
+output_uri: "researcher_data:<meds_dir>" # or azureml uri
+
+# File path to the pipeline configuration for data processing.
+pipeline_config_path: "ehr2meds/example_configs/meds/pipeline.yaml"
+
+# File path to the event conversion configuration.
+event_conversion_config_path: "ehr2meds/example_configs/meds/event.yaml"

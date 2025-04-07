@@ -1,0 +1,77 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+test: true # Just for testing, use false for full conversion
+
+env: azure
+run_name: preMEDS
+chunksize: 10_000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+paths:
+  concepts: researcher_data:data-backup/SP-dumps/2024-09-10 # make sure to set the correct path
+  register_concepts: researcher_data:FSEID
+  pid_link: researcher_data:maskerede_data/mapping.csv
+  
+  output: ## set output dir, e.g. researcher_data:<your_dir>
+
+write_file_type: csv 
+
+pid_link: 
+  join_col: PID
+  target_col: CPR_hash
+
+concepts:
+  admissions:
+    filename: CPMI_ADTHaendelser.parquet
+    # columns to keep, rename, and the final names
+    rename_columns:
+      CPR_hash: subject_id
+      Flyt_ind: timestamp_in
+      Flyt_ud: timestamp_out
+      Afsnit: section
+      ADT_haendelse: type
+    use_adm_move: true # also save all move events
+
+  diagnosis:
+    filename: CPMI_Diagnoser.parquet
+    rename_columns:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Noteret_dato: timestamp
+      CPR_hash: subject_id
+    fillna:
+      code:
+        column: fill_code
+        regex: '\((D[^)]+)\)'
+    code_prefix: "D/"
+
+register_concepts:
+  register_diagnosis:
+    filename: diagnoser.asc
+    rename_columns:
+      diagnosekode: code
+      # diagnosetype: code_type
+      dw_ek_kontakt: contact_id
+
+    code_prefix: "RD/"
+    mappings:
+      - source_column: contact_id
+        via_file: kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: PID
+        rename_to: subject_id
+      - source_column: contact_id
+        via_file: kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: dato_slut
+        rename_to: timestamp
+        drop_source: true
+
+patients_info:
+  filename: CPMI_PatientInfo.parquet
+  rename_columns:
+    CPR_hash: subject_id
+    Fødselsdato: birthdate
+    Dødsdato: deathdate
+    Køn: gender
+  file_type: parquet
