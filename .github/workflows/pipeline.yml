@@ -36,8 +36,8 @@ jobs:
             - name: Extract lab distribution
               run: |
                 source .venv/bin/activate
-                python -m ehr2meds.PREMEDS.helper.extract_lab_dist --config ehr2meds/PREMEDS/configs/extract.yaml
-                
+                python -m ehr2meds.PREMEDS.extract_lab_dist --config ehr2meds/PREMEDS/configs/extract.yaml
+
             - name: Normalise data
               run: |
                 source .venv/bin/activate
