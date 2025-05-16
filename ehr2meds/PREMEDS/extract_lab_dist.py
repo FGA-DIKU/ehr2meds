@@ -1,8 +1,8 @@
 import gzip
-import pathlib
+import os
 import pickle
 import shutil
-from os.path import dirname, join
+from os.path import join
 
 from ehr2meds.PREMEDS.preprocessing.extraction.extractor import ValueExtractor
 from ehr2meds.PREMEDS.preprocessing.io.config import load_config
@@ -19,8 +19,8 @@ def my_app(config_path):
     cfg = load_config(config_path)
 
     # Create output directory (parent directory of the output file)
-    output_dir = dirname(cfg.paths.output_dir)
-    pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+    output_dir = cfg.paths.output_dir
+    os.makedirs(output_dir, exist_ok=True)
 
     # Copy config to output directory
     shutil.copyfile(
