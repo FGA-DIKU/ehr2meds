@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "JOB",
         type=str,
-        choices={"premeds", "normalise"},
+        choices={"premeds", "normalise", "extract_lab_dist"},
         help="Job to run.",
     )
     parser.add_argument(

@@ -33,6 +33,11 @@ jobs:
                 source .venv/bin/activate
                 python -m ehr2meds.PREMEDS.main_azure --config ehr2meds/PREMEDS/configs/MEDS_local.yaml
 
+            - name: Extract lab distribution
+              run: |
+                source .venv/bin/activate
+                python -m ehr2meds.PREMEDS.extract_lab_dist --config ehr2meds/PREMEDS/configs/extract.yaml
+
             - name: Normalise data
               run: |
                 source .venv/bin/activate
