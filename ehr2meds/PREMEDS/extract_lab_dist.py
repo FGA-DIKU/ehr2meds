@@ -32,7 +32,7 @@ def my_app(config_path):
     setup_logging(
         log_dir=cfg.get("logging", {}).get("path"),
         log_level=cfg.get("logging", {}).get("level"),
-        name="normalise.log",
+        name="extract_lab_dist.log",
     )
 
     lab_val_dict = ValueExtractor(cfg)()
@@ -45,7 +45,7 @@ def my_app(config_path):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Normalization script")
+    parser = argparse.ArgumentParser(description="Extract lab distribution script")
     parser.add_argument(
         "--config",
         type=str,
