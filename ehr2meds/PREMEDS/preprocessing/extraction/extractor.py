@@ -60,7 +60,9 @@ class ValueExtractor:
             chunk[self.numeric_value] = pd.to_numeric(
                 chunk[self.numeric_value], errors="coerce"
             )
+            logger.info(f"Chunk length before filtering {len(chunk)}")
             chunk = chunk.dropna(subset=[self.numeric_value])
+            logger.info(f"Chunk length after filtering {len(chunk)}")
             grouped = chunk.groupby(CODE)[self.numeric_value].apply(list).to_dict()
 
             for key, values in grouped.items():
