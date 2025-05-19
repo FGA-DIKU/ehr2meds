@@ -208,7 +208,11 @@ class AzureDataLoader(BaseDataLoader):
         if cols:
             tbl = tbl.keep_columns(cols)
 
-        max_chunks = N_TEST_CHUNKS if self.test else float("inf")
+        if self.test:
+            max_chunks = N_TEST_CHUNKS
+        else:
+            max_chunks = float("inf")
+        print("Max chunks", max_chunks)
         chunks_processed = 0
         offset = 0
 
@@ -221,6 +225,7 @@ class AzureDataLoader(BaseDataLoader):
             )
             df = chunk.to_pandas_dataframe()
             if df.empty:
+                logger.info(f"Empty chunk {chunks_processed}")
                 break
 
             offset += self.chunksize
