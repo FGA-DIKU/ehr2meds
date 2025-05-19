@@ -1,8 +1,9 @@
 import logging
-from os.path import dirname, split
+import os
+from os.path import split, dirname
+from typing import Dict, Any
 
 import pandas as pd
-from tqdm import tqdm
 
 from ehr2meds.PREMEDS.preprocessing.constants import CODE
 from ehr2meds.PREMEDS.preprocessing.io.dataloader import get_data_loader
@@ -12,64 +13,89 @@ logger = logging.getLogger(__name__)
 
 class ValueExtractor:
     """
-    The purpose is to extract the distribution of a given values.
-
-    This class takes a path to a table.
-    And an output folder.
-    Iterates through the table, extracting two columns:
-    <name> and <value> and creates a dictionary with the name as the key and the values as the values.
+    Extracts for each lab 'code' a list of its numeric values,
+    streaming through the input via pandas for CSVs and using
+    the data loader for Parquet.
     """
 
     def __init__(self, cfg) -> None:
         self.cfg = cfg
         self.test = cfg.test
-        logger.info(f"test {self.test}")
-        self._init_data_loader()
-        self.numeric_value = cfg.data["numeric_value"]
-
-    def _init_data_loader(self):
-        self.data_loader = get_data_loader(
-            path=dirname(self.cfg.paths.input),
-            env=self.cfg.env,
-            chunksize=self.cfg.data.chunksize,
+        logger.info(f"test mode = {self.test}")
+        self.input_path = cfg.paths.input
+        self.chunksize = cfg.data.chunksize
+        self.numeric_value = cfg.data.numeric_value
+        # Prepare parquet loader; will be used if extension is .parquet
+        path = dirname(self.input_path)
+        filename = split(self.input_path)[1]
+        self.parquet_loader = get_data_loader(
+            env=cfg.env,
+            path=path,
+            chunksize=self.chunksize,
             test=self.test,
-            test_rows=self.cfg.data.get("test_rows", 100_000),
+            test_rows=cfg.data.get("test_rows", 100_000),
         )
 
-    def __call__(self):
-        print("Getting lab distribution")
-        dist = self.get_lab_values()
-        return dist
-
-    def get_lab_values(self):
+    def __call__(self) -> Dict[str, Any]:
         logger.info("Getting lab distribution")
-        lab_val_dict = {}
-        counter = 0
+        return self.get_lab_values()
 
-        for chunk in tqdm(
-            self.data_loader.load_chunks(
-                filename=split(self.cfg.paths.input)[1], cols=[self.numeric_value, CODE]
-            ),
-            desc="Building lab distribution",
-        ):
+    def get_lab_values(self) -> Dict[str, list]:
+        filepath = self.input_path
+        ext = os.path.splitext(filepath)[1].lower()
+        lab_val_dict: Dict[str, list] = {}
+
+        # Choose iterator based on file extension
+        if ext == ".parquet":
+            # Use existing data loader for parquet
+            filename = split(filepath)[1]
+            chunk_iter = self.parquet_loader.load_chunks(
+                filename=filename,
+                cols=[self.numeric_value, CODE],
+            )
+        elif ext in (".csv", ".asc"):  # infer CSV from path
+            # Use pandas for CSV streaming
+            chunk_iter = pd.read_csv(
+                filepath,
+                usecols=[self.numeric_value, CODE],
+                sep=None,
+                engine="python",
+                chunksize=self.chunksize,
+            )
+        else:
+            raise ValueError(f"Unsupported file type: {ext}")
+
+        # optional chunk limit in test mode
+        max_chunks = (
+            self.cfg.data.get("test_chunks", float("inf"))
+            if self.test
+            else float("inf")
+        )
+
+        for i, chunk in enumerate(chunk_iter):
+            if i >= max_chunks:
+                break
+
+            # ensure columns
             if self.numeric_value not in chunk.columns or CODE not in chunk.columns:
                 raise ValueError(
-                    f"Missing required columns. Available columns: {chunk.columns}"
+                    f"Missing required columns. Got: {chunk.columns.tolist()}"
                 )
-            logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+
+            logger.info(f"Processing chunk {i}, raw rows = {len(chunk)}")
+
+            # coerce and drop
             chunk[self.numeric_value] = pd.to_numeric(
                 chunk[self.numeric_value], errors="coerce"
             )
-            logger.info(f"Chunk length before filtering {len(chunk)}")
             chunk = chunk.dropna(subset=[self.numeric_value])
-            logger.info(f"Chunk length after filtering {len(chunk)}")
+            logger.info(f"  after dropna = {len(chunk)} rows")
+
+            # group by code
             grouped = chunk.groupby(CODE)[self.numeric_value].apply(list).to_dict()
 
-            for key, values in grouped.items():
-                if key in lab_val_dict:
-                    lab_val_dict[key].extend(values)
-                else:
-                    lab_val_dict[key] = values
+            # merge
+            for code, vals in grouped.items():
+                lab_val_dict.setdefault(code, []).extend(vals)
 
-            counter += 1
         return lab_val_dict
