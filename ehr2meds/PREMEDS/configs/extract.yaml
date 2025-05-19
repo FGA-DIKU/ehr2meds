@@ -1,0 +1,15 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+test: false
+env: local
+run_name: extract_lab_dist
+paths:
+  input: outputs/preMEDS/labtest.csv
+  output_dir: outputs/preMEDS
+
+data:
+  chunksize: 30000000
+  test_rows: 1000000
+  numeric_value: numeric_value
