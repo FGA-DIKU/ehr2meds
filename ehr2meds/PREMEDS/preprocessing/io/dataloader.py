@@ -13,7 +13,7 @@ N_TEST_CHUNKS = 2
 
 class BaseDataLoader(ABC):
     KNOWN_SEPARATORS = [";", ","]
-    CSV_ENCODINGS = ["iso88591", "utf8", "latin1"]
+    CSV_ENCODINGS = ["iso8859_10", "utf8", "latin1"]
 
     def __init__(
         self,
@@ -56,6 +56,7 @@ class BaseDataLoader(ABC):
         for encoding in self.CSV_ENCODINGS:
             for separator in self.KNOWN_SEPARATORS:
                 # Try primary separator first
+                print("Trying", "encoding", encoding, "separator", separator)
                 try:
                     return pd.read_csv(
                         file_path,
@@ -63,7 +64,8 @@ class BaseDataLoader(ABC):
                         encoding=encoding,
                         usecols=cols,
                     )
-                except Exception:
+                except Exception as e:
+                    print(e)
                     continue
         raise ValueError(f"Unable to read file {file_path} with any encoding")
 
