@@ -3,6 +3,7 @@ from typing import Dict, Optional, Tuple
 import pandas as pd
 
 from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
+from ehr2meds.PREMEDS.preprocessing.io.config import AdmissionsConfig
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     clean_data,
     convert_numeric_columns,
@@ -66,6 +67,7 @@ class ConceptProcessor:
             - Data for the last patient if it's incomplete (spans to next chunk)
         """
         # Preprocess the dataframe
+        admissions_config = AdmissionsConfig(**admissions_config)
         df = preprocess_admissions_df(df, admissions_config, subject_id_mapping)
 
         # Initialize state from last chunk if available
@@ -74,20 +76,18 @@ class ConceptProcessor:
         # Process all patients and generate events
         events = []
 
-        timestamp_out_column = admissions_config.get(
-            "timestamp_out_column", "timestamp_out"
-        )
+        timestamp_out_column = admissions_config.timestamp_out_column
         for subject_id, patient_df in df.groupby(SUBJECT_ID):
             # Handle patient transition if needed
 
             if (
-                patient_state["current_patient_id"] is not None
-                and subject_id != patient_state["current_patient_id"]
+                patient_state.current_patient_id is not None
+                and subject_id != patient_state.current_patient_id
             ):
                 finalize_previous_patient(events, patient_state, timestamp_out_column)
 
             # Set current patient
-            patient_state["current_patient_id"] = subject_id
+            patient_state.current_patient_id = subject_id
 
             # Process this patient's events
             process_patient_events(

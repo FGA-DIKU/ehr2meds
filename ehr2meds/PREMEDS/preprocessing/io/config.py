@@ -1,4 +1,8 @@
 import yaml
+from dataclasses import dataclass
+from typing import Dict
+
+from ehr2meds.PREMEDS.preprocessing.constants import ADMISSION_IND
 
 
 def load_config(config_file):
@@ -37,3 +41,23 @@ class Config(dict):
             del self[name]
         if hasattr(self, name):
             super(Config, self).__delattr__(name)
+
+
+@dataclass
+class AdmissionsConfig:
+    """Configuration for admissions processing."""
+
+    type_column: str = "type"
+    section_column: str = "section"
+    timestamp_in_column: str = "timestamp_in"
+    timestamp_out_column: str = "timestamp_out"
+    admission_event_type: str = ADMISSION_IND.lower()
+    transfer_event_type: str = "flyt ind"
+    save_adm_move: bool = True
+    rename_columns: Dict[str, str] = None
+    filename: str = "admissions"
+    prefix: str = None
+
+    def __post_init__(self):
+        if self.rename_columns is None:
+            self.rename_columns = {}

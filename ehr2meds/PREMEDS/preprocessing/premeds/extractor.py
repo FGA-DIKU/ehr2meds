@@ -6,6 +6,7 @@ from tqdm import tqdm
 from os.path import split
 from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
 from ehr2meds.PREMEDS.preprocessing.io.data_handling import DataHandler
+from ehr2meds.PREMEDS.preprocessing.io.config import AdmissionsConfig
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     factorize_subject_id,
     select_and_rename_columns,
@@ -205,7 +206,7 @@ class PREMEDSExtractor:
         """Process the admissions concept separately, handling patients across chunks."""
         first_chunk = True
         last_patient_data = None  # Store data for patient that spans chunks
-
+        admissions_config = AdmissionsConfig(**admissions_config)
         for chunk in tqdm(
             self.data_handler.load_chunks(admissions_config),
             desc="Chunks admissions",
@@ -225,7 +226,7 @@ class PREMEDSExtractor:
         # Process any remaining last patient data
         final_df = add_discharge_to_last_patient(
             last_patient_data,
-            admissions_config.get("timestamp_out_column", "timestamp_out"),
+            admissions_config.timestamp_out_column,
         )
         if not final_df.empty:
             self.data_handler.save(final_df, "admissions", mode="a")
