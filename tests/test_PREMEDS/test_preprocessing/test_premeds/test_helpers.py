@@ -9,6 +9,7 @@ from ehr2meds.PREMEDS.preprocessing.constants import (
     SUBJECT_ID,
     TIMESTAMP,
 )
+from ehr2meds.PREMEDS.preprocessing.io.config import AdmissionsConfig
 from ehr2meds.PREMEDS.preprocessing.premeds.helpers import (
     add_discharge_to_last_patient,
     create_events_dataframe,
@@ -18,6 +19,7 @@ from ehr2meds.PREMEDS.preprocessing.premeds.helpers import (
     initialize_patient_state,
     prepare_last_patient_info,
     preprocess_admissions_df,
+    PatientState,
 )
 
 
@@ -28,17 +30,23 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         # Mock subject ID mapping
         self.subject_id_mapping = {"patient1": 1, "patient2": 2, "patient3": 3}
 
-        # Sample admissions config
-        self.admissions_config = {
-            "rename_columns": {
+        # Sample admissions config - now using AdmissionsConfig class
+        self.admissions_config = AdmissionsConfig(
+            type_column="type",
+            section_column="section",
+            timestamp_in_column="timestamp_in",
+            timestamp_out_column="timestamp_out",
+            admission_event_type=ADMISSION_IND.lower(),
+            transfer_event_type="flyt ind",
+            save_adm_move=True,
+            rename_columns={
                 "original_col1": "type",
                 "original_col2": "section",
                 "original_col3": "timestamp_in",
                 "original_col4": "timestamp_out",
                 "original_col5": SUBJECT_ID,
             },
-            "save_adm_move": True,
-        }
+        )
 
         # Sample dataframe
         self.sample_df = pd.DataFrame(
@@ -51,10 +59,10 @@ class TestAdtProcessingFunctions(unittest.TestCase):
             }
         )
 
-        # Sample patient state
-        self.patient_state = {
-            "current_patient_id": 1,
-            "admission_start": pd.Series(
+        # Sample patient state - now using PatientState dataclass
+        self.patient_state = PatientState(
+            current_patient_id=1,
+            admission_start=pd.Series(
                 {
                     "type": ADMISSION_IND,
                     "section": "dept1",
@@ -62,7 +70,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
                     "timestamp_out": "2023-01-02",
                 }
             ),
-            "last_transfer": pd.Series(
+            last_transfer=pd.Series(
                 {
                     "type": "flyt ind",
                     "section": "dept2",
@@ -70,7 +78,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
                     "timestamp_out": "2023-01-03",
                 }
             ),
-        }
+        )
 
     def test_preprocess_admissions_df(self):
         """Test preprocessing of admissions dataframe."""
@@ -94,14 +102,14 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         # Test with missing SUBJECT_ID column: Expect KeyError since "subject_id" is required for sorting
         df_without_subject = self.sample_df.copy()
         df_without_subject.drop("original_col5", axis=1, inplace=True)
-        config_without_subject = {
-            "rename_columns": {
+        config_without_subject = AdmissionsConfig(
+            rename_columns={
                 "original_col1": "type",
                 "original_col2": "section",
                 "original_col3": "timestamp_in",
                 "original_col4": "timestamp_out",
             }
-        }
+        )
         with self.assertRaises(KeyError) as context:
             preprocess_admissions_df(
                 df_without_subject, config_without_subject, self.subject_id_mapping
@@ -117,39 +125,43 @@ class TestAdtProcessingFunctions(unittest.TestCase):
             "last_transfer": "test_transfer",
         }
         state = initialize_patient_state(last_patient)
-        self.assertEqual(state["current_patient_id"], 1)
-        self.assertEqual(state["admission_start"], "test_admission")
-        self.assertEqual(state["last_transfer"], "test_transfer")
+        self.assertEqual(state.current_patient_id, 1)
+        self.assertEqual(state.admission_start, "test_admission")
+        self.assertEqual(state.last_transfer, "test_transfer")
 
         # Test with no last_patient_data
         state = initialize_patient_state(None)
-        self.assertIsNone(state["current_patient_id"])
-        self.assertIsNone(state["admission_start"])
-        self.assertIsNone(state["last_transfer"])
+        self.assertIsNone(state.current_patient_id)
+        self.assertIsNone(state.admission_start)
+        self.assertIsNone(state.last_transfer)
 
     def test_finalize_previous_patient(self):
         """Test finalizing previous patient."""
         events = []
 
         # Test with complete admission data
-        finalize_previous_patient(events, self.patient_state)
+        finalize_previous_patient(
+            events, self.patient_state, self.admissions_config.timestamp_out_column
+        )
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0][CODE], "DISCHARGE_ADT")
         self.assertEqual(events[0][SUBJECT_ID], 1)
         self.assertEqual(events[0][TIMESTAMP], "2023-01-03")
 
         # Test patient state is reset
-        self.assertIsNone(self.patient_state["admission_start"])
-        self.assertIsNone(self.patient_state["last_transfer"])
+        self.assertIsNone(self.patient_state.admission_start)
+        self.assertIsNone(self.patient_state.last_transfer)
 
         # Test with incomplete admission data
-        incomplete_state = {
-            "current_patient_id": 2,
-            "admission_start": None,
-            "last_transfer": None,
-        }
+        incomplete_state = PatientState(
+            current_patient_id=2,
+            admission_start=None,
+            last_transfer=None,
+        )
         events = []
-        finalize_previous_patient(events, incomplete_state)
+        finalize_previous_patient(
+            events, incomplete_state, self.admissions_config.timestamp_out_column
+        )
         self.assertEqual(len(events), 0)  # No events should be added
 
     def test_handle_admission_event(self):
@@ -168,13 +180,19 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         )
 
         # Test with no previous admission
-        initial_state = {
-            "current_patient_id": subject_id,
-            "admission_start": None,
-            "last_transfer": None,
-        }
+        initial_state = PatientState(
+            current_patient_id=subject_id,
+            admission_start=None,
+            last_transfer=None,
+        )
         handle_admission_event(
-            subject_id, timestamp_in, dept, row, initial_state, events
+            subject_id,
+            timestamp_in,
+            dept,
+            row,
+            initial_state,
+            events,
+            self.admissions_config,
         )
 
         # Should create 2 events (ADMISSION_ADT and department)
@@ -184,7 +202,11 @@ class TestAdtProcessingFunctions(unittest.TestCase):
 
         # Test with existing admission
         events = []
-        existing_state = self.patient_state.copy()
+        existing_state = PatientState(
+            current_patient_id=subject_id,
+            admission_start=self.patient_state.admission_start,
+            last_transfer=self.patient_state.last_transfer,
+        )
         new_dept = "dept3"
         new_row = pd.Series(
             {
@@ -196,7 +218,13 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         )
 
         handle_admission_event(
-            subject_id, "2023-01-03", new_dept, new_row, existing_state, events
+            subject_id,
+            "2023-01-03",
+            new_dept,
+            new_row,
+            existing_state,
+            events,
+            self.admissions_config,
         )
 
         # Should create 3 events (DISCHARGE_ADT, ADMISSION_ADT and department)
@@ -238,8 +266,16 @@ class TestAdtProcessingFunctions(unittest.TestCase):
 
         # Test with save_adm_move=False
         events = []
-        config_no_save = self.admissions_config.copy()
-        config_no_save["save_adm_move"] = False
+        config_no_save = AdmissionsConfig(
+            type_column="original_col1",
+            section_column="original_col2",
+            timestamp_in_column="original_col3",
+            timestamp_out_column="original_col4",
+            admission_event_type=ADMISSION_IND.lower(),
+            transfer_event_type="flyt ind",
+            save_adm_move=False,
+            rename_columns=self.admissions_config.rename_columns,
+        )
 
         handle_transfer_event(
             subject_id,
@@ -256,7 +292,7 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         self.assertEqual(events[0][CODE], f"AFSNIT_ADT/{dept}")
 
         # Verify last_transfer was updated
-        self.assertEqual(self.patient_state["last_transfer"].equals(row), True)
+        self.assertEqual(self.patient_state.last_transfer.equals(row), True)
 
     def test_create_events_dataframe(self):
         """Test creating events dataframe."""
@@ -288,29 +324,29 @@ class TestAdtProcessingFunctions(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result[SUBJECT_ID], 1)
         self.assertEqual(
-            result["admission_start"].equals(self.patient_state["admission_start"]),
+            result["admission_start"].equals(self.patient_state.admission_start),
             True,
         )
         self.assertEqual(
-            result["last_transfer"].equals(self.patient_state["last_transfer"]), True
+            result["last_transfer"].equals(self.patient_state.last_transfer), True
         )
         self.assertEqual(result["events"], [])
 
         # Test with incomplete patient state
-        incomplete_state = {
-            "current_patient_id": 1,
-            "admission_start": None,
-            "last_transfer": None,
-        }
+        incomplete_state = PatientState(
+            current_patient_id=1,
+            admission_start=None,
+            last_transfer=None,
+        )
         result = prepare_last_patient_info(incomplete_state)
         self.assertIsNone(result)
 
         # Test with no patient ID
-        no_patient_state = {
-            "current_patient_id": None,
-            "admission_start": self.patient_state["admission_start"],
-            "last_transfer": self.patient_state["last_transfer"],
-        }
+        no_patient_state = PatientState(
+            current_patient_id=None,
+            admission_start=self.patient_state.admission_start,
+            last_transfer=self.patient_state.last_transfer,
+        )
         result = prepare_last_patient_info(no_patient_state)
         self.assertIsNone(result)
 
@@ -321,10 +357,11 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
         # Define constants that might be needed
         self.subject_id = 12345
         self.discharge_timestamp = pd.Timestamp("2023-01-01 15:30:00")
+        self.timestamp_out_column = "timestamp_out"
 
     def test_none_last_patient_data(self):
         """Test when last_patient_data is None"""
-        result = add_discharge_to_last_patient(None)
+        result = add_discharge_to_last_patient(None, self.timestamp_out_column)
         self.assertTrue(result.empty)
         self.assertIsInstance(result, pd.DataFrame)
 
@@ -337,7 +374,9 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
             "events": [],
         }
 
-        result = add_discharge_to_last_patient(last_patient_data)
+        result = add_discharge_to_last_patient(
+            last_patient_data, self.timestamp_out_column
+        )
         self.assertTrue(result.empty)
         self.assertIsInstance(result, pd.DataFrame)
 
@@ -397,7 +436,9 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
         )
 
         # Call the function
-        result = add_discharge_to_last_patient(last_patient_data)
+        result = add_discharge_to_last_patient(
+            last_patient_data, self.timestamp_out_column
+        )
 
         # Reset index for comparison
         result = result.reset_index(drop=True)
@@ -420,7 +461,9 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
         }
 
         # Call the function
-        result = add_discharge_to_last_patient(last_patient_data)
+        result = add_discharge_to_last_patient(
+            last_patient_data, self.timestamp_out_column
+        )
 
         # Assertions
         self.assertFalse(result.empty)
@@ -443,7 +486,9 @@ class TestAddDischargeToLastPatient(unittest.TestCase):
         }
 
         # Call the function
-        result = add_discharge_to_last_patient(last_patient_data)
+        result = add_discharge_to_last_patient(
+            last_patient_data, self.timestamp_out_column
+        )
 
         # Assertions
         self.assertFalse(result.empty)

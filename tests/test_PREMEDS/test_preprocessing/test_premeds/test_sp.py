@@ -3,6 +3,7 @@ import unittest
 import pandas as pd
 
 from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, ADMISSION_IND
+from ehr2meds.PREMEDS.preprocessing.io.config import AdmissionsConfig
 from ehr2meds.PREMEDS.preprocessing.premeds.sp import ConceptProcessor
 
 
@@ -131,7 +132,7 @@ class TestServiceProvider(unittest.TestCase):
             single_patient_df, self.admissions_config, self.subject_id_mapping
         )
 
-        # Check number of events (ADMISSION + dept1 + ADM_move + dept2 + DISCHARGE)
+        # Check number of events (ADMISSION + dept1 + ADM_move + dept2 )
         self.assertEqual(result_df.shape[0], 4)
 
         # Verify all events belong to the same patient
@@ -206,6 +207,50 @@ class TestServiceProvider(unittest.TestCase):
         self.assertEqual(
             result_df2[SUBJECT_ID].iloc[1], 2
         )  # New events should be for patient2
+
+    def test_process_adt_admissions_simple_admission(self):
+        """Test processing with simple admission events (no type column)."""
+        # Create config for simple admissions (no type column)
+        simple_config = {
+            "type_column": None,  # No type column for simple admissions
+            "section_column": "section",
+            "timestamp_in_column": "timestamp_in",
+            "timestamp_out_column": "timestamp_out",
+            "save_adm_move": True,
+            "rename_columns": {
+                "original_col2": "section",
+                "original_col3": "timestamp_in",
+                "original_col4": "timestamp_out",
+                "original_col5": SUBJECT_ID,
+            },
+        }
+
+        # Create simple admission dataframe (no type column)
+        simple_df = pd.DataFrame(
+            {
+                "original_col2": ["dept1", "dept2"],
+                "original_col3": ["2023-01-01", "2023-01-01"],
+                "original_col4": ["2023-01-02", "2023-01-02"],
+                "original_col5": ["patient1", "patient2"],
+            }
+        )
+
+        result_df, _ = ConceptProcessor.process_adt_admissions(
+            simple_df, simple_config, self.subject_id_mapping
+        )
+
+        # Check number of events (2 patients * 3 events each: ADMISSION + dept + DISCHARGE)
+        self.assertEqual(result_df.shape[0], 6)
+
+        # Check events for patient 1
+        patient1_events = result_df[result_df[SUBJECT_ID] == 1]
+        self.assertEqual(len(patient1_events), 3)
+
+        # Check event sequence for patient 1
+        patient1_codes = list(patient1_events[CODE])
+        self.assertEqual(patient1_codes[0], "ADMISSION_ADT")
+        self.assertEqual(patient1_codes[1], "AFSNIT_ADT/dept1")
+        self.assertEqual(patient1_codes[2], "DISCHARGE_ADT")
 
 
 if __name__ == "__main__":
