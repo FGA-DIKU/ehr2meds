@@ -74,13 +74,17 @@ class ConceptProcessor:
         # Process all patients and generate events
         events = []
 
+        timestamp_out_column = admissions_config.get(
+            "timestamp_out_column", "timestamp_out"
+        )
         for subject_id, patient_df in df.groupby(SUBJECT_ID):
             # Handle patient transition if needed
+
             if (
                 patient_state["current_patient_id"] is not None
                 and subject_id != patient_state["current_patient_id"]
             ):
-                finalize_previous_patient(events, patient_state)
+                finalize_previous_patient(events, patient_state, timestamp_out_column)
 
             # Set current patient
             patient_state["current_patient_id"] = subject_id

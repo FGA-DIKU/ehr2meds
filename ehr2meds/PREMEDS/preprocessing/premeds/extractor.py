@@ -223,6 +223,9 @@ class PREMEDSExtractor:
             first_chunk = False
 
         # Process any remaining last patient data
-        final_df = add_discharge_to_last_patient(last_patient_data)
+        final_df = add_discharge_to_last_patient(
+            last_patient_data,
+            admissions_config.get("timestamp_out_column", "timestamp_out"),
+        )
         if not final_df.empty:
             self.data_handler.save(final_df, "admissions", mode="a")
