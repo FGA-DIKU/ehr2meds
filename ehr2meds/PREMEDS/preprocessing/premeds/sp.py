@@ -47,7 +47,7 @@ class ConceptProcessor:
     @staticmethod
     def process_adt_admissions(
         df: pd.DataFrame,
-        admissions_config: dict,
+        admissions_config: AdmissionsConfig,
         subject_id_mapping: Dict[str, int],
         last_patient_data: Optional[dict] = None,
     ) -> Tuple[pd.DataFrame, Optional[dict]]:
@@ -67,7 +67,6 @@ class ConceptProcessor:
             - Data for the last patient if it's incomplete (spans to next chunk)
         """
         # Preprocess the dataframe
-        admissions_config = AdmissionsConfig(**admissions_config)
         df = preprocess_admissions_df(df, admissions_config, subject_id_mapping)
 
         # Initialize state from last chunk if available

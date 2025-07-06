@@ -26,6 +26,7 @@ class TestServiceProvider(unittest.TestCase):
             },
             "save_adm_move": True,
         }
+        self.admissions_config = AdmissionsConfig(**self.admissions_config)
 
         # Sample dataframe with two patients
         self.sample_df = pd.DataFrame(
@@ -224,6 +225,7 @@ class TestServiceProvider(unittest.TestCase):
                 "original_col5": SUBJECT_ID,
             },
         }
+        simple_config = AdmissionsConfig(**simple_config)
 
         # Create simple admission dataframe (no type column)
         simple_df = pd.DataFrame(

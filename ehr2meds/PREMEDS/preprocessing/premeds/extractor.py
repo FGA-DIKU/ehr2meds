@@ -201,14 +201,14 @@ class PREMEDSExtractor:
         return register_sp_link
 
     def format_admissions(
-        self, admissions_config: dict, subject_id_mapping: Dict[str, int]
+        self, config: dict, subject_id_mapping: Dict[str, int]
     ) -> None:
         """Process the admissions concept separately, handling patients across chunks."""
         first_chunk = True
         last_patient_data = None  # Store data for patient that spans chunks
-        admissions_config = AdmissionsConfig(**admissions_config)
+        admissions_config = AdmissionsConfig(**config)
         for chunk in tqdm(
-            self.data_handler.load_chunks(admissions_config),
+            self.data_handler.load_chunks(config),
             desc="Chunks admissions",
         ):
             # Process the chunk with any carried over patient data
