@@ -1,0 +1,46 @@
+subject_id_col: subject_id
+
+subject:
+  subject_id_col: subject_id
+  dob:
+    code:
+      - DOB
+    time: col(birthdate)
+    time_format: "%Y-%m-%d"
+  dod:
+    code:
+      - DOD
+    time: col(deathdate)
+    time_format: "%Y-%m-%d"
+  gender:
+    code:
+      - "GENDER"
+      - col(gender)
+    time: null
+
+admissions:
+  admissions:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+diagnosis:
+  diagnosis:
+    code:
+      - col(code)
+    time: col(time)
+    time_format: "%Y-%m-%d"
+
+medications:
+  medications:
+    code:
+      - col(code)
+    time: col(time)
+    time_format: "%Y-%m-%d %H:%M:%S"
+procedures:
+  procedures:
+    code:
+      - col(code)
+    time: col(time)
+    time_format: "%Y-%m-%d %H:%M:%S"

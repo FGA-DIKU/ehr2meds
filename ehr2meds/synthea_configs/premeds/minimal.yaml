@@ -1,0 +1,63 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+test: false # Just for testing, use false for full conversion
+
+env: local
+run_name: preMEDS
+chunksize: 50_000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+paths:
+  concepts: "C:/Users/fjn197/PhD/projects/PHAIR/pipelines/synthea/output/synthea5000/csv" # make sure to set the correct path
+  # register_concepts: researcher_data:FSEID
+  # pid_link: researcher_data:maskerede_data/mapping.csv
+
+  output: outputs/synthea_premeds
+
+write_file_type: csv
+
+# pid_link:
+#   join_col: PID
+#   target_col: CPR_hash
+
+concepts:
+  admissions:
+    filename: encounters.csv
+    rename_columns:
+      PATIENT: subject_id
+      START: timestamp_in
+      STOP: timestamp_out
+      ENCOUNTERCLASS: department
+    type_column: null
+
+  diagnosis:
+    filename: conditions.csv
+    rename_columns:
+      CODE: code
+      START: time
+      PATIENT: subject_id
+    code_prefix: "D/"
+  medications:
+    filename: medications.csv
+    rename_columns:
+      CODE: code
+      START: time
+      PATIENT: subject_id
+    code_prefix: "M/"
+  procedures:
+    filename: procedures.csv
+    rename_columns:
+      CODE: code
+      START: time
+      PATIENT: subject_id
+    code_prefix: "P/"
+
+patients_info:
+  filename: patients.csv
+  rename_columns:
+    Id: subject_id
+    BIRTHDATE: birthdate
+    DEATHDATE: deathdate
+    GENDER: gender
+    RACE: race
+  # file_type: csv
