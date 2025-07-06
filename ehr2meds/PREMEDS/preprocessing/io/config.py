@@ -53,7 +53,7 @@ class AdmissionsConfig:
     timestamp_out_column: str = "timestamp_out"
     admission_event_type: str = ADMISSION_IND.lower()
     transfer_event_type: str = "flyt ind"
-    use_admission_move: bool = False
+    use_adm_move: bool = False
     save_adm_move: bool = False
     rename_columns: Dict[str, str] = None
     filename: str = "admissions"
