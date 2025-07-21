@@ -1,13 +1,15 @@
 import pickle
 from typing import Dict
+from os.path import exists, join, split
 
 import pandas as pd
 from tqdm import tqdm
-from os.path import split
+
 from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
 from ehr2meds.PREMEDS.preprocessing.io.data_handling import DataHandler
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     factorize_subject_id,
+    map_pids_to_ints,
     select_and_rename_columns,
 )
 from ehr2meds.PREMEDS.preprocessing.premeds.helpers import add_discharge_to_last_patient
@@ -16,6 +18,7 @@ from ehr2meds.PREMEDS.preprocessing.premeds.sp import ConceptProcessor
 import logging
 
 logger = logging.getLogger(__name__)
+HASH_TO_INT_MAP_PATH = "hash_to_integer_map.pkl"
 
 
 class PREMEDSExtractor:
@@ -77,32 +80,67 @@ class PREMEDSExtractor:
 
     def format_patients_info(self) -> Dict[str, int]:
         """
-        Load and process patient information, creating a mapping of patient IDs.
+        Load and process patient information, creating or loading a mapping of patient IDs.
+
+        The method follows this logic to obtain the subject ID mapping:
+        1. Check for an explicit path in `cfg.patients_info.subject_id_map_path`.
+        2. If not found, check for 'hash_to_integer_map.pkl' in the output directory.
+        3. If no existing map is found, create a new one from the patient data.
 
         Returns:
-            Dict[str, int]: Mapping from original patient IDs to integer IDs
+            Dict[str, int]: Mapping from original patient IDs to integer IDs.
         """
         logger.info("Load patients info")
         df = self.data_handler.load_pandas(
             self.cfg.patients_info.filename,
             cols=list(self.cfg.patients_info.get("rename_columns", {}).keys()),
         )
-        # Use columns_map to subset and rename the columns.
         df = select_and_rename_columns(
             df, self.cfg.patients_info.get("rename_columns", {})
         )
         logger.info(f"Number of patients after selecting columns: {len(df)}")
 
-        df, hash_to_int_map = factorize_subject_id(df)
-        # Save the mapping for reference.
-        with open(f"{self.cfg.paths.output}/hash_to_integer_map.pkl", "wb") as f:
-            pickle.dump(hash_to_int_map, f)
+        hash_to_int_map = self.get_hash_to_int_map()
+        if hash_to_int_map is None:
+            output_map_path = join(self.cfg.paths.output, HASH_TO_INT_MAP_PATH)
+            logger.info(
+                f"No existing map found. Creating and saving new map to: {output_map_path}"
+            )
+            df, hash_to_int_map = factorize_subject_id(df)
+            # Save the new mapping for reference.
+            with open(output_map_path, "wb") as f:
+                pickle.dump(hash_to_int_map, f)
+        else:
+            logger.info("Applying loaded subject_id map to patient data.")
+            df = map_pids_to_ints(df, hash_to_int_map)
 
         df = df.dropna(subset=[SUBJECT_ID], how="any")
         logger.info(f"Number of patients before saving: {len(df)}")
         self.data_handler.save(df, "subject")
 
         return hash_to_int_map
+
+    def get_hash_to_int_map(self) -> Dict[str, int] | None:
+        explicit_map_path = self.cfg.paths.get("hash_to_integer_map")
+        output_map_path = join(self.cfg.paths.output, HASH_TO_INT_MAP_PATH)
+
+        if explicit_map_path and exists(explicit_map_path):
+            logger.info(
+                f"Loading existing subject_id map from explicit path: {explicit_map_path}"
+            )
+            with open(explicit_map_path, "rb") as f:
+                hash_to_int_map = pickle.load(f)
+            return hash_to_int_map
+
+        if output_map_path and exists(output_map_path):
+            logger.info(
+                f"Loading existing subject_id map from output directory: {output_map_path}"
+            )
+            with open(output_map_path, "rb") as f:
+                hash_to_int_map = pickle.load(f)
+            return hash_to_int_map
+
+        return None
 
     def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process all medical concepts"""
