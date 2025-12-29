@@ -1,6 +1,8 @@
 import logging
-from os.path import dirname, join, split
-from typing import Dict, List
+import os
+import re
+from os.path import dirname, isdir, join, split, splitext
+from typing import Dict, Iterator, List
 
 import numpy as np
 import pandas as pd
@@ -28,13 +30,28 @@ class Normaliser:
         self.numeric_value = cfg.data["numeric_value"]
 
     def _init_data_loader(self):
-        self.data_loader = get_data_loader(
-            path=dirname(self.cfg.paths.input),
-            env=self.cfg.env,
-            chunksize=self.cfg.data.chunksize,
-            test=self.test,
-            test_rows=self.cfg.data.get("test_rows", 100_000),
-        )
+        # Check if input is a directory (chunked files) or a single file
+        self.input_is_directory = isdir(self.cfg.paths.input)
+        
+        if self.input_is_directory:
+            # For directory input, we'll load chunks directly from files
+            # No need for a data loader with chunksize
+            self.data_loader = get_data_loader(
+                path=self.cfg.paths.input,
+                env=self.cfg.env,
+                chunksize=None,  # Not used for directory loading
+                test=self.test,
+                test_rows=self.cfg.data.get("test_rows", 100_000),
+            )
+        else:
+            # For single file input, use existing behavior
+            self.data_loader = get_data_loader(
+                path=dirname(self.cfg.paths.input),
+                env=self.cfg.env,
+                chunksize=self.cfg.data.chunksize,
+                test=self.test,
+                test_rows=self.cfg.data.get("test_rows", 100_000),
+            )
 
     def __call__(self):
         print("Getting lab distribution")
@@ -46,9 +63,7 @@ class Normaliser:
     def normalise_data(self):
         counter = 0
         for chunk in tqdm(
-            self.data_loader.load_chunks(
-                filename=split(self.cfg.paths.input)[1],
-            ),
+            self._get_chunks(),
             desc="Processing chunks",
         ):
             chunk = self._prepare_chunk(chunk, counter)
@@ -117,18 +132,92 @@ class Normaliser:
         # Ensure subject_id is treated as integer
         chunk[SUBJECT_ID] = pd.to_numeric(chunk[SUBJECT_ID]).astype("Int64")
         chunk = chunk.reset_index(drop=True)
-        logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+        logger.info(f"Loaded chunk {counter}")
         return self.process_chunk(chunk)
 
     def _save_chunk(self, chunk: pd.DataFrame, counter: int) -> None:
         """Save a processed chunk to file."""
-        save_path = join(self.cfg.paths.output_dir, self.cfg.file_name)
-        mode = "w" if counter == 0 else "a"
+        if self.input_is_directory:
+            # If input was chunked, save output as chunks too
+            base_name, ext = splitext(self.cfg.file_name)
+            # Create directory if it doesn't exist
+            chunk_dir = join(self.cfg.paths.output_dir, base_name)
+            os.makedirs(chunk_dir, exist_ok=True)
+            # Save file as base_name/chunk_counter.ext
+            chunk_filename = f"chunk_{counter}{ext}"
+            save_path = join(chunk_dir, chunk_filename)
+            mode = "w"
+            header = True  # Always write header for chunked files
+        else:
+            # Original behavior: append to single file
+            save_path = join(self.cfg.paths.output_dir, self.cfg.file_name)
+            mode = "w" if counter == 0 else "a"
+            header = (counter == 0)  # Write header only for first chunk
+        
         if self.cfg.file_name.endswith(".parquet"):
             chunk.to_parquet(save_path, index=False, mode=mode)
         else:
-            # Write header only for the first chunk
-            chunk.to_csv(save_path, index=False, mode=mode, header=(counter == 0))
+            chunk.to_csv(save_path, index=False, mode=mode, header=header)
+
+    def _get_chunks(self) -> Iterator[pd.DataFrame]:
+        """Get chunks from either a directory of chunk files or a single file."""
+        if self.input_is_directory:
+            yield from self._load_chunks_from_directory()
+        else:
+            yield from self.data_loader.load_chunks(
+                filename=split(self.cfg.paths.input)[1],
+            )
+
+    def _load_chunks_from_directory(self) -> Iterator[pd.DataFrame]:
+        """Load chunks from a directory containing chunk files (chunk_0.csv, chunk_1.csv, etc.)."""
+        input_dir = self.cfg.paths.input
+        
+        # Get all files in the directory
+        all_files = os.listdir(input_dir)
+        
+        # Filter for chunk files (chunk_0.csv, chunk_1.csv, etc.)
+        chunk_files = [
+            f for f in all_files 
+            if re.match(r'chunk_\d+\.(csv|parquet)$', f)
+        ]
+        
+        if not chunk_files:
+            raise ValueError(
+                f"No chunk files found in directory {input_dir}. "
+                f"Expected files matching pattern 'chunk_*.csv' or 'chunk_*.parquet'"
+            )
+        
+        # Sort by chunk number
+        def get_chunk_number(filename):
+            match = re.search(r'chunk_(\d+)', filename)
+            return int(match.group(1)) if match else -1
+        
+        chunk_files.sort(key=get_chunk_number)
+        
+        # Limit chunks in test mode
+        max_chunks = 2 if self.test else len(chunk_files)
+        
+        # Load each chunk file
+        for chunk_file in chunk_files[:max_chunks]:
+            chunk_path = join(input_dir, chunk_file)
+            if chunk_file.endswith(".parquet"):
+                yield pd.read_parquet(chunk_path)
+            else:
+                # Try different encodings and separators
+                loaded = False
+                for encoding in ["utf8", "iso88591", "latin1"]:
+                    for sep in [",", ";"]:
+                        try:
+                            df = pd.read_csv(chunk_path, sep=sep, encoding=encoding)
+                            yield df
+                            loaded = True
+                            break
+                        except Exception:
+                            continue
+                    if loaded:
+                        break
+                if not loaded:
+                    raise ValueError(f"Unable to read chunk file {chunk_path}")
 
     def get_lab_values(self):
         logger.info("Getting lab distribution")
@@ -136,16 +225,14 @@ class Normaliser:
         counter = 0
 
         for chunk in tqdm(
-            self.data_loader.load_chunks(
-                filename=split(self.cfg.paths.input)[1],
-            ),
+            self._get_chunks(),
             desc="Building lab distribution",
         ):
             if self.numeric_value not in chunk.columns or CODE not in chunk.columns:
                 raise ValueError(
                     f"Missing required columns. Available columns: {chunk.columns}"
                 )
-            logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+            logger.info(f"Loaded chunk {counter}")
             chunk[self.numeric_value] = pd.to_numeric(
                 chunk[self.numeric_value], errors="coerce"
             )
