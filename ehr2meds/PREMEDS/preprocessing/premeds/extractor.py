@@ -1,3 +1,4 @@
+import os
 import pickle
 from typing import Dict
 
@@ -188,8 +189,12 @@ class PREMEDSExtractor:
     ) -> None:
         if not processed_chunk.empty:
             if self.save_in_chunks:
-                # Save each chunk as a separate file
-                filename = f"{concept_type}_chunk_{chunk_idx}"
+                # Save each chunk as a separate file in a directory named after concept_type
+                # Create directory if it doesn't exist
+                chunk_dir = os.path.join(data_handler.output_dir, concept_type)
+                os.makedirs(chunk_dir, exist_ok=True)
+                # Save file as concept_type/chunk_idx
+                filename = os.path.join(concept_type, f"chunk_{chunk_idx}")
                 data_handler.save(processed_chunk, filename, mode="w")
             else:
                 # Original behavior: append to single file
@@ -233,8 +238,10 @@ class PREMEDSExtractor:
         final_df = add_discharge_to_last_patient(last_patient_data)
         if not final_df.empty:
             if self.save_in_chunks:
-                # Save final patient data as last chunk
-                filename = f"admissions_chunk_{chunk_idx}"
+                # Save final patient data as last chunk in directory
+                chunk_dir = os.path.join(self.data_handler.output_dir, "admissions")
+                os.makedirs(chunk_dir, exist_ok=True)
+                filename = os.path.join("admissions", f"chunk_{chunk_idx}")
                 self.data_handler.save(final_df, filename, mode="w")
             else:
                 self.data_handler.save(final_df, "admissions", mode="a")
