@@ -4,13 +4,9 @@ channels:
 dependencies:
   - python=3.11
   - pip:
-      - meds
-      - meds-transforms
+      - meds==0.3.3
+      - meds-transforms==0.1.1
       - meds_reader
-      - azureml-core
-      - azureml-defaults
-      - azureml-mlflow
       - pandas
       - torch
-      - tqdm
 name: MEDS

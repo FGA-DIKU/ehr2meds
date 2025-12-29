@@ -32,6 +32,7 @@ class PREMEDSExtractor:
         self.cfg = cfg
         logger.info(f"test {cfg.test}")
         self.chunksize = cfg.get("chunksize", 500_000)
+        self.save_in_chunks = cfg.get("save_in_chunks", False)
 
         # Create data handler for concepts
         self.data_handler = DataHandler(
@@ -143,7 +144,7 @@ class PREMEDSExtractor:
         subject_id_mapping: Dict[str, int],
         register_sp_link: pd.DataFrame,
     ) -> None:
-        first_chunk = True
+        chunk_idx = 0
         for chunk in tqdm(
             self.register_data_handler.load_chunks(concept_config),
             desc=f"Chunks {concept_type}",
@@ -159,9 +160,9 @@ class PREMEDSExtractor:
             )
 
             self._safe_save(
-                self.register_data_handler, processed_chunk, concept_type, first_chunk
+                self.register_data_handler, processed_chunk, concept_type, chunk_idx
             )
-            first_chunk = False
+            chunk_idx += 1
 
     def _process_concept_chunks(
         self,
@@ -169,7 +170,7 @@ class PREMEDSExtractor:
         concept_config: dict,
         subject_id_mapping: Dict[str, int],
     ) -> None:
-        first_chunk = True
+        chunk_idx = 0
         for chunk in tqdm(
             self.data_handler.load_chunks(concept_config),
             desc=f"Chunks {concept_type}",
@@ -178,16 +179,22 @@ class PREMEDSExtractor:
                 chunk, concept_config, subject_id_mapping
             )
             self._safe_save(
-                self.data_handler, processed_chunk, concept_type, first_chunk
+                self.data_handler, processed_chunk, concept_type, chunk_idx
             )
-            first_chunk = False
+            chunk_idx += 1
 
     def _safe_save(
-        self, data_handler, processed_chunk, concept_type, first_chunk: bool
+        self, data_handler, processed_chunk, concept_type, chunk_idx: int
     ) -> None:
         if not processed_chunk.empty:
-            mode = "w" if first_chunk else "a"
-            data_handler.save(processed_chunk, concept_type, mode=mode)
+            if self.save_in_chunks:
+                # Save each chunk as a separate file
+                filename = f"{concept_type}_chunk_{chunk_idx}"
+                data_handler.save(processed_chunk, filename, mode="w")
+            else:
+                # Original behavior: append to single file
+                mode = "w" if chunk_idx == 0 else "a"
+                data_handler.save(processed_chunk, concept_type, mode=mode)
         else:
             logger.warning(f"Empty processed chunk for {concept_type}, skipping save")
 
@@ -203,7 +210,7 @@ class PREMEDSExtractor:
         self, admissions_config: dict, subject_id_mapping: Dict[str, int]
     ) -> None:
         """Process the admissions concept separately, handling patients across chunks."""
-        first_chunk = True
+        chunk_idx = 0
         last_patient_data = None  # Store data for patient that spans chunks
 
         for chunk in tqdm(
@@ -218,11 +225,16 @@ class PREMEDSExtractor:
             )
 
             self._safe_save(
-                self.data_handler, processed_chunk, "admissions", first_chunk
+                self.data_handler, processed_chunk, "admissions", chunk_idx
             )
-            first_chunk = False
+            chunk_idx += 1
 
         # Process any remaining last patient data
         final_df = add_discharge_to_last_patient(last_patient_data)
         if not final_df.empty:
-            self.data_handler.save(final_df, "admissions", mode="a")
+            if self.save_in_chunks:
+                # Save final patient data as last chunk
+                filename = f"admissions_chunk_{chunk_idx}"
+                self.data_handler.save(final_df, filename, mode="w")
+            else:
+                self.data_handler.save(final_df, "admissions", mode="a")
