@@ -33,7 +33,6 @@ class PREMEDSExtractor:
         self.cfg = cfg
         logger.info(f"test {cfg.test}")
         self.chunksize = cfg.get("chunksize", 500_000)
-        self.save_in_chunks = cfg.get("save_in_chunks", False)
 
         # Create data handler for concepts
         self.data_handler = DataHandler(
@@ -161,7 +160,7 @@ class PREMEDSExtractor:
             )
 
             self._safe_save(
-                self.register_data_handler, processed_chunk, concept_type, chunk_idx
+                self.register_data_handler, processed_chunk, concept_type, chunk_idx, concept_config
             )
             chunk_idx += 1
 
@@ -180,15 +179,18 @@ class PREMEDSExtractor:
                 chunk, concept_config, subject_id_mapping
             )
             self._safe_save(
-                self.data_handler, processed_chunk, concept_type, chunk_idx
+                self.data_handler, processed_chunk, concept_type, chunk_idx, concept_config
             )
             chunk_idx += 1
 
     def _safe_save(
-        self, data_handler, processed_chunk, concept_type, chunk_idx: int
+        self, data_handler, processed_chunk, concept_type, chunk_idx: int, concept_config: dict
     ) -> None:
         if not processed_chunk.empty:
-            if self.save_in_chunks:
+            # Check if save_in_chunks is set for this specific concept type
+            save_in_chunks = concept_config.get("save_in_chunks", False)
+            
+            if save_in_chunks:
                 # Save each chunk as a separate file in a directory named after concept_type
                 # Create directory if it doesn't exist
                 chunk_dir = os.path.join(data_handler.output_dir, concept_type)
@@ -230,14 +232,15 @@ class PREMEDSExtractor:
             )
 
             self._safe_save(
-                self.data_handler, processed_chunk, "admissions", chunk_idx
+                self.data_handler, processed_chunk, "admissions", chunk_idx, admissions_config
             )
             chunk_idx += 1
 
         # Process any remaining last patient data
         final_df = add_discharge_to_last_patient(last_patient_data)
         if not final_df.empty:
-            if self.save_in_chunks:
+            save_in_chunks = admissions_config.get("save_in_chunks", False)
+            if save_in_chunks:
                 # Save final patient data as last chunk in directory
                 chunk_dir = os.path.join(self.data_handler.output_dir, "admissions")
                 os.makedirs(chunk_dir, exist_ok=True)
