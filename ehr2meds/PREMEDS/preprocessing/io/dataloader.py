@@ -81,11 +81,10 @@ class BaseDataLoader(ABC):
         other_encodings = [enc for enc in self.CSV_ENCODINGS if enc not in utf8_encodings]
         encoding_order = utf8_encodings + other_encodings
         
-        for encoding in encoding_order:
+        # First, try UTF-8 encodings with all separators - if any succeeds, use it immediately
+        for encoding in utf8_encodings:
             for separator in self.KNOWN_SEPARATORS:
-                # Try primary separator first
                 try:
-                    # First try reading with usecols if specified
                     if cols:
                         try:
                             df = pd.read_csv(
@@ -104,14 +103,49 @@ class BaseDataLoader(ABC):
                             # Check which columns are missing
                             missing_cols = set(cols) - set(df_all.columns)
                             if missing_cols:
+                                continue  # Try next separator/encoding
+                            # If all columns exist, select them
+                            df = df_all[cols]
+                    else:
+                        df = pd.read_csv(
+                            file_path,
+                            sep=separator,
+                            encoding=encoding,
+                        )
+                    logger.debug(f"Successfully read {file_path} with UTF-8 encoding '{encoding}' and separator '{separator}'")
+                    return df
+                except Exception as e:
+                    logger.debug(
+                        f"Failed to read {file_path} with UTF-8 encoding '{encoding}' and separator '{separator}': {str(e)}"
+                    )
+                    continue
+        
+        # If UTF-8 encodings all failed, try other encodings
+        for encoding in other_encodings:
+            for separator in self.KNOWN_SEPARATORS:
+                try:
+                    if cols:
+                        try:
+                            df = pd.read_csv(
+                                file_path,
+                                sep=separator,
+                                encoding=encoding,
+                                usecols=cols,
+                            )
+                        except (ValueError, KeyError) as col_error:
+                            df_all = pd.read_csv(
+                                file_path,
+                                sep=separator,
+                                encoding=encoding,
+                            )
+                            missing_cols = set(cols) - set(df_all.columns)
+                            if missing_cols:
                                 raise ValueError(
                                     f"Columns not found in file: {missing_cols}. "
                                     f"Available columns: {list(df_all.columns)}"
                                 )
-                            # If all columns exist, select them
                             df = df_all[cols]
                     else:
-                        # No column filtering requested
                         df = pd.read_csv(
                             file_path,
                             sep=separator,
