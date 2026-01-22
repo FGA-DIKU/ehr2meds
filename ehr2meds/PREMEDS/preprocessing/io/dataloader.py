@@ -13,7 +13,7 @@ N_TEST_CHUNKS = 2
 
 class BaseDataLoader(ABC):
     KNOWN_SEPARATORS = [";", ","]
-    CSV_ENCODINGS = ["utf-8", "utf8", "iso88591", "latin1"]
+    CSV_ENCODINGS = ["utf-8-sig", "utf-8", "utf8", "iso88591", "latin1"]
 
     def __init__(
         self,
@@ -76,7 +76,12 @@ class BaseDataLoader(ABC):
             raise ValueError(f"File does not exist: {file_path}")
         
         last_error = None
-        for encoding in self.CSV_ENCODINGS:
+        # Try UTF-8 encodings first to avoid misinterpreting UTF-8 files as iso88591
+        utf8_encodings = ["utf-8-sig", "utf-8", "utf8"]
+        other_encodings = [enc for enc in self.CSV_ENCODINGS if enc not in utf8_encodings]
+        encoding_order = utf8_encodings + other_encodings
+        
+        for encoding in encoding_order:
             for separator in self.KNOWN_SEPARATORS:
                 # Try primary separator first
                 try:
