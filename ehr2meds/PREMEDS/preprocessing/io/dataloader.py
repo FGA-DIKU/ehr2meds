@@ -13,7 +13,7 @@ N_TEST_CHUNKS = 2
 
 class BaseDataLoader(ABC):
     KNOWN_SEPARATORS = [";", ","]
-    CSV_ENCODINGS = ["iso88591", "utf8", "latin1"]
+    CSV_ENCODINGS = ["utf-8", "utf8", "iso88591", "latin1"]
 
     def __init__(
         self,
