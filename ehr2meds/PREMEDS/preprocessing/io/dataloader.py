@@ -80,12 +80,38 @@ class BaseDataLoader(ABC):
             for separator in self.KNOWN_SEPARATORS:
                 # Try primary separator first
                 try:
-                    df = pd.read_csv(
-                        file_path,
-                        sep=separator,
-                        encoding=encoding,
-                        usecols=cols,
-                    )
+                    # First try reading with usecols if specified
+                    if cols:
+                        try:
+                            df = pd.read_csv(
+                                file_path,
+                                sep=separator,
+                                encoding=encoding,
+                                usecols=cols,
+                            )
+                        except (ValueError, KeyError) as col_error:
+                            # If usecols fails, try reading all columns first to see what's available
+                            df_all = pd.read_csv(
+                                file_path,
+                                sep=separator,
+                                encoding=encoding,
+                            )
+                            # Check which columns are missing
+                            missing_cols = set(cols) - set(df_all.columns)
+                            if missing_cols:
+                                raise ValueError(
+                                    f"Columns not found in file: {missing_cols}. "
+                                    f"Available columns: {list(df_all.columns)}"
+                                )
+                            # If all columns exist, select them
+                            df = df_all[cols]
+                    else:
+                        # No column filtering requested
+                        df = pd.read_csv(
+                            file_path,
+                            sep=separator,
+                            encoding=encoding,
+                        )
                     logger.debug(f"Successfully read {file_path} with encoding '{encoding}' and separator '{separator}'")
                     return df
                 except Exception as e:
