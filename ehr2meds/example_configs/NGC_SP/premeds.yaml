@@ -1,0 +1,40 @@
+
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+test: true
+env: local
+run_name: MEDS
+chunksize: 10000
+paths:
+  output: outputs/preMEDS
+  concepts: ../../../../../../storage/archive/UCPH/DeepFetal/SP/tables
+  file_type: csv 
+
+write_file_type: csv
+
+pid_link: 
+  join_col: PID
+  target_col: CPR_hash
+
+concepts:
+  admissions:
+    filename: Mor - CPMI - Diagnoseliste.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Redigeringsdato: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "D/"
+
+
+patients_info:
+  filename: Mor - CPMI - PatientInfo.csv
+  rename_columns:
+    Mor_CPR: subject_id
+    Fødselsdato: birthdate
+    Dødsdato: deathdate
+    Køn: gender
+  file_type: csv
