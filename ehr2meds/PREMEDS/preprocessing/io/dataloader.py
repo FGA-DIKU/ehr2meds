@@ -40,14 +40,28 @@ class BaseDataLoader(ABC):
 
     def _detect_separator(self, file_path: str) -> str:
         """Detect the correct separator by checking first few lines."""
-        with open(file_path, "r") as f:
-            first_line = f.readline()
-            # Count occurrences of each separator
-            counts = {sep: first_line.count(sep) for sep in self.KNOWN_SEPARATORS}
-            # Choose separator with most occurrences
-            best_sep = max(counts.items(), key=lambda x: x[1])[0]
-            if counts[best_sep] > 0:
-                return best_sep
+        # Try all encodings to read the first line
+        first_line = None
+        for encoding in self.CSV_ENCODINGS:
+            try:
+                with open(file_path, "r", encoding=encoding) as f:
+                    first_line = f.readline()
+                    break  # Successfully read, exit loop
+            except (UnicodeDecodeError, Exception):
+                continue  # Try next encoding
+        
+        # If we couldn't read with any encoding, default to comma
+        if first_line is None:
+            return ","
+        
+        # Count occurrences of each separator
+        counts = {sep: first_line.count(sep) for sep in self.KNOWN_SEPARATORS}
+        # Choose separator with most occurrences
+        best_sep = max(counts.items(), key=lambda x: x[1])[0]
+        if counts[best_sep] > 0:
+            return best_sep
+        # Default to comma if no separator found
+        return ","
 
     def _load_csv(
         self, file_path: str, cols: Optional[List[str]] = None
@@ -125,26 +139,32 @@ class StandardDataLoader(BaseDataLoader):
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
         """Load CSV in chunks, trying separators in priority order."""
-        separator = self._detect_separator(file_path)
+        # Try detected separator first, then fall back to trying all separators
+        detected_separator = self._detect_separator(file_path)
+        separators_to_try = [detected_separator] + [
+            sep for sep in self.KNOWN_SEPARATORS if sep != detected_separator
+        ]
+        
         for encoding in self.CSV_ENCODINGS:
-            try:
-                chunk_iter = pd.read_csv(
-                    file_path,
-                    sep=separator,
-                    encoding=encoding,
-                    chunksize=self.chunksize,
-                    usecols=cols,
-                )
-                for i, chunk in enumerate(chunk_iter):
-                    if self.test and i >= N_TEST_CHUNKS:
-                        break
-                    yield chunk
-                return  # Exit if reading was successful
-            except Exception as e:
-                logger.info(
-                    f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}"
-                )
-                continue
+            for separator in separators_to_try:
+                try:
+                    chunk_iter = pd.read_csv(
+                        file_path,
+                        sep=separator,
+                        encoding=encoding,
+                        chunksize=self.chunksize,
+                        usecols=cols,
+                    )
+                    for i, chunk in enumerate(chunk_iter):
+                        if self.test and i >= N_TEST_CHUNKS:
+                            break
+                        yield chunk
+                    return  # Exit if reading was successful
+                except Exception as e:
+                    logger.debug(
+                        f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}"
+                    )
+                    continue
 
         raise ValueError(
             f"Unable to read file {file_path} with any encoding/separator combination"
