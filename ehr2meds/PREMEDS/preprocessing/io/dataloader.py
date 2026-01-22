@@ -67,19 +67,39 @@ class BaseDataLoader(ABC):
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """Try primary separator first, then fallback."""
+        # Verify file_path is actually a path, not a variable name
+        if file_path == "file_path" or not isinstance(file_path, str) or len(file_path) == 0:
+            raise ValueError(f"Invalid file_path provided: {repr(file_path)}")
+        
+        # Verify file exists and is readable
+        if not os.path.exists(file_path):
+            raise ValueError(f"File does not exist: {file_path}")
+        
+        last_error = None
         for encoding in self.CSV_ENCODINGS:
             for separator in self.KNOWN_SEPARATORS:
                 # Try primary separator first
                 try:
-                    return pd.read_csv(
+                    df = pd.read_csv(
                         file_path,
                         sep=separator,
                         encoding=encoding,
                         usecols=cols,
                     )
-                except Exception:
+                    logger.debug(f"Successfully read {file_path} with encoding '{encoding}' and separator '{separator}'")
+                    return df
+                except Exception as e:
+                    last_error = e
+                    logger.debug(
+                        f"Failed to read {file_path} with encoding '{encoding}' and separator '{separator}': {str(e)}"
+                    )
                     continue
-        raise ValueError(f"Unable to read file {file_path} with any encoding")
+        # If we get here, all combinations failed
+        # Use repr to ensure the actual path is shown
+        error_msg = "Unable to read file: " + repr(file_path) + " with any encoding/separator combination"
+        if last_error:
+            error_msg += ". Last error: " + str(last_error)
+        raise ValueError(error_msg)
 
     @abstractmethod
     def load_chunks(
