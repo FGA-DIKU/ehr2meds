@@ -33,7 +33,7 @@ concepts:
 patients_info:
   filename: Mor - CPMI - PatientInfo.csv
   rename_columns:
-    Mor_CPR: subject_id
+    MOR_CPR: subject_id
     Fødselsdato: birthdate
     Dødsdato: deathdate
     Køn: gender

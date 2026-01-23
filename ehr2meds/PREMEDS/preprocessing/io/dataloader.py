@@ -63,95 +63,166 @@ class BaseDataLoader(ABC):
         # Default to comma if no separator found
         return ","
 
-    def _load_csv(
-        self, file_path: str, cols: Optional[List[str]] = None
+    def _try_read_csv_single(
+        self, file_path: str, cols: Optional[List[str]] = None, 
+        sep: Optional[str] = None, encoding: Optional[str] = None
     ) -> pd.DataFrame:
-        """Try pandas auto-detection first (no encoding/separator specified), then fallback."""
-        # Verify file_path is actually a path, not a variable name
-        if file_path == "file_path" or not isinstance(file_path, str) or len(file_path) == 0:
-            raise ValueError(f"Invalid file_path provided: {repr(file_path)}")
-        
-        # Verify file exists and is readable
-        if not os.path.exists(file_path):
-            raise ValueError(f"File does not exist: {file_path}")
-        
-        last_error = None
-        
-        # Phase 1: Try pandas' full auto-detection (no encoding, no separator specified)
-        # This lets pandas detect everything automatically and avoids character corruption
-        logger.debug(f"Trying pandas full auto-detection for {file_path}")
+        """Helper to try reading CSV with given parameters, handling column selection."""
         try:
+            kwargs = {}
+            if sep:
+                kwargs['sep'] = sep
+            if encoding:
+                kwargs['encoding'] = encoding
+            
             if cols:
                 try:
-                    df = pd.read_csv(file_path, usecols=cols)
-                except (ValueError, KeyError) as col_error:
+                    return pd.read_csv(file_path, usecols=cols, **kwargs)
+                except (ValueError, KeyError):
                     # If usecols fails, read all columns first to check availability
-                    df_all = pd.read_csv(file_path)
+                    df_all = pd.read_csv(file_path, **kwargs)
                     missing_cols = set(cols) - set(df_all.columns)
                     if missing_cols:
                         raise ValueError(
                             f"Columns not found in file: {missing_cols}. "
                             f"Available columns: {list(df_all.columns)}"
                         )
-                    df = df_all[cols]
+                    return df_all[cols]
             else:
-                df = pd.read_csv(file_path)
-            logger.debug(f"Successfully read {file_path} with pandas full auto-detection")
-            return df
+                return pd.read_csv(file_path, **kwargs)
+        except Exception:
+            raise  # Re-raise to be caught by caller
+
+    def _try_csv_read_strategies(
+        self, file_path: str, cols: Optional[List[str]], 
+        read_func, context_msg: str = "", test_generator: bool = False
+    ):
+        """Generic method to try CSV reading with 3-phase strategy: auto-detection -> separators -> encodings+separators."""
+        last_error = None
+        
+        # Phase 1: Full auto-detection
+        logger.debug(f"Trying pandas auto-detection{context_msg} for {file_path}")
+        try:
+            result = read_func(sep=None, encoding=None)
+            if test_generator:
+                # For generators, test by getting first item
+                first_item = next(result)
+                def gen():
+                    yield first_item
+                    yield from result
+                logger.debug(f"Successfully read{context_msg} with auto-detection")
+                return gen()
+            logger.debug(f"Successfully read{context_msg} with auto-detection")
+            return result
         except Exception as e:
-            logger.debug(f"Pandas auto-detection failed for {file_path}: {str(e)}")
+            logger.debug(f"Auto-detection failed: {str(e)}")
             last_error = e
         
-        # Phase 2: If auto-detection failed, try with explicit separators but still no encoding
-        logger.debug(f"Trying with explicit separators for {file_path}")
+        # Phase 2: Try with explicit separators
         for separator in self.KNOWN_SEPARATORS:
             try:
-                if cols:
-                    try:
-                        df = pd.read_csv(file_path, sep=separator, usecols=cols)
-                    except (ValueError, KeyError) as col_error:
-                        df_all = pd.read_csv(file_path, sep=separator)
-                        missing_cols = set(cols) - set(df_all.columns)
-                        if missing_cols:
-                            continue  # Try next separator
-                        df = df_all[cols]
-                else:
-                    df = pd.read_csv(file_path, sep=separator)
-                logger.debug(f"Successfully read {file_path} with separator '{separator}' and auto encoding")
-                return df
+                result = read_func(sep=separator, encoding=None)
+                if test_generator:
+                    first_item = next(result)
+                    def gen():
+                        yield first_item
+                        yield from result
+                    logger.debug(f"Successfully read{context_msg} with separator '{separator}'")
+                    return gen()
+                logger.debug(f"Successfully read{context_msg} with separator '{separator}'")
+                return result
             except Exception as e:
                 logger.debug(f"Failed with separator '{separator}': {str(e)}")
                 last_error = e
-                continue
         
-        # Phase 3: Last resort - try explicit UTF-8 encodings with separators
-        utf8_encodings = ["utf-8-sig", "utf-8", "utf8"]
-        for encoding in utf8_encodings:
+        # Phase 3: Try all encodings with all separators
+        for encoding in self.CSV_ENCODINGS:
             for separator in self.KNOWN_SEPARATORS:
                 try:
-                    if cols:
-                        try:
-                            df = pd.read_csv(file_path, sep=separator, encoding=encoding, usecols=cols)
-                        except (ValueError, KeyError) as col_error:
-                            df_all = pd.read_csv(file_path, sep=separator, encoding=encoding)
-                            missing_cols = set(cols) - set(df_all.columns)
-                            if missing_cols:
-                                continue
-                            df = df_all[cols]
-                    else:
-                        df = pd.read_csv(file_path, sep=separator, encoding=encoding)
-                    logger.debug(f"Successfully read {file_path} with UTF-8 encoding '{encoding}' and separator '{separator}'")
-                    return df
+                    result = read_func(sep=separator, encoding=encoding)
+                    if test_generator:
+                        first_item = next(result)
+                        def gen():
+                            yield first_item
+                            yield from result
+                        logger.debug(f"Successfully read{context_msg} with encoding '{encoding}' and separator '{separator}'")
+                        return gen()
+                    logger.debug(f"Successfully read{context_msg} with encoding '{encoding}' and separator '{separator}'")
+                    return result
                 except Exception as e:
                     logger.debug(f"Failed with encoding '{encoding}' and separator '{separator}': {str(e)}")
                     last_error = e
-                    continue
         
-        # If we get here, all combinations failed
-        error_msg = "Unable to read file: " + repr(file_path) + " with any method"
+        error_msg = f"Unable to read file {repr(file_path)} with any method"
         if last_error:
-            error_msg += ". Last error: " + str(last_error)
+            error_msg += f". Last error: {str(last_error)}"
         raise ValueError(error_msg)
+
+    def _load_csv(
+        self, file_path: str, cols: Optional[List[str]] = None
+    ) -> pd.DataFrame:
+        """Try pandas auto-detection first, then fallback to explicit options."""
+        if file_path == "file_path" or not isinstance(file_path, str) or len(file_path) == 0:
+            raise ValueError(f"Invalid file_path provided: {repr(file_path)}")
+        if not os.path.exists(file_path):
+            raise ValueError(f"File does not exist: {file_path}")
+        
+        def read_func(sep=None, encoding=None):
+            return self._try_read_csv_single(file_path, cols, sep=sep, encoding=encoding)
+        
+        return self._try_csv_read_strategies(file_path, cols, read_func)
+
+    def _try_read_csv_chunks(
+        self, file_path: str, cols: Optional[List[str]] = None,
+        sep: Optional[str] = None, encoding: Optional[str] = None
+    ) -> Iterator[pd.DataFrame]:
+        """Helper to try reading CSV chunks with given parameters."""
+        kwargs = {'chunksize': self.chunksize}
+        if sep:
+            kwargs['sep'] = sep
+        if encoding:
+            kwargs['encoding'] = encoding
+        if cols:
+            kwargs['usecols'] = cols
+        
+        try:
+            chunk_iter = pd.read_csv(file_path, **kwargs)
+            for i, chunk in enumerate(chunk_iter):
+                if self.test and i >= N_TEST_CHUNKS:
+                    break
+                yield chunk
+        except (ValueError, KeyError) as col_error:
+            if cols:
+                # If usecols fails, try reading all columns then selecting
+                kwargs.pop('usecols', None)
+                chunk_iter = pd.read_csv(file_path, **kwargs)
+                first_chunk = next(iter(chunk_iter))
+                missing_cols = set(cols) - set(first_chunk.columns)
+                if missing_cols:
+                    raise ValueError(
+                        f"Columns not found: {missing_cols}. "
+                        f"Available: {list(first_chunk.columns)}"
+                    )
+                # Re-read and select columns
+                chunk_iter = pd.read_csv(file_path, **kwargs)
+                for i, chunk in enumerate(chunk_iter):
+                    if self.test and i >= N_TEST_CHUNKS:
+                        break
+                    yield chunk[cols]
+            else:
+                raise
+        except Exception:
+            raise  # Re-raise to be caught by caller
+
+    def _load_csv_chunks(
+        self, file_path: str, cols: Optional[List[str]] = None
+    ) -> Iterator[pd.DataFrame]:
+        """Load CSV in chunks, trying pandas auto-detection first."""
+        def read_func(sep=None, encoding=None):
+            return self._try_read_csv_chunks(file_path, cols, sep=sep, encoding=encoding)
+        
+        chunk_iter = self._try_csv_read_strategies(file_path, cols, read_func, " chunks", test_generator=True)
+        yield from chunk_iter
 
     @abstractmethod
     def load_chunks(
@@ -206,79 +277,6 @@ class StandardDataLoader(BaseDataLoader):
             df = batch.to_pandas()
             chunks_read += 1
             yield df
-
-    def _load_csv_chunks(
-        self, file_path: str, cols: Optional[List[str]] = None
-    ) -> Iterator[pd.DataFrame]:
-        """Load CSV in chunks, trying pandas full auto-detection first."""
-        last_error = None
-        
-        # Phase 1: Try pandas' full auto-detection (no encoding, no separator specified)
-        logger.debug(f"Trying pandas full auto-detection for chunks in {file_path}")
-        try:
-            chunk_iter = pd.read_csv(
-                file_path,
-                chunksize=self.chunksize,
-                usecols=cols,
-            )
-            for i, chunk in enumerate(chunk_iter):
-                if self.test and i >= N_TEST_CHUNKS:
-                    break
-                yield chunk
-            logger.debug(f"Successfully read chunks from {file_path} with pandas full auto-detection")
-            return  # Exit if reading was successful
-        except Exception as e:
-            logger.debug(f"Pandas auto-detection failed for chunks in {file_path}: {str(e)}")
-            last_error = e
-        
-        # Phase 2: If auto-detection failed, try with explicit separators but still no encoding
-        logger.debug(f"Trying with explicit separators for chunks in {file_path}")
-        for separator in self.KNOWN_SEPARATORS:
-            try:
-                chunk_iter = pd.read_csv(
-                    file_path,
-                    sep=separator,
-                    chunksize=self.chunksize,
-                    usecols=cols,
-                )
-                for i, chunk in enumerate(chunk_iter):
-                    if self.test and i >= N_TEST_CHUNKS:
-                        break
-                    yield chunk
-                logger.debug(f"Successfully read chunks from {file_path} with separator '{separator}' and auto encoding")
-                return  # Exit if reading was successful
-            except Exception as e:
-                logger.debug(f"Failed with separator '{separator}': {str(e)}")
-                last_error = e
-                continue
-        
-        # Phase 3: Last resort - try explicit UTF-8 encodings with separators
-        utf8_encodings = ["utf-8-sig", "utf-8", "utf8"]
-        for encoding in utf8_encodings:
-            for separator in self.KNOWN_SEPARATORS:
-                try:
-                    chunk_iter = pd.read_csv(
-                        file_path,
-                        sep=separator,
-                        encoding=encoding,
-                        chunksize=self.chunksize,
-                        usecols=cols,
-                    )
-                    for i, chunk in enumerate(chunk_iter):
-                        if self.test and i >= N_TEST_CHUNKS:
-                            break
-                        yield chunk
-                    logger.debug(f"Successfully read chunks from {file_path} with UTF-8 encoding '{encoding}' and separator '{separator}'")
-                    return  # Exit if reading was successful
-                except Exception as e:
-                    logger.debug(f"Failed with encoding '{encoding}' and separator '{separator}': {str(e)}")
-                    last_error = e
-                    continue
-
-        error_msg = f"Unable to read file {file_path} with any method"
-        if last_error:
-            error_msg += f". Last error: {str(last_error)}"
-        raise ValueError(error_msg)
 
 
 class AzureDataLoader(BaseDataLoader):
