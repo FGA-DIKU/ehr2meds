@@ -29,29 +29,29 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "D/"
 
-  medication:
-    filename: Mor - CPMI - Medicin.csv
-    # columns to keep, rename, and the final names
-    rename_columns:
-      ATC: code
-      Administrationstidspunkt: timestamp
-      Bestillingsdato: fill_timestamp
-      MOR_CPR: subject_id
-    fillna:
-      timestamp:
-        column: fill_timestamp
-    code_prefix: "M/"
+  # medication:
+  #   filename: Mor - CPMI - Medicin.csv
+  #   # columns to keep, rename, and the final names
+  #   rename_columns:
+  #     ATC: code
+  #     Administrationstidspunkt: timestamp
+  #     Bestillingsdato: fill_timestamp
+  #     MOR_CPR: subject_id
+  #   fillna:
+  #     timestamp:
+  #       column: fill_timestamp
+  #   code_prefix: "M/"
 
-  notes:
-    filename: Mor - CPMI - Notater.csv
-    # columns to keep, rename, and the final names
-    rename_columns:
-      Linjenummer: line_number
-      Note: note
-      Notetype: code
-      Speciale: specialty
-      MOR_CPR: subject_id
-    code_prefix: "N/"
+  # notes:
+  #   filename: Mor - CPMI - Notater.csv
+  #   # columns to keep, rename, and the final names
+  #   rename_columns:
+  #     Linjenummer: line_number
+  #     Note: note
+  #     Notetype: code
+  #     Speciale: specialty
+  #     MOR_CPR: subject_id
+  #   code_prefix: "N/"
 
 
 patients_info:

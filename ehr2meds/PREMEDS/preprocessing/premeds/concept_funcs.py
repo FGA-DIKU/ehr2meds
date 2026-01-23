@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List, Tuple
 
 import pandas as pd
@@ -8,6 +9,8 @@ from ehr2meds.PREMEDS.preprocessing.constants import (
     SUBJECT_ID,
     TIMESTAMP,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
@@ -81,8 +84,43 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
     }  # +2 to prevent subject ids being read in as binary.
 
     # Apply mapping to DataFrame
-    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+    try:
+        logger.debug(f"Mapping {len(df)} rows with {len(hash_to_int_map)} unique subject IDs")
+        original_subject_ids = df[SUBJECT_ID].copy()
+        df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
+        
+        # Check for unmapped values (NaN after mapping)
+        unmapped_count = df[SUBJECT_ID].isna().sum()
+        if unmapped_count > 0:
+            unmapped_original_values = original_subject_ids[df[SUBJECT_ID].isna()].unique()
+            logger.warning(
+                f"Found {unmapped_count} rows with unmapped subject IDs. "
+                f"Sample unmapped values: {list(unmapped_original_values[:10])}"
+            )
+        
+        logger.debug(f"Converting SUBJECT_ID to int. Current dtype: {df[SUBJECT_ID].dtype}")
+        df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+        logger.debug(f"Successfully converted SUBJECT_ID to int. New dtype: {df[SUBJECT_ID].dtype}")
+    except KeyError as e:
+        logger.error(f"SUBJECT_ID column not found in dataframe. Available columns: {list(df.columns)}")
+        raise
+    except ValueError as e:
+        logger.error(
+            f"Failed to convert SUBJECT_ID to int. "
+            f"Unique values in column: {df[SUBJECT_ID].unique()[:20] if SUBJECT_ID in df.columns else 'N/A'}. "
+            f"NaN count: {df[SUBJECT_ID].isna().sum() if SUBJECT_ID in df.columns else 'N/A'}. "
+            f"Error: {str(e)}"
+        )
+        raise
+    except Exception as e:
+        logger.error(
+            f"Unexpected error during subject ID mapping/conversion. "
+            f"DataFrame shape: {df.shape}, "
+            f"SUBJECT_ID dtype: {df[SUBJECT_ID].dtype if SUBJECT_ID in df.columns else 'N/A'}, "
+            f"Error: {str(e)}"
+        )
+        raise
+    
     return df, hash_to_int_map
 
 
