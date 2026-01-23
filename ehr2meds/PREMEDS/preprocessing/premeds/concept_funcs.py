@@ -90,27 +90,46 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
         logger.debug(f"Mapping {len(df)} rows with {len(hash_to_int_map)} unique subject IDs")
         original_subject_ids = df[SUBJECT_ID].copy()
         
-        # Check for problematic values before mapping (e.g., lists, dicts, etc.)
+        # Check ALL values for hashability BEFORE attempting any mapping
         problematic_indices = []
+        logger.debug("Checking all SUBJECT_ID values for hashability...")
+        
         for idx, val in original_subject_ids.items():
+            # Check if value is hashable (can be used as dict key)
             try:
-                # Try to use the value as a dictionary key to see if it's hashable
-                _ = hash_to_int_map.get(val)
-            except (TypeError, ValueError) as e:
+                hash(val)
+            except TypeError:
                 problematic_indices.append(idx)
-                logger.warning(
-                    f"Row {idx} has problematic SUBJECT_ID value (type: {type(val).__name__}, value: {val}). "
+                print(f"\n{'='*80}")
+                print(f"PROBLEMATIC ROW {idx} FOUND (Unhashable SUBJECT_ID):")
+                print(f"  SUBJECT_ID value: {repr(val)}")
+                print(f"  SUBJECT_ID type: {type(val).__name__}")
+                print(f"  Full row data:")
+                for col, col_val in df.loc[idx].items():
+                    print(f"    {col}: {repr(col_val)} (type: {type(col_val).__name__})")
+                print(f"{'='*80}\n")
+                logger.error(
+                    f"Row {idx} has unhashable SUBJECT_ID value (type: {type(val).__name__}, value: {repr(val)}). "
                     f"Full row:\n{df.loc[idx].to_dict()}"
                 )
         
         if problematic_indices:
+            print(f"\n{'#'*80}")
+            print(f"ERROR: Found {len(problematic_indices)} rows with unhashable SUBJECT_ID values!")
+            print(f"Problematic row indices: {problematic_indices[:20]}")
+            print(f"{'#'*80}\n")
             logger.error(
                 f"Found {len(problematic_indices)} rows with non-hashable SUBJECT_ID values. "
-                f"Indices: {problematic_indices[:10]}"
+                f"Indices: {problematic_indices[:20]}"
+            )
+            raise ValueError(
+                f"Cannot map SUBJECT_ID: {len(problematic_indices)} row(s) have unhashable values "
+                f"(e.g., lists, dicts). First problematic row: {problematic_indices[0]}. "
+                f"See logs above for details."
             )
         
-        # Try mapping and catch the exact error
-        print(hash_to_int_map)
+        # All values are hashable, proceed with mapping
+        logger.debug("All SUBJECT_ID values are hashable. Proceeding with mapping...")
         try:
             df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
         except (TypeError, ValueError) as map_error:
