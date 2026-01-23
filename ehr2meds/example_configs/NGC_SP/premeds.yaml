@@ -9,7 +9,7 @@ run_name: MEDS
 chunksize: 10000
 paths:
   output: outputs/preMEDS
-  concepts: ../../../../../../storage/archive/UCPH/DeepFetal/SP/tables
+  concepts: ../../../../../../../../storage/archive/UCPH/DeepFetal/SP/tables
   file_type: csv 
 
 write_file_type: csv
