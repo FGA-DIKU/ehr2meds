@@ -74,6 +74,9 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
 
         # Must be a scalar
         if not pd.api.types.is_scalar(val):
+            print(f"Invalid SUBJECT_ID at row {idx}: non-scalar value\n"
+                f"Value: {repr(val)}\n"
+                f"Type: {type(val).__name__}")
             raise TypeError(
                 f"Invalid SUBJECT_ID at row {idx}: non-scalar value\n"
                 f"Value: {repr(val)}\n"
@@ -84,6 +87,8 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
         if isinstance(val, str):
             stripped = val.strip()
             if stripped.startswith("[") and stripped.endswith("]"):
+                print(f"Invalid SUBJECT_ID at row {idx}: array-like string\n"
+                    f"Value: {repr(val)}")
                 raise ValueError(
                     f"Invalid SUBJECT_ID at row {idx}: array-like string\n"
                     f"Value: {repr(val)}"
@@ -108,6 +113,9 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
     if mapped.isna().any():
         bad_idx = mapped[mapped.isna()].index.tolist()[:10]
         bad_vals = df.loc[bad_idx, col].tolist()
+        print(f"Unmapped SUBJECT_ID values detected.\n"
+            f"Indices: {bad_idx}\n"
+            f"Values: {bad_vals}")
         raise ValueError(
             f"Unmapped SUBJECT_ID values detected.\n"
             f"Indices: {bad_idx}\n"
