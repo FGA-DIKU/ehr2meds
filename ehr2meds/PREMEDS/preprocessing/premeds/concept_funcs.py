@@ -83,20 +83,53 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
         val: idx + 2 for idx, val in enumerate(sorted(unique_vals))
     }  # +2 to prevent subject ids being read in as binary.
 
+    print(df.head())
+
     # Apply mapping to DataFrame
     try:
         logger.debug(f"Mapping {len(df)} rows with {len(hash_to_int_map)} unique subject IDs")
         original_subject_ids = df[SUBJECT_ID].copy()
+        
+        # Check for problematic values before mapping (e.g., lists, dicts, etc.)
+        problematic_indices = []
+        for idx, val in original_subject_ids.items():
+            try:
+                # Try to use the value as a dictionary key to see if it's hashable
+                _ = hash_to_int_map.get(val)
+            except (TypeError, ValueError) as e:
+                problematic_indices.append(idx)
+                logger.warning(
+                    f"Row {idx} has problematic SUBJECT_ID value (type: {type(val).__name__}, value: {val}). "
+                    f"Full row:\n{df.loc[idx].to_dict()}"
+                )
+        
+        if problematic_indices:
+            logger.error(
+                f"Found {len(problematic_indices)} rows with non-hashable SUBJECT_ID values. "
+                f"Indices: {problematic_indices[:10]}"
+            )
+        
         df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
         
         # Check for unmapped values (NaN after mapping)
         unmapped_count = df[SUBJECT_ID].isna().sum()
         if unmapped_count > 0:
-            unmapped_original_values = original_subject_ids[df[SUBJECT_ID].isna()].unique()
+            unmapped_mask = df[SUBJECT_ID].isna()
+            unmapped_original_values = original_subject_ids[unmapped_mask].unique()
+            unmapped_indices = df[unmapped_mask].index.tolist()
+            
             logger.warning(
                 f"Found {unmapped_count} rows with unmapped subject IDs. "
                 f"Sample unmapped values: {list(unmapped_original_values[:10])}"
             )
+            
+            # Print first few failing rows
+            for idx in unmapped_indices[:5]:
+                logger.warning(
+                    f"Row {idx} failed to map. SUBJECT_ID value: {original_subject_ids.loc[idx]}, "
+                    f"Type: {type(original_subject_ids.loc[idx]).__name__}. "
+                    f"Full row:\n{df.loc[idx].to_dict()}"
+                )
         
         logger.debug(f"Converting SUBJECT_ID to int. Current dtype: {df[SUBJECT_ID].dtype}")
         df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
@@ -104,13 +137,31 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
     except KeyError as e:
         logger.error(f"SUBJECT_ID column not found in dataframe. Available columns: {list(df.columns)}")
         raise
-    except ValueError as e:
-        logger.error(
-            f"Failed to convert SUBJECT_ID to int. "
-            f"Unique values in column: {df[SUBJECT_ID].unique()[:20] if SUBJECT_ID in df.columns else 'N/A'}. "
-            f"NaN count: {df[SUBJECT_ID].isna().sum() if SUBJECT_ID in df.columns else 'N/A'}. "
-            f"Error: {str(e)}"
-        )
+    except (TypeError, ValueError) as e:
+        # Try to identify the problematic row by iterating
+        logger.error(f"Error during mapping: {str(e)}")
+        logger.error("Attempting to identify problematic rows...")
+        
+        problematic_rows = []
+        for idx, val in original_subject_ids.items():
+            try:
+                # Try to look up in mapping
+                _ = hash_to_int_map.get(val)
+            except Exception as row_error:
+                problematic_rows.append(idx)
+                logger.error(
+                    f"Row {idx} has problematic SUBJECT_ID: {val} (type: {type(val).__name__}). "
+                    f"Error: {str(row_error)}. "
+                    f"Full row:\n{df.loc[idx].to_dict()}"
+                )
+        
+        if problematic_rows:
+            logger.error(f"Found {len(problematic_rows)} problematic rows: {problematic_rows[:20]}")
+        else:
+            logger.error("Could not identify specific problematic rows. Showing first few rows:")
+            for idx in df.index[:5]:
+                logger.error(f"Row {idx}: SUBJECT_ID = {original_subject_ids.loc[idx]} (type: {type(original_subject_ids.loc[idx]).__name__})")
+        
         raise
     except Exception as e:
         logger.error(
@@ -119,6 +170,15 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
             f"SUBJECT_ID dtype: {df[SUBJECT_ID].dtype if SUBJECT_ID in df.columns else 'N/A'}, "
             f"Error: {str(e)}"
         )
+        # Try to find problematic rows even in unexpected errors
+        try:
+            for idx in df.index[:10]:
+                val = original_subject_ids.loc[idx]
+                logger.error(
+                    f"Row {idx} sample: SUBJECT_ID = {val} (type: {type(val).__name__})"
+                )
+        except Exception:
+            pass
         raise
     
     return df, hash_to_int_map
