@@ -42,6 +42,26 @@ concepts:
         column: fill_timestamp
     code_prefix: "M/"
 
+  procedure:
+    filename: Mor - CPMI - Procedurer.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      Procedurekode: code
+      ServiceDato: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "P/"
+
+  labtest:
+    filename: Mor - CPMI - Labresultater.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      BestOrd: code
+      Prøvetagningstidspunkt: timestamp
+      Resultatværdi: numeric_value
+      MOR_CPR: subject_id
+    code_prefix: "L/"
+    numeric_columns: [numeric_value]
+
   notes:
     filename: Mor - CPMI - Notater.csv
     # columns to keep, rename, and the final names
