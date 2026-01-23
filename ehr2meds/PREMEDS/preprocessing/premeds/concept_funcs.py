@@ -203,14 +203,64 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
     return df
 
 
-def map_pids_to_ints(
-    df: pd.DataFrame, subject_id_mapping: Dict[str, int]
-) -> pd.DataFrame:
-    """Map PIDs to integers."""
-    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
-    df = df.dropna(subset=[SUBJECT_ID])
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(float).astype(int)
+def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
+    """Map PIDs to integers, with robust diagnostics and safe casting."""
+    col = SUBJECT_ID
+
+    # 1) Fail fast on non-scalar SUBJECT_ID values (same principle as before)
+    non_scalar_mask = ~df[col].apply(pd.api.types.is_scalar)
+    if non_scalar_mask.any():
+        idx = df.index[non_scalar_mask][0]
+        val = df.at[idx, col]
+        print(f"Non-scalar SUBJECT_ID encountered in map_pids_to_ints at row {idx}\n"
+            f"Value: {repr(val)}\n"
+            f"Type: {type(val).__name__}")
+        raise TypeError(
+            f"Non-scalar SUBJECT_ID encountered in map_pids_to_ints at row {idx}\n"
+            f"Value: {repr(val)}\n"
+            f"Type: {type(val).__name__}"
+        )
+
+    # 2) Map without assigning first (prevents dtype coercion during assignment)
+    mapped = df[col].map(subject_id_mapping)
+
+    # 3) Identify unmapped values explicitly (before dropna hides what happened)
+    unmapped_mask = mapped.isna() & df[col].notna()
+    if unmapped_mask.any():
+        bad_idx = df.index[unmapped_mask]
+        # show a small sample
+        sample_idx = bad_idx[:20].tolist()
+        sample_vals = df.loc[sample_idx, col].tolist()
+        print(f"Some SUBJECT_ID values were not found in subject_id_mapping.\n"
+            f"Sample indices: {sample_idx}\n"
+            f"Sample values: {sample_vals}")
+        raise KeyError(
+            "Some SUBJECT_ID values were not found in subject_id_mapping.\n"
+            f"Sample indices: {sample_idx}\n"
+            f"Sample values: {sample_vals}"
+        )
+
+    # 4) Assign after mapping (as object/nullable int to avoid string dtype constraints)
+    df = df.copy()
+    df[col] = mapped
+
+    # 5) Drop any remaining NaNs (defensive)
+    df = df.dropna(subset=[col])
+
+    # 6) Convert robustly to integer
+    # If you truly expect integers, Int64 gives you safety while still being int-like
+    df[col] = pd.to_numeric(df[col], errors="raise").astype("Int64")
+
+    # If you require plain numpy int (no missing), enforce it:
+    if df[col].isna().any():
+        bad_idx = df.index[df[col].isna()][:20].tolist()
+        print(f"Unexpected NA after conversion. Example indices: {bad_idx}")
+        raise ValueError(f"Unexpected NA after conversion. Example indices: {bad_idx}")
+
+    df[col] = df[col].astype(int)
+
     return df
+
 
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
