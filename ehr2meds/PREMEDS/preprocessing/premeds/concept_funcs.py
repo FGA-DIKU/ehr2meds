@@ -67,35 +67,50 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
 
     col = SUBJECT_ID
 
+    bad_rows = []
+
     # ------------------------------------------------------------------
-    # 1. Validate SUBJECT_ID values (FAIL FAST)
+    # 1. Scan and collect all invalid SUBJECT_ID values
     # ------------------------------------------------------------------
     for idx, val in df[col].items():
 
-        # Must be a scalar
+        # Non-scalar values (lists, arrays, dicts, etc.)
         if not pd.api.types.is_scalar(val):
-            print(f"Invalid SUBJECT_ID at row {idx}: non-scalar value\n"
-                f"Value: {repr(val)}\n"
-                f"Type: {type(val).__name__}")
-            raise TypeError(
-                f"Invalid SUBJECT_ID at row {idx}: non-scalar value\n"
-                f"Value: {repr(val)}\n"
-                f"Type: {type(val).__name__}"
-            )
+            bad_rows.append((idx, val, type(val).__name__, "non-scalar"))
+            continue
 
-        # Catch bracketed array-like strings such as "[. 2584 .... 71096]"
+        # Bracketed array-like strings
         if isinstance(val, str):
             stripped = val.strip()
             if stripped.startswith("[") and stripped.endswith("]"):
-                print(f"Invalid SUBJECT_ID at row {idx}: array-like string\n"
-                    f"Value: {repr(val)}")
-                raise ValueError(
-                    f"Invalid SUBJECT_ID at row {idx}: array-like string\n"
-                    f"Value: {repr(val)}"
-                )
+                bad_rows.append((idx, val, type(val).__name__, "array-like string"))
+                continue
 
     # ------------------------------------------------------------------
-    # 2. Create mapping
+    # 2. Print all bad rows (if any) and abort
+    # ------------------------------------------------------------------
+    if bad_rows:
+        print("\n" + "=" * 80)
+        print(f"FOUND {len(bad_rows)} INVALID SUBJECT_ID VALUES")
+        print("=" * 80)
+
+        for idx, val, typ, reason in bad_rows:
+            print(
+                f"Row index: {idx}\n"
+                f"  Reason: {reason}\n"
+                f"  SUBJECT_ID value: {repr(val)}\n"
+                f"  Type: {typ}\n"
+            )
+
+        print("=" * 80 + "\n")
+
+        raise ValueError(
+            f"Invalid SUBJECT_ID values detected: {len(bad_rows)} row(s). "
+            f"See printed output above."
+        )
+
+    # ------------------------------------------------------------------
+    # 3. Create mapping (only reached if data is clean)
     # ------------------------------------------------------------------
     unique_vals = df[col].unique()
 
@@ -105,26 +120,29 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
     }  # +2 prevents binary interpretation
 
     # ------------------------------------------------------------------
-    # 3. Apply mapping safely
+    # 4. Apply mapping safely
     # ------------------------------------------------------------------
     mapped = df[col].map(hash_to_int_map)
 
-    # Explicit unmapped check (should never happen, but defensive)
     if mapped.isna().any():
-        bad_idx = mapped[mapped.isna()].index.tolist()[:10]
+        bad_idx = mapped[mapped.isna()].index.tolist()
         bad_vals = df.loc[bad_idx, col].tolist()
-        print(f"Unmapped SUBJECT_ID values detected.\n"
-            f"Indices: {bad_idx}\n"
-            f"Values: {bad_vals}")
+
+        print("\n" + "=" * 80)
+        print("UNMAPPED SUBJECT_ID VALUES AFTER FACTORIZATION")
+        print("=" * 80)
+        for i, v in zip(bad_idx, bad_vals):
+            print(f"Row index: {i}, SUBJECT_ID: {repr(v)}")
+        print("=" * 80 + "\n")
+
         raise ValueError(
-            f"Unmapped SUBJECT_ID values detected.\n"
-            f"Indices: {bad_idx}\n"
-            f"Values: {bad_vals}"
+            f"Unmapped SUBJECT_ID values detected: {len(bad_idx)} row(s)."
         )
 
     df[col] = mapped.astype(int)
 
     return df, hash_to_int_map
+
 
 
 
