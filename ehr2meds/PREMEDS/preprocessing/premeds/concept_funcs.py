@@ -109,7 +109,61 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
                 f"Indices: {problematic_indices[:10]}"
             )
         
-        df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
+        # Try mapping and catch the exact error
+        print(hash_to_int_map)
+        try:
+            df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
+        except (TypeError, ValueError) as map_error:
+            logger.error(f"Mapping failed with error: {str(map_error)}")
+            logger.error("Finding exact problematic row(s)...")
+            
+            # Try mapping row by row to find the exact failure
+            mapped_series = pd.Series(index=df.index, dtype=object)
+            failed_rows = []
+            
+            for idx in df.index:
+                val = original_subject_ids.loc[idx]
+                try:
+                    # First check if value is hashable
+                    try:
+                        hash(val)
+                    except TypeError:
+                        failed_rows.append(idx)
+                        logger.error(
+                            f"\n{'='*80}\n"
+                            f"FAILED ROW {idx} (Unhashable type):\n"
+                            f"  SUBJECT_ID value: {repr(val)}\n"
+                            f"  SUBJECT_ID type: {type(val).__name__}\n"
+                            f"  Full row data:\n{df.loc[idx].to_dict()}\n"
+                            f"{'='*80}\n"
+                        )
+                        continue
+                    
+                    # Try to map this specific value
+                    mapped_val = hash_to_int_map.get(val)
+                    mapped_series.loc[idx] = mapped_val
+                except Exception as row_error:
+                    failed_rows.append(idx)
+                    logger.error(
+                        f"\n{'='*80}\n"
+                        f"FAILED ROW {idx}:\n"
+                        f"  SUBJECT_ID value: {repr(val)}\n"
+                        f"  SUBJECT_ID type: {type(val).__name__}\n"
+                        f"  Error: {str(row_error)}\n"
+                        f"  Full row data:\n{df.loc[idx].to_dict()}\n"
+                        f"{'='*80}\n"
+                    )
+            
+            if failed_rows:
+                logger.error(f"Total failed rows: {len(failed_rows)}. Indices: {failed_rows}")
+                raise ValueError(
+                    f"Mapping failed for {len(failed_rows)} row(s). "
+                    f"First failed row index: {failed_rows[0]}. "
+                    f"See logs above for details."
+                )
+            else:
+                # If we got here, the error was something else - re-raise original
+                raise map_error
         
         # Check for unmapped values (NaN after mapping)
         unmapped_count = df[SUBJECT_ID].isna().sum()
