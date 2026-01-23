@@ -66,7 +66,7 @@ class BaseDataLoader(ABC):
     def _load_csv(
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> pd.DataFrame:
-        """Try pandas auto-detection first, then explicit encodings."""
+        """Try pandas auto-detection first (no encoding/separator specified), then fallback."""
         # Verify file_path is actually a path, not a variable name
         if file_path == "file_path" or not isinstance(file_path, str) or len(file_path) == 0:
             raise ValueError(f"Invalid file_path provided: {repr(file_path)}")
@@ -77,122 +77,78 @@ class BaseDataLoader(ABC):
         
         last_error = None
         
-        # Phase 1: Try pandas' auto-detection first (no encoding specified)
-        # This is usually most reliable and avoids character corruption
-        logger.debug(f"Trying pandas auto-detection for {file_path}")
+        # Phase 1: Try pandas' full auto-detection (no encoding, no separator specified)
+        # This lets pandas detect everything automatically and avoids character corruption
+        logger.debug(f"Trying pandas full auto-detection for {file_path}")
+        try:
+            if cols:
+                try:
+                    df = pd.read_csv(file_path, usecols=cols)
+                except (ValueError, KeyError) as col_error:
+                    # If usecols fails, read all columns first to check availability
+                    df_all = pd.read_csv(file_path)
+                    missing_cols = set(cols) - set(df_all.columns)
+                    if missing_cols:
+                        raise ValueError(
+                            f"Columns not found in file: {missing_cols}. "
+                            f"Available columns: {list(df_all.columns)}"
+                        )
+                    df = df_all[cols]
+            else:
+                df = pd.read_csv(file_path)
+            logger.debug(f"Successfully read {file_path} with pandas full auto-detection")
+            return df
+        except Exception as e:
+            logger.debug(f"Pandas auto-detection failed for {file_path}: {str(e)}")
+            last_error = e
+        
+        # Phase 2: If auto-detection failed, try with explicit separators but still no encoding
+        logger.debug(f"Trying with explicit separators for {file_path}")
         for separator in self.KNOWN_SEPARATORS:
             try:
                 if cols:
                     try:
-                        df = pd.read_csv(
-                            file_path,
-                            sep=separator,
-                            usecols=cols,
-                        )
+                        df = pd.read_csv(file_path, sep=separator, usecols=cols)
                     except (ValueError, KeyError) as col_error:
-                        df_all = pd.read_csv(
-                            file_path,
-                            sep=separator,
-                        )
+                        df_all = pd.read_csv(file_path, sep=separator)
                         missing_cols = set(cols) - set(df_all.columns)
                         if missing_cols:
                             continue  # Try next separator
                         df = df_all[cols]
                 else:
-                    df = pd.read_csv(
-                        file_path,
-                        sep=separator,
-                    )
-                logger.debug(f"Successfully read {file_path} with pandas auto-detection and separator '{separator}'")
+                    df = pd.read_csv(file_path, sep=separator)
+                logger.debug(f"Successfully read {file_path} with separator '{separator}' and auto encoding")
                 return df
             except Exception as e:
-                logger.debug(
-                    f"Failed to read {file_path} with pandas auto-detection and separator '{separator}': {str(e)}"
-                )
+                logger.debug(f"Failed with separator '{separator}': {str(e)}")
                 last_error = e
                 continue
         
-        # Phase 2: If auto-detection failed, try explicit UTF-8 encodings
+        # Phase 3: Last resort - try explicit UTF-8 encodings with separators
         utf8_encodings = ["utf-8-sig", "utf-8", "utf8"]
         for encoding in utf8_encodings:
             for separator in self.KNOWN_SEPARATORS:
                 try:
                     if cols:
                         try:
-                            df = pd.read_csv(
-                                file_path,
-                                sep=separator,
-                                encoding=encoding,
-                                usecols=cols,
-                            )
+                            df = pd.read_csv(file_path, sep=separator, encoding=encoding, usecols=cols)
                         except (ValueError, KeyError) as col_error:
-                            df_all = pd.read_csv(
-                                file_path,
-                                sep=separator,
-                                encoding=encoding,
-                            )
+                            df_all = pd.read_csv(file_path, sep=separator, encoding=encoding)
                             missing_cols = set(cols) - set(df_all.columns)
                             if missing_cols:
-                                continue  # Try next separator/encoding
+                                continue
                             df = df_all[cols]
                     else:
-                        df = pd.read_csv(
-                            file_path,
-                            sep=separator,
-                            encoding=encoding,
-                        )
+                        df = pd.read_csv(file_path, sep=separator, encoding=encoding)
                     logger.debug(f"Successfully read {file_path} with UTF-8 encoding '{encoding}' and separator '{separator}'")
                     return df
                 except Exception as e:
-                    logger.debug(
-                        f"Failed to read {file_path} with UTF-8 encoding '{encoding}' and separator '{separator}': {str(e)}"
-                    )
+                    logger.debug(f"Failed with encoding '{encoding}' and separator '{separator}': {str(e)}")
                     last_error = e
-                    continue
-        
-        # Phase 3: If UTF-8 encodings failed, try other encodings as last resort
-        other_encodings = [enc for enc in self.CSV_ENCODINGS if enc not in utf8_encodings]
-        for encoding in other_encodings:
-            for separator in self.KNOWN_SEPARATORS:
-                try:
-                    if cols:
-                        try:
-                            df = pd.read_csv(
-                                file_path,
-                                sep=separator,
-                                encoding=encoding,
-                                usecols=cols,
-                            )
-                        except (ValueError, KeyError) as col_error:
-                            df_all = pd.read_csv(
-                                file_path,
-                                sep=separator,
-                                encoding=encoding,
-                            )
-                            missing_cols = set(cols) - set(df_all.columns)
-                            if missing_cols:
-                                raise ValueError(
-                                    f"Columns not found in file: {missing_cols}. "
-                                    f"Available columns: {list(df_all.columns)}"
-                                )
-                            df = df_all[cols]
-                    else:
-                        df = pd.read_csv(
-                            file_path,
-                            sep=separator,
-                            encoding=encoding,
-                        )
-                    logger.debug(f"Successfully read {file_path} with encoding '{encoding}' and separator '{separator}'")
-                    return df
-                except Exception as e:
-                    last_error = e
-                    logger.debug(
-                        f"Failed to read {file_path} with encoding '{encoding}' and separator '{separator}': {str(e)}"
-                    )
                     continue
         
         # If we get here, all combinations failed
-        error_msg = "Unable to read file: " + repr(file_path) + " with any encoding/separator combination"
+        error_msg = "Unable to read file: " + repr(file_path) + " with any method"
         if last_error:
             error_msg += ". Last error: " + str(last_error)
         raise ValueError(error_msg)
@@ -254,11 +210,29 @@ class StandardDataLoader(BaseDataLoader):
     def _load_csv_chunks(
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
-        """Load CSV in chunks, trying pandas auto-detection first."""
+        """Load CSV in chunks, trying pandas full auto-detection first."""
         last_error = None
         
-        # Phase 1: Try pandas' auto-detection first (no encoding specified)
-        logger.debug(f"Trying pandas auto-detection for chunks in {file_path}")
+        # Phase 1: Try pandas' full auto-detection (no encoding, no separator specified)
+        logger.debug(f"Trying pandas full auto-detection for chunks in {file_path}")
+        try:
+            chunk_iter = pd.read_csv(
+                file_path,
+                chunksize=self.chunksize,
+                usecols=cols,
+            )
+            for i, chunk in enumerate(chunk_iter):
+                if self.test and i >= N_TEST_CHUNKS:
+                    break
+                yield chunk
+            logger.debug(f"Successfully read chunks from {file_path} with pandas full auto-detection")
+            return  # Exit if reading was successful
+        except Exception as e:
+            logger.debug(f"Pandas auto-detection failed for chunks in {file_path}: {str(e)}")
+            last_error = e
+        
+        # Phase 2: If auto-detection failed, try with explicit separators but still no encoding
+        logger.debug(f"Trying with explicit separators for chunks in {file_path}")
         for separator in self.KNOWN_SEPARATORS:
             try:
                 chunk_iter = pd.read_csv(
@@ -271,16 +245,14 @@ class StandardDataLoader(BaseDataLoader):
                     if self.test and i >= N_TEST_CHUNKS:
                         break
                     yield chunk
-                logger.debug(f"Successfully read chunks from {file_path} with pandas auto-detection and separator '{separator}'")
+                logger.debug(f"Successfully read chunks from {file_path} with separator '{separator}' and auto encoding")
                 return  # Exit if reading was successful
             except Exception as e:
-                logger.debug(
-                    f"Failed to read chunks from {file_path} with pandas auto-detection and separator '{separator}': {str(e)}"
-                )
+                logger.debug(f"Failed with separator '{separator}': {str(e)}")
                 last_error = e
                 continue
         
-        # Phase 2: If auto-detection failed, try explicit UTF-8 encodings
+        # Phase 3: Last resort - try explicit UTF-8 encodings with separators
         utf8_encodings = ["utf-8-sig", "utf-8", "utf8"]
         for encoding in utf8_encodings:
             for separator in self.KNOWN_SEPARATORS:
@@ -299,38 +271,11 @@ class StandardDataLoader(BaseDataLoader):
                     logger.debug(f"Successfully read chunks from {file_path} with UTF-8 encoding '{encoding}' and separator '{separator}'")
                     return  # Exit if reading was successful
                 except Exception as e:
-                    logger.debug(
-                        f"Failed to read chunks from {file_path} with UTF-8 encoding '{encoding}' and separator '{separator}': {str(e)}"
-                    )
-                    last_error = e
-                    continue
-        
-        # Phase 3: If UTF-8 encodings failed, try other encodings as last resort
-        other_encodings = [enc for enc in self.CSV_ENCODINGS if enc not in utf8_encodings]
-        for encoding in other_encodings:
-            for separator in self.KNOWN_SEPARATORS:
-                try:
-                    chunk_iter = pd.read_csv(
-                        file_path,
-                        sep=separator,
-                        encoding=encoding,
-                        chunksize=self.chunksize,
-                        usecols=cols,
-                    )
-                    for i, chunk in enumerate(chunk_iter):
-                        if self.test and i >= N_TEST_CHUNKS:
-                            break
-                        yield chunk
-                    logger.debug(f"Successfully read chunks from {file_path} with encoding '{encoding}' and separator '{separator}'")
-                    return  # Exit if reading was successful
-                except Exception as e:
-                    logger.debug(
-                        f"Failed to read chunks from {file_path} with encoding '{encoding}' and separator '{separator}': {str(e)}"
-                    )
+                    logger.debug(f"Failed with encoding '{encoding}' and separator '{separator}': {str(e)}")
                     last_error = e
                     continue
 
-        error_msg = f"Unable to read file {file_path} with any encoding/separator combination"
+        error_msg = f"Unable to read file {file_path} with any method"
         if last_error:
             error_msg += f". Last error: {str(last_error)}"
         raise ValueError(error_msg)
