@@ -159,6 +159,42 @@ class BaseDataLoader(ABC):
                         f"Failed to read {file_path} with encoding '{encoding}' and separator '{separator}': {str(e)}"
                     )
                     continue
+        
+        # If all explicit encodings failed, try pandas' default encoding detection
+        # (same as pd.read_csv without specifying encoding)
+        logger.debug(f"Trying pandas default encoding detection for {file_path}")
+        for separator in self.KNOWN_SEPARATORS:
+            try:
+                if cols:
+                    try:
+                        df = pd.read_csv(
+                            file_path,
+                            sep=separator,
+                            usecols=cols,
+                        )
+                    except (ValueError, KeyError) as col_error:
+                        df_all = pd.read_csv(
+                            file_path,
+                            sep=separator,
+                        )
+                        missing_cols = set(cols) - set(df_all.columns)
+                        if missing_cols:
+                            continue
+                        df = df_all[cols]
+                else:
+                    df = pd.read_csv(
+                        file_path,
+                        sep=separator,
+                    )
+                logger.debug(f"Successfully read {file_path} with pandas default encoding and separator '{separator}'")
+                return df
+            except Exception as e:
+                logger.debug(
+                    f"Failed to read {file_path} with pandas default encoding and separator '{separator}': {str(e)}"
+                )
+                last_error = e
+                continue
+        
         # If we get here, all combinations failed
         # Use repr to ensure the actual path is shown
         error_msg = "Unable to read file: " + repr(file_path) + " with any encoding/separator combination"
@@ -230,7 +266,34 @@ class StandardDataLoader(BaseDataLoader):
             sep for sep in self.KNOWN_SEPARATORS if sep != detected_separator
         ]
         
-        for encoding in self.CSV_ENCODINGS:
+        # Try UTF-8 encodings first
+        utf8_encodings = ["utf-8-sig", "utf-8", "utf8"]
+        other_encodings = [enc for enc in self.CSV_ENCODINGS if enc not in utf8_encodings]
+        
+        # First try UTF-8 encodings
+        for encoding in utf8_encodings:
+            for separator in separators_to_try:
+                try:
+                    chunk_iter = pd.read_csv(
+                        file_path,
+                        sep=separator,
+                        encoding=encoding,
+                        chunksize=self.chunksize,
+                        usecols=cols,
+                    )
+                    for i, chunk in enumerate(chunk_iter):
+                        if self.test and i >= N_TEST_CHUNKS:
+                            break
+                        yield chunk
+                    return  # Exit if reading was successful
+                except Exception as e:
+                    logger.debug(
+                        f"Failed with separator '{separator}' and UTF-8 encoding {encoding}: {str(e)}"
+                    )
+                    continue
+        
+        # Then try other encodings
+        for encoding in other_encodings:
             for separator in separators_to_try:
                 try:
                     chunk_iter = pd.read_csv(
@@ -250,6 +313,27 @@ class StandardDataLoader(BaseDataLoader):
                         f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}"
                     )
                     continue
+        
+        # Finally, try pandas' default encoding detection
+        logger.debug(f"Trying pandas default encoding detection for chunks in {file_path}")
+        for separator in separators_to_try:
+            try:
+                chunk_iter = pd.read_csv(
+                    file_path,
+                    sep=separator,
+                    chunksize=self.chunksize,
+                    usecols=cols,
+                )
+                for i, chunk in enumerate(chunk_iter):
+                    if self.test and i >= N_TEST_CHUNKS:
+                        break
+                    yield chunk
+                return  # Exit if reading was successful
+            except Exception as e:
+                logger.debug(
+                    f"Failed with separator '{separator}' and pandas default encoding: {str(e)}"
+                )
+                continue
 
         raise ValueError(
             f"Unable to read file {file_path} with any encoding/separator combination"
