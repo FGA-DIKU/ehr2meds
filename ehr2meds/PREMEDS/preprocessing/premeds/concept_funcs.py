@@ -63,270 +63,61 @@ def check_columns(df: pd.DataFrame, columns_map: dict):
 
 
 def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
-    """Factorize the subject_id column into an integer mapping.
+    """Factorize the SUBJECT_ID column into an integer mapping."""
 
-    Args:
-        df: DataFrame containing SUBJECT_ID column
+    col = SUBJECT_ID
 
-    Returns:
-        Tuple[pd.DataFrame, Dict[str, int]]:
-            - DataFrame with integer subject IDs
-            - Mapping from original IDs to integer IDs
+    # ------------------------------------------------------------------
+    # 1. Validate SUBJECT_ID values (FAIL FAST)
+    # ------------------------------------------------------------------
+    for idx, val in df[col].items():
 
-    Example:
-        Input df[SUBJECT_ID]: ['A', 'B', 'C', 'D']
-        Output mapping: {'A': 1, 'B': 2, 'C': 3, 'D': 4}
-    """
-    # Get unique values and create sequential mapping
-    unique_vals = df[SUBJECT_ID].unique()
-    hash_to_int_map = {
-        val: idx + 2 for idx, val in enumerate(sorted(unique_vals))
-    }  # +2 to prevent subject ids being read in as binary.
-
-    print(df.head())
-
-    # Apply mapping to DataFrame
-    try:
-        logger.debug(f"Mapping {len(df)} rows with {len(hash_to_int_map)} unique subject IDs")
-        original_subject_ids = df[SUBJECT_ID].copy()
-        
-        # Check ALL values for hashability BEFORE attempting any mapping
-        problematic_indices = []
-        logger.debug("Checking all SUBJECT_ID values for hashability...")
-        
-        for idx, val in original_subject_ids.items():
-            # Check if value is hashable (can be used as dict key)
-            try:
-                hash(val)
-            except TypeError:
-                problematic_indices.append(idx)
-                print(f"\n{'='*80}")
-                print(f"PROBLEMATIC ROW {idx} FOUND (Unhashable SUBJECT_ID):")
-                print(f"  SUBJECT_ID value: {repr(val)}")
-                print(f"  SUBJECT_ID type: {type(val).__name__}")
-                print(f"  Full row data:")
-                for col, col_val in df.loc[idx].items():
-                    print(f"    {col}: {repr(col_val)} (type: {type(col_val).__name__})")
-                print(f"{'='*80}\n")
-                logger.error(
-                    f"Row {idx} has unhashable SUBJECT_ID value (type: {type(val).__name__}, value: {repr(val)}). "
-                    f"Full row:\n{df.loc[idx].to_dict()}"
-                )
-                continue
-            
-            # Check for string representations of arrays/lists (like '[ 2584 135406 ...]')
-            if isinstance(val, str):
-                if (val.strip().startswith('[') and val.strip().endswith(']') and 
-                    any(c.isdigit() for c in val)):
-                    problematic_indices.append(idx)
-                    print(f"\n{'='*80}")
-                    print(f"PROBLEMATIC ROW {idx} FOUND (String representation of array):")
-                    print(f"  SUBJECT_ID value: {repr(val)}")
-                    print(f"  SUBJECT_ID type: {type(val).__name__}")
-                    print(f"  Value length: {len(val)}")
-                    print(f"  Full row data:")
-                    for col, col_val in df.loc[idx].items():
-                        print(f"    {col}: {repr(col_val)} (type: {type(col_val).__name__})")
-                    print(f"{'='*80}\n")
-                    logger.error(
-                        f"Row {idx} has SUBJECT_ID that is a string representation of an array: {repr(val[:100])}... "
-                        f"Full row:\n{df.loc[idx].to_dict()}"
-                    )
-        
-        if problematic_indices:
-            print(f"\n{'#'*80}")
-            print(f"ERROR: Found {len(problematic_indices)} rows with unhashable SUBJECT_ID values!")
-            print(f"Problematic row indices: {problematic_indices[:20]}")
-            print(f"{'#'*80}\n")
-            logger.error(
-                f"Found {len(problematic_indices)} rows with non-hashable SUBJECT_ID values. "
-                f"Indices: {problematic_indices[:20]}"
+        # Must be a scalar
+        if not pd.api.types.is_scalar(val):
+            raise TypeError(
+                f"Invalid SUBJECT_ID at row {idx}: non-scalar value\n"
+                f"Value: {repr(val)}\n"
+                f"Type: {type(val).__name__}"
             )
-            raise ValueError(
-                f"Cannot map SUBJECT_ID: {len(problematic_indices)} row(s) have unhashable values "
-                f"(e.g., lists, dicts). First problematic row: {problematic_indices[0]}. "
-                f"See logs above for details."
-            )
-        
-        # All values are hashable, proceed with mapping
-        logger.debug("All SUBJECT_ID values are hashable. Proceeding with mapping...")
-        try:
-            df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
-        except (TypeError, ValueError) as map_error:
-            logger.error(f"Mapping failed with error: {str(map_error)}")
-            logger.error("Finding exact problematic row(s)...")
-            
-            # Try mapping row by row to find the exact failure
-            mapped_series = pd.Series(index=df.index, dtype=object)
-            failed_rows = []
-            
-            for idx in df.index:
-                val = original_subject_ids.loc[idx]
-                try:
-                    # First check if value is hashable
-                    try:
-                        hash(val)
-                    except TypeError:
-                        failed_rows.append(idx)
-                        logger.error(
-                            f"\n{'='*80}\n"
-                            f"FAILED ROW {idx} (Unhashable type):\n"
-                            f"  SUBJECT_ID value: {repr(val)}\n"
-                            f"  SUBJECT_ID type: {type(val).__name__}\n"
-                            f"  Full row data:\n{df.loc[idx].to_dict()}\n"
-                            f"{'='*80}\n"
-                        )
-                        continue
-                    
-                    # Try to map this specific value
-                    mapped_val = hash_to_int_map.get(val)
-                    mapped_series.loc[idx] = mapped_val
-                except Exception as row_error:
-                    failed_rows.append(idx)
-                    logger.error(
-                        f"\n{'='*80}\n"
-                        f"FAILED ROW {idx}:\n"
-                        f"  SUBJECT_ID value: {repr(val)}\n"
-                        f"  SUBJECT_ID type: {type(val).__name__}\n"
-                        f"  Error: {str(row_error)}\n"
-                        f"  Full row data:\n{df.loc[idx].to_dict()}\n"
-                        f"{'='*80}\n"
-                    )
-            
-            if failed_rows:
-                logger.error(f"Total failed rows: {len(failed_rows)}. Indices: {failed_rows}")
+
+        # Catch bracketed array-like strings such as "[. 2584 .... 71096]"
+        if isinstance(val, str):
+            stripped = val.strip()
+            if stripped.startswith("[") and stripped.endswith("]"):
                 raise ValueError(
-                    f"Mapping failed for {len(failed_rows)} row(s). "
-                    f"First failed row index: {failed_rows[0]}. "
-                    f"See logs above for details."
+                    f"Invalid SUBJECT_ID at row {idx}: array-like string\n"
+                    f"Value: {repr(val)}"
                 )
-            else:
-                # If we got here, the error was something else - re-raise original
-                raise map_error
-        
-        # Check for unmapped values (NaN after mapping)
-        unmapped_count = df[SUBJECT_ID].isna().sum()
-        if unmapped_count > 0:
-            unmapped_mask = df[SUBJECT_ID].isna()
-            unmapped_original_values = original_subject_ids[unmapped_mask].unique()
-            unmapped_indices = df[unmapped_mask].index.tolist()
-            
-            logger.warning(
-                f"Found {unmapped_count} rows with unmapped subject IDs. "
-                f"Sample unmapped values: {list(unmapped_original_values[:10])}"
-            )
-            
-            # Print first few failing rows
-            for idx in unmapped_indices[:5]:
-                logger.warning(
-                    f"Row {idx} failed to map. SUBJECT_ID value: {original_subject_ids.loc[idx]}, "
-                    f"Type: {type(original_subject_ids.loc[idx]).__name__}. "
-                    f"Full row:\n{df.loc[idx].to_dict()}"
-                )
-        
-        logger.debug(f"Converting SUBJECT_ID to int. Current dtype: {df[SUBJECT_ID].dtype}")
-        df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
-        logger.debug(f"Successfully converted SUBJECT_ID to int. New dtype: {df[SUBJECT_ID].dtype}")
-    except KeyError as e:
-        logger.error(f"SUBJECT_ID column not found in dataframe. Available columns: {list(df.columns)}")
-        raise
-    except (TypeError, ValueError) as e:
-        # Try to identify the problematic row by iterating
-        logger.error(f"Error during mapping: {str(e)}")
-        logger.error("Attempting to identify problematic rows...")
-        
-        problematic_rows = []
-        for idx, val in original_subject_ids.items():
-            # Check if value is hashable first (this will catch lists, dicts, etc.)
-            try:
-                hash(val)
-            except TypeError:
-                problematic_rows.append(idx)
-                print(f"\n{'='*80}")
-                print(f"PROBLEMATIC ROW {idx} FOUND (Unhashable SUBJECT_ID):")
-                print(f"  SUBJECT_ID value: {repr(val)}")
-                print(f"  SUBJECT_ID type: {type(val).__name__}")
-                print(f"  Full row data:")
-                for col, col_val in df.loc[idx].items():
-                    print(f"    {col}: {repr(col_val)} (type: {type(col_val).__name__})")
-                print(f"{'='*80}\n")
-                logger.error(
-                    f"Row {idx} has unhashable SUBJECT_ID: {repr(val)} (type: {type(val).__name__}). "
-                    f"Full row:\n{df.loc[idx].to_dict()}"
-                )
-                continue
-            
-            # If hashable, check if it's in the mapping (though this shouldn't cause the error)
-            if val not in hash_to_int_map:
-                logger.warning(f"Row {idx} has SUBJECT_ID value not in mapping: {repr(val)}")
-        
-        if problematic_rows:
-            print(f"\n{'#'*80}")
-            print(f"ERROR: Found {len(problematic_rows)} rows with unhashable SUBJECT_ID values!")
-            print(f"Problematic row indices: {problematic_rows[:20]}")
-            print(f"{'#'*80}\n")
-            logger.error(f"Found {len(problematic_rows)} problematic rows: {problematic_rows[:20]}")
-        else:
-            # If no unhashable values found, check all values to see what we have
-            logger.error("Could not identify specific problematic rows. Checking all SUBJECT_ID values...")
-            print(f"\n{'='*80}")
-            print("Checking all SUBJECT_ID values for problematic patterns...")
-            print(f"{'='*80}\n")
-            
-            problematic_found = False
-            for idx in df.index:
-                val = original_subject_ids.loc[idx]
-                val_type = type(val).__name__
-                is_hashable = True
-                try:
-                    hash(val)
-                except TypeError:
-                    is_hashable = False
-                
-                # Check for string representations of arrays
-                is_array_string = (isinstance(val, str) and 
-                                 val.strip().startswith('[') and 
-                                 val.strip().endswith(']') and 
-                                 any(c.isdigit() for c in val))
-                
-                if not is_hashable or val_type not in ['str', 'int', 'float'] or is_array_string:
-                    problematic_found = True
-                    print(f"Row {idx}: SUBJECT_ID = {repr(val[:200])} (type: {val_type}, hashable: {is_hashable}, array_string: {is_array_string})")
-                    print(f"  Full row:")
-                    for col, col_val in df.loc[idx].items():
-                        print(f"    {col}: {repr(str(col_val)[:100])} (type: {type(col_val).__name__})")
-                    print()
-                    logger.error(f"Row {idx}: SUBJECT_ID = {repr(val)} (type: {val_type}, hashable: {is_hashable}, array_string: {is_array_string})")
-                    if problematic_found and idx >= 5:  # Show first few problematic ones
-                        break
-            
-            if not problematic_found:
-                print("No obviously problematic values found. Showing first 10 rows:")
-                for idx in df.index[:10]:
-                    val = original_subject_ids.loc[idx]
-                    print(f"Row {idx}: SUBJECT_ID = {repr(str(val)[:100])} (type: {type(val).__name__})")
-                    logger.error(f"Row {idx}: SUBJECT_ID = {repr(val)} (type: {type(val).__name__})")
-        
-        raise
-    except Exception as e:
-        logger.error(
-            f"Unexpected error during subject ID mapping/conversion. "
-            f"DataFrame shape: {df.shape}, "
-            f"SUBJECT_ID dtype: {df[SUBJECT_ID].dtype if SUBJECT_ID in df.columns else 'N/A'}, "
-            f"Error: {str(e)}"
+
+    # ------------------------------------------------------------------
+    # 2. Create mapping
+    # ------------------------------------------------------------------
+    unique_vals = df[col].unique()
+
+    hash_to_int_map = {
+        val: idx + 2
+        for idx, val in enumerate(sorted(unique_vals))
+    }  # +2 prevents binary interpretation
+
+    # ------------------------------------------------------------------
+    # 3. Apply mapping safely
+    # ------------------------------------------------------------------
+    mapped = df[col].map(hash_to_int_map)
+
+    # Explicit unmapped check (should never happen, but defensive)
+    if mapped.isna().any():
+        bad_idx = mapped[mapped.isna()].index.tolist()[:10]
+        bad_vals = df.loc[bad_idx, col].tolist()
+        raise ValueError(
+            f"Unmapped SUBJECT_ID values detected.\n"
+            f"Indices: {bad_idx}\n"
+            f"Values: {bad_vals}"
         )
-        # Try to find problematic rows even in unexpected errors
-        try:
-            for idx in df.index[:10]:
-                val = original_subject_ids.loc[idx]
-                logger.error(
-                    f"Row {idx} sample: SUBJECT_ID = {val} (type: {type(val).__name__})"
-                )
-        except Exception:
-            pass
-        raise
-    
+
+    df[col] = mapped.astype(int)
+
     return df, hash_to_int_map
+
 
 
 def apply_mapping(
