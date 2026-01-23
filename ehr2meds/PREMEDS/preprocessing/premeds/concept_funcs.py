@@ -112,6 +112,26 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
                     f"Row {idx} has unhashable SUBJECT_ID value (type: {type(val).__name__}, value: {repr(val)}). "
                     f"Full row:\n{df.loc[idx].to_dict()}"
                 )
+                continue
+            
+            # Check for string representations of arrays/lists (like '[ 2584 135406 ...]')
+            if isinstance(val, str):
+                if (val.strip().startswith('[') and val.strip().endswith(']') and 
+                    any(c.isdigit() for c in val)):
+                    problematic_indices.append(idx)
+                    print(f"\n{'='*80}")
+                    print(f"PROBLEMATIC ROW {idx} FOUND (String representation of array):")
+                    print(f"  SUBJECT_ID value: {repr(val)}")
+                    print(f"  SUBJECT_ID type: {type(val).__name__}")
+                    print(f"  Value length: {len(val)}")
+                    print(f"  Full row data:")
+                    for col, col_val in df.loc[idx].items():
+                        print(f"    {col}: {repr(col_val)} (type: {type(col_val).__name__})")
+                    print(f"{'='*80}\n")
+                    logger.error(
+                        f"Row {idx} has SUBJECT_ID that is a string representation of an array: {repr(val[:100])}... "
+                        f"Full row:\n{df.loc[idx].to_dict()}"
+                    )
         
         if problematic_indices:
             print(f"\n{'#'*80}")
@@ -249,6 +269,11 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
         else:
             # If no unhashable values found, check all values to see what we have
             logger.error("Could not identify specific problematic rows. Checking all SUBJECT_ID values...")
+            print(f"\n{'='*80}")
+            print("Checking all SUBJECT_ID values for problematic patterns...")
+            print(f"{'='*80}\n")
+            
+            problematic_found = False
             for idx in df.index:
                 val = original_subject_ids.loc[idx]
                 val_type = type(val).__name__
@@ -258,11 +283,29 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
                 except TypeError:
                     is_hashable = False
                 
-                if not is_hashable or val_type not in ['str', 'int', 'float']:
-                    print(f"\nRow {idx}: SUBJECT_ID = {repr(val)} (type: {val_type}, hashable: {is_hashable})")
-                    logger.error(f"Row {idx}: SUBJECT_ID = {repr(val)} (type: {val_type}, hashable: {is_hashable})")
-                    if idx >= 10:  # Limit output
+                # Check for string representations of arrays
+                is_array_string = (isinstance(val, str) and 
+                                 val.strip().startswith('[') and 
+                                 val.strip().endswith(']') and 
+                                 any(c.isdigit() for c in val))
+                
+                if not is_hashable or val_type not in ['str', 'int', 'float'] or is_array_string:
+                    problematic_found = True
+                    print(f"Row {idx}: SUBJECT_ID = {repr(val[:200])} (type: {val_type}, hashable: {is_hashable}, array_string: {is_array_string})")
+                    print(f"  Full row:")
+                    for col, col_val in df.loc[idx].items():
+                        print(f"    {col}: {repr(str(col_val)[:100])} (type: {type(col_val).__name__})")
+                    print()
+                    logger.error(f"Row {idx}: SUBJECT_ID = {repr(val)} (type: {val_type}, hashable: {is_hashable}, array_string: {is_array_string})")
+                    if problematic_found and idx >= 5:  # Show first few problematic ones
                         break
+            
+            if not problematic_found:
+                print("No obviously problematic values found. Showing first 10 rows:")
+                for idx in df.index[:10]:
+                    val = original_subject_ids.loc[idx]
+                    print(f"Row {idx}: SUBJECT_ID = {repr(str(val)[:100])} (type: {type(val).__name__})")
+                    logger.error(f"Row {idx}: SUBJECT_ID = {repr(val)} (type: {type(val).__name__})")
         
         raise
     except Exception as e:
