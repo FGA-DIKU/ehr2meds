@@ -217,23 +217,52 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
         
         problematic_rows = []
         for idx, val in original_subject_ids.items():
+            # Check if value is hashable first (this will catch lists, dicts, etc.)
             try:
-                # Try to look up in mapping
-                _ = hash_to_int_map.get(val)
-            except Exception as row_error:
+                hash(val)
+            except TypeError:
                 problematic_rows.append(idx)
+                print(f"\n{'='*80}")
+                print(f"PROBLEMATIC ROW {idx} FOUND (Unhashable SUBJECT_ID):")
+                print(f"  SUBJECT_ID value: {repr(val)}")
+                print(f"  SUBJECT_ID type: {type(val).__name__}")
+                print(f"  Full row data:")
+                for col, col_val in df.loc[idx].items():
+                    print(f"    {col}: {repr(col_val)} (type: {type(col_val).__name__})")
+                print(f"{'='*80}\n")
                 logger.error(
-                    f"Row {idx} has problematic SUBJECT_ID: {val} (type: {type(val).__name__}). "
-                    f"Error: {str(row_error)}. "
+                    f"Row {idx} has unhashable SUBJECT_ID: {repr(val)} (type: {type(val).__name__}). "
                     f"Full row:\n{df.loc[idx].to_dict()}"
                 )
+                continue
+            
+            # If hashable, check if it's in the mapping (though this shouldn't cause the error)
+            if val not in hash_to_int_map:
+                logger.warning(f"Row {idx} has SUBJECT_ID value not in mapping: {repr(val)}")
         
         if problematic_rows:
+            print(f"\n{'#'*80}")
+            print(f"ERROR: Found {len(problematic_rows)} rows with unhashable SUBJECT_ID values!")
+            print(f"Problematic row indices: {problematic_rows[:20]}")
+            print(f"{'#'*80}\n")
             logger.error(f"Found {len(problematic_rows)} problematic rows: {problematic_rows[:20]}")
         else:
-            logger.error("Could not identify specific problematic rows. Showing first few rows:")
-            for idx in df.index[:5]:
-                logger.error(f"Row {idx}: SUBJECT_ID = {original_subject_ids.loc[idx]} (type: {type(original_subject_ids.loc[idx]).__name__})")
+            # If no unhashable values found, check all values to see what we have
+            logger.error("Could not identify specific problematic rows. Checking all SUBJECT_ID values...")
+            for idx in df.index:
+                val = original_subject_ids.loc[idx]
+                val_type = type(val).__name__
+                is_hashable = True
+                try:
+                    hash(val)
+                except TypeError:
+                    is_hashable = False
+                
+                if not is_hashable or val_type not in ['str', 'int', 'float']:
+                    print(f"\nRow {idx}: SUBJECT_ID = {repr(val)} (type: {val_type}, hashable: {is_hashable})")
+                    logger.error(f"Row {idx}: SUBJECT_ID = {repr(val)} (type: {val_type}, hashable: {is_hashable})")
+                    if idx >= 10:  # Limit output
+                        break
         
         raise
     except Exception as e:
