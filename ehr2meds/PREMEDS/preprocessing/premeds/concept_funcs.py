@@ -64,83 +64,35 @@ def check_columns(df: pd.DataFrame, columns_map: dict):
 
 def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
     """Factorize the SUBJECT_ID column into an integer mapping."""
-
     col = SUBJECT_ID
-
-    bad_rows = []
-
-    # ------------------------------------------------------------------
-    # 1. Scan and collect all invalid SUBJECT_ID values
-    # ------------------------------------------------------------------
-    for idx, val in df[col].items():
-
-        # Non-scalar values (lists, arrays, dicts, etc.)
-        if not pd.api.types.is_scalar(val):
-            bad_rows.append((idx, val, type(val).__name__, "non-scalar"))
-            continue
-
-        # Bracketed array-like strings
-        if isinstance(val, str):
-            stripped = val.strip()
-            if stripped.startswith("[") and stripped.endswith("]"):
-                bad_rows.append((idx, val, type(val).__name__, "array-like string"))
-                continue
-
-    # ------------------------------------------------------------------
-    # 2. Print all bad rows (if any) and abort
-    # ------------------------------------------------------------------
+    
+    # Validate all SUBJECT_ID values: check for non-scalar values and array-like strings
+    bad_rows = [
+        (idx, val, type(val).__name__, "non-scalar" if not pd.api.types.is_scalar(val) else "array-like string")
+        for idx, val in df[col].items()
+        if not pd.api.types.is_scalar(val) or (isinstance(val, str) and val.strip().startswith("[") and val.strip().endswith("]"))
+    ]
+    
     if bad_rows:
-        print("\n" + "=" * 80)
-        print(f"FOUND {len(bad_rows)} INVALID SUBJECT_ID VALUES")
-        print("=" * 80)
-
-        for idx, val, typ, reason in bad_rows:
-            print(
-                f"Row index: {idx}\n"
-                f"  Reason: {reason}\n"
-                f"  SUBJECT_ID value: {repr(val)}\n"
-                f"  Type: {typ}\n"
-            )
-
-        print("=" * 80 + "\n")
-
         raise ValueError(
             f"Invalid SUBJECT_ID values detected: {len(bad_rows)} row(s). "
-            f"See printed output above."
+            f"First problematic row: {bad_rows[0][0]}, value: {repr(bad_rows[0][1])}, type: {bad_rows[0][2]}"
         )
-
-    # ------------------------------------------------------------------
-    # 3. Create mapping (only reached if data is clean)
-    # ------------------------------------------------------------------
+    
+    # Create mapping from unique values to integers
     unique_vals = df[col].unique()
-
-    hash_to_int_map = {
-        val: idx + 2
-        for idx, val in enumerate(sorted(unique_vals))
-    }  # +2 prevents binary interpretation
-
-    # ------------------------------------------------------------------
-    # 4. Apply mapping safely
-    # ------------------------------------------------------------------
+    hash_to_int_map = {val: idx + 2 for idx, val in enumerate(sorted(unique_vals))}  # +2 prevents binary interpretation
+    
+    # Apply mapping and validate
     mapped = df[col].map(hash_to_int_map)
-
     if mapped.isna().any():
         bad_idx = mapped[mapped.isna()].index.tolist()
-        bad_vals = df.loc[bad_idx, col].tolist()
-
-        print("\n" + "=" * 80)
-        print("UNMAPPED SUBJECT_ID VALUES AFTER FACTORIZATION")
-        print("=" * 80)
-        for i, v in zip(bad_idx, bad_vals):
-            print(f"Row index: {i}, SUBJECT_ID: {repr(v)}")
-        print("=" * 80 + "\n")
-
         raise ValueError(
-            f"Unmapped SUBJECT_ID values detected: {len(bad_idx)} row(s)."
+            f"Unmapped SUBJECT_ID values detected: {len(bad_idx)} row(s). "
+            f"First unmapped row: {bad_idx[0]}, value: {repr(df.loc[bad_idx[0], col])}"
         )
-
+    
     df[col] = mapped.astype(int)
-
     return df, hash_to_int_map
 
 
@@ -224,59 +176,37 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
 def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
     """Map PIDs to integers, with robust diagnostics and safe casting."""
     col = SUBJECT_ID
-
-    # 1) Fail fast on non-scalar SUBJECT_ID values (same principle as before)
+    
+    # Validate non-scalar values
     non_scalar_mask = ~df[col].apply(pd.api.types.is_scalar)
     if non_scalar_mask.any():
         idx = df.index[non_scalar_mask][0]
         val = df.at[idx, col]
-        print(f"Non-scalar SUBJECT_ID encountered in map_pids_to_ints at row {idx}\n"
-            f"Value: {repr(val)}\n"
-            f"Type: {type(val).__name__}")
         raise TypeError(
-            f"Non-scalar SUBJECT_ID encountered in map_pids_to_ints at row {idx}\n"
-            f"Value: {repr(val)}\n"
-            f"Type: {type(val).__name__}"
+            f"Non-scalar SUBJECT_ID at row {idx}, value: {repr(val)}, type: {type(val).__name__}"
         )
-
-    # 2) Map without assigning first (prevents dtype coercion during assignment)
+    
+    # Map and validate unmapped values
     mapped = df[col].map(subject_id_mapping)
-
-    # 3) Identify unmapped values explicitly (before dropna hides what happened)
     unmapped_mask = mapped.isna() & df[col].notna()
     if unmapped_mask.any():
-        bad_idx = df.index[unmapped_mask]
-        # show a small sample
-        sample_idx = bad_idx[:20].tolist()
-        sample_vals = df.loc[sample_idx, col].tolist()
-        print(f"Some SUBJECT_ID values were not found in subject_id_mapping.\n"
-            f"Sample indices: {sample_idx}\n"
-            f"Sample values: {sample_vals}")
+        bad_idx = df.index[unmapped_mask][:20].tolist()
+        sample_vals = df.loc[bad_idx, col].tolist()
         raise KeyError(
-            "Some SUBJECT_ID values were not found in subject_id_mapping.\n"
-            f"Sample indices: {sample_idx}\n"
-            f"Sample values: {sample_vals}"
+            f"SUBJECT_ID values not found in mapping. Sample indices: {bad_idx}, values: {sample_vals}"
         )
-
-    # 4) Assign after mapping (as object/nullable int to avoid string dtype constraints)
+    
+    # Assign, drop NaNs, and convert to int
     df = df.copy()
     df[col] = mapped
-
-    # 5) Drop any remaining NaNs (defensive)
     df = df.dropna(subset=[col])
-
-    # 6) Convert robustly to integer
-    # If you truly expect integers, Int64 gives you safety while still being int-like
     df[col] = pd.to_numeric(df[col], errors="raise").astype("Int64")
-
-    # If you require plain numpy int (no missing), enforce it:
+    
     if df[col].isna().any():
         bad_idx = df.index[df[col].isna()][:20].tolist()
-        print(f"Unexpected NA after conversion. Example indices: {bad_idx}")
         raise ValueError(f"Unexpected NA after conversion. Example indices: {bad_idx}")
-
+    
     df[col] = df[col].astype(int)
-
     return df
 
 
