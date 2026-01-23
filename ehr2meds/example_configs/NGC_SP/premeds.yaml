@@ -72,6 +72,7 @@ concepts:
       Speciale: specialty
       MOR_CPR: subject_id
     code_prefix: "N/"
+    save_in_chunks: true
 
 
 patients_info:
