@@ -23,7 +23,7 @@ diagnosis:
     code:
       - code
     time: timestamp
-    time_format: "%Y-%m-%d"
+    time_format: "%Y-%m-%d %H:%M:%S"
 
 # medication:
 #   medication:
