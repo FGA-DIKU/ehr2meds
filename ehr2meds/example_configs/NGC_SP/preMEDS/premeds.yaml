@@ -52,7 +52,7 @@ concepts:
     code_prefix: "P/"
 
   labtest:
-    filename: Mor - CPMI - Labresultater.csv
+    filename: Mor - CPMI - Prøvesvar.csv
     # columns to keep, rename, and the final names
     rename_columns:
       BestOrd: code
