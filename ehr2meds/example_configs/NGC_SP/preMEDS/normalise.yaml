@@ -6,7 +6,7 @@ test: true # Just for testing, use false for full conversion
 env: local
 run_name: normalise_labs
 paths:
-  input: outputs/preMEDS/labtest
+  input: outputs/preMEDS/labtest.csv
   output_dir: outputs/preMEDS/ # can be same directory that holds the input file
 
 file_name: labtest_norm_min_max.csv # file name to save the normalised data, make sure it's not already present in the output directory

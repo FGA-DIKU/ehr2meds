@@ -18,13 +18,6 @@ subject:
       - col(gender)
     time: null    
     
-admissions:
-  admissions:
-    code:
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
-
 diagnosis:
   diagnosis:
     code:
