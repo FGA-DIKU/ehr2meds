@@ -1,0 +1,15 @@
+# Directory containing raw PREMEDS data (input).
+# To get the directory:
+# On azure go to Data -> Researcher Data -> Browse -> right click directory -> Copy usage code ->  job, sdkv2
+# Copy the uri. It looks like this: azureml://subscriptions/.../researcher_data/paths/<your_dir>
+
+input_uri: outputs/preMEDS/
+
+# Directory where processed PREMEDS data will be stored (output).
+output_uri: outputs/MEDS/
+
+# File path to the pipeline configuration for data processing.
+pipeline_config_path: "ehr2meds/example_configs/NGC_SP/MEDS/pipeline.yaml"
+
+# File path to the event conversion configuration.
+event_conversion_config_path: "ehr2meds/example_configs/NGC_SP/MEDS/event.yaml"

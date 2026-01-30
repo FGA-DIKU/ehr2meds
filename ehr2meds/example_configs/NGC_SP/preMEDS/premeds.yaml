@@ -69,8 +69,9 @@ concepts:
       Linjenummer: line_number
       Note: note
       Notetype: code
-      Speciale: specialty
+      Speciale: speciality
       MOR_CPR: subject_id
+      Redigeringstidspunkt: timestamp
     code_prefix: "N/"
     save_in_chunks: true
 

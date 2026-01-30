@@ -1,0 +1,75 @@
+subject_id_col: subject_id
+
+subject:
+  subject_id_col: subject_id
+  dob:
+    code: 
+      - DOB
+    time: col(birthdate)
+    time_format: "%Y-%m-%d %H:%M:%S"
+  dod:
+    code: 
+      - DOD
+    time: col(deathdate)
+    time_format: "%Y-%m-%d %H:%M:%S"
+  gender:
+    code:
+      - "GENDER"
+      - col(gender)
+    time: null    
+    
+admissions:
+  admissions:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+diagnosis:
+  diagnosis:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d"
+
+medication:
+  medication:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format:  "%Y-%m-%d %H:%M:%S"
+
+procedure:
+  procedure:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+labtest_norm_min_max:
+  labtest_norm_min_max:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    numeric_value: col(numeric_value)
+
+notes/chunk_0:
+  notes:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    note: col(note)
+    line_number: col(line_number)
+    speciality: col(speciality)
+
+notes/chunk_1:
+  notes:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    note: col(note)
+    line_number: col(line_number)
+    speciality: col(speciality)
