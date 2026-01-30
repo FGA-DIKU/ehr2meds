@@ -5,12 +5,12 @@ subject:
   dob:
     code: 
       - DOB
-    time: birthdate
+    time: col(birthdate)
     time_format: "%Y-%m-%d %H:%M:%S"
   dod:
     code: 
       - DOD
-    time: deathdate
+    time: col(deathdate)
     time_format: "%Y-%m-%d %H:%M:%S"
   gender:
     code:
@@ -21,8 +21,8 @@ subject:
 diagnosis:
   diagnosis:
     code:
-      - code
-    time: timestamp
+      - col(code)
+    time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
 # medication:

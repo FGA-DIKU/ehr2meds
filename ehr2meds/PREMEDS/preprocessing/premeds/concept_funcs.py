@@ -172,6 +172,28 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
             df[col] = pd.to_numeric(df[col], errors="coerce")
     return df
 
+def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Convert specified columns to datetime type. Handles both date-only and datetime formats.
+    
+    If time_format is specified but some values are date-only (Y-M-D), those will be parsed
+    and automatically get 00:00:00 as the time component.
+    """
+    datetime_cols = concept_config.get("datetime_columns", [])
+    time_format = concept_config.get("time_format")
+    
+    for col in datetime_cols:
+        if col in df.columns:
+            if time_format:
+                # Try with specified format first
+                df[col] = pd.to_datetime(df[col], errors="coerce", format=time_format)
+                # If some values failed to parse (likely date-only), try without format (pandas infers)
+                if df[col].isna().any():
+                    mask = df[col].isna()
+                    df.loc[mask, col] = pd.to_datetime(df.loc[mask, col], errors="coerce")
+            else:
+                # No format specified - let pandas infer (handles both date and datetime)
+                df[col] = pd.to_datetime(df[col], errors="coerce")
+    return df
 
 def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
     """Map PIDs to integers, with robust diagnostics and safe casting."""

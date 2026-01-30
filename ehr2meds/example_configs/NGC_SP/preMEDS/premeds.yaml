@@ -28,6 +28,7 @@ concepts:
       Redigeringsdato: timestamp
       MOR_CPR: subject_id
     code_prefix: "D/"
+    datetime_columns: [timestamp]
 
   # medication:
   #   filename: Mor - CPMI - Medicin.csv
