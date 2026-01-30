@@ -29,52 +29,61 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "D/"
     datetime_columns: [timestamp]
+    time_format: "%Y-%m-%d %H:%M:%S"
 
-  # medication:
-  #   filename: Mor - CPMI - Medicin.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     ATC: code
-  #     Administrationstidspunkt: timestamp
-  #     Bestillingsdato: fill_timestamp
-  #     MOR_CPR: subject_id
-  #   fillna:
-  #     timestamp:
-  #       column: fill_timestamp
-  #   code_prefix: "M/"
+  medication:
+    filename: Mor - CPMI - Medicin.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      ATC: code
+      Administrationstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      MOR_CPR: subject_id
+    fillna:
+      timestamp:
+        column: fill_timestamp
+    code_prefix: "M/"
+    datetime_columns: [timestamp]
+    time_format: "%Y-%m-%d %H:%M:%S"
 
-  # procedure:
-  #   filename: Mor - CPMI - Procedurer.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     ProcedureCode: code
-  #     ServiceDate: timestamp
-  #     MOR_CPR: subject_id
-  #   code_prefix: "P/"
+  procedure:
+    filename: Mor - CPMI - Procedurer.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      ProcedureCode: code
+      ServiceDate: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "P/"
+    datetime_columns: [timestamp]
+    time_format: "%Y-%m-%d %H:%M:%S"
 
-  # labtest:
-  #   filename: Mor - CPMI - Prøvesvar.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     BestOrd: code
-  #     Prøvetagningstidspunkt: timestamp
-  #     Resultatværdi: numeric_value
-  #     MOR_CPR: subject_id
-  #   code_prefix: "L/"
-  #   numeric_columns: [numeric_value]
+  labtest:
+    filename: Mor - CPMI - Prøvesvar.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      BestOrd: code
+      Prøvetagningstidspunkt: timestamp
+      Resultatværdi: numeric_value
+      MOR_CPR: subject_id
+    code_prefix: "L/"
+    numeric_columns: [numeric_value]
+    datetime_columns: [timestamp]
+    time_format: "%Y-%m-%d %H:%M:%S"
 
-  # notes:
-  #   filename: Mor - CPMI - Notater.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     Linjenummer: line_number
-  #     Note: note
-  #     Notetype: code
-  #     Speciale: speciality
-  #     MOR_CPR: subject_id
-  #     Redigeringstidspunkt: timestamp
-  #   code_prefix: "N/"
-  #   save_in_chunks: true
+  notes:
+    filename: Mor - CPMI - Notater.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      Linjenummer: line_number
+      Note: note
+      Notetype: code
+      Speciale: speciality
+      MOR_CPR: subject_id
+      Redigeringstidspunkt: timestamp
+    code_prefix: "N/"
+    datetime_columns: [timestamp]
+    time_format: "%Y-%m-%d %H:%M:%S"
+    save_in_chunks: true
 
 
 patients_info:
