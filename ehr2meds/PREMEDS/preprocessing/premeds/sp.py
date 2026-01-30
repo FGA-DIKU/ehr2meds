@@ -6,6 +6,7 @@ from ehr2meds.PREMEDS.preprocessing.constants import SUBJECT_ID
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
     clean_data,
     convert_numeric_columns,
+    convert_datetime_columns,
     fill_missing_values,
     map_pids_to_ints,
     prefix_codes,
@@ -38,6 +39,7 @@ class ConceptProcessor:
         df = prefix_codes(df, concept_config.get("code_prefix", None))
 
         df = convert_numeric_columns(df, concept_config)
+        df = convert_datetime_columns(df, concept_config)
         df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
 
