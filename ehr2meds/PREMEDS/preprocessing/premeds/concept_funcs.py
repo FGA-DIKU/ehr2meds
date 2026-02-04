@@ -175,30 +175,33 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
 def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Convert specified columns to datetime type. Handles both date-only and datetime formats.
     
+    Date-only values like "2024-01-15" are automatically converted to "2024-01-15 00:00:00".
     If time_format is specified, it's used as a hint but values that don't match will be
-    parsed without format to avoid data loss. Date-only values automatically get 00:00:00.
+    parsed without format to avoid data loss.
     """
     datetime_cols = concept_config.get("datetime_columns", [])
     time_format = concept_config.get("time_format")
     
     for col in datetime_cols:
         if col in df.columns:
+            # Convert to string first to ensure we have the original format
+            original_values = df[col].astype(str)
+            
             if time_format:
-                # Convert to string first to ensure we have the original format
-                original_values = df[col].astype(str)
                 # Try with specified format first
-                parsed_with_format = pd.to_datetime(original_values, errors="coerce", format=time_format)
-                # For values that failed with format, try without format using original string values
-                mask = parsed_with_format.isna() & (original_values != 'nan')
-                if mask.any():
-                    # Parse original string values without format to preserve time components
-                    failed_values = original_values.loc[mask]
-                    parsed_without_format = pd.to_datetime(failed_values, errors="coerce")
-                    parsed_with_format.loc[mask] = parsed_without_format
-                df[col] = parsed_with_format
+                parsed = pd.to_datetime(original_values, errors="coerce", format=time_format)
+                # For values that failed with format, try without format (preserves time components)
+                failed_mask = parsed.isna() & df[col].notna()
+                if failed_mask.any():
+                    failed_values = original_values.loc[failed_mask]
+                    parsed_failed = pd.to_datetime(failed_values, errors="coerce")
+                    parsed.loc[failed_mask] = parsed_failed
             else:
                 # No format specified - let pandas infer (handles both date and datetime)
-                df[col] = pd.to_datetime(df[col], errors="coerce")
+                # Date-only values will automatically get 00:00:00
+                parsed = pd.to_datetime(original_values, errors="coerce")
+            
+            df[col] = parsed
     return df
 
 def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
