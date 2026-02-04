@@ -32,7 +32,16 @@ def fill_missing_values(df: pd.DataFrame, fillna_cfg: dict) -> pd.DataFrame:
     """
     Fill missing values using specified columns and regex patterns.
     Drop the columns used to fill missing values.
+    
+    Args:
+        df: DataFrame to process
+        fillna_cfg: Dictionary with target columns as keys and fill config as values
+        
+    Returns:
+        DataFrame with missing values filled and fill columns dropped
     """
+    if not fillna_cfg:
+        return df
     for target_col, fill_config in fillna_cfg.items():
         fill_col = fill_config.get("column")
         if fill_col and fill_col in df.columns:
@@ -178,9 +187,19 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
     Date-only values like "2024-01-15" are automatically converted to "2024-01-15 00:00:00".
     If time_format is specified, it's used as a hint but values that don't match will be
     parsed without format to avoid data loss.
+    
+    Uses only the global datetime config from '_global_datetime' key with:
+    - 'columns': list of column names
+    - 'timeformat': time format string
     """
-    datetime_cols = concept_config.get("datetime_columns", [])
-    time_format = concept_config.get("time_format")
+    # Get global datetime config only
+    global_datetime = concept_config.get("_global_datetime", {})
+    datetime_cols = global_datetime.get("columns", [])
+    time_format = global_datetime.get("timeformat")
+    
+    if not datetime_cols:
+        print(f"[WARNING convert_datetime_columns] No datetime columns specified in global config!")
+        return df
     
     for col in datetime_cols:
         if col in df.columns:
@@ -190,6 +209,7 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
             if time_format:
                 # Try with specified format first
                 parsed = pd.to_datetime(original_values, errors="coerce", format=time_format)
+                
                 # For values that failed with format, try without format (preserves time components)
                 failed_mask = parsed.isna() & df[col].notna()
                 if failed_mask.any():
@@ -201,7 +221,11 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
                 # Date-only values will automatically get 00:00:00
                 parsed = pd.to_datetime(original_values, errors="coerce")
             
+            # Assign the parsed values
             df[col] = parsed
+            
+        else:
+            print(f"[WARNING convert_datetime_columns] Column '{col}' not found in dataframe! Available columns: {df.columns.tolist()}")
     return df
 
 def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:

@@ -34,7 +34,7 @@ class ConceptProcessor:
         """
         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
         if concept_config.get("fillna"):
-            df = fill_missing_values(df, concept_config.fillna)
+            df = fill_missing_values(df, concept_config.get("fillna"))
 
         df = prefix_codes(df, concept_config.get("code_prefix", None))
 

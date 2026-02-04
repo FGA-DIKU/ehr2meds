@@ -30,12 +30,42 @@ diagnosis:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d"
+    time_format: "%Y-%m-%d %H:%M:%S"
 
-register_diagnosis:
-  register_diagnosis:
+medication:
+  medication:
     code:
       - col(code)
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
+
+procedure:
+  procedure:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+labtest:
+  labtest:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    numeric_value: col(numeric_value)
+
+# labtest_norm_min_max:
+#   labtest_norm_min_max:
+#     code:
+#       - col(code)
+#     time: col(timestamp)
+#     time_format: "%Y-%m-%d %H:%M:%S"
+#     numeric_value: col(numeric_value)
+
+# register_diagnosis:
+#   register_diagnosis:
+#     code:
+#       - col(code)
+#     time: col(timestamp)
+#     time_format: "%Y-%m-%d %H:%M:%S"
     

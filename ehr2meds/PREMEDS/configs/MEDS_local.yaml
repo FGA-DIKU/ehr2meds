@@ -16,6 +16,10 @@ paths:
 
 write_file_type: csv
 
+datetime: 
+  columns: [timestamp]
+  timeformat: "%Y-%m-%d %H:%M:%S"
+
 pid_link: 
   join_col: PID
   target_col: CPR_hash
@@ -43,7 +47,8 @@ concepts:
       code:
         column: fill_code
         regex: '\((D[^)]+)\)'
-    code_prefix: "D/"
+    code_prefix: 'D/'
+    # datetime_columns and time_format are inherited from global datetime config
 
   procedure:
     filename: CPMI_Procedurer.parquet
@@ -86,112 +91,112 @@ concepts:
     code_prefix: "L/"
     numeric_columns: [numeric_value]
 
-register_concepts:
-  register_diagnosis:
-    filename: diagnoser.asc
-    rename_columns:
-      diagnosekode: code
-      # diagnosetype: code_type
-      dw_ek_kontakt: contact_id
+# register_concepts:
+#   register_diagnosis:
+#     filename: diagnoser.asc
+#     rename_columns:
+#       diagnosekode: code
+#       # diagnosetype: code_type
+#       dw_ek_kontakt: contact_id
 
-    code_prefix: "RD/"
-    mappings:
-      - source_column: contact_id
-        via_file: kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: PID
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: dato_slut
-        rename_to: timestamp
-        drop_source: true
+#     code_prefix: "RD/"
+#     mappings:
+#       - source_column: contact_id
+#         via_file: kontakter.parquet
+#         join_on: dw_ek_kontakt
+#         target_column: PID
+#         rename_to: subject_id
+#       - source_column: contact_id
+#         via_file: kontakter.parquet
+#         join_on: dw_ek_kontakt
+#         target_column: dato_slut
+#         rename_to: timestamp
+#         drop_source: true
 
-  register_contacts:
-    filename: kontakter.parquet
-    rename_columns:
-      PID: subject_id
-      dato_start: date_start
-      tidspunkt_start: time_start
-      aktionsdiagnose: code
-      kontaktaarsag: contact_reason
-      hovedspeciale_ans: clinical_specialty
-      region_ans: region_code
+#   register_contacts:
+#     filename: kontakter.parquet
+#     rename_columns:
+#       PID: subject_id
+#       dato_start: date_start
+#       tidspunkt_start: time_start
+#       aktionsdiagnose: code
+#       kontaktaarsag: contact_reason
+#       hovedspeciale_ans: clinical_specialty
+#       region_ans: region_code
 
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
+#     combine_datetime:
+#       timestamp:
+#         date_col: date_start
+#         time_col: time_start
+#         drop_original: true
 
-    unroll_columns:
-      - column: contact_reason
-        prefix: "RC_REASON/"
-      - column: clinical_specialty
-        prefix: "RC_SPEC/"
-      - column: region_code
-        prefix: "RC_REG/"
-    code_prefix: "RC/"
+#     unroll_columns:
+#       - column: contact_reason
+#         prefix: "RC_REASON/"
+#       - column: clinical_specialty
+#         prefix: "RC_SPEC/"
+#       - column: region_code
+#         prefix: "RC_REG/"
+#     code_prefix: "RC/"
 
-  register_medication:
-    filename: epikur.parquet
-    rename_columns:
-      PID: subject_id
-      vnr: vnr_code
-      eksd: timestamp
-    mappings:
-      - source_column: vnr_code
-        how: left
-        via_file: laegemiddeloplysninger.asc
-        join_on: VNR
-        target_column: PNAME
-        rename_to: code
-        drop_source: false
-    code_prefix: "RM/"
+#   register_medication:
+#     filename: epikur.parquet
+#     rename_columns:
+#       PID: subject_id
+#       vnr: vnr_code
+#       eksd: timestamp
+#     mappings:
+#       - source_column: vnr_code
+#         how: left
+#         via_file: laegemiddeloplysninger.asc
+#         join_on: VNR
+#         target_column: PNAME
+#         rename_to: code
+#         drop_source: false
+#     code_prefix: "RM/"
 
-  register_procedures_surgery:
-    filename: procedurer_kirurgi.asc
-    rename_columns:
-      procedurekode: code
-      dato_start: date_start
-      tidspunkt_start: time_start
-      dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
-    code_prefix: "RPS/"
-    mappings:
-      - source_column: contact_id
-        via_file: kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: PID
-        rename_to: subject_id
-        drop_source: true
+#   register_procedures_surgery:
+#     filename: procedurer_kirurgi.asc
+#     rename_columns:
+#       procedurekode: code
+#       dato_start: date_start
+#       tidspunkt_start: time_start
+#       dw_ek_kontakt: contact_id
+#     combine_datetime:
+#       timestamp:
+#         date_col: date_start
+#         time_col: time_start
+#         drop_original: true
+#     code_prefix: "RPS/"
+#     mappings:
+#       - source_column: contact_id
+#         via_file: kontakter.parquet
+#         join_on: dw_ek_kontakt
+#         target_column: PID
+#         rename_to: subject_id
+#         drop_source: true
     
-  register_procedures_other:
-    filename: procedurer_andre.asc
-    rename_columns:
-      procedurekode: code
-      proceduretype: procedure_type
-      dato_start: date_start
-      tidspunkt_start: time_start
-      dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
-    code_prefix: "RPO/"
-    mappings:
-      - source_column: contact_id
-        via_file: kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: PID
-        rename_to: subject_id
-        drop_source: true
+#   register_procedures_other:
+#     filename: procedurer_andre.asc
+#     rename_columns:
+#       procedurekode: code
+#       proceduretype: procedure_type
+#       dato_start: date_start
+#       tidspunkt_start: time_start
+#       dw_ek_kontakt: contact_id
+#     combine_datetime:
+#       timestamp:
+#         date_col: date_start
+#         time_col: time_start
+#         drop_original: true
+#     code_prefix: "RPO/"
+#     mappings:
+#       - source_column: contact_id
+#         via_file: kontakter.parquet
+#         join_on: dw_ek_kontakt
+#         target_column: PID
+#         rename_to: subject_id
+#         drop_source: true
 
 patients_info:
   filename: CPMI_PatientInfo.parquet

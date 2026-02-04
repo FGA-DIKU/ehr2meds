@@ -33,6 +33,9 @@ class PREMEDSExtractor:
         self.cfg = cfg
         logger.info(f"test {cfg.test}")
         self.chunksize = cfg.get("chunksize", 500_000)
+        
+        # Get global datetime format
+        datetime_format = cfg.get("datetime", {}).get("timeformat")
 
         # Create data handler for concepts
         self.data_handler = DataHandler(
@@ -43,6 +46,7 @@ class PREMEDSExtractor:
             test_rows=cfg.get("test_rows", 1_000_000),
             test=cfg.test,
             env=cfg.env,
+            datetime_format=datetime_format,
         )
         if cfg.get("register_concepts"):
             # Create data handler for register concepts
@@ -54,6 +58,7 @@ class PREMEDSExtractor:
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,
                 env=cfg.env,
+                datetime_format=datetime_format,
             )
 
             # Create data handler for mappings
@@ -65,6 +70,7 @@ class PREMEDSExtractor:
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,
                 env=cfg.env,
+                datetime_format=datetime_format,
             )
 
         self.concept_processor = ConceptProcessor()
@@ -107,13 +113,20 @@ class PREMEDSExtractor:
 
     def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process all medical concepts"""
+        # Get global datetime config if it exists
+        global_datetime = self.cfg.get("datetime", {})
+        
         for concept_type, concept_config in self.cfg.get("concepts", {}).items():
+            # Merge global datetime config into concept config (concept config takes precedence)
+            concept_config_with_global = concept_config.copy()
+            concept_config_with_global["_global_datetime"] = global_datetime
+            
             if concept_type == "admissions":
-                self.format_admissions(concept_config, subject_id_mapping)
+                self.format_admissions(concept_config_with_global, subject_id_mapping)
                 continue  # continue to next concept
             try:
                 self._process_concept_chunks(
-                    concept_type, concept_config, subject_id_mapping
+                    concept_type, concept_config_with_global, subject_id_mapping
                 )
             except Exception as e:
                 logger.warning(f"Error processing {concept_type}: {str(e)}")
@@ -122,15 +135,22 @@ class PREMEDSExtractor:
         """Process the register concepts using the register-specific data handler"""
         # Load the register-SP mapping once - this maps register PIDs to SP hashes
         register_sp_link = self._get_register_sp_link()
+        
+        # Get global datetime config if it exists
+        global_datetime = self.cfg.get("datetime", {})
 
         for concept_type, concept_config in self.cfg.get(
             "register_concepts", {}
         ).items():
+            # Merge global datetime config into concept config (concept config takes precedence)
+            concept_config_with_global = concept_config.copy()
+            concept_config_with_global["_global_datetime"] = global_datetime
+            
             logger.info(f"Processing register concept: {concept_type}")
             try:
                 self.process_register_concept_chunks(
                     concept_type,
-                    concept_config,
+                    concept_config_with_global,
                     subject_id_mapping,
                     register_sp_link,
                 )

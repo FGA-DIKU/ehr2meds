@@ -34,10 +34,12 @@ class DataHandler:
         chunksize: Optional[int] = None,
         test: Optional[bool] = False,
         test_rows: Optional[int] = 1_000_000,
+        datetime_format: Optional[str] = None,
     ):
         self.output_dir = output_dir
         self.file_type = file_type
         self.env = env
+        self.datetime_format = datetime_format or '%Y-%m-%d %H:%M:%S'  # Default format
 
         # Initialize the appropriate data loader
         self.data_loader = get_data_loader(
@@ -90,10 +92,17 @@ class DataHandler:
                 combined_df = pd.concat([existing_df, df], ignore_index=True)
                 combined_df.to_parquet(path, index=False)
         elif file_type == "csv":
+            # Format datetime columns using the configured datetime format
+            df_to_save = df.copy()
+            for col in df_to_save.columns:
+                if pd.api.types.is_datetime64_any_dtype(df_to_save[col]):
+                    # Format datetime columns using the global datetime format
+                    df_to_save[col] = df_to_save[col].dt.strftime(self.datetime_format)
+            
             if mode == "w":
-                df.to_csv(path, index=False, mode="w")
+                df_to_save.to_csv(path, index=False, mode="w")
             else:
                 # append without header
-                df.to_csv(path, index=False, mode="a", header=False)
+                df_to_save.to_csv(path, index=False, mode="a", header=False)
         else:
             raise ValueError(f"Filetype {file_type} not implemented.")
