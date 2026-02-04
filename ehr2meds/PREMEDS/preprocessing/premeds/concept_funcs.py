@@ -184,12 +184,16 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
     for col in datetime_cols:
         if col in df.columns:
             if time_format:
+                # Convert to string first to ensure we have the original format
+                original_values = df[col].astype(str)
                 # Try with specified format first
-                parsed_with_format = pd.to_datetime(df[col], errors="coerce", format=time_format)
-                # For values that failed with format, try without format (handles mismatches)
-                mask = parsed_with_format.isna() & df[col].notna()
+                parsed_with_format = pd.to_datetime(original_values, errors="coerce", format=time_format)
+                # For values that failed with format, try without format using original string values
+                mask = parsed_with_format.isna() & (original_values != 'nan')
                 if mask.any():
-                    parsed_without_format = pd.to_datetime(df.loc[mask, col], errors="coerce")
+                    # Parse original string values without format to preserve time components
+                    failed_values = original_values.loc[mask]
+                    parsed_without_format = pd.to_datetime(failed_values, errors="coerce")
                     parsed_with_format.loc[mask] = parsed_without_format
                 df[col] = parsed_with_format
             else:
