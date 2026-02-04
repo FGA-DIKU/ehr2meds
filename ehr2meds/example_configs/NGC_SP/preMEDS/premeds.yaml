@@ -14,6 +14,10 @@ paths:
 
 write_file_type: csv
 
+datetime: 
+  columns: [timestamp]
+  timeformat: "%Y-%m-%d %H:%M:%S"
+
 pid_link: 
   join_col: PID
   target_col: CPR_hash
@@ -28,8 +32,6 @@ concepts:
       Redigeringsdato: timestamp
       MOR_CPR: subject_id
     code_prefix: "D/"
-    datetime_columns: [timestamp]
-    time_format: "%Y-%m-%d %H:%M:%S"
 
   medication:
     filename: Mor - CPMI - Medicin.csv
@@ -43,8 +45,6 @@ concepts:
       timestamp:
         column: fill_timestamp
     code_prefix: "M/"
-    datetime_columns: [timestamp]
-    time_format: "%Y-%m-%d %H:%M:%S"
 
   procedure:
     filename: Mor - CPMI - Procedurer.csv
@@ -54,8 +54,6 @@ concepts:
       ServiceDate: timestamp
       MOR_CPR: subject_id
     code_prefix: "P/"
-    datetime_columns: [timestamp]
-    time_format: "%Y-%m-%d %H:%M:%S"
 
   labtest:
     filename: Mor - CPMI - Prøvesvar.csv
@@ -67,8 +65,6 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "L/"
     numeric_columns: [numeric_value]
-    datetime_columns: [timestamp]
-    time_format: "%Y-%m-%d %H:%M:%S"
 
   notes:
     filename: Mor - CPMI - Notater.csv
@@ -81,8 +77,6 @@ concepts:
       MOR_CPR: subject_id
       Redigeringstidspunkt: timestamp
     code_prefix: "N/"
-    datetime_columns: [timestamp]
-    time_format: "%Y-%m-%d %H:%M:%S"
     save_in_chunks: true
 
 
