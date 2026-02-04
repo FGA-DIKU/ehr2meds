@@ -175,8 +175,8 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
 def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Convert specified columns to datetime type. Handles both date-only and datetime formats.
     
-    If time_format is specified but some values are date-only (Y-M-D), those will be parsed
-    and automatically get 00:00:00 as the time component.
+    If time_format is specified, it's used as a hint but values that don't match will be
+    parsed without format to avoid data loss. Date-only values automatically get 00:00:00.
     """
     datetime_cols = concept_config.get("datetime_columns", [])
     time_format = concept_config.get("time_format")
@@ -185,11 +185,13 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
         if col in df.columns:
             if time_format:
                 # Try with specified format first
-                df[col] = pd.to_datetime(df[col], errors="coerce", format=time_format)
-                # If some values failed to parse (likely date-only), try without format (pandas infers)
-                if df[col].isna().any():
-                    mask = df[col].isna()
-                    df.loc[mask, col] = pd.to_datetime(df.loc[mask, col], errors="coerce")
+                parsed_with_format = pd.to_datetime(df[col], errors="coerce", format=time_format)
+                # For values that failed with format, try without format (handles mismatches)
+                mask = parsed_with_format.isna() & df[col].notna()
+                if mask.any():
+                    parsed_without_format = pd.to_datetime(df.loc[mask, col], errors="coerce")
+                    parsed_with_format.loc[mask] = parsed_without_format
+                df[col] = parsed_with_format
             else:
                 # No format specified - let pandas infer (handles both date and datetime)
                 df[col] = pd.to_datetime(df[col], errors="coerce")
