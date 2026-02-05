@@ -341,7 +341,45 @@ concepts:
   #   code_prefix: "VS/"
   #   numeric_columns: [numeric_value]
 
+  ICU: 
+    filename: Barn - Barn - SAPS3, SOFA og GCS.csv
+    rename_columns:
+      Måling: code
+      Målingstidspunkt: timestamp
+      Værdi: numeric_value
+      BABY_CPR: subject_id
+    code_prefix: "ICU/"
+    numeric_columns: [numeric_value]
 
+  diagnosis:
+    filename: Barn - Diagnoser.csv
+    rename_columns:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Noteret_dato: timestamp
+      BABY_CPR: subject_id
+    code_prefix: "D/"
+
+  ordinated_medication:
+    filename: Barn - Ordinationer.csv
+    rename_columns:
+      ATC: code
+      Ordinationstidspunkt: timestamp
+      BABY_CPR: subject_id
+    code_prefix: "M/"
+
+  vital_signs: # is it EWS or vital signs?
+    filename: Barn - PEWS og Børneundersøgelse +-2 år.csv
+    rename_columns:
+      Vital_parametre: code
+      Registreringstidspunkt: timestamp
+      BABY_CPR: subject_id
+      Værdi: numeric_value
+    fillna:
+      numeric_value:
+        column: Værdi_Omregnet
+    code_prefix: "VS/"
+    numeric_columns: [numeric_value]
 
 patients_info:
   files:
