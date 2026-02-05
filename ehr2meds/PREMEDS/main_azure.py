@@ -53,3 +53,4 @@ def run_pre_MEDS(config_path):
 if __name__ == "__main__":
     args = parse_args()
     run_pre_MEDS(args.config)
+    print("PREMEDS preprocessing completed successfully")
