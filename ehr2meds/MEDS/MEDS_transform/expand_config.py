@@ -10,6 +10,7 @@ Given an input directory and a YAML config file, this script:
 """
 
 import argparse
+import copy
 import os
 import yaml
 from pathlib import Path
@@ -77,17 +78,12 @@ def expand_config_for_directories(
             
             if files:
                 # Expand: create entries for each file
-                # Use the first nested key as the template (e.g., "notes" from "notes: {...}")
-                template_key = list(concept_config.keys())[0] if concept_config else None
-                template_config = concept_config[template_key] if template_key else concept_config
-                
+                # Copy the entire concept_config structure to each file entry
                 for file_name in files:
                     # Create entry like "notes/chunk_0"
                     expanded_key = f"{concept_name}/{file_name}"
-                    # Use the same structure: {concept_name: {template_config}}
-                    expanded_config[expanded_key] = {
-                        template_key: template_config
-                    } if template_key else concept_config
+                    # Copy all configs under the concept (deep copy to avoid reference issues)
+                    expanded_config[expanded_key] = copy.deepcopy(concept_config)
                 
                 print(f"Expanded '{concept_name}' directory: found {len(files)} files")
             else:
