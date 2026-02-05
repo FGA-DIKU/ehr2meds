@@ -3,7 +3,7 @@ logging:
   level: INFO
   path: ./outputs/logs
 
-test: true
+test: false
 env: local
 run_name: MEDS
 chunksize: 10000
@@ -201,107 +201,107 @@ concepts:
       ADT_haendelse: type
     use_adm_move: true # also save all move events
 
-  allergy: # Also includes those that are cancelled
-    filename: Barn - Allergi.csv
-    rename_columns:
-      Beskrivelse: code
-      Dato for notering: timestamp
-      BABY_CPR: subject_id
-    code_prefix: "A/"
+  # allergy: # Also includes those that are cancelled
+  #   filename: Barn - Allergi.csv
+  #   rename_columns:
+  #     Beskrivelse: code
+  #     Dato for notering: timestamp
+  #     BABY_CPR: subject_id
+  #   code_prefix: "A/"
 
-  diagnosis:
-    filename: Barn - CPMI - Diagnoseliste.csv
-    # columns to keep, rename, and the final names
-    rename_columns:
-      Diagnosekode: code
-      Diagnose: fill_code
-      Redigeringsdato: timestamp
-      BABY_CPR: subject_id
-    code_prefix: "D/"
+  # diagnosis:
+  #   filename: Barn - CPMI - Diagnoseliste.csv
+  #   # columns to keep, rename, and the final names
+  #   rename_columns:
+  #     Diagnosekode: code
+  #     Diagnose: fill_code
+  #     Redigeringsdato: timestamp
+  #     BABY_CPR: subject_id
+  #   code_prefix: "D/"
 
-  medication:
-    filename: Barn - CPMI - Medicin.csv
-    # columns to keep, rename, and the final names
-    rename_columns:
-      ATC: code
-      Administrationstidspunkt: timestamp
-      Bestillingsdato: fill_timestamp
-      BABY_CPR: subject_id
-    fillna:
-      timestamp:
-        column: fill_timestamp
-    code_prefix: "M/"
+  # medication:
+  #   filename: Barn - CPMI - Medicin.csv
+  #   # columns to keep, rename, and the final names
+  #   rename_columns:
+  #     ATC: code
+  #     Administrationstidspunkt: timestamp
+  #     Bestillingsdato: fill_timestamp
+  #     BABY_CPR: subject_id
+  #   fillna:
+  #     timestamp:
+  #       column: fill_timestamp
+  #   code_prefix: "M/"
 
-  procedure:
-    filename: Barn - CPMI - Procedurer.csv
-    # columns to keep, rename, and the final names
-    rename_columns:
-      ProcedureCode: code
-      ServiceDate: timestamp
-      BABY_CPR: subject_id
-    code_prefix: "P/"
+  # procedure:
+  #   filename: Barn - CPMI - Procedurer.csv
+  #   # columns to keep, rename, and the final names
+  #   rename_columns:
+  #     ProcedureCode: code
+  #     ServiceDate: timestamp
+  #     BABY_CPR: subject_id
+  #   code_prefix: "P/"
 
-  labtest:
-    filename: Barn - CPMI - Prøvesvar.csv
-    # columns to keep, rename, and the final names
-    rename_columns:
-      BestOrd: code
-      Prøvetagningstidspunkt: timestamp
-      Resultatværdi: numeric_value
-      BABY_CPR: subject_id
-    code_prefix: "L/"
-    numeric_columns: [numeric_value]
+  # labtest:
+  #   filename: Barn - CPMI - Prøvesvar.csv
+  #   # columns to keep, rename, and the final names
+  #   rename_columns:
+  #     BestOrd: code
+  #     Prøvetagningstidspunkt: timestamp
+  #     Resultatværdi: numeric_value
+  #     BABY_CPR: subject_id
+  #   code_prefix: "L/"
+  #   numeric_columns: [numeric_value]
 
-  notes:
-    filename: Barn - CPMI - Notater.csv
-    # columns to keep, rename, and the final names
-    rename_columns:
-      Linjenummer: line_number
-      Note: note
-      Notetype: code
-      Speciale: speciality
-      BABY_CPR: subject_id
-      Redigeringstidspunkt: timestamp
-    code_prefix: "N/"
-    save_in_chunks: true
+  # notes:
+  #   filename: Barn - CPMI - Notater.csv
+  #   # columns to keep, rename, and the final names
+  #   rename_columns:
+  #     Linjenummer: line_number
+  #     Note: note
+  #     Notetype: code
+  #     Speciale: speciality
+  #     BABY_CPR: subject_id
+  #     Redigeringstidspunkt: timestamp
+  #   code_prefix: "N/"
+  #   save_in_chunks: true
 
-  imaging: 
-    filename: Barn - CPMI - Billeddiagnostik.csv
-    rename_columns:
-      Procedurekode: code
-      Bestillingstidspunkt: timestamp
-      BABY_CPR: subject_id
-    code_prefix: "P/"
+  # imaging: 
+  #   filename: Barn - CPMI - Billeddiagnostik.csv
+  #   rename_columns:
+  #     Procedurekode: code
+  #     Bestillingstidspunkt: timestamp
+  #     BABY_CPR: subject_id
+  #   code_prefix: "P/"
 
-  EWS: 
-    filename: Barn - CPMI - EWS overbilk.csv
-    rename_columns:
-      EWS_Måling: code
-      Målingstidspunkt: timestamp
-      BABY_CPR: subject_id
-      Værdi: numeric_value
-    code_prefix: "EWS/"
-    numeric_columns: [numeric_value]
+  # EWS: 
+  #   filename: Barn - CPMI - EWS overbilk.csv
+  #   rename_columns:
+  #     EWS_Måling: code
+  #     Målingstidspunkt: timestamp
+  #     BABY_CPR: subject_id
+  #     Værdi: numeric_value
+  #   code_prefix: "EWS/"
+  #   numeric_columns: [numeric_value]
 
-  ICU:
-    filename: Barn - CPMI - IP ITA oversigtsrapport.csv
-    rename_columns:
-      Måling: code
-      Målingstidspunkt: timestamp
-      Værdi: numeric_value
-      BABY_CPR: subject_id
-    code_prefix: "ICU/"
-    numeric_columns: [numeric_value]
+  # ICU:
+  #   filename: Barn - CPMI - IP ITA oversigtsrapport.csv
+  #   rename_columns:
+  #     Måling: code
+  #     Målingstidspunkt: timestamp
+  #     Værdi: numeric_value
+  #     BABY_CPR: subject_id
+  #   code_prefix: "ICU/"
+  #   numeric_columns: [numeric_value]
   
-  ICU: 
-    filename: Barn - CPMI - IP ITA resp.csv
-    rename_columns:
-      Måling: code
-      Målingstidspunkt: timestamp
-      Værdi: numeric_value
-      BABY_CPR: subject_id
-    code_prefix: "ICU/"
-    numeric_columns: [numeric_value]
+  # ICU: 
+  #   filename: Barn - CPMI - IP ITA resp.csv
+  #   rename_columns:
+  #     Måling: code
+  #     Målingstidspunkt: timestamp
+  #     Værdi: numeric_value
+  #     BABY_CPR: subject_id
+  #   code_prefix: "ICU/"
+  #   numeric_columns: [numeric_value]
 
   # Results from microbiology missing
   microbiology:
@@ -312,34 +312,34 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "MB/"
 
-  microbiology:
-    filename: Barn - CPMI - Mikrobiologi Del 3.csv
-    rename_columns:
-      Provetagningstidspunkt: timestamp
-      Organismenavn: code
-      BABY_CPR: subject_id
-    code_prefix: "MB/"
+  # microbiology:
+  #   filename: Barn - CPMI - Mikrobiologi Del 3.csv
+  #   rename_columns:
+  #     Provetagningstidspunkt: timestamp
+  #     Organisme: code
+  #     BABY_CPR: subject_id
+  #   code_prefix: "MB/"
 
-  surgery:
-    filename: Barn - CPMI - Oplysninger om cases.csv
-    rename_columns:
-      SKS_Kode: code
-      Planlagt_til: timestamp
-      BABY_CPR: subject_id
-    code_prefix: "P/"
+  # surgery:
+  #   filename: Barn - CPMI - Oplysninger om cases.csv
+  #   rename_columns:
+  #     SKS_Kode: code
+  #     Planlagt_til: timestamp
+  #     BABY_CPR: subject_id
+  #   code_prefix: "P/"
   
-  vital_signs:
-    filename: Barn - CPMI - Vital parametre.csv
-    rename_columns:
-      Vital_parametre: code
-      Registreringstidspunkt: timestamp
-      BABY_CPR: subject_id
-      Værdi: numeric_value
-    fillna:
-      numeric_value:
-        column: Værdi_Omregnet
-    code_prefix: "VS/"
-    numeric_columns: [numeric_value]
+  # vital_signs:
+  #   filename: Barn - CPMI - Vital parametre.csv
+  #   rename_columns:
+  #     Vital_parametre: code
+  #     Registreringstidspunkt: timestamp
+  #     BABY_CPR: subject_id
+  #     Værdi: numeric_value
+  #   fillna:
+  #     numeric_value:
+  #       column: Værdi_Omregnet
+  #   code_prefix: "VS/"
+  #   numeric_columns: [numeric_value]
 
 
 
