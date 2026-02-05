@@ -24,15 +24,15 @@ pid_link:
 
 concepts:
   ###### MOR
-  # admission:
-  #   filename: Mor - CPMI - ADT hændelser.csv
-  #   rename_columns:
-  #     MOR_CPR: subject_id
-  #     Flyt_ind: timestamp_in
-  #     Flyt_ud: timestamp_out
-  #     Afsnit: section
-  #     ADT_haendelse: type
-  #   use_adm_move: true # also save all move events
+  admission:
+    filename: Mor - CPMI - ADT hændelser.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      Flyt_ind: timestamp_in
+      Flyt_ud: timestamp_out
+      Afsnit: section
+      ADT_haendelse: type
+    use_adm_move: true # also save all move events
 
   # allergy: # Also includes those that are cancelled
   #   filename: Mor - Allergi.csv
@@ -304,13 +304,13 @@ concepts:
   #   numeric_columns: [numeric_value]
 
   # Results from microbiology missing
-  microbiology:
-    filename: Barn - CPMI - Mikrobiologi Del 1.csv
-    rename_columns:
-      Provetagningstidspunkt: timestamp
-      Komponentnavn: code
-      BABY_CPR: subject_id
-    code_prefix: "MB/"
+  # microbiology:
+  #   filename: Barn - CPMI - Mikrobiologi Del 1.csv
+  #   rename_columns:
+  #     Provetagningstidspunkt: timestamp
+  #     Komponentnavn: code
+  #     BABY_CPR: subject_id
+  #   code_prefix: "MB/"
 
   # microbiology:
   #   filename: Barn - CPMI - Mikrobiologi Del 3.csv
