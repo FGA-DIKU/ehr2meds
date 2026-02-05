@@ -39,15 +39,14 @@ class Normaliser:
             self.data_loader =  StandardDataLoader(
                 path=self.cfg.paths.input, 
                 chunksize=None, 
-                test=self.test, 
-                test_rows=self.cfg.data.get("test_rows", 100_000))
+                test=self.test 
+            )
         else:
             # For single file input, use existing behavior
             self.data_loader = StandardDataLoader(
                 path=dirname(self.cfg.paths.input), 
                 chunksize=self.cfg.data.chunksize, 
-                test=self.test, 
-                test_rows=self.cfg.data.get("test_rows", 100_000))
+                test=self.test)
 
     def __call__(self):
         print("Getting lab distribution")
