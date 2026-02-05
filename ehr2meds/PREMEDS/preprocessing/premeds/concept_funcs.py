@@ -224,8 +224,6 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
             # Assign the parsed values
             df[col] = parsed
             
-        else:
-            print(f"[WARNING convert_datetime_columns] Column '{col}' not found in dataframe! Available columns: {df.columns.tolist()}")
     return df
 
 def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
