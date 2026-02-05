@@ -23,6 +23,16 @@ pid_link:
   target_col: CPR_hash
 
 concepts:
+  admission:
+    filename: Mor - CPMI - ADT hændelser.csv
+    rename_columns:
+      CPR_hash: subject_id
+      Flyt_ind: timestamp_in
+      Flyt_ud: timestamp_out
+      Afsnit: section
+      ADT_haendelse: type
+    use_adm_move: true # also save all move events
+
   diagnosis:
     filename: Mor - CPMI - Diagnoseliste.csv
     # columns to keep, rename, and the final names
@@ -82,16 +92,21 @@ concepts:
 
 patients_info:
   files:
-    # - filename: Mor - CPMI - Patientinfo.csv
-    #   rename_columns:
-    #     MOR_CPR: subject_id
-    #     Fødselsdato: birthdate
-    #     Dødsdato: deathdate
-    #     Køn: gender
-    - filename: Barn - CPMI - Patientinfo.csv
+    - filename: Mor - CPMI - Patientinfo.csv
       rename_columns:
-        BABY_CPR: subject_id
+        MOR_CPR: subject_id
         Fødselsdato: birthdate
         Dødsdato: deathdate
         Køn: gender
+    # - filename: Barn - CPMI - Patientinfo.csv
+    #   rename_columns:
+    #     BABY_CPR: subject_id
+    #     Fødselsdato: birthdate
+    #     Dødsdato: deathdate
+    #     Køn: gender
+    - filename: Mor - Patientinfo tillæg til CPMI.csv
+      rename_columns:
+        MOR_CPR: subject_id
+        Rygestatus: smoking_status
+        Misbrug: drug_use
   file_type: csv
