@@ -33,124 +33,124 @@ concepts:
       ADT_haendelse: type
     use_adm_move: true # also save all move events
 
-  # allergy: # Also includes those that are cancelled
-  #   filename: Mor - Allergi.csv
-  #   rename_columns:
-  #     Beskrivelse: code
-  #     Dato for notering: timestamp
-  #     MOR_CPR: subject_id
-  #   code_prefix: "A/"
+  allergy: # Also includes those that are cancelled
+    filename: Mor - Allergi.csv
+    rename_columns:
+      Beskrivelse: code
+      Dato for notering: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "A/"
 
-  # diagnosis:
-  #   filename: Mor - CPMI - Diagnoseliste.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     Diagnosekode: code
-  #     Diagnose: fill_code
-  #     Redigeringsdato: timestamp
-  #     MOR_CPR: subject_id
-  #   code_prefix: "D/"
+  diagnosis:
+    filename: Mor - CPMI - Diagnoseliste.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Redigeringsdato: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "D/"
 
-  # medication:
-  #   filename: Mor - CPMI - Medicin.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     ATC: code
-  #     Administrationstidspunkt: timestamp
-  #     Bestillingsdato: fill_timestamp
-  #     MOR_CPR: subject_id
-  #   fillna:
-  #     timestamp:
-  #       column: fill_timestamp
-  #   code_prefix: "M/"
+  medication:
+    filename: Mor - CPMI - Medicin.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      ATC: code
+      Administrationstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      MOR_CPR: subject_id
+    fillna:
+      timestamp:
+        column: fill_timestamp
+    code_prefix: "M/"
 
-  # procedure:
-  #   filename: Mor - CPMI - Procedurer.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     ProcedureCode: code
-  #     ServiceDate: timestamp
-  #     MOR_CPR: subject_id
-  #   code_prefix: "P/"
+  procedure:
+    filename: Mor - CPMI - Procedurer.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      ProcedureCode: code
+      ServiceDate: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "P/"
 
-  # labtest:
-  #   filename: Mor - CPMI - Prøvesvar.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     BestOrd: code
-  #     Prøvetagningstidspunkt: timestamp
-  #     Resultatværdi: numeric_value
-  #     MOR_CPR: subject_id
-  #   code_prefix: "L/"
-  #   numeric_columns: [numeric_value]
+  labtest:
+    filename: Mor - CPMI - Prøvesvar.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      BestOrd: code
+      Prøvetagningstidspunkt: timestamp
+      Resultatværdi: numeric_value
+      MOR_CPR: subject_id
+    code_prefix: "L/"
+    numeric_columns: [numeric_value]
 
-  # notes:
-  #   filename: Mor - CPMI - Notater.csv
-  #   # columns to keep, rename, and the final names
-  #   rename_columns:
-  #     Linjenummer: line_number
-  #     Note: note
-  #     Notetype: code
-  #     Speciale: speciality
-  #     MOR_CPR: subject_id
-  #     Redigeringstidspunkt: timestamp
-  #   code_prefix: "N/"
-  #   save_in_chunks: true
+  notes:
+    filename: Mor - CPMI - Notater.csv
+    # columns to keep, rename, and the final names
+    rename_columns:
+      Linjenummer: line_number
+      Note: note
+      Notetype: code
+      Speciale: speciality
+      MOR_CPR: subject_id
+      Redigeringstidspunkt: timestamp
+    code_prefix: "N/"
+    save_in_chunks: true
 
-  # imaging: 
-  #   filename: Mor - CPMI - Billeddiagnostik.csv
-  #   rename_columns:
-  #     Procedurekode: code
-  #     Bestillingstidspunkt: timestamp
-  #     MOR_CPR: subject_id
-  #   code_prefix: "P/"
+  imaging: 
+    filename: Mor - CPMI - Billeddiagnostik.csv
+    rename_columns:
+      Procedurekode: code
+      Bestillingstidspunkt: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "P/"
 
-  # EWS: 
-  #   filename: Mor - CPMI - EWS overbilk.csv
-  #   rename_columns:
-  #     EWS_Måling: code
-  #     Målingstidspunkt: timestamp
-  #     MOR_CPR: subject_id
-  #     Værdi: numeric_value
-  #   code_prefix: "EWS/"
-  #   numeric_columns: [numeric_value]
+  EWS: 
+    filename: Mor - CPMI - EWS overbilk.csv
+    rename_columns:
+      EWS_Måling: code
+      Målingstidspunkt: timestamp
+      MOR_CPR: subject_id
+      Værdi: numeric_value
+    code_prefix: "EWS/"
+    numeric_columns: [numeric_value]
 
-  # ICU:
-  #   filename: Mor - CPMI - IP ITA oversigtsrapport.csv
-  #   rename_columns:
-  #     Måling: code
-  #     Målingstidspunkt: timestamp
-  #     Værdi: numeric_value
-  #     MOR_CPR: subject_id
-  #   code_prefix: "ICU/"
-  #   numeric_columns: [numeric_value]
+  ICU:
+    filename: Mor - CPMI - IP ITA oversigtsrapport.csv
+    rename_columns:
+      Måling: code
+      Målingstidspunkt: timestamp
+      Værdi: numeric_value
+      MOR_CPR: subject_id
+    code_prefix: "ICU/"
+    numeric_columns: [numeric_value]
   
-  # ICU: 
-  #   filename: Mor - CPMI - IP ITA resp.csv
-  #   rename_columns:
-  #     Måling: code
-  #     Målingstidspunkt: timestamp
-  #     Værdi: numeric_value
-  #     MOR_CPR: subject_id
-  #   code_prefix: "ICU/"
-  #   numeric_columns: [numeric_value]
+  ICU: 
+    filename: Mor - CPMI - IP ITA resp.csv
+    rename_columns:
+      Måling: code
+      Målingstidspunkt: timestamp
+      Værdi: numeric_value
+      MOR_CPR: subject_id
+    code_prefix: "ICU/"
+    numeric_columns: [numeric_value]
 
-  # # Results from microbiology missing
-  # microbiology:
-  #   filename: Mor - CPMI - Mikrobiologi Del 1.csv
-  #   rename_columns:
-  #     Provetagningstidspunkt: timestamp
-  #     Komponentnavn: code
-  #     MOR_CPR: subject_id
-  #   code_prefix: "MB/"
+  # Results from microbiology missing
+  microbiology:
+    filename: Mor - CPMI - Mikrobiologi Del 1.csv
+    rename_columns:
+      Provetagningstidspunkt: timestamp
+      Komponentnavn: code
+      MOR_CPR: subject_id
+    code_prefix: "MB/"
 
-  # microbiology:
-  #   filename: Mor - CPMI - Mikrobiologi Del 3.csv
-  #   rename_columns:
-  #     Provetagningstidspunkt: timestamp
-  #     Organisme: code
-  #     MOR_CPR: subject_id
-  #   code_prefix: "MB/"
+  microbiology:
+    filename: Mor - CPMI - Mikrobiologi Del 3.csv
+    rename_columns:
+      Provetagningstidspunkt: timestamp
+      Organisme: code
+      MOR_CPR: subject_id
+    code_prefix: "MB/"
 
   surgery:
     filename: Mor - CPMI - Oplysninger om cases.csv
@@ -160,21 +160,21 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "P/"
   
-  # vital_signs:
-  #   filename: Mor - CPMI - Vital parametre.csv
-  #   rename_columns:
-  #     Vital_parametre: code
-  #     Registreringstidspunkt: timestamp
-  #     MOR_CPR: subject_id
-  #     Værdi: numeric_value
-  #   fillna:
-  #     numeric_value:
-  #       column: Værdi_Omregnet
-  #   code_prefix: "VS/"
-  #   numeric_columns: [numeric_value]
+  vital_signs:
+    filename: Mor - CPMI - Vital parametre.csv
+    rename_columns:
+      Vital_parametre: code
+      Registreringstidspunkt: timestamp
+      MOR_CPR: subject_id
+      Værdi: numeric_value
+    fillna:
+      numeric_value:
+        column: Værdi_Omregnet
+    code_prefix: "VS/"
+    numeric_columns: [numeric_value]
 
   birth_outcomes: 
-    filename: Mor - Fødselsresume DEL 1.csv
+    filename: Mor - Fødselsresume - DEL 1.csv
     rename_columns:
       Placenta dato: timestamp
       Udfald: code
