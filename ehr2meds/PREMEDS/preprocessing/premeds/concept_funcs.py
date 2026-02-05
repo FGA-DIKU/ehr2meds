@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Dict, List, Tuple
 
 import pandas as pd
@@ -215,6 +216,12 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
             
             # Convert to string first to ensure we have the original format
             original_values = df[col].astype(str)
+            
+            # Strip microseconds (fractional seconds) to normalize the format
+            # This handles both cases: with microseconds (e.g., "2024-01-01 12:00:00.0000000") 
+            # and without (e.g., "2024-01-01 12:00:00")
+            original_values = original_values.str.replace(r'\.\d+$', '', regex=True)
+            print(f"[DEBUG convert_datetime_columns] After stripping microseconds, sample values (first 10): {original_values.head(10).tolist()}")
             
             if time_format:
                 print(f"[DEBUG convert_datetime_columns] Using time_format: '{time_format}'")
