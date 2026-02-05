@@ -3,10 +3,10 @@ logging:
   level: INFO
   path: ./outputs/logs
 
-test: false
+test: true #false
 env: local
 run_name: MEDS
-chunksize: 250_000_000
+chunksize: 10000 #250_000_000
 paths:
   output: outputs/preMEDS
   concepts: ../../../../../../../../storage/archive/UCPH/DeepFetal/SP/tables
@@ -24,7 +24,7 @@ pid_link:
 
 concepts:
   ###### MOR
-  admission_m:
+  admission:
     filename: Mor - CPMI - ADT hændelser.csv
     rename_columns:
       MOR_CPR: subject_id
@@ -191,7 +191,7 @@ concepts:
     code_prefix: "M/"
 
 ###### BABY
-  admission_b:
+  admission:
     filename: Barn - CPMI - ADT hændelser.csv
     rename_columns:
       BABY_CPR: subject_id
@@ -303,7 +303,7 @@ concepts:
     code_prefix: "ICU/"
     numeric_columns: [numeric_value]
 
-  Results from microbiology missing
+  # Results from microbiology missing
   microbiology:
     filename: Barn - CPMI - Mikrobiologi Del 1.csv
     rename_columns:
