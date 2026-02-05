@@ -81,10 +81,17 @@ concepts:
 
 
 patients_info:
-  filename: Mor - CPMI - Patientinfo.csv
-  rename_columns:
-    MOR_CPR: subject_id
-    Fødselsdato: birthdate
-    Dødsdato: deathdate
-    Køn: gender
+  files:
+    - filename: Mor - CPMI - Patientinfo.csv
+      rename_columns:
+        MOR_CPR: subject_id
+        Fødselsdato: birthdate
+        Dødsdato: deathdate
+        Køn: gender
+    - filename: Barn - CPMI - Patientinfo.csv
+      rename_columns:
+        BABY_CPR: subject_id
+        Fødselsdato: birthdate
+        Dødsdato: deathdate
+        Køn: gender
   file_type: csv

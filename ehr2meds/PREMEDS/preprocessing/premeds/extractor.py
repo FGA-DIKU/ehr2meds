@@ -82,19 +82,46 @@ class PREMEDSExtractor:
     def format_patients_info(self) -> Dict[str, int]:
         """
         Load and process patient information, creating a mapping of patient IDs.
+        Expects a 'files' list in config, where each entry is a dict with:
+        - filename: name of the file
+        - rename_columns: file-specific column renaming (required)
 
         Returns:
             Dict[str, int]: Mapping from original patient IDs to integer IDs
         """
         logger.info("Load patients info")
-        df = self.data_handler.load_pandas(
-            self.cfg.patients_info.filename,
-            cols=list(self.cfg.patients_info.get("rename_columns", {}).keys()),
-        )
-        # Use columns_map to subset and rename the columns.
-        df = select_and_rename_columns(
-            df, self.cfg.patients_info.get("rename_columns", {})
-        )
+        
+        # Get files list - always expect a list
+        files = self.cfg.patients_info.files
+        
+        # Load all files and concatenate
+        dfs = []
+        for file_config in files:
+            filename = file_config["filename"]
+            # Each file must specify its own rename_columns
+            rename_columns = file_config["rename_columns"]
+            
+            logger.info(f"Loading patient info from: {filename}")
+            cols = list(rename_columns.keys()) if rename_columns else None
+            df_file = self.data_handler.load_pandas(filename, cols=cols)
+            
+            # Use file-specific rename_columns
+            df_file = select_and_rename_columns(df_file, rename_columns)
+            dfs.append(df_file)
+        
+        # Concatenate all dataframes
+        if len(dfs) > 1:
+            df = pd.concat(dfs, ignore_index=True)
+            logger.info(f"Concatenated {len(dfs)} patient info files")
+            # Drop duplicates based on subject_id if it exists
+            if SUBJECT_ID in df.columns:
+                initial_len = len(df)
+                df = df.drop_duplicates(subset=[SUBJECT_ID], keep='first')
+                if len(df) < initial_len:
+                    logger.info(f"Removed {initial_len - len(df)} duplicate patient records")
+        else:
+            df = dfs[0]
+        
         logger.info(f"Number of patients after selecting columns: {len(df)}")
 
         df, hash_to_int_map = factorize_subject_id(df)
