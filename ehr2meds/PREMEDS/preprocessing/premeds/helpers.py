@@ -23,34 +23,18 @@ def preprocess_admissions_df(
     df: pd.DataFrame, admissions_config: dict, subject_id_mapping: Dict[str, int]
 ) -> pd.DataFrame:
     """Preprocess the admissions DataFrame."""
-    print(f"[DEBUG preprocess_admissions_df] Starting preprocessing, input shape: {df.shape}")
-    print(f"[DEBUG preprocess_admissions_df] Input columns: {df.columns.tolist()}")
-    
     # Select and rename columns
     df = select_and_rename_columns(df, admissions_config.get("rename_columns", {}))
-    print(f"[DEBUG preprocess_admissions_df] After rename, columns: {df.columns.tolist()}")
-    print(f"[DEBUG preprocess_admissions_df] Sample data:\n{df.head()}")
 
     # Convert datetime columns (timestamp_in, timestamp_out) before sorting
-    print(f"[DEBUG preprocess_admissions_df] Converting datetime columns...")
     df = convert_datetime_columns(df, admissions_config)
-    print(f"[DEBUG preprocess_admissions_df] After datetime conversion:")
-    if "timestamp_in" in df.columns:
-        print(f"[DEBUG preprocess_admissions_df] timestamp_in dtype: {df['timestamp_in'].dtype}")
-        print(f"[DEBUG preprocess_admissions_df] timestamp_in sample: {df['timestamp_in'].head().tolist()}")
-    if "timestamp_out" in df.columns:
-        print(f"[DEBUG preprocess_admissions_df] timestamp_out dtype: {df['timestamp_out'].dtype}")
-        print(f"[DEBUG preprocess_admissions_df] timestamp_out sample: {df['timestamp_out'].head().tolist()}")
 
     # Map subject_id to integers
     if SUBJECT_ID in df.columns:
         df = map_pids_to_ints(df, subject_id_mapping)
 
     # Sort by patient and timestamp
-    print(f"[DEBUG preprocess_admissions_df] Sorting by {SUBJECT_ID} and timestamp_in...")
-    sorted_df = df.sort_values([SUBJECT_ID, "timestamp_in"])
-    print(f"[DEBUG preprocess_admissions_df] Final shape: {sorted_df.shape}\n")
-    return sorted_df
+    return df.sort_values([SUBJECT_ID, "timestamp_in"])
 
 
 def initialize_patient_state(last_patient_data: Optional[dict]) -> dict:

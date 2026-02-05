@@ -199,73 +199,33 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
     time_format = global_datetime.get("timeformat")
     
     if not datetime_cols:
-        print(f"[WARNING convert_datetime_columns] No datetime columns specified in global config!")
         return df
     
     for col in datetime_cols:
         if col in df.columns:
-            print(f"\n[DEBUG convert_datetime_columns] Processing column: '{col}'")
-            print(f"[DEBUG convert_datetime_columns] Column dtype before: {df[col].dtype}")
-            print(f"[DEBUG convert_datetime_columns] Total rows: {len(df)}")
-            print(f"[DEBUG convert_datetime_columns] Non-null rows: {df[col].notna().sum()}")
-            print(f"[DEBUG convert_datetime_columns] Null rows: {df[col].isna().sum()}")
-            
-            # Show sample original values
-            sample_original = df[col].head(10).tolist()
-            print(f"[DEBUG convert_datetime_columns] Sample original values (first 10): {sample_original}")
-            
             # Convert to string first to ensure we have the original format
             original_values = df[col].astype(str)
             
             # Strip microseconds (fractional seconds) to normalize the format
-            # This handles both cases: with microseconds (e.g., "2024-01-01 12:00:00.0000000") 
-            # and without (e.g., "2024-01-01 12:00:00")
             original_values = original_values.str.replace(r'\.\d+$', '', regex=True)
-            print(f"[DEBUG convert_datetime_columns] After stripping microseconds, sample values (first 10): {original_values.head(10).tolist()}")
             
             if time_format:
-                print(f"[DEBUG convert_datetime_columns] Using time_format: '{time_format}'")
                 # Try with specified format first
                 parsed = pd.to_datetime(original_values, errors="coerce", format=time_format)
-                
-                # Count successful and failed parses
-                successful = (~parsed.isna()).sum()
-                failed = parsed.isna().sum()
-                print(f"[DEBUG convert_datetime_columns] Parsing with format '{time_format}': {successful} successful, {failed} failed")
                 
                 # For values that failed with format, try without format (preserves time components)
                 failed_mask = parsed.isna() & df[col].notna()
                 if failed_mask.any():
                     failed_values = original_values.loc[failed_mask]
-                    print(f"[DEBUG convert_datetime_columns] Sample failed values (first 10): {failed_values.head(10).tolist()}")
                     parsed_failed = pd.to_datetime(failed_values, errors="coerce")
-                    successful_retry = (~parsed_failed.isna()).sum()
-                    print(f"[DEBUG convert_datetime_columns] Retry without format: {successful_retry} successful, {len(failed_values) - successful_retry} still failed")
                     parsed.loc[failed_mask] = parsed_failed
             else:
-                print(f"[DEBUG convert_datetime_columns] No time_format specified, using pandas auto-detection")
                 # No format specified - let pandas infer (handles both date and datetime)
                 # Date-only values will automatically get 00:00:00
                 parsed = pd.to_datetime(original_values, errors="coerce")
-                successful = (~parsed.isna()).sum()
-                failed = parsed.isna().sum()
-                print(f"[DEBUG convert_datetime_columns] Auto-detection: {successful} successful, {failed} failed")
-            
-            # Show final parsed values
-            sample_parsed = parsed.head(10).tolist()
-            print(f"[DEBUG convert_datetime_columns] Sample parsed values (first 10): {sample_parsed}")
-            
-            # Check for any remaining NaT values that weren't originally NaN
-            final_failed = parsed.isna() & df[col].notna()
-            if final_failed.any():
-                print(f"[WARNING convert_datetime_columns] Column '{col}': {final_failed.sum()} values could not be parsed (were not originally NaN)")
-                print(f"[WARNING convert_datetime_columns] Sample unparseable values: {original_values.loc[final_failed].head(10).tolist()}")
             
             # Assign the parsed values
             df[col] = parsed
-            print(f"[DEBUG convert_datetime_columns] Column dtype after: {df[col].dtype}")
-            print(f"[DEBUG convert_datetime_columns] Final non-null rows: {df[col].notna().sum()}")
-            print(f"[DEBUG convert_datetime_columns] Final null rows: {df[col].isna().sum()}\n")
             
     return df
 
