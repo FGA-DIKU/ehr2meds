@@ -5,7 +5,7 @@ from typing import Iterator, Optional
 import pandas as pd
 
 from ehr2meds.PREMEDS.preprocessing.constants import FILENAME
-from ehr2meds.PREMEDS.preprocessing.io.dataloader import get_data_loader
+from ehr2meds.PREMEDS.preprocessing.io.dataloader import StandardDataLoader
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,6 @@ class DataHandler:
         self,
         output_dir: str,
         file_type: str,
-        env: str,
         path: str,
         chunksize: Optional[int] = None,
         test: Optional[bool] = False,
@@ -38,17 +37,10 @@ class DataHandler:
     ):
         self.output_dir = output_dir
         self.file_type = file_type
-        self.env = env
         self.datetime_format = datetime_format or '%Y-%m-%d %H:%M:%S'  # Default format
 
         # Initialize the appropriate data loader
-        self.data_loader = get_data_loader(
-            env=self.env,
-            path=path,
-            chunksize=chunksize,
-            test=test,
-            test_rows=test_rows,
-        )  # return azure or standard data loader
+        self.data_loader = StandardDataLoader(path, chunksize, test) 
 
     def load_pandas(
         self, filename: str, cols: Optional[list[str]] = None

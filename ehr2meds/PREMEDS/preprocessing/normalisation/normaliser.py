@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from ehr2meds.PREMEDS.preprocessing.io.dataloader import get_data_loader
+from ehr2meds.PREMEDS.preprocessing.io.dataloader import StandardDataLoader
 from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID
 
 logger = logging.getLogger(__name__)
@@ -36,22 +36,18 @@ class Normaliser:
         if self.input_is_directory:
             # For directory input, we'll load chunks directly from files
             # No need for a data loader with chunksize
-            self.data_loader = get_data_loader(
-                path=self.cfg.paths.input,
-                env=self.cfg.env,
-                chunksize=None,  # Not used for directory loading
-                test=self.test,
-                test_rows=self.cfg.data.get("test_rows", 100_000),
-            )
+            self.data_loader =  StandardDataLoader(
+                path=self.cfg.paths.input, 
+                chunksize=None, 
+                test=self.test, 
+                test_rows=self.cfg.data.get("test_rows", 100_000))
         else:
             # For single file input, use existing behavior
-            self.data_loader = get_data_loader(
-                path=dirname(self.cfg.paths.input),
-                env=self.cfg.env,
-                chunksize=self.cfg.data.chunksize,
-                test=self.test,
-                test_rows=self.cfg.data.get("test_rows", 100_000),
-            )
+            self.data_loader = StandardDataLoader(
+                path=dirname(self.cfg.paths.input), 
+                chunksize=self.cfg.data.chunksize, 
+                test=self.test, 
+                test_rows=self.cfg.data.get("test_rows", 100_000))
 
     def __call__(self):
         print("Getting lab distribution")

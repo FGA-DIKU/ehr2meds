@@ -45,7 +45,6 @@ class PREMEDSExtractor:
             chunksize=self.chunksize,
             test_rows=cfg.get("test_rows", 1_000_000),
             test=cfg.test,
-            env=cfg.env,
             datetime_format=datetime_format,
         )
         if cfg.get("register_concepts"):
@@ -57,7 +56,6 @@ class PREMEDSExtractor:
                 chunksize=self.chunksize,
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,
-                env=cfg.env,
                 datetime_format=datetime_format,
             )
 
@@ -69,7 +67,6 @@ class PREMEDSExtractor:
                 chunksize=self.chunksize,  # not used here
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,
-                env=cfg.env,
                 datetime_format=datetime_format,
             )
 
