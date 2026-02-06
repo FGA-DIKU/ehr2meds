@@ -24,7 +24,7 @@ pid_link:
 
 concepts:
   ###### MOR
-  admission:
+  admission_m:
     filename: Mor - CPMI - ADT hændelser.csv
     rename_columns:
       MOR_CPR: subject_id
@@ -34,7 +34,7 @@ concepts:
       ADT_haendelse: type
     use_adm_move: true # also save all move events
 
-  allergy: # Also includes those that are cancelled
+  allergy_m: # Also includes those that are cancelled
     filename: Mor - Allergi.csv
     rename_columns:
       Beskrivelse: code
@@ -42,7 +42,7 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "A/"
 
-  diagnosis:
+  diagnosis_m:
     filename: Mor - CPMI - Diagnoseliste.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -52,7 +52,7 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "D/"
 
-  medication:
+  medication_m:
     filename: Mor - CPMI - Medicin.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -65,7 +65,7 @@ concepts:
         column: fill_timestamp
     code_prefix: "M/"
 
-  procedure:
+  procedure_m:
     filename: Mor - CPMI - Procedurer.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -74,7 +74,7 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "P/"
 
-  labtest:
+  labtest_m:
     filename: Mor - CPMI - Prøvesvar.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -85,7 +85,7 @@ concepts:
     code_prefix: "L/"
     numeric_columns: [numeric_value]
 
-  notes:
+  notes_m:
     filename: Mor - CPMI - Notater.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -98,7 +98,7 @@ concepts:
     code_prefix: "N/"
     save_in_chunks: true
 
-  imaging: 
+  imaging_m: 
     filename: Mor - CPMI - Billeddiagnostik.csv
     rename_columns:
       Procedurekode: code
@@ -106,7 +106,7 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "P/"
 
-  EWS: 
+  EWS_m: 
     filename: Mor - CPMI - EWS overbilk.csv
     rename_columns:
       EWS_Måling: code
@@ -116,7 +116,7 @@ concepts:
     code_prefix: "EWS/"
     numeric_columns: [numeric_value]
 
-  ICU:
+  ICU_m:
     filename: Mor - CPMI - IP ITA oversigtsrapport.csv
     rename_columns:
       Måling: code
@@ -126,7 +126,7 @@ concepts:
     code_prefix: "ICU/"
     numeric_columns: [numeric_value]
   
-  ICU: 
+  ICU_m: 
     filename: Mor - CPMI - IP ITA resp.csv
     rename_columns:
       Måling: code
@@ -137,7 +137,7 @@ concepts:
     numeric_columns: [numeric_value]
 
   # Results from microbiology missing
-  microbiology:
+  microbiology_m:
     filename: Mor - CPMI - Mikrobiologi Del 1.csv
     rename_columns:
       Provetagningstidspunkt: timestamp
@@ -145,7 +145,7 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "MB/"
 
-  microbiology:
+  microbiology_m:
     filename: Mor - CPMI - Mikrobiologi Del 3.csv
     rename_columns:
       Provetagningstidspunkt: timestamp
@@ -153,7 +153,7 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "MB/"
 
-  surgery:
+  surgery_m:
     filename: Mor - CPMI - Oplysninger om cases.csv
     rename_columns:
       SKS_Kode: code
@@ -161,7 +161,7 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "P/"
   
-  vital_signs:
+  vital_signs_m:
     filename: Mor - CPMI - Vital parametre.csv
     rename_columns:
       Vital_parametre: code
@@ -174,7 +174,7 @@ concepts:
     code_prefix: "VS/"
     numeric_columns: [numeric_value]
 
-  birth_outcomes: 
+  birth_outcomes_m: 
     filename: Mor - Fødselsresume - DEL 1.csv
     rename_columns:
       Placenta dato: timestamp
@@ -182,7 +182,7 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "B/"
 
-  ordinated_medication:
+  ordinated_medication_m:
     filename: Mor - Ordinationer.csv
     rename_columns:
       ATC: code
@@ -191,7 +191,7 @@ concepts:
     code_prefix: "M/"
 
 ###### BABY
-  admission:
+  admission_b:
     filename: Barn - CPMI - ADT hændelser.csv
     rename_columns:
       BABY_CPR: subject_id
@@ -201,7 +201,7 @@ concepts:
       ADT_haendelse: type
     use_adm_move: true # also save all move events
 
-  allergy: # Also includes those that are cancelled
+  allergy_b: # Also includes those that are cancelled
     filename: Barn - Allergi.csv
     rename_columns:
       Beskrivelse: code
@@ -209,7 +209,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "A/"
 
-  diagnosis:
+  diagnosis_b:
     filename: Barn - CPMI - Diagnoseliste.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -219,7 +219,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "D/"
 
-  medication:
+  medication_b:
     filename: Barn - CPMI - Medicin.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -232,7 +232,7 @@ concepts:
         column: fill_timestamp
     code_prefix: "M/"
 
-  procedure:
+  procedure_b:
     filename: Barn - CPMI - Procedurer.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -241,7 +241,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "P/"
 
-  labtest:
+  labtest_b:
     filename: Barn - CPMI - Prøvesvar.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -252,7 +252,7 @@ concepts:
     code_prefix: "L/"
     numeric_columns: [numeric_value]
 
-  notes:
+  notes_b:
     filename: Barn - CPMI - Notater.csv
     # columns to keep, rename, and the final names
     rename_columns:
@@ -265,7 +265,7 @@ concepts:
     code_prefix: "N/"
     save_in_chunks: true
 
-  imaging: 
+  imaging_b: 
     filename: Barn - CPMI - Billeddiagnostik.csv
     rename_columns:
       Procedurekode: code
@@ -273,7 +273,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "P/"
 
-  EWS: 
+  EWS_b: 
     filename: Barn - CPMI - EWS overbilk.csv
     rename_columns:
       EWS_Måling: code
@@ -283,7 +283,7 @@ concepts:
     code_prefix: "EWS/"
     numeric_columns: [numeric_value]
 
-  ICU:
+  ICU_b:
     filename: Barn - CPMI - IP ITA oversigtsrapport.csv
     rename_columns:
       Måling: code
@@ -293,7 +293,7 @@ concepts:
     code_prefix: "ICU/"
     numeric_columns: [numeric_value]
   
-  ICU: 
+  ICU_b: 
     filename: Barn - CPMI - IP ITA resp.csv
     rename_columns:
       Måling: code
@@ -304,7 +304,7 @@ concepts:
     numeric_columns: [numeric_value]
 
   # Results from microbiology missing
-  microbiology:
+  microbiology_b:
     filename: Barn - CPMI - Mikrobiologi Del 1.csv
     rename_columns:
       Provetagningstidspunkt: timestamp
@@ -312,7 +312,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "MB/"
 
-  microbiology:
+  microbiology_b:
     filename: Barn - CPMI - Mikrobiologi Del 3.csv
     rename_columns:
       Provetagningstidspunkt: timestamp
@@ -320,7 +320,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "MB/"
 
-  surgery:
+  surgery_b:
     filename: Barn - CPMI - Oplysninger om cases.csv
     rename_columns:
       SKS_Kode: code
@@ -328,7 +328,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "P/"
   
-  vital_signs:
+  vital_signs_b:
     filename: Barn - CPMI - Vital parametre.csv
     rename_columns:
       Vital_parametre: code
@@ -341,7 +341,7 @@ concepts:
     code_prefix: "VS/"
     numeric_columns: [numeric_value]
 
-  ICU: 
+  ICU_b: 
     filename: Barn - Barn - SAPS3, SOFA og GCS.csv
     rename_columns:
       Måling: code
@@ -351,7 +351,7 @@ concepts:
     code_prefix: "ICU/"
     numeric_columns: [numeric_value]
 
-  diagnosis:
+  diagnosis_b:
     filename: Barn - Diagnoser.csv
     rename_columns:
       Diagnosekode: code
@@ -360,7 +360,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "D/"
 
-  ordinated_medication:
+  ordinated_medication_b:
     filename: Barn - Ordinationer.csv
     rename_columns:
       ATC: code
@@ -368,7 +368,7 @@ concepts:
       BABY_CPR: subject_id
     code_prefix: "M/"
 
-  vital_signs: # is it EWS or vital signs?
+  vital_signs_b: # is it EWS or vital signs?
     filename: Barn - PEWS og Børneundersøgelse +-2 år.csv
     rename_columns:
       Vital_parametre: code

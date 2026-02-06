@@ -26,7 +26,7 @@ concepts:
   admission:
     filename: Mor - CPMI - ADT hændelser.csv
     rename_columns:
-      CPR_hash: subject_id
+      MOR_CPR: subject_id
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
       Afsnit: section
