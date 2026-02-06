@@ -152,6 +152,8 @@ class PREMEDSExtractor:
             # Check if this concept has multiple files (files list) or single file (filename)
             if "files" in concept_config:
                 # Process multiple files for the same concept
+                # Track chunk_idx across all files to avoid overwriting
+                chunk_idx = 0
                 for file_config in concept_config["files"]:
                     # Create a merged config with file-specific settings
                     merged_config = concept_config_with_global.copy()
@@ -164,8 +166,8 @@ class PREMEDSExtractor:
                             merged_config[key] = value
                     
                     try:
-                        self._process_concept_chunks(
-                            concept_type, merged_config, subject_id_mapping
+                        chunk_idx = self._process_concept_chunks(
+                            concept_type, merged_config, subject_id_mapping, start_chunk_idx=chunk_idx
                         )
                     except Exception as e:
                         logger.warning(f"Error processing {concept_type} from {file_config['filename']}: {str(e)}")
@@ -236,8 +238,14 @@ class PREMEDSExtractor:
         concept_type: str,
         concept_config: dict,
         subject_id_mapping: Dict[str, int],
-    ) -> None:
-        chunk_idx = 0
+        start_chunk_idx: int = 0,
+    ) -> int:
+        """Process concept chunks and return the final chunk_idx for tracking across multiple files.
+        
+        Returns:
+            int: The final chunk_idx after processing all chunks
+        """
+        chunk_idx = start_chunk_idx
         for chunk in tqdm(
             self.data_handler.load_chunks(concept_config),
             desc=f"Chunks {concept_type}",
@@ -249,6 +257,7 @@ class PREMEDSExtractor:
                 self.data_handler, processed_chunk, concept_type, chunk_idx, concept_config
             )
             chunk_idx += 1
+        return chunk_idx
 
     def _safe_save(
         self, data_handler, processed_chunk, concept_type, chunk_idx: int, concept_config: dict
