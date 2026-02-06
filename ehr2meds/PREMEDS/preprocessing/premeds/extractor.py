@@ -148,12 +148,35 @@ class PREMEDSExtractor:
             if concept_type == "admissions":
                 self.format_admissions(concept_config_with_global, subject_id_mapping)
                 continue  # continue to next concept
-            try:
-                self._process_concept_chunks(
-                    concept_type, concept_config_with_global, subject_id_mapping
-                )
-            except Exception as e:
-                logger.warning(f"Error processing {concept_type}: {str(e)}")
+            
+            # Check if this concept has multiple files (files list) or single file (filename)
+            if "files" in concept_config:
+                # Process multiple files for the same concept
+                for file_config in concept_config["files"]:
+                    # Create a merged config with file-specific settings
+                    merged_config = concept_config_with_global.copy()
+                    merged_config["filename"] = file_config["filename"]
+                    if "rename_columns" in file_config:
+                        merged_config["rename_columns"] = file_config["rename_columns"]
+                    # File-specific configs override concept-level configs
+                    for key, value in file_config.items():
+                        if key not in ["filename", "rename_columns"]:
+                            merged_config[key] = value
+                    
+                    try:
+                        self._process_concept_chunks(
+                            concept_type, merged_config, subject_id_mapping
+                        )
+                    except Exception as e:
+                        logger.warning(f"Error processing {concept_type} from {file_config['filename']}: {str(e)}")
+            else:
+                # Single file (backward compatible)
+                try:
+                    self._process_concept_chunks(
+                        concept_type, concept_config_with_global, subject_id_mapping
+                    )
+                except Exception as e:
+                    logger.warning(f"Error processing {concept_type}: {str(e)}")
 
     def format_register_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process the register concepts using the register-specific data handler"""

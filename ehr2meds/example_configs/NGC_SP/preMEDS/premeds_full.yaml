@@ -117,40 +117,35 @@ concepts:
     numeric_columns: [numeric_value]
 
   ICU_m:
-    filename: Mor - CPMI - IP ITA oversigtsrapport.csv
-    rename_columns:
-      Måling: code
-      Målingstidspunkt: timestamp
-      Værdi: numeric_value
-      MOR_CPR: subject_id
-    code_prefix: "ICU/"
-    numeric_columns: [numeric_value]
-  
-  ICU_m: 
-    filename: Mor - CPMI - IP ITA resp.csv
-    rename_columns:
-      Måling: code
-      Målingstidspunkt: timestamp
-      Værdi: numeric_value
-      MOR_CPR: subject_id
+    files:
+      - filename: Mor - CPMI - IP ITA oversigtsrapport.csv
+        rename_columns:
+          Måling: code
+          Målingstidspunkt: timestamp
+          Værdi: numeric_value
+          MOR_CPR: subject_id
+      - filename: Mor - CPMI - IP ITA resp.csv
+        rename_columns:
+          Måling: code
+          Målingstidspunkt: timestamp
+          Værdi: numeric_value
+          MOR_CPR: subject_id
     code_prefix: "ICU/"
     numeric_columns: [numeric_value]
 
   # Results from microbiology missing
   microbiology_m:
-    filename: Mor - CPMI - Mikrobiologi Del 1.csv
-    rename_columns:
-      Provetagningstidspunkt: timestamp
-      Komponentnavn: code
-      MOR_CPR: subject_id
-    code_prefix: "MB/"
-
-  microbiology_m:
-    filename: Mor - CPMI - Mikrobiologi Del 3.csv
-    rename_columns:
-      Provetagningstidspunkt: timestamp
-      Organisme: code
-      MOR_CPR: subject_id
+    files:
+      - filename: Mor - CPMI - Mikrobiologi Del 1.csv
+        rename_columns:
+          Provetagningstidspunkt: timestamp
+          Komponentnavn: code
+          MOR_CPR: subject_id
+      - filename: Mor - CPMI - Mikrobiologi Del 3.csv
+        rename_columns:
+          Provetagningstidspunkt: timestamp
+          Organisme: code
+          MOR_CPR: subject_id
     code_prefix: "MB/"
 
   surgery_m:
@@ -210,13 +205,19 @@ concepts:
     code_prefix: "A/"
 
   diagnosis_b:
-    filename: Barn - CPMI - Diagnoseliste.csv
-    # columns to keep, rename, and the final names
-    rename_columns:
-      Diagnosekode: code
-      Diagnose: fill_code
-      Redigeringsdato: timestamp
-      BABY_CPR: subject_id
+    files:
+      - filename: Barn - CPMI - Diagnoseliste.csv
+        rename_columns:
+          Diagnosekode: code
+          Diagnose: fill_code
+          Redigeringsdato: timestamp
+          BABY_CPR: subject_id
+      - filename: Barn - Diagnoser.csv
+        rename_columns:
+          Diagnosekode: code
+          Diagnose: fill_code
+          Noteret_dato: timestamp
+          BABY_CPR: subject_id
     code_prefix: "D/"
 
   medication_b:
@@ -284,40 +285,41 @@ concepts:
     numeric_columns: [numeric_value]
 
   ICU_b:
-    filename: Barn - CPMI - IP ITA oversigtsrapport.csv
-    rename_columns:
-      Måling: code
-      Målingstidspunkt: timestamp
-      Værdi: numeric_value
-      BABY_CPR: subject_id
-    code_prefix: "ICU/"
-    numeric_columns: [numeric_value]
-  
-  ICU_b: 
-    filename: Barn - CPMI - IP ITA resp.csv
-    rename_columns:
-      Måling: code
-      Målingstidspunkt: timestamp
-      Værdi: numeric_value
-      BABY_CPR: subject_id
+    files:
+      - filename: Barn - CPMI - IP ITA oversigtsrapport.csv
+        rename_columns:
+          Måling: code
+          Målingstidspunkt: timestamp
+          Værdi: numeric_value
+          BABY_CPR: subject_id
+      - filename: Barn - CPMI - IP ITA resp.csv
+        rename_columns:
+          Måling: code
+          Målingstidspunkt: timestamp
+          Værdi: numeric_value
+          BABY_CPR: subject_id
+      - filename: Barn - Barn - SAPS3, SOFA og GCS.csv
+        rename_columns:
+          Måling: code
+          Målingstidspunkt: timestamp
+          Værdi: numeric_value
+          BABY_CPR: subject_id
     code_prefix: "ICU/"
     numeric_columns: [numeric_value]
 
   # Results from microbiology missing
   microbiology_b:
-    filename: Barn - CPMI - Mikrobiologi Del 1.csv
-    rename_columns:
-      Provetagningstidspunkt: timestamp
-      Komponentnavn: code
-      BABY_CPR: subject_id
-    code_prefix: "MB/"
-
-  microbiology_b:
-    filename: Barn - CPMI - Mikrobiologi Del 3.csv
-    rename_columns:
-      Provetagningstidspunkt: timestamp
-      Organisme: code
-      BABY_CPR: subject_id
+    files:
+      - filename: Barn - CPMI - Mikrobiologi Del 1.csv
+        rename_columns:
+          Provetagningstidspunkt: timestamp
+          Komponentnavn: code
+          BABY_CPR: subject_id
+      - filename: Barn - CPMI - Mikrobiologi Del 3.csv
+        rename_columns:
+          Provetagningstidspunkt: timestamp
+          Organisme: code
+          BABY_CPR: subject_id
     code_prefix: "MB/"
 
   surgery_b:
@@ -329,36 +331,24 @@ concepts:
     code_prefix: "P/"
   
   vital_signs_b:
-    filename: Barn - CPMI - Vital parametre.csv
-    rename_columns:
-      Vital_parametre: code
-      Registreringstidspunkt: timestamp
-      BABY_CPR: subject_id
-      Værdi: numeric_value
+    files:
+      - filename: Barn - CPMI - Vital parametre.csv
+        rename_columns:
+          Vital_parametre: code
+          Registreringstidspunkt: timestamp
+          BABY_CPR: subject_id
+          Værdi: numeric_value
+      - filename: Barn - PEWS og Børneundersøgelse +-2 år.csv
+        rename_columns:
+          Vital_parametre: code
+          Registreringstidspunkt: timestamp
+          BABY_CPR: subject_id
+          Værdi: numeric_value
     fillna:
       numeric_value:
         column: Værdi_Omregnet
     code_prefix: "VS/"
     numeric_columns: [numeric_value]
-
-  ICU_b: 
-    filename: Barn - Barn - SAPS3, SOFA og GCS.csv
-    rename_columns:
-      Måling: code
-      Målingstidspunkt: timestamp
-      Værdi: numeric_value
-      BABY_CPR: subject_id
-    code_prefix: "ICU/"
-    numeric_columns: [numeric_value]
-
-  diagnosis_b:
-    filename: Barn - Diagnoser.csv
-    rename_columns:
-      Diagnosekode: code
-      Diagnose: fill_code
-      Noteret_dato: timestamp
-      BABY_CPR: subject_id
-    code_prefix: "D/"
 
   ordinated_medication_b:
     filename: Barn - Ordinationer.csv
@@ -367,19 +357,6 @@ concepts:
       Ordinationstidspunkt: timestamp
       BABY_CPR: subject_id
     code_prefix: "M/"
-
-  vital_signs_b: # is it EWS or vital signs?
-    filename: Barn - PEWS og Børneundersøgelse +-2 år.csv
-    rename_columns:
-      Vital_parametre: code
-      Registreringstidspunkt: timestamp
-      BABY_CPR: subject_id
-      Værdi: numeric_value
-    fillna:
-      numeric_value:
-        column: Værdi_Omregnet
-    code_prefix: "VS/"
-    numeric_columns: [numeric_value]
 
 patients_info:
   files:

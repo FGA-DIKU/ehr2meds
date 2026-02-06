@@ -206,7 +206,7 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
             # Convert to string first to ensure we have the original format
             original_values = df[col].astype(str)
             
-            # Strip microseconds (fractional seconds) to normalize the format
+            # Strip microseconds 
             original_values = original_values.str.replace(r'\.\d+$', '', regex=True)
             
             if time_format:
