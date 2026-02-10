@@ -223,7 +223,7 @@ class BaseDataLoader(ABC):
                 if self.test and i >= N_TEST_CHUNKS:
                     break
                 yield chunk
-        except (ValueError, KeyError) as col_error:
+        except (ValueError, KeyError):
             if cols:
                 # If usecols fails, try reading all columns then selecting
                 kwargs.pop("usecols", None)
