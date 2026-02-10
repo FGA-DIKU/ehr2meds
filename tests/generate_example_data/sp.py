@@ -50,8 +50,12 @@ def generate_diagnosis(save_dir, hashes, birthdates, deathdates, seed=0):
             "CPR_hash": hashes,
             "Diagnosekode": diag_codes,
             "Diagnose": generate_diagnosis_description(total_concepts, diag_codes),
-            "Noteret_dato": generate_timestamps(birthdates, deathdates, total_concepts, date_only=True),
-            "Løst_dato": generate_timestamps(birthdates, deathdates, total_concepts, date_only=True),
+            "Noteret_dato": generate_timestamps(
+                birthdates, deathdates, total_concepts, date_only=True
+            ),
+            "Løst_dato": generate_timestamps(
+                birthdates, deathdates, total_concepts, date_only=True
+            ),
         }
     )
     os.makedirs(save_dir, exist_ok=True)
@@ -125,8 +129,10 @@ def generate_procedures(save_dir, hashes, birthdates, deathdates, seed=0):
             ],
             "ServiceDate": dates.dt.date,
             "ServiceTime": dates.apply(
-                lambda x: pd.Timestamp("1970-01-01")
-                + pd.Timedelta(hours=x.hour, minutes=x.minute, seconds=x.second)
+                lambda x: (
+                    pd.Timestamp("1970-01-01")
+                    + pd.Timedelta(hours=x.hour, minutes=x.minute, seconds=x.second)
+                )
             ),
             "ServiceDatetime": dates,
         }

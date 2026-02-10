@@ -1,5 +1,4 @@
 import logging
-import re
 from typing import Dict, List, Tuple
 
 import pandas as pd
@@ -33,11 +32,11 @@ def fill_missing_values(df: pd.DataFrame, fillna_cfg: dict) -> pd.DataFrame:
     """
     Fill missing values using specified columns and regex patterns.
     Drop the columns used to fill missing values.
-    
+
     Args:
         df: DataFrame to process
         fillna_cfg: Dictionary with target columns as keys and fill config as values
-        
+
     Returns:
         DataFrame with missing values filled and fill columns dropped
     """
@@ -75,24 +74,36 @@ def check_columns(df: pd.DataFrame, columns_map: dict):
 def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]]:
     """Factorize the SUBJECT_ID column into an integer mapping."""
     col = SUBJECT_ID
-    
+
     # Validate all SUBJECT_ID values: check for non-scalar values and array-like strings
     bad_rows = [
-        (idx, val, type(val).__name__, "non-scalar" if not pd.api.types.is_scalar(val) else "array-like string")
+        (
+            idx,
+            val,
+            type(val).__name__,
+            "non-scalar" if not pd.api.types.is_scalar(val) else "array-like string",
+        )
         for idx, val in df[col].items()
-        if not pd.api.types.is_scalar(val) or (isinstance(val, str) and val.strip().startswith("[") and val.strip().endswith("]"))
+        if not pd.api.types.is_scalar(val)
+        or (
+            isinstance(val, str)
+            and val.strip().startswith("[")
+            and val.strip().endswith("]")
+        )
     ]
-    
+
     if bad_rows:
         raise ValueError(
             f"Invalid SUBJECT_ID values detected: {len(bad_rows)} row(s). "
             f"First problematic row: {bad_rows[0][0]}, value: {repr(bad_rows[0][1])}, type: {bad_rows[0][2]}"
         )
-    
+
     # Create mapping from unique values to integers
     unique_vals = df[col].unique()
-    hash_to_int_map = {val: idx + 2 for idx, val in enumerate(sorted(unique_vals))}  # +2 prevents binary interpretation
-    
+    hash_to_int_map = {
+        val: idx + 2 for idx, val in enumerate(sorted(unique_vals))
+    }  # +2 prevents binary interpretation
+
     # Apply mapping and validate
     mapped = df[col].map(hash_to_int_map)
     if mapped.isna().any():
@@ -101,11 +112,9 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
             f"Unmapped SUBJECT_ID values detected: {len(bad_idx)} row(s). "
             f"First unmapped row: {bad_idx[0]}, value: {repr(df.loc[bad_idx[0], col])}"
         )
-    
+
     df[col] = mapped.astype(int)
     return df, hash_to_int_map
-
-
 
 
 def apply_mapping(
@@ -182,13 +191,14 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
             df[col] = pd.to_numeric(df[col], errors="coerce")
     return df
 
+
 def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Convert specified columns to datetime type. Handles both date-only and datetime formats.
-    
+
     Date-only values like "2024-01-15" are automatically converted to "2024-01-15 00:00:00".
     If time_format is specified, it's used as a hint but values that don't match will be
     parsed without format to avoid data loss.
-    
+
     Uses only the global datetime config from '_global_datetime' key with:
     - 'columns': list of column names
     - 'timeformat': time format string
@@ -197,22 +207,24 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
     global_datetime = concept_config.get("_global_datetime", {})
     datetime_cols = global_datetime.get("columns", [])
     time_format = global_datetime.get("timeformat")
-    
+
     if not datetime_cols:
         return df
-    
+
     for col in datetime_cols:
         if col in df.columns:
             # Convert to string first to ensure we have the original format
             original_values = df[col].astype(str)
-            
-            # Strip microseconds 
-            original_values = original_values.str.replace(r'\.\d+$', '', regex=True)
-            
+
+            # Strip microseconds
+            original_values = original_values.str.replace(r"\.\d+$", "", regex=True)
+
             if time_format:
                 # Try with specified format first
-                parsed = pd.to_datetime(original_values, errors="coerce", format=time_format)
-                
+                parsed = pd.to_datetime(
+                    original_values, errors="coerce", format=time_format
+                )
+
                 # For values that failed with format, try without format (preserves time components)
                 failed_mask = parsed.isna() & df[col].notna()
                 if failed_mask.any():
@@ -223,16 +235,19 @@ def convert_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataF
                 # No format specified - let pandas infer (handles both date and datetime)
                 # Date-only values will automatically get 00:00:00
                 parsed = pd.to_datetime(original_values, errors="coerce")
-            
+
             # Assign the parsed values
             df[col] = parsed
-            
+
     return df
 
-def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
+
+def map_pids_to_ints(
+    df: pd.DataFrame, subject_id_mapping: Dict[str, int]
+) -> pd.DataFrame:
     """Map PIDs to integers, with robust diagnostics and safe casting."""
     col = SUBJECT_ID
-    
+
     # Validate non-scalar values
     non_scalar_mask = ~df[col].apply(pd.api.types.is_scalar)
     if non_scalar_mask.any():
@@ -241,7 +256,7 @@ def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd
         raise TypeError(
             f"Non-scalar SUBJECT_ID at row {idx}, value: {repr(val)}, type: {type(val).__name__}"
         )
-    
+
     # Map and validate unmapped values
     mapped = df[col].map(subject_id_mapping)
     unmapped_mask = mapped.isna() & df[col].notna()
@@ -251,20 +266,19 @@ def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd
         raise KeyError(
             f"SUBJECT_ID values not found in mapping. Sample indices: {bad_idx}, values: {sample_vals}"
         )
-    
+
     # Assign, drop NaNs, and convert to int
     df = df.copy()
     df[col] = mapped
     df = df.dropna(subset=[col])
     df[col] = pd.to_numeric(df[col], errors="raise").astype("Int64")
-    
+
     if df[col].isna().any():
         bad_idx = df.index[df[col].isna()][:20].tolist()
         raise ValueError(f"Unexpected NA after conversion. Example indices: {bad_idx}")
-    
+
     df[col] = df[col].astype(int)
     return df
-
 
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:

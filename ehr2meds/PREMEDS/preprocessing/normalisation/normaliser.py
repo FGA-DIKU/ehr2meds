@@ -32,21 +32,20 @@ class Normaliser:
     def _init_data_loader(self):
         # Check if input is a directory (chunked files) or a single file
         self.input_is_directory = isdir(self.cfg.paths.input)
-        
+
         if self.input_is_directory:
             # For directory input, we'll load chunks directly from files
             # No need for a data loader with chunksize
-            self.data_loader =  StandardDataLoader(
-                path=self.cfg.paths.input, 
-                chunksize=None, 
-                test=self.test 
+            self.data_loader = StandardDataLoader(
+                path=self.cfg.paths.input, chunksize=None, test=self.test
             )
         else:
             # For single file input, use existing behavior
             self.data_loader = StandardDataLoader(
-                path=dirname(self.cfg.paths.input), 
-                chunksize=self.cfg.data.chunksize, 
-                test=self.test)
+                path=dirname(self.cfg.paths.input),
+                chunksize=self.cfg.data.chunksize,
+                test=self.test,
+            )
 
     def __call__(self):
         print("Getting lab distribution")
@@ -147,8 +146,8 @@ class Normaliser:
             # Original behavior: append to single file
             save_path = join(self.cfg.paths.output_dir, self.cfg.file_name)
             mode = "w" if counter == 0 else "a"
-            header = (counter == 0)  # Write header only for first chunk
-        
+            header = counter == 0  # Write header only for first chunk
+
         if self.cfg.file_name.endswith(".parquet"):
             chunk.to_parquet(save_path, index=False, mode=mode)
         else:
@@ -166,32 +165,31 @@ class Normaliser:
     def _load_chunks_from_directory(self) -> Iterator[pd.DataFrame]:
         """Load chunks from a directory containing chunk files (chunk_0.csv, chunk_1.csv, etc.)."""
         input_dir = self.cfg.paths.input
-        
+
         # Get all files in the directory
         all_files = os.listdir(input_dir)
-        
+
         # Filter for chunk files (chunk_0.csv, chunk_1.csv, etc.)
         chunk_files = [
-            f for f in all_files 
-            if re.match(r'chunk_\d+\.(csv|parquet)$', f)
+            f for f in all_files if re.match(r"chunk_\d+\.(csv|parquet)$", f)
         ]
-        
+
         if not chunk_files:
             raise ValueError(
                 f"No chunk files found in directory {input_dir}. "
                 f"Expected files matching pattern 'chunk_*.csv' or 'chunk_*.parquet'"
             )
-        
+
         # Sort by chunk number
         def get_chunk_number(filename):
-            match = re.search(r'chunk_(\d+)', filename)
+            match = re.search(r"chunk_(\d+)", filename)
             return int(match.group(1)) if match else -1
-        
+
         chunk_files.sort(key=get_chunk_number)
-        
+
         # Limit chunks in test mode
         max_chunks = 2 if self.test else len(chunk_files)
-        
+
         # Load each chunk file
         for chunk_file in chunk_files[:max_chunks]:
             chunk_path = join(input_dir, chunk_file)

@@ -33,7 +33,7 @@ class PREMEDSExtractor:
         self.cfg = cfg
         logger.info(f"test {cfg.test}")
         self.chunksize = cfg.get("chunksize", 500_000)
-        
+
         # Get global datetime format
         datetime_format = cfg.get("datetime", {}).get("timeformat")
 
@@ -90,25 +90,25 @@ class PREMEDSExtractor:
             Dict[str, int]: Mapping from original patient IDs to integer IDs
         """
         logger.info("Load patients info")
-        
+
         # Get files list - always expect a list
         files = self.cfg.patients_info.files
-        
+
         # Load all files and concatenate
         dfs = []
         for file_config in files:
             filename = file_config["filename"]
             # Each file must specify its own rename_columns
             rename_columns = file_config["rename_columns"]
-            
+
             logger.info(f"Loading patient info from: {filename}")
             cols = list(rename_columns.keys()) if rename_columns else None
             df_file = self.data_handler.load_pandas(filename, cols=cols)
-            
+
             # Use file-specific rename_columns
             df_file = select_and_rename_columns(df_file, rename_columns)
             dfs.append(df_file)
-        
+
         # Concatenate all dataframes
         if len(dfs) > 1:
             df = pd.concat(dfs, ignore_index=True)
@@ -116,12 +116,14 @@ class PREMEDSExtractor:
             # Drop duplicates based on subject_id if it exists
             if SUBJECT_ID in df.columns:
                 initial_len = len(df)
-                df = df.drop_duplicates(subset=[SUBJECT_ID], keep='first')
+                df = df.drop_duplicates(subset=[SUBJECT_ID], keep="first")
                 if len(df) < initial_len:
-                    logger.info(f"Removed {initial_len - len(df)} duplicate patient records")
+                    logger.info(
+                        f"Removed {initial_len - len(df)} duplicate patient records"
+                    )
         else:
             df = dfs[0]
-        
+
         logger.info(f"Number of patients after selecting columns: {len(df)}")
 
         df, hash_to_int_map = factorize_subject_id(df)
@@ -139,16 +141,16 @@ class PREMEDSExtractor:
         """Process all medical concepts"""
         # Get global datetime config if it exists
         global_datetime = self.cfg.get("datetime", {})
-        
+
         for concept_type, concept_config in self.cfg.get("concepts", {}).items():
             # Merge global datetime config into concept config (concept config takes precedence)
             concept_config_with_global = concept_config.copy()
             concept_config_with_global["_global_datetime"] = global_datetime
-            
+
             if concept_type == "admissions":
                 self.format_admissions(concept_config_with_global, subject_id_mapping)
                 continue  # continue to next concept
-            
+
             # Check if this concept has multiple files (files list) or single file (filename)
             if "files" in concept_config:
                 # Process multiple files for the same concept
@@ -164,13 +166,18 @@ class PREMEDSExtractor:
                     for key, value in file_config.items():
                         if key not in ["filename", "rename_columns"]:
                             merged_config[key] = value
-                    
+
                     try:
                         chunk_idx = self._process_concept_chunks(
-                            concept_type, merged_config, subject_id_mapping, start_chunk_idx=chunk_idx
+                            concept_type,
+                            merged_config,
+                            subject_id_mapping,
+                            start_chunk_idx=chunk_idx,
                         )
                     except Exception as e:
-                        logger.warning(f"Error processing {concept_type} from {file_config['filename']}: {str(e)}")
+                        logger.warning(
+                            f"Error processing {concept_type} from {file_config['filename']}: {str(e)}"
+                        )
             else:
                 # Single file (backward compatible)
                 try:
@@ -184,7 +191,7 @@ class PREMEDSExtractor:
         """Process the register concepts using the register-specific data handler"""
         # Load the register-SP mapping once - this maps register PIDs to SP hashes
         register_sp_link = self._get_register_sp_link()
-        
+
         # Get global datetime config if it exists
         global_datetime = self.cfg.get("datetime", {})
 
@@ -194,7 +201,7 @@ class PREMEDSExtractor:
             # Merge global datetime config into concept config (concept config takes precedence)
             concept_config_with_global = concept_config.copy()
             concept_config_with_global["_global_datetime"] = global_datetime
-            
+
             logger.info(f"Processing register concept: {concept_type}")
             try:
                 self.process_register_concept_chunks(
@@ -229,7 +236,11 @@ class PREMEDSExtractor:
             )
 
             self._safe_save(
-                self.register_data_handler, processed_chunk, concept_type, chunk_idx, concept_config
+                self.register_data_handler,
+                processed_chunk,
+                concept_type,
+                chunk_idx,
+                concept_config,
             )
             chunk_idx += 1
 
@@ -241,7 +252,7 @@ class PREMEDSExtractor:
         start_chunk_idx: int = 0,
     ) -> int:
         """Process concept chunks and return the final chunk_idx for tracking across multiple files.
-        
+
         Returns:
             int: The final chunk_idx after processing all chunks
         """
@@ -254,18 +265,27 @@ class PREMEDSExtractor:
                 chunk, concept_config, subject_id_mapping
             )
             self._safe_save(
-                self.data_handler, processed_chunk, concept_type, chunk_idx, concept_config
+                self.data_handler,
+                processed_chunk,
+                concept_type,
+                chunk_idx,
+                concept_config,
             )
             chunk_idx += 1
         return chunk_idx
 
     def _safe_save(
-        self, data_handler, processed_chunk, concept_type, chunk_idx: int, concept_config: dict
+        self,
+        data_handler,
+        processed_chunk,
+        concept_type,
+        chunk_idx: int,
+        concept_config: dict,
     ) -> None:
         if not processed_chunk.empty:
             # Check if save_in_chunks is set for this specific concept type
             save_in_chunks = concept_config.get("save_in_chunks", False)
-            
+
             if save_in_chunks:
                 # Save each chunk as a separate file in a directory named after concept_type
                 # Create directory if it doesn't exist
@@ -308,7 +328,11 @@ class PREMEDSExtractor:
             )
 
             self._safe_save(
-                self.data_handler, processed_chunk, "admissions", chunk_idx, admissions_config
+                self.data_handler,
+                processed_chunk,
+                "admissions",
+                chunk_idx,
+                admissions_config,
             )
             chunk_idx += 1
 

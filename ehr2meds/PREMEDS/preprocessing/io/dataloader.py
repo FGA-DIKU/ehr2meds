@@ -49,11 +49,11 @@ class BaseDataLoader(ABC):
                     break  # Successfully read, exit loop
             except (UnicodeDecodeError, Exception):
                 continue  # Try next encoding
-        
+
         # If we couldn't read with any encoding, default to comma
         if first_line is None:
             return ","
-        
+
         # Count occurrences of each separator
         counts = {sep: first_line.count(sep) for sep in self.KNOWN_SEPARATORS}
         # Choose separator with most occurrences
@@ -64,17 +64,20 @@ class BaseDataLoader(ABC):
         return ","
 
     def _try_read_csv_single(
-        self, file_path: str, cols: Optional[List[str]] = None, 
-        sep: Optional[str] = None, encoding: Optional[str] = None
+        self,
+        file_path: str,
+        cols: Optional[List[str]] = None,
+        sep: Optional[str] = None,
+        encoding: Optional[str] = None,
     ) -> pd.DataFrame:
         """Helper to try reading CSV with given parameters, handling column selection."""
         try:
             kwargs = {}
             if sep:
-                kwargs['sep'] = sep
+                kwargs["sep"] = sep
             if encoding:
-                kwargs['encoding'] = encoding
-            
+                kwargs["encoding"] = encoding
+
             if cols:
                 try:
                     return pd.read_csv(file_path, usecols=cols, **kwargs)
@@ -94,12 +97,16 @@ class BaseDataLoader(ABC):
             raise  # Re-raise to be caught by caller
 
     def _try_csv_read_strategies(
-        self, file_path: str, cols: Optional[List[str]], 
-        read_func, context_msg: str = "", test_generator: bool = False
+        self,
+        file_path: str,
+        cols: Optional[List[str]],
+        read_func,
+        context_msg: str = "",
+        test_generator: bool = False,
     ):
         """Generic method to try CSV reading with 3-phase strategy: auto-detection -> separators -> encodings+separators."""
         last_error = None
-        
+
         # Phase 1: Full auto-detection
         logger.debug(f"Trying pandas auto-detection{context_msg} for {file_path}")
         try:
@@ -107,9 +114,11 @@ class BaseDataLoader(ABC):
             if test_generator:
                 # For generators, test by getting first item
                 first_item = next(result)
+
                 def gen():
                     yield first_item
                     yield from result
+
                 logger.debug(f"Successfully read{context_msg} with auto-detection")
                 return gen()
             logger.debug(f"Successfully read{context_msg} with auto-detection")
@@ -117,24 +126,30 @@ class BaseDataLoader(ABC):
         except Exception as e:
             logger.debug(f"Auto-detection failed: {str(e)}")
             last_error = e
-        
+
         # Phase 2: Try with explicit separators
         for separator in self.KNOWN_SEPARATORS:
             try:
                 result = read_func(sep=separator, encoding=None)
                 if test_generator:
                     first_item = next(result)
+
                     def gen():
                         yield first_item
                         yield from result
-                    logger.debug(f"Successfully read{context_msg} with separator '{separator}'")
+
+                    logger.debug(
+                        f"Successfully read{context_msg} with separator '{separator}'"
+                    )
                     return gen()
-                logger.debug(f"Successfully read{context_msg} with separator '{separator}'")
+                logger.debug(
+                    f"Successfully read{context_msg} with separator '{separator}'"
+                )
                 return result
             except Exception as e:
                 logger.debug(f"Failed with separator '{separator}': {str(e)}")
                 last_error = e
-        
+
         # Phase 3: Try all encodings with all separators
         for encoding in self.CSV_ENCODINGS:
             for separator in self.KNOWN_SEPARATORS:
@@ -142,17 +157,25 @@ class BaseDataLoader(ABC):
                     result = read_func(sep=separator, encoding=encoding)
                     if test_generator:
                         first_item = next(result)
+
                         def gen():
                             yield first_item
                             yield from result
-                        logger.debug(f"Successfully read{context_msg} with encoding '{encoding}' and separator '{separator}'")
+
+                        logger.debug(
+                            f"Successfully read{context_msg} with encoding '{encoding}' and separator '{separator}'"
+                        )
                         return gen()
-                    logger.debug(f"Successfully read{context_msg} with encoding '{encoding}' and separator '{separator}'")
+                    logger.debug(
+                        f"Successfully read{context_msg} with encoding '{encoding}' and separator '{separator}'"
+                    )
                     return result
                 except Exception as e:
-                    logger.debug(f"Failed with encoding '{encoding}' and separator '{separator}': {str(e)}")
+                    logger.debug(
+                        f"Failed with encoding '{encoding}' and separator '{separator}': {str(e)}"
+                    )
                     last_error = e
-        
+
         error_msg = f"Unable to read file {repr(file_path)} with any method"
         if last_error:
             error_msg += f". Last error: {str(last_error)}"
@@ -162,29 +185,38 @@ class BaseDataLoader(ABC):
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> pd.DataFrame:
         """Try pandas auto-detection first, then fallback to explicit options."""
-        if file_path == "file_path" or not isinstance(file_path, str) or len(file_path) == 0:
+        if (
+            file_path == "file_path"
+            or not isinstance(file_path, str)
+            or len(file_path) == 0
+        ):
             raise ValueError(f"Invalid file_path provided: {repr(file_path)}")
         if not os.path.exists(file_path):
             raise ValueError(f"File does not exist: {file_path}")
-        
+
         def read_func(sep=None, encoding=None):
-            return self._try_read_csv_single(file_path, cols, sep=sep, encoding=encoding)
-        
+            return self._try_read_csv_single(
+                file_path, cols, sep=sep, encoding=encoding
+            )
+
         return self._try_csv_read_strategies(file_path, cols, read_func)
 
     def _try_read_csv_chunks(
-        self, file_path: str, cols: Optional[List[str]] = None,
-        sep: Optional[str] = None, encoding: Optional[str] = None
+        self,
+        file_path: str,
+        cols: Optional[List[str]] = None,
+        sep: Optional[str] = None,
+        encoding: Optional[str] = None,
     ) -> Iterator[pd.DataFrame]:
         """Helper to try reading CSV chunks with given parameters."""
-        kwargs = {'chunksize': self.chunksize}
+        kwargs = {"chunksize": self.chunksize}
         if sep:
-            kwargs['sep'] = sep
+            kwargs["sep"] = sep
         if encoding:
-            kwargs['encoding'] = encoding
+            kwargs["encoding"] = encoding
         if cols:
-            kwargs['usecols'] = cols
-        
+            kwargs["usecols"] = cols
+
         try:
             chunk_iter = pd.read_csv(file_path, **kwargs)
             for i, chunk in enumerate(chunk_iter):
@@ -194,7 +226,7 @@ class BaseDataLoader(ABC):
         except (ValueError, KeyError) as col_error:
             if cols:
                 # If usecols fails, try reading all columns then selecting
-                kwargs.pop('usecols', None)
+                kwargs.pop("usecols", None)
                 chunk_iter = pd.read_csv(file_path, **kwargs)
                 first_chunk = next(iter(chunk_iter))
                 missing_cols = set(cols) - set(first_chunk.columns)
@@ -218,10 +250,15 @@ class BaseDataLoader(ABC):
         self, file_path: str, cols: Optional[List[str]] = None
     ) -> Iterator[pd.DataFrame]:
         """Load CSV in chunks, trying pandas auto-detection first."""
+
         def read_func(sep=None, encoding=None):
-            return self._try_read_csv_chunks(file_path, cols, sep=sep, encoding=encoding)
-        
-        chunk_iter = self._try_csv_read_strategies(file_path, cols, read_func, " chunks", test_generator=True)
+            return self._try_read_csv_chunks(
+                file_path, cols, sep=sep, encoding=encoding
+            )
+
+        chunk_iter = self._try_csv_read_strategies(
+            file_path, cols, read_func, " chunks", test_generator=True
+        )
         yield from chunk_iter
 
     @abstractmethod

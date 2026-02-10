@@ -32,14 +32,14 @@ def generate_medical_code(n, start=100, end=999, mix_letters=False, prefix=None)
 
 def generate_timestamps(birthdates, deathdates, n=1000, date_only=False):
     """Generate timestamps between birthdates and deathdates.
-    
+
     Args:
         birthdates: Series or array of birth dates
         deathdates: Series or array of death dates
         n: Number of timestamps to generate (unused, kept for compatibility)
         date_only: If True, generate date-only timestamps (YYYY-MM-DD 00:00:00).
                    If False (default), generate timestamps with random time components.
-    
+
     Returns:
         Series of datetime timestamps
     """
@@ -58,7 +58,7 @@ def generate_timestamps(birthdates, deathdates, n=1000, date_only=False):
         birthdates = pd.Series(birthdates).dt.normalize()
         deathdates = pd.Series(deathdates).dt.normalize()
         deathdates = deathdates.fillna(pd.Timestamp("2025-01-01").normalize())
-        
+
         timestamps = []
         for birth, death in zip(birthdates, deathdates):
             days_diff = (death - birth).days

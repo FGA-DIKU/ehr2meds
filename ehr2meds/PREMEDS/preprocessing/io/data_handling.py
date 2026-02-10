@@ -37,10 +37,10 @@ class DataHandler:
     ):
         self.output_dir = output_dir
         self.file_type = file_type
-        self.datetime_format = datetime_format or '%Y-%m-%d %H:%M:%S'  # Default format
+        self.datetime_format = datetime_format or "%Y-%m-%d %H:%M:%S"  # Default format
 
         # Initialize the appropriate data loader
-        self.data_loader = StandardDataLoader(path, chunksize, test) 
+        self.data_loader = StandardDataLoader(path, chunksize, test)
 
     def load_pandas(
         self, filename: str, cols: Optional[list[str]] = None
@@ -90,7 +90,7 @@ class DataHandler:
                 if pd.api.types.is_datetime64_any_dtype(df_to_save[col]):
                     # Format datetime columns using the global datetime format
                     df_to_save[col] = df_to_save[col].dt.strftime(self.datetime_format)
-            
+
             if mode == "w":
                 df_to_save.to_csv(path, index=False, mode="w")
             else:
