@@ -3,13 +3,22 @@ paths:
 
 data:
   LPR3_kontakter: 
-    N: 5
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
     columns:
       id:
         type: id
         args:
           min: 1
           max: 100000000
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 5
+              probability: 0.05
       aktionsdiagnose:
         type: medical_code
         args:
