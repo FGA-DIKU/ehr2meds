@@ -1,0 +1,30 @@
+paths:
+  output: "data/raw/DST"
+
+data:
+  LPR3_kontakter: 
+    N: 5
+    columns:
+      id:
+        type: id
+        args:
+          min: 1
+          max: 100000000
+      aktionsdiagnose:
+        type: medical_code
+        args:
+          prefix: "D"
+      priority:
+        type: choice
+        args:
+          options: [1, 2, 3]
+      dato_start:
+        type: rand_date
+      tidspunkt_start:
+        type: rand_time
+      dato_slut:
+        type: greater_than_date
+        match:
+          min_date: dato_start
+      tidspunkt_slut:
+        type: rand_time
