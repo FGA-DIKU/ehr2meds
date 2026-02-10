@@ -29,8 +29,6 @@ pipeline_config_path: ".../configs/pipeline.yaml"
 # File path to the event conversion configuration
 event_config_path: ".../configs/event.yaml"
 
-# Optional compute target (can be overridden via command line)
-compute_target: "CPU-20-LP"
 ```
 
 ### Pipeline Config File

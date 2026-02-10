@@ -25,17 +25,17 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
 
 2. **PREMEDS → MEDS Conversion:**  
    Transforms preMEDS data into a finalized MEDS cohort format.  
-   You need to run [run.py](./ehr2meds/MEDS/MEDS_transform/run.py) to run the MEDS conversion.
+   You need to run [run.sh](./ehr2meds/MEDS/MEDS_transform/run.sh) to run the MEDS conversion.
    For instructions ons how to run on azure, see the [MEDS Transform README](./ehr2meds/MEDS/MEDS_transform/README.md).
 
    ```bash
-   python -m ehr2meds.MEDS.MEDS_transform.run --config <config_path> --compute <compute> --experiment <experiment_name>
+   bash -m ehr2meds/MEDS/MEDS_transform/run.sh <input_dir> <pipeline_config> <event_config> <output_dir> 
    ```
 
    Example:
 
    ```bash
-   python -m ehr2meds.MEDS.MEDS_transform.run --config ehr2meds/example_configs/meds/run.yaml --compute CPU-20-LP --experiment MEDS
+   bash -m ehr2meds/MEDS/MEDS_transform/run.sh outputs/preMEDS ehr2meds/example_configs/meds/pipeline.yaml ehr2meds/example_configs/meds/event_minimal.yaml outputs/MEDS
    ```
 
    Example configuration files can be found in the [MEDS/MEDS_transform/configs](./ehr2meds/MEDS/MEDS_transform/configs).
