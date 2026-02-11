@@ -95,8 +95,8 @@ data:
       volume: #dosage
         type: rand_float
         args:
-          min: 0.001
-          max: 10000
+          min_val: 0.001
+          max_val: 10000
       voltypecode:
         type: choice
         args:
@@ -115,8 +115,8 @@ data:
       speciale:
         type: rand_int
         args:
-          min: 100000
-          max: 999999
+          min_val: 100000
+          max_val: 999999
       honuge:
         type: honuge
         args:
@@ -136,8 +136,8 @@ data:
       speciale:
         type: rand_int
         args:
-          min: 100000
-          max: 999999
+          min_val: 100000
+          max_val: 999999
       honuge:
         type: honuge
         args:

@@ -13,9 +13,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate synthetic datasets based on a YAML configuration."
     )
-    parser.add_argument("--config", type=str, help="Path to the YAML configuration file.")
+    parser.add_argument(
+        "--config", type=str, help="Path to the YAML configuration file."
+    )
     args = parser.parse_args()
-
 
     root = Path("ehr2meds")
 
@@ -25,10 +26,14 @@ if __name__ == "__main__":
     output_dir.mkdir(parents=True, exist_ok=True)
 
     gfunc_dict = {
-        name: obj for name, obj in inspect.getmembers(ghelpers) if inspect.isfunction(obj)
+        name: obj
+        for name, obj in inspect.getmembers(ghelpers)
+        if inspect.isfunction(obj)
     }
     cfunc_dict = {
-        name: obj for name, obj in inspect.getmembers(chelpers) if inspect.isfunction(obj)
+        name: obj
+        for name, obj in inspect.getmembers(chelpers)
+        if inspect.isfunction(obj)
     }
 
     # Iterate through each file and its corresponding configuration
@@ -39,7 +44,9 @@ if __name__ == "__main__":
 
             for col, col_info in info["columns"].items():
                 if col_info["type"] not in gfunc_dict:
-                    raise ValueError(f"Unknown generation function type: {col_info['type']}")
+                    raise ValueError(
+                        f"Unknown generation function type: {col_info['type']}"
+                    )
                 func = gfunc_dict[col_info["type"]]
 
                 call_args = col_info.get("args", {})
@@ -53,7 +60,9 @@ if __name__ == "__main__":
                 if "corruptions" in col_info:
                     for corruption in col_info["corruptions"]:
                         if corruption["type"] not in cfunc_dict:
-                            raise ValueError(f"Unknown corruption function type: {corruption['type']}")
+                            raise ValueError(
+                                f"Unknown corruption function type: {corruption['type']}"
+                            )
                         cfunc = cfunc_dict[corruption["type"]]
                         value = cfunc(value, row_index=i, **corruption.get("args", {}))
 
@@ -64,7 +73,9 @@ if __name__ == "__main__":
                     row.copy()
                 )  # Avoid modifying the original row for subsequent corruptions
                 if corruption["type"] not in cfunc_dict:
-                    raise ValueError(f"Unknown corruption function type: {corruption['type']}")
+                    raise ValueError(
+                        f"Unknown corruption function type: {corruption['type']}"
+                    )
                 func = cfunc_dict[corruption["type"]]
                 row = func(row, row_index=i, **corruption.get("args", {}))
             df.append(row)
