@@ -10,7 +10,7 @@ def medical_code(prefix="", min=100, max=999):
     return f"{prefix}{letter}{number}"
 
 
-def id(min=1000000000, max=9999999999):
+def person_id(min=1000000000, max=9999999999):
     random_str = str(random.randint(min, max))
     hash_object = hashlib.sha256(random_str.encode())
     return hash_object.hexdigest()
@@ -55,8 +55,8 @@ def greater_than_date(min_date, end=2020):
 
 def greater_than_datetime(min_date, end=2020):
     delta = datetime(end, 12, 31) - min_date
-    random_days = random.randint(0, delta.days)
-    return min_date + timedelta(days=random_days)
+    random_seconds = random.randint(0, int(delta.total_seconds()))
+    return min_date + timedelta(seconds=random_seconds)
 
 
 # Specialized functions for DST dataset

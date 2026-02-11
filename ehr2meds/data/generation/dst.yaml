@@ -10,8 +10,8 @@ data:
           probability: 0.05
           forced_idx: [5, 10]
     columns:
-      id:
-        type: id
+      person_id:
+        type: person_id
         corruptions:
           - type: truncation
             args:
@@ -45,8 +45,8 @@ data:
           probability: 0.05
           forced_idx: [5, 10]
     columns:
-      id:
-        type: id
+      person_id:
+        type: person_id
         corruptions:
           - type: truncation
             args:
@@ -82,8 +82,8 @@ data:
           probability: 0.05
           forced_idx: [5, 10]
     columns:
-      id:
-        type: id
+      person_id:
+        type: person_id
       eksd:
         type: rand_datetime
         args:
@@ -100,7 +100,7 @@ data:
       voltypecode:
         type: choice
         args:
-          options: ["GP", "DDK", "ML", "DWK", "PK", "GI", "ML", "ST", "GA", "DW", "TU", "L", "DDK"]
+          options: ["MG", "DDK", "TU", "DWK", "GP", "PK", "DW", "ML", "ST", "GA", "DWG", "L", "GI"]
 
   sysi:
     corruptions:
@@ -110,8 +110,8 @@ data:
           forced_idx: [5, 10]
     N: 20
     columns:
-      id:
-        type: id
+      person_id:
+        type: person_id
       speciale:
         type: rand_int
         args:
@@ -131,8 +131,8 @@ data:
           probability: 0.05
           forced_idx: [5, 10]
     columns:
-      id:
-        type: id
+      person_id:
+        type: person_id
       speciale:
         type: rand_int
         args:

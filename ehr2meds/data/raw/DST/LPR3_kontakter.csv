@@ -1,4 +1,4 @@
-id,aktionsdiagnose,priority,dato_start,tidspunkt_start,dato_slut,tidspunkt_slut
+person_id,aktionsdiagnose,priority,dato_start,tidspunkt_start,dato_slut,tidspunkt_slut
 15b34c1a4c078f93acbe932b50ea66a48570a3489742bfc937f6f7a04560ba77,DN141,2.0,2015-11-14,15:25:58,2020-04-06,09:30:22
 a5b20adcf8f2df552672115e70d7cc8bff5b0297cb9466cbc23809d5d85cea9e,DX175,3.0,1999-08-16,15:35:06,2007-07-23,13:20:39
 6b2bd012536f27ccb789273d9c1605b5f4b3d555274b73b7449c7f480ee4ecce,DM827,3.0,1970-02-07,19:31:52,1999-12-28,07:46:20
