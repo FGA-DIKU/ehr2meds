@@ -6,9 +6,12 @@ from pathlib import Path
 import ehr2meds.data.generation.helpers as ghelpers
 import ehr2meds.data.corruption.helpers as chelpers
 import random
+
 random.seed(0)
 
-parser = argparse.ArgumentParser(description="Generate synthetic datasets based on a YAML configuration.")
+parser = argparse.ArgumentParser(
+    description="Generate synthetic datasets based on a YAML configuration."
+)
 parser.add_argument("--config", type=str, help="Path to the YAML configuration file.")
 args = parser.parse_args()
 
@@ -17,11 +20,15 @@ root = Path("ehr2meds")
 
 with open(root / "data" / "generation" / args.config) as f:
     cfg = yaml.safe_load(f)
-output_dir = (root / cfg["paths"]["output"])
+output_dir = root / cfg["paths"]["output"]
 output_dir.mkdir(parents=True, exist_ok=True)
 
-gfunc_dict = {name: obj for name, obj in inspect.getmembers(ghelpers) if inspect.isfunction(obj)}
-cfunc_dict = {name: obj for name, obj in inspect.getmembers(chelpers) if inspect.isfunction(obj)}
+gfunc_dict = {
+    name: obj for name, obj in inspect.getmembers(ghelpers) if inspect.isfunction(obj)
+}
+cfunc_dict = {
+    name: obj for name, obj in inspect.getmembers(chelpers) if inspect.isfunction(obj)
+}
 
 # Iterate through each file and its corresponding configuration
 for file, info in cfg["data"].items():
@@ -47,10 +54,12 @@ for file, info in cfg["data"].items():
             row[col] = value
 
         for corruption in info.get("corruptions", []):
-            row = row.copy()  # Avoid modifying the original row for subsequent corruptions
+            row = (
+                row.copy()
+            )  # Avoid modifying the original row for subsequent corruptions
             func = cfunc_dict[corruption["type"]]
             row = func(row, row_index=i, **corruption.get("args", {}))
         df.append(row)
-    
+
     df = pd.DataFrame(df)
     df.to_csv(output_dir / f"{file}.csv", index=False)
