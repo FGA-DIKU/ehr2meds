@@ -43,14 +43,14 @@ for file, info in cfg["data"].items():
             if "corruptions" in col_info:
                 for corruption in col_info["corruptions"]:
                     cfunc = cfunc_dict[corruption["type"]]
-                    value = cfunc(value, **corruption.get("args", {}))
+                    value = cfunc(value, row_index=i, **corruption.get("args", {}))
 
             row[col] = value
 
         for corruption in info.get("corruptions", []):
             row = row.copy()  # Avoid modifying the original row for subsequent corruptions
             func = cfunc_dict[corruption["type"]]
-            row = func(row, **corruption.get("args", {}))
+            row = func(row, row_index=i, **corruption.get("args", {}))
         df.append(row)
     
     df = pd.DataFrame(df)
