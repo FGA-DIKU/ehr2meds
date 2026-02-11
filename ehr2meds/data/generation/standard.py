@@ -26,7 +26,6 @@ cfunc_dict = {name: obj for name, obj in inspect.getmembers(chelpers) if inspect
 # Iterate through each file and its corresponding configuration
 for file, info in cfg["data"].items():
     df = []
-
     for i in range(info["N"]):
         row = {}
 

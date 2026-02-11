@@ -16,6 +16,9 @@ def id(min=1000000000, max=9999999999):
 def rand_int(min=0, max=100):
     return random.randint(min, max)
 
+def rand_float(min=0.0, max=100.0):
+    return random.uniform(min, max)
+
 def rand_date(start=1970, end=2020):
     delta = date(end, 12, 31) - date(start, 1, 1)
     random_days = random.randint(0, delta.days)
@@ -39,3 +42,17 @@ def greater_than_date(min_date, end=2020):
     delta = date(end, 12, 31) - min_date
     random_days = random.randint(0, delta.days)
     return min_date + timedelta(days=random_days)
+
+def greater_than_datetime(min_date, end=2020):
+    delta = datetime(end, 12, 31) - min_date
+    random_days = random.randint(0, delta.days)
+    return min_date + timedelta(days=random_days)
+
+
+
+
+# Specialized functions for DST dataset
+def honuge(start_year, end_year):
+    week = random.randint(1, 52)
+    year = str(random.randint(start_year, end_year))[-2:]
+    return f"{year}{week:02d}"

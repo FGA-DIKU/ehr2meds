@@ -12,9 +12,6 @@ data:
     columns:
       id:
         type: id
-        args:
-          min: 1
-          max: 100000000
         corruptions:
           - type: truncation
             args:
@@ -25,7 +22,7 @@ data:
         type: medical_code
         args:
           prefix: "D"
-      priority:
+      priority: # urgency
         type: choice
         args:
           options: [1, 2, 3]
@@ -39,3 +36,110 @@ data:
           min_date: dato_start
       tidspunkt_slut:
         type: rand_time
+
+  LPR_ADM:  
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    columns:
+      id:
+        type: id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 4
+              probability: 0.05
+              forced_idx: [3]
+      d_indto: # start date
+        type: rand_datetime
+        args:
+          start: 1977
+      d_uddto: # end date
+        type: greater_than_datetime
+        match:
+          min_date: d_indto
+      c_adiag:
+        type: medical_code
+        args:
+          prefix: "D"
+      c_indm: # urgency
+        type: choice
+        args:
+          options: [1, 2]
+      c_pattype: # Patienttype
+        type: choice
+        args:
+          options: [0, 1, 2, 3]
+
+  LMDB:
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    columns:
+      id:
+        type: id
+      eksd:
+        type: rand_datetime
+        args:
+          start: 1995
+      atc:
+        type: medical_code
+        args:
+          prefix: "M"
+      volume: #dosage
+        type: rand_float
+        args:
+          min: 0.001
+          max: 10000
+      voltypecode:
+        type: choice
+        args:
+          options: ["GP", "DDK", "ML", "DWK", "PK", "GI", "ML", "ST", "GA", "DW", "TU", "L", "DDK"]
+
+  sysi:
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    N: 20
+    columns:
+      id:
+        type: id
+      speciale:
+        type: rand_int
+        args:
+          min: 100000
+          max: 999999
+      honuge:
+        type: honuge
+        args:
+          start_year: 1990
+          end_year: 2005
+
+  sssy:
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    columns:
+      id:
+        type: id
+      speciale:
+        type: rand_int
+        args:
+          min: 100000
+          max: 999999
+      honuge:
+        type: honuge
+        args:
+          start_year: 2005
+          end_year: 2024
