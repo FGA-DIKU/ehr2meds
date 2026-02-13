@@ -29,13 +29,13 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    For instructions ons how to run on azure, see the [MEDS Transform README](./ehr2meds/MEDS/MEDS_transform/README.md).
 
    ```bash
-   bash -m ehr2meds/MEDS/MEDS_transform/run.sh <input_dir> <pipeline_config> <event_config> <output_dir> 
+   bash ehr2meds/MEDS/MEDS_transform/run.sh <input_dir> <pipeline_config> <event_config> <output_dir> 
    ```
 
    Example:
 
    ```bash
-   bash -m ehr2meds/MEDS/MEDS_transform/run.sh outputs/preMEDS ehr2meds/example_configs/meds/pipeline.yaml ehr2meds/example_configs/meds/event_minimal.yaml outputs/MEDS
+   bash ehr2meds/MEDS/MEDS_transform/run.sh outputs/preMEDS ehr2meds/example_configs/meds/pipeline.yaml ehr2meds/example_configs/meds/event_minimal.yaml outputs/MEDS
    ```
 
    Example configuration files can be found in the [MEDS/MEDS_transform/configs](./ehr2meds/MEDS/MEDS_transform/configs).

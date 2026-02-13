@@ -71,30 +71,33 @@ class BaseDataLoader(ABC):
         encoding: Optional[str] = None,
     ) -> pd.DataFrame:
         """Helper to try reading CSV with given parameters, handling column selection."""
-        try:
-            kwargs = {}
-            if sep:
-                kwargs["sep"] = sep
-            if encoding:
-                kwargs["encoding"] = encoding
+        kwargs = {}
+        if sep:
+            kwargs["sep"] = sep
+        if encoding:
+            kwargs["encoding"] = encoding
 
-            if cols:
-                try:
-                    return pd.read_csv(file_path, usecols=cols, **kwargs)
-                except (ValueError, KeyError):
-                    # If usecols fails, read all columns first to check availability
-                    df_all = pd.read_csv(file_path, **kwargs)
-                    missing_cols = set(cols) - set(df_all.columns)
-                    if missing_cols:
-                        raise ValueError(
-                            f"Columns not found in file: {missing_cols}. "
-                            f"Available columns: {list(df_all.columns)}"
-                        )
-                    return df_all[cols]
-            else:
-                return pd.read_csv(file_path, **kwargs)
-        except Exception:
-            raise  # Re-raise to be caught by caller
+        if cols:
+            try:
+                return pd.read_csv(file_path, usecols=cols, **kwargs)
+            except (ValueError, KeyError):
+                # If usecols fails, read all columns first to check availability
+                df_all = pd.read_csv(file_path, **kwargs)
+                missing_cols = set(cols) - set(df_all.columns)
+                if missing_cols:
+                    raise ValueError(
+                        f"Columns not found in file: {missing_cols}. "
+                        f"Available columns: {list(df_all.columns)}"
+                    )
+                return df_all[cols]
+        else:
+            return pd.read_csv(file_path, **kwargs)
+
+    @staticmethod
+    def _chain_first_item(first_item, rest):
+        """Yield first_item followed by remaining items from rest."""
+        yield first_item
+        yield from rest
 
     def _try_csv_read_strategies(
         self,
@@ -114,13 +117,8 @@ class BaseDataLoader(ABC):
             if test_generator:
                 # For generators, test by getting first item
                 first_item = next(result)
-
-                def gen():
-                    yield first_item
-                    yield from result
-
                 logger.debug(f"Successfully read{context_msg} with auto-detection")
-                return gen()
+                return self._chain_first_item(first_item, result)
             logger.debug(f"Successfully read{context_msg} with auto-detection")
             return result
         except Exception as e:
@@ -133,15 +131,10 @@ class BaseDataLoader(ABC):
                 result = read_func(sep=separator, encoding=None)
                 if test_generator:
                     first_item = next(result)
-
-                    def gen():
-                        yield first_item
-                        yield from result
-
                     logger.debug(
                         f"Successfully read{context_msg} with separator '{separator}'"
                     )
-                    return gen()
+                    return self._chain_first_item(first_item, result)
                 logger.debug(
                     f"Successfully read{context_msg} with separator '{separator}'"
                 )
@@ -157,15 +150,10 @@ class BaseDataLoader(ABC):
                     result = read_func(sep=separator, encoding=encoding)
                     if test_generator:
                         first_item = next(result)
-
-                        def gen():
-                            yield first_item
-                            yield from result
-
                         logger.debug(
                             f"Successfully read{context_msg} with encoding '{encoding}' and separator '{separator}'"
                         )
-                        return gen()
+                        return self._chain_first_item(first_item, result)
                     logger.debug(
                         f"Successfully read{context_msg} with encoding '{encoding}' and separator '{separator}'"
                     )
@@ -243,8 +231,6 @@ class BaseDataLoader(ABC):
                     yield chunk[cols]
             else:
                 raise
-        except Exception:
-            raise  # Re-raise to be caught by caller
 
     def _load_csv_chunks(
         self, file_path: str, cols: Optional[List[str]] = None

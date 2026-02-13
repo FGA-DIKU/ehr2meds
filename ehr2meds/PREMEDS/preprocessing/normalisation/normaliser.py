@@ -149,7 +149,7 @@ class Normaliser:
             header = counter == 0  # Write header only for first chunk
 
         if self.cfg.file_name.endswith(".parquet"):
-            chunk.to_parquet(save_path, index=False, mode=mode)
+            chunk.to_parquet(save_path, index=False)
         else:
             chunk.to_csv(save_path, index=False, mode=mode, header=header)
 
