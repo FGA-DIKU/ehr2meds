@@ -63,7 +63,7 @@ class StandardGenerator:
                 row = {}
                 row = self.generate_rows(info, row, i)
                 row = self.generate_corruptions(info, row, i)
-                df.append(row)
+                rows.append(row)
 
             df = pd.DataFrame(rows)
             df.to_csv(output_dir / f"{file}.csv", index=False)

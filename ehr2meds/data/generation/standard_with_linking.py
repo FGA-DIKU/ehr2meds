@@ -60,15 +60,15 @@ class StandardWithLinkingGenerator(StandardGenerator):
 
         # 2: Generate linked data files
         for file, info in cfg.get("linked_data", {}).items():
-            df = []
+            rows = []
             for i in range(info["N"]):
                 row = {}
                 row = self.generate_rows(info, row, i)
                 row = self.generate_linked_columns(info, row, output_dir)
                 row = self.generate_corruptions(info, row, i)
-                df.append(row)
+                rows.append(row)
 
-            df = pd.DataFrame(df)
+            df = pd.DataFrame(rows)
             df.to_csv(output_dir / f"{file}.csv", index=False)
 
 if __name__ == "__main__":
