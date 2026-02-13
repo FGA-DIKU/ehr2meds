@@ -58,14 +58,14 @@ class StandardGenerator:
     def generate_data_files(self, cfg, output_dir):
         # Iterate through each file and its corresponding configuration
         for file, info in cfg["data"].items():
-            df = []
+            rows = []
             for i in range(info["N"]):
                 row = {}
                 row = self.generate_rows(info, row, i)
                 row = self.generate_corruptions(info, row, i)
                 df.append(row)
 
-            df = pd.DataFrame(df)
+            df = pd.DataFrame(rows)
             df.to_csv(output_dir / f"{file}.csv", index=False)
 
 if __name__ == "__main__":

@@ -11,8 +11,6 @@ from ehr2meds.data.generation.standard import StandardGenerator
 class StandardWithLinkingGenerator(StandardGenerator):
     def __init__(self, gfunc_dict, cfunc_dict):
         super().__init__(gfunc_dict, cfunc_dict)
-        self.gfunc_dict = gfunc_dict
-        self.cfunc_dict = cfunc_dict
 
     def generate_linked_columns(self, info, row, output_dir):
         for _, col_info in info["linked_columns"].items():

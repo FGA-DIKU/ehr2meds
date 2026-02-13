@@ -73,7 +73,7 @@ def honuge(start_year, end_year):
     return f"{year}{week:02d}"
 
 # Function to mix multiple functions
-def mix_function(functions, probabilities=None, **kwargs):
+def mix_function(functions, probabilities=None):
     gfunc_dict = {
         name: obj
         for name, obj in inspect.getmembers(ghelpers)

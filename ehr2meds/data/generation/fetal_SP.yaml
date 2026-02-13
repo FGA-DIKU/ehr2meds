@@ -18,6 +18,10 @@ data:
         type: greater_than_date
         match:
           min_date: Birthdate
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.8
       Gender:
         type: choice
         args:
