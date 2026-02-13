@@ -1,0 +1,118 @@
+paths:
+  output: "data/raw/fetal_data/SP"
+
+data: 
+  patient_info:
+    N: 20
+    columns:
+      CPR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      Birthdate:
+        type: rand_date
+      Deathdate:
+        type: greater_than_date
+        match:
+          min_date: Birthdate
+      Gender:
+        type: choice
+        args:
+          options: ["M", "K"]
+      Ethnicity:
+        type: choice
+        args:
+          options: ["Unspecified", "Nordeuropa", "Asien", "Mellemøsten"]
+
+  diagnosis:
+    N: 20
+    columns:
+      Diagnosekode:
+        type: medical_code
+        args:
+          prefix: "D"
+      Redigeringsdato:
+        type: rand_datetime
+      CPR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+
+  labtest:
+    N: 20
+    columns:
+      CPR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      BestOrd:
+        type: rand_string
+        args:
+          min_length: 20
+          max_length: 100
+      Bestillingsdato:
+        type: rand_datetime
+      Enhed:
+        type: choice
+        args:
+          options: ["fl", "mmol/l", "10^9/l", "fmol", "U/L"]
+      Resultatværdi:
+        type: mix_function
+        args:
+          functions:
+            - name: rand_float
+              args:
+                min_val: 0.001
+                max_val: 100
+            - name: rand_int
+              args:
+                min_val: 0
+                max_val: 300
+            - name: choice
+              args:
+                options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
+          probabilities: [0.4, 0.4, 0.2]
+
+  notes:
+    N: 20
+    columns:
+      CPR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      Linjenummer:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 10
+      Redigeringstidspunkt:
+        type: rand_datetime
+      Notetype:
+        type: choice
+        args:
+          options: ["Opfølgning", "Indlæggelse", "Operation"]
+      Speciale:
+        type: choice
+        args:
+          options: ["Nefrologi", "Gastroenterologi", "Kardiologi", "Endokrinologi", "Nervensundhed", "Andet"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+      note:
+        type: rand_string
+        args:
+          min_length: 10
+          max_length: 3000

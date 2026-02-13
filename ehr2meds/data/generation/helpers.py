@@ -44,6 +44,12 @@ def rand_time():
     second = random.randint(0, 59)
     return time(hour, minute, second)
 
+def rand_string(min_length=10, max_length=100, include_digits=True):
+    if include_digits:
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(min_length, max_length)))
+    else:
+        return ''.join(random.choices(string.ascii_letters, k=random.randint(min_length, max_length)))
+
 
 def choice(options):
     return random.choice(options)
