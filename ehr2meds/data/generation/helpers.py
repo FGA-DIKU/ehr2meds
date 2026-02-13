@@ -16,12 +16,12 @@ def person_id(min=1000000000, max=9999999999):
     return hash_object.hexdigest()
 
 
-def rand_int(min=0, max=100):
-    return random.randint(min, max)
+def rand_int(min_val=0, max_val=100):
+    return random.randint(min_val, max_val)
 
 
-def rand_float(min=0.0, max=100.0):
-    return random.uniform(min, max)
+def rand_float(min_val=0.0, max_val=100.0):
+    return random.uniform(min_val, max_val)
 
 
 def rand_date(start=1970, end=2020):

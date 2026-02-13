@@ -7,6 +7,67 @@ import ehr2meds.data.generation.helpers as ghelpers
 import ehr2meds.data.corruption.helpers as chelpers
 import random
 
+
+class StandardGenerator:
+    def __init__(self, gfunc_dict, cfunc_dict):
+        self.gfunc_dict = gfunc_dict
+        self.cfunc_dict = cfunc_dict
+
+    def generate_rows(self, info, row, row_index):
+        for col, col_info in info["columns"].items():
+            if col_info["type"] not in self.gfunc_dict:
+                raise ValueError(
+                    f"Unknown generation function type: {col_info['type']}"
+                )
+            func = self.gfunc_dict[col_info["type"]]
+
+            call_args = col_info.get("args", {})
+            # Handle dependencies between columns using the "match" key
+            if "match" in col_info:
+                keyword, match_col = next(iter(col_info["match"].items()))
+                call_args[keyword] = row[match_col]
+            value = func(**call_args)
+
+            # Apply column-specific corruptions if specified
+            if "corruptions" in col_info:
+                for corruption in col_info["corruptions"]:
+                    if corruption["type"] not in self.cfunc_dict:
+                        raise ValueError(
+                            f"Unknown corruption function type: {corruption['type']}"
+                        )
+                    cfunc = self.cfunc_dict[corruption["type"]]
+                    value = cfunc(value, row_index=row_index, **corruption.get("args", {}))
+
+            row[col] = value
+        return row
+
+    def generate_corruptions(self, info, row, row_index):
+        for corruption in info.get("corruptions", []):
+            row = (
+                row.copy()
+            )  # Avoid modifying the original row for subsequent corruptions
+            if corruption["type"] not in self.cfunc_dict:
+                raise ValueError(
+                    f"Unknown corruption function type: {corruption['type']}"
+                )
+            func = self.cfunc_dict[corruption["type"]]
+            row = func(row, row_index=row_index, **corruption.get("args", {}))
+        return row
+
+
+    def generate_data_files(self, cfg, output_dir):
+        # Iterate through each file and its corresponding configuration
+        for file, info in cfg["data"].items():
+            df = []
+            for i in range(info["N"]):
+                row = {}
+                row = self.generate_rows(info, row, i)
+                row = self.generate_corruptions(info, row, i)
+                df.append(row)
+
+            df = pd.DataFrame(df)
+            df.to_csv(output_dir / f"{file}.csv", index=False)
+
 if __name__ == "__main__":
     random.seed(0)
 
@@ -35,50 +96,5 @@ if __name__ == "__main__":
         for name, obj in inspect.getmembers(chelpers)
         if inspect.isfunction(obj)
     }
-
-    # Iterate through each file and its corresponding configuration
-    for file, info in cfg["data"].items():
-        df = []
-        for i in range(info["N"]):
-            row = {}
-
-            for col, col_info in info["columns"].items():
-                if col_info["type"] not in gfunc_dict:
-                    raise ValueError(
-                        f"Unknown generation function type: {col_info['type']}"
-                    )
-                func = gfunc_dict[col_info["type"]]
-
-                call_args = col_info.get("args", {})
-                # Handle dependencies between columns using the "match" key
-                if "match" in col_info:
-                    keyword, match_col = next(iter(col_info["match"].items()))
-                    call_args[keyword] = row[match_col]
-                value = func(**call_args)
-
-                # Apply column-specific corruptions if specified
-                if "corruptions" in col_info:
-                    for corruption in col_info["corruptions"]:
-                        if corruption["type"] not in cfunc_dict:
-                            raise ValueError(
-                                f"Unknown corruption function type: {corruption['type']}"
-                            )
-                        cfunc = cfunc_dict[corruption["type"]]
-                        value = cfunc(value, row_index=i, **corruption.get("args", {}))
-
-                row[col] = value
-
-            for corruption in info.get("corruptions", []):
-                row = (
-                    row.copy()
-                )  # Avoid modifying the original row for subsequent corruptions
-                if corruption["type"] not in cfunc_dict:
-                    raise ValueError(
-                        f"Unknown corruption function type: {corruption['type']}"
-                    )
-                func = cfunc_dict[corruption["type"]]
-                row = func(row, row_index=i, **corruption.get("args", {}))
-            df.append(row)
-
-        df = pd.DataFrame(df)
-        df.to_csv(output_dir / f"{file}.csv", index=False)
+    standard_generator = StandardGenerator(gfunc_dict, cfunc_dict)
+    standard_generator.generate_data_files(cfg, output_dir)
