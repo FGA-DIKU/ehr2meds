@@ -16,7 +16,7 @@ class StandardWithLinkingGenerator(StandardGenerator):
         self.cfunc_dict = cfunc_dict
 
     def generate_linked_columns(self, info, row):
-        for col, col_info in info["linked_columns"].items():
+        for _, col_info in info["linked_columns"].items():
             linked_file = col_info["file"]
             linked_on = col_info["linked_on"]
             rename_to = col_info.get("rename_to")
@@ -49,8 +49,11 @@ class StandardWithLinkingGenerator(StandardGenerator):
                     f"Unknown linked type: {linked_type}"
                 )
             # Insert column to row 
-            final_col_name = rename_to if rename_to else col
-            row[final_col_name] = selected_row
+            if rename_to:
+                selected_row.rename(columns=dict(zip(linked_on, rename_to)), inplace=True)
+            else:
+                selected_row.rename(columns=dict(zip(linked_on, linked_on)), inplace=True)
+            row.update(selected_row.iloc[0])
         return row
 
     def generate_linked_data_files(self, cfg, output_dir):

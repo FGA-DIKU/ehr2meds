@@ -21,3 +21,8 @@ def truncation(value, row_index, max_length, probability, forced_idx=None):
     if random.random() < probability:
         return value[:max_length]
     return value
+
+def insert_value(value, row_index, insert_value, probability):
+    if random.random() < probability:
+        return insert_value
+    return value
