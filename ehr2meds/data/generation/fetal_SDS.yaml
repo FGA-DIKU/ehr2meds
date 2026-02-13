@@ -88,21 +88,21 @@ data: # Mangler DAR
         corruptions:
           - type: insert_value
             args:
-              insert_value: "INVALID"
+              new_value: "INVALID"
               probability: 0.05
       v_far_pnr:
         type: person_id
         corruptions:
           - type: insert_value
             args:
-              insert_value: "INVALID"
+              new_value: "INVALID"
               probability: 0.05
       sosk:
         type: person_id
         corruptions:
           - type: insert_value
             args:
-              insert_value: "INVALID"
+              new_value: "INVALID"
               probability: 0.05
       sosk_type:
         type: rand_int
@@ -371,7 +371,7 @@ data: # Mangler DAR
         corruptions:
           - type: insert_value
             args:
-              insert_value: "."
+              new_value: "."
               probability: 0.05
       LEVENDER_ELLER_DOD:
         type: choice
@@ -439,7 +439,7 @@ data: # Mangler DAR
         corruptions:
           - type: insert_value
             args:
-              insert_value: -1
+              new_value: -1
               probability: 0.05
       Vaegt_Barn:
         type: rand_float
@@ -458,7 +458,7 @@ data: # Mangler DAR
         corruptions:
           - type: insert_value
             args:
-              insert_value: -1
+              new_value: -1
               probability: 0.5
 
   SSR_GP:
@@ -502,7 +502,7 @@ linked_data: # Data that needs to be linked to the data above
         type: choice
         file: LPR3_kontakter
         linked_on: [contact_id]
-        rename_to: contact_id
+        rename_to: [contact_id_new]
     
   LPR3_procedurer_kirurgi:
     N: 20
@@ -605,7 +605,7 @@ linked_data: # Data that needs to be linked to the data above
         corruptions:
           - type: insert_value
             args:
-              insert_value: "."
+              new_value: "."
               probability: 0.8
     linked_columns:
       PK_MFR:
@@ -613,39 +613,6 @@ linked_data: # Data that needs to be linked to the data above
         file: MFR2_main
         linked_on: [PK_MFR]
         rename_to: [FK_MFR]
-
-  MFR3_barn_kontakter: 
-    N: 20
-    columns:
-      Aktionsdiagnose:
-        type: medical_code
-        args:
-          prefix: "D"
-      Priority:
-        type: choice
-        args:
-          options: [1, 2, 3]
-      Datostart:
-        type: rand_date
-      Tidspunktstart:
-        type: rand_time
-      Datoslut:
-        type: greater_than_date
-        match:
-          min_date: Datostart
-      Tidspunktslut:
-        type: rand_time
-      contact_id:
-        type: rand_int
-        args:
-          min_val: 1
-          max_val: 600000
-    
-    linked_columns:
-      nyfoedt_id:
-        type: choice
-        file: MFR3_Nyfoedte
-        linked_on: [nyfoedt_id]
 
   MFR3_barn_kontakter: 
     N: 20

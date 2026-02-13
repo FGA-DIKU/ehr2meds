@@ -22,9 +22,9 @@ def truncation(value, row_index, max_length, probability, forced_idx=None):
         return value[:max_length]
     return value
 
-def insert_value(value, row_index, insert_value, probability):
+def insert_value(value, row_index, new_value, probability):
     if random.random() < probability:
-        return insert_value
+        return new_value
     return value
 
 def insert_nan(value, row_index, probability):

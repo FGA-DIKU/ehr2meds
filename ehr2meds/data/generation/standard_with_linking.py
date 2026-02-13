@@ -4,10 +4,9 @@ import inspect
 import argparse
 from pathlib import Path
 import random
-from standard import StandardGenerator
 import ehr2meds.data.generation.helpers as ghelpers
 import ehr2meds.data.corruption.helpers as chelpers
-
+from ehr2meds.data.generation.standard import StandardGenerator
 
 class StandardWithLinkingGenerator(StandardGenerator):
     def __init__(self, gfunc_dict, cfunc_dict):
@@ -15,7 +14,7 @@ class StandardWithLinkingGenerator(StandardGenerator):
         self.gfunc_dict = gfunc_dict
         self.cfunc_dict = cfunc_dict
 
-    def generate_linked_columns(self, info, row):
+    def generate_linked_columns(self, info, row, output_dir):
         for _, col_info in info["linked_columns"].items():
             linked_file = col_info["file"]
             linked_on = col_info["linked_on"]
@@ -51,9 +50,9 @@ class StandardWithLinkingGenerator(StandardGenerator):
             # Insert column to row 
             if rename_to:
                 selected_row.rename(columns=dict(zip(linked_on, rename_to)), inplace=True)
-            else:
-                selected_row.rename(columns=dict(zip(linked_on, linked_on)), inplace=True)
+
             row.update(selected_row.iloc[0])
+
         return row
 
     def generate_linked_data_files(self, cfg, output_dir):
@@ -67,7 +66,7 @@ class StandardWithLinkingGenerator(StandardGenerator):
             for i in range(info["N"]):
                 row = {}
                 row = self.generate_rows(info, row, i)
-                row = self.generate_linked_columns(info, row)
+                row = self.generate_linked_columns(info, row, output_dir)
                 row = self.generate_corruptions(info, row, i)
                 df.append(row)
 
