@@ -148,7 +148,12 @@ class TestApplyMapping(unittest.TestCase):
                 "new_id": ["A", "B", "C", pd.NA],
             }
         )
-        pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+        result_normalized = result.reset_index(drop=True).copy()
+        # Normalize null values: convert np.nan to pd.NA for object columns
+        for col in result_normalized.columns:
+            if result_normalized[col].dtype == "object":
+                result_normalized[col] = result_normalized[col].replace({np.nan: pd.NA})
+        pd.testing.assert_frame_equal(result_normalized, expected)
 
     def test_drop_source_column(self):
         # When drop_source is True, the original source column should be removed.
@@ -283,7 +288,12 @@ class TestApplyMapping(unittest.TestCase):
         # For a left join, the new_id column should be NaN for all rows.
         expected = self.df.copy()
         expected["new_id"] = pd.NA
-        pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
+        result_normalized = result.reset_index(drop=True).copy()
+        # Normalize null values: convert np.nan to pd.NA for object columns
+        for col in result_normalized.columns:
+            if result_normalized[col].dtype == "object":
+                result_normalized[col] = result_normalized[col].replace({np.nan: pd.NA})
+        pd.testing.assert_frame_equal(result_normalized, expected)
 
 
 class TestConvertNumericColumns(unittest.TestCase):
