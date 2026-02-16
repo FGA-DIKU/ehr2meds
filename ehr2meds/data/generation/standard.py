@@ -110,7 +110,8 @@ class StandardWithLinkingGenerator(StandardGenerator):
             linked_cols = linked_df[linked_on]
 
             if linked_type == "choice":
-                selected_row = linked_cols.sample(n=1)
+                selected_idx = random.randint(0, len(linked_cols) - 1)
+                selected_row = linked_cols.iloc[[selected_idx]]
             else:
                 raise ValueError(
                     f"Unknown linked type: {linked_type}"
