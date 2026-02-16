@@ -2,6 +2,7 @@ import random
 import string
 import hashlib
 from datetime import date, datetime, timedelta, time
+import numpy as np
 
 
 def medical_code(prefix="", min=100, max=999):
@@ -16,12 +17,12 @@ def person_id(min=1000000000, max=9999999999):
     return hash_object.hexdigest()
 
 
-def rand_int(min=0, max=100):
-    return random.randint(min, max)
+def rand_int(min_val=0, max_val=100):
+    return random.randint(min_val, max_val)
 
 
-def rand_float(min=0.0, max=100.0):
-    return random.uniform(min, max)
+def rand_float(min_val=0.0, max_val=100.0):
+    return random.uniform(min_val, max_val)
 
 
 def rand_date(start=1970, end=2020):
@@ -41,6 +42,22 @@ def rand_time():
     minute = random.randint(0, 59)
     second = random.randint(0, 59)
     return time(hour, minute, second)
+
+
+def rand_string(min_length=10, max_length=100, include_digits=True):
+    if include_digits:
+        return "".join(
+            random.choices(
+                string.ascii_letters + string.digits,
+                k=random.randint(min_length, max_length),
+            )
+        )
+    else:
+        return "".join(
+            random.choices(
+                string.ascii_letters, k=random.randint(min_length, max_length)
+            )
+        )
 
 
 def choice(options):
@@ -64,3 +81,13 @@ def honuge(start_year, end_year):
     week = random.randint(1, 52)
     year = str(random.randint(start_year, end_year))[-2:]
     return f"{year}{week:02d}"
+
+
+# Function to mix multiple functions
+def mix_function(functions, probabilities):
+    if not np.isclose(sum(probabilities), 1.0):
+        raise ValueError(f"Probabilities must sum to 1.0, got {sum(probabilities)}")
+
+    selected_idx = random.choices(range(len(functions)), weights=probabilities, k=1)[0]
+    selected_func = functions[selected_idx]
+    return selected_func["func"](**selected_func["args"])
