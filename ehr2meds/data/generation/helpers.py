@@ -4,6 +4,7 @@ import hashlib
 from datetime import date, datetime, timedelta, time
 import numpy as np
 
+
 def medical_code(prefix="", min=100, max=999):
     letter = random.choice(string.ascii_uppercase)
     number = random.randint(min, max)
@@ -42,11 +43,21 @@ def rand_time():
     second = random.randint(0, 59)
     return time(hour, minute, second)
 
+
 def rand_string(min_length=10, max_length=100, include_digits=True):
     if include_digits:
-        return ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(min_length, max_length)))
+        return "".join(
+            random.choices(
+                string.ascii_letters + string.digits,
+                k=random.randint(min_length, max_length),
+            )
+        )
     else:
-        return ''.join(random.choices(string.ascii_letters, k=random.randint(min_length, max_length)))
+        return "".join(
+            random.choices(
+                string.ascii_letters, k=random.randint(min_length, max_length)
+            )
+        )
 
 
 def choice(options):
@@ -64,17 +75,19 @@ def greater_than_datetime(min_date, end=2020):
     random_seconds = random.randint(0, int(delta.total_seconds()))
     return min_date + timedelta(seconds=random_seconds)
 
+
 # Specialized functions for DST dataset
 def honuge(start_year, end_year):
     week = random.randint(1, 52)
     year = str(random.randint(start_year, end_year))[-2:]
     return f"{year}{week:02d}"
 
+
 # Function to mix multiple functions
-def mix_function(functions, probabilities):  
+def mix_function(functions, probabilities):
     if not np.isclose(sum(probabilities), 1.0):
         raise ValueError(f"Probabilities must sum to 1.0, got {sum(probabilities)}")
-   
+
     selected_idx = random.choices(range(len(functions)), weights=probabilities, k=1)[0]
     selected_func = functions[selected_idx]
     return selected_func["func"](**selected_func["args"])

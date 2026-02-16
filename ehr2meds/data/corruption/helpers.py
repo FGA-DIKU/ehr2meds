@@ -1,6 +1,7 @@
 import random
 import numpy as np
 
+
 def row_dropout(row, row_index, probability, forced_idx=None):
     if forced_idx and row_index in forced_idx:
         return {col: None for col in row}
@@ -22,10 +23,12 @@ def truncation(value, row_index, max_length, probability, forced_idx=None):
         return value[:max_length]
     return value
 
+
 def insert_value(value, row_index, new_value, probability):
     if random.random() < probability:
         return new_value
     return value
+
 
 def insert_nan(value, row_index, probability):
     if random.random() < probability:

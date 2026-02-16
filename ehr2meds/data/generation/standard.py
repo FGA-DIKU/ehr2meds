@@ -18,7 +18,7 @@ class StandardGenerator:
         for func_cfg in callable_args["functions"]:
             if func_cfg["type"] in self.gfunc_dict:
                 func_cfg["func"] = self.gfunc_dict[func_cfg["type"]]
-            else: 
+            else:
                 raise ValueError(f"Function {func_cfg['type']} not found in gfunc_dict")
         return callable_args
 
@@ -48,7 +48,9 @@ class StandardGenerator:
                             f"Unknown corruption function type: {corruption['type']}"
                         )
                     cfunc = self.cfunc_dict[corruption["type"]]
-                    value = cfunc(value, row_index=row_index, **corruption.get("args", {}))
+                    value = cfunc(
+                        value, row_index=row_index, **corruption.get("args", {})
+                    )
 
             row[col] = value
         return row
@@ -66,7 +68,6 @@ class StandardGenerator:
             row = func(row, row_index=row_index, **corruption.get("args", {}))
         return row
 
-
     def generate_data_files(self, cfg, output_dir):
         # Iterate through each file and its corresponding configuration
         for file, info in cfg["data"].items():
@@ -79,6 +80,7 @@ class StandardGenerator:
 
             df = pd.DataFrame(rows)
             df.to_csv(output_dir / f"{file}.csv", index=False)
+
 
 class StandardWithLinkingGenerator(StandardGenerator):
     def __init__(self, gfunc_dict, cfunc_dict):
@@ -101,26 +103,28 @@ class StandardWithLinkingGenerator(StandardGenerator):
             linked_df = pd.read_csv(linked_file_path)
 
             # Check the linked columns exist in linked file
-            missing_linked_cols = [col for col in linked_on if col not in linked_df.columns]
+            missing_linked_cols = [
+                col for col in linked_on if col not in linked_df.columns
+            ]
             if missing_linked_cols:
                 raise ValueError(
                     f"Linked columns {missing_linked_cols} not found in linked file '{linked_file}'. "
                     f"Available columns: {list(linked_df.columns)}"
                 )
 
-            # Get columns 
+            # Get columns
             linked_cols = linked_df[linked_on]
 
             if linked_type == "choice":
                 selected_idx = random.randint(0, len(linked_cols) - 1)
                 selected_row = linked_cols.iloc[[selected_idx]].copy()
             else:
-                raise ValueError(
-                    f"Unknown linked type: {linked_type}"
-                )
-            # Insert column to row 
+                raise ValueError(f"Unknown linked type: {linked_type}")
+            # Insert column to row
             if rename_to:
-                selected_row = selected_row.rename(columns=dict(zip(linked_on, rename_to)))
+                selected_row = selected_row.rename(
+                    columns=dict(zip(linked_on, rename_to))
+                )
 
             row.update(selected_row.iloc[0])
 
@@ -143,6 +147,7 @@ class StandardWithLinkingGenerator(StandardGenerator):
 
             df = pd.DataFrame(rows)
             df.to_csv(output_dir / f"{file}.csv", index=False)
+
 
 if __name__ == "__main__":
     random.seed(0)
