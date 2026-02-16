@@ -16,8 +16,10 @@ class StandardGenerator:
     def handle_mix_function(self, call_args):
         callable_args = call_args.copy()
         for func_cfg in callable_args["functions"]:
-            if func_cfg["name"] in self.gfunc_dict:
-                func_cfg["func"] = self.gfunc_dict[func_cfg["name"]]
+            if func_cfg["type"] in self.gfunc_dict:
+                func_cfg["func"] = self.gfunc_dict[func_cfg["type"]]
+            else: 
+                raise ValueError(f"Function {func_cfg['type']} not found in gfunc_dict")
         return callable_args
 
     def generate_rows(self, info, row, row_index):
@@ -111,14 +113,14 @@ class StandardWithLinkingGenerator(StandardGenerator):
 
             if linked_type == "choice":
                 selected_idx = random.randint(0, len(linked_cols) - 1)
-                selected_row = linked_cols.iloc[[selected_idx]]
+                selected_row = linked_cols.iloc[[selected_idx]].copy()
             else:
                 raise ValueError(
                     f"Unknown linked type: {linked_type}"
                 )
             # Insert column to row 
             if rename_to:
-                selected_row.rename(columns=dict(zip(linked_on, rename_to)), inplace=True)
+                selected_row = selected_row.rename(columns=dict(zip(linked_on, rename_to)))
 
             row.update(selected_row.iloc[0])
 

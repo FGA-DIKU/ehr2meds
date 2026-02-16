@@ -183,15 +183,15 @@ data: # Mangler DAR
         type: mix_function
         args:
           functions:
-            - name: rand_float 
+            - type: rand_float 
               args:
                 min_val: 0.001
                 max_val: 100
-            - name: rand_int
+            - type: rand_int
               args:
                 min_val: 0
                 max_val: 300
-            - name: choice
+            - type: choice
               args:
                 options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
           probabilities: [0.4, 0.4, 0.2]
