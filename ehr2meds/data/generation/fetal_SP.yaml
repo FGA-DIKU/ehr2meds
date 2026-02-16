@@ -73,15 +73,15 @@ data:
         type: mix_function
         args:
           functions:
-            - name: ehr2meds.data.generation.helpers.rand_float
+            - name: rand_float
               args:
                 min_val: 0.001
                 max_val: 100
-            - name: ehr2meds.data.generation.helpers.rand_int
+            - name: rand_int
               args:
                 min_val: 0
                 max_val: 300
-            - name: ehr2meds.data.generation.helpers.choice
+            - name: choice
               args:
                 options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
           probabilities: [0.4, 0.4, 0.2]
