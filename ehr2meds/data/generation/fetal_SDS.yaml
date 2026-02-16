@@ -183,7 +183,7 @@ data: # Mangler DAR
         type: mix_function
         args:
           functions:
-            - name: rand_float
+            - name: rand_float 
               args:
                 min_val: 0.001
                 max_val: 100

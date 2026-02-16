@@ -2,9 +2,7 @@ import random
 import string
 import hashlib
 from datetime import date, datetime, timedelta, time
-import inspect
-import ehr2meds.data.generation.helpers as ghelpers
-
+import numpy as np
 
 def medical_code(prefix="", min=100, max=999):
     letter = random.choice(string.ascii_uppercase)
@@ -73,46 +71,17 @@ def honuge(start_year, end_year):
     return f"{year}{week:02d}"
 
 # Function to mix multiple functions
-def mix_function(functions, probabilities=None):
-    gfunc_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(ghelpers)
-        if inspect.isfunction(obj) and name != "mix_function"
-    }
-    
-    if not isinstance(functions, list) or len(functions) < 2:
-        raise ValueError("'functions' must be a list with at least 2 functions")
-    
-    # Parse function configurations
-    func_configs = []
+def mix_function(functions, probabilities):  
+    if not np.isclose(sum(probabilities), 1.0):
+        raise ValueError(f"Probabilities must sum to 1.0, got {sum(probabilities)}")
+    callable_funcs = []
     for func_cfg in functions:
-        func_name = func_cfg.get("name")
-        if func_name is None:
-            raise ValueError("Each function configuration must have a 'name' key")
-        
-        func_args = func_cfg.get("args", {})
-        
-        if func_name not in gfunc_dict:
-            raise ValueError(f"Function '{func_name}' not found in helpers")
-        
-        func_configs.append({
-            "func": gfunc_dict[func_name],
-            "args": func_args
-        })
+        func = func_cfg.get("func")
+        if callable(func):
+            callable_funcs.append(func)
+        else:
+            raise ValueError(f"Function {func} must be callable")
     
-    # Handle probabilities
-    if probabilities is None:
-        # Equal probability for all functions
-        probabilities = [1.0 / len(func_configs)] * len(func_configs)
-    else:
-        if len(probabilities) != len(func_configs):
-            raise ValueError(f"Number of probabilities ({len(probabilities)}) must match number of functions ({len(func_configs)})")
-                    
-        # Enforce that probabilities sum to 1
-        prob_sum = sum(probabilities)
-        if abs(prob_sum - 1.0) > 1e-10:  # Allow small floating point errors
-            raise ValueError(f"Probabilities must sum to 1.0, got {prob_sum}")
-    
-    # Select function 
-    selected_idx = random.choices(range(len(func_configs)), weights=probabilities, k=1)[0]
-    return func_configs[selected_idx]["func"](**func_configs[selected_idx]["args"])        
+    selected_idx = np.random.choice(len(functions), p=probabilities)
+    selected_func = functions[selected_idx]
+    return selected_func["func"](**selected_func["args"])
