@@ -74,14 +74,7 @@ def honuge(start_year, end_year):
 def mix_function(functions, probabilities):  
     if not np.isclose(sum(probabilities), 1.0):
         raise ValueError(f"Probabilities must sum to 1.0, got {sum(probabilities)}")
-    callable_funcs = []
-    for func_cfg in functions:
-        func = func_cfg.get("func")
-        if callable(func):
-            callable_funcs.append(func)
-        else:
-            raise ValueError(f"Function {func} must be callable")
-    
+   
     selected_idx = np.random.choice(len(functions), p=probabilities)
     selected_func = functions[selected_idx]
     return selected_func["func"](**selected_func["args"])
