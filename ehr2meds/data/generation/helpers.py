@@ -75,6 +75,6 @@ def mix_function(functions, probabilities):
     if not np.isclose(sum(probabilities), 1.0):
         raise ValueError(f"Probabilities must sum to 1.0, got {sum(probabilities)}")
    
-    selected_idx = np.random.choice(len(functions), p=probabilities)
+    selected_idx = random.choices(range(len(functions)), weights=probabilities, k=1)[0]
     selected_func = functions[selected_idx]
     return selected_func["func"](**selected_func["args"])
