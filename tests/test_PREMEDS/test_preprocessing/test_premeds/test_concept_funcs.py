@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import pandas as pd
+from pandas import StringDtype
 
 from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, TIMESTAMP
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
@@ -21,7 +22,7 @@ from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
 class TestSelectAndRenameColumns(unittest.TestCase):
     def setUp(self):
         self.df = pd.DataFrame(
-            {"patient_id": [1, 2, 3, 4], "value": ["a", "b", "c", "d"]}
+            {SUBJECT_ID: [1, 2, 3, 4], "value": ["a", "b", "c", "d"]}
         )
 
     def test_simple(self):
@@ -66,7 +67,7 @@ class TestFillMissingValues(unittest.TestCase):
 class TestCheckColumns(unittest.TestCase):
     def setUp(self):
         self.df = pd.DataFrame(
-            {"patient_id": [1, 2, 3, 4], "value": ["a", "b", "c", "d"]}
+            {SUBJECT_ID: [1, 2, 3, 4], "value": ["a", "b", "c", "d"]}
         )
 
     def test_raise_error(self):
@@ -75,7 +76,7 @@ class TestCheckColumns(unittest.TestCase):
             check_columns(self.df, columns_map)
 
     def test_no_error(self):
-        columns_map = {"patient_id": "id", "value": "val"}
+        columns_map = {SUBJECT_ID: "id", "value": "val"}
         check_columns(self.df, columns_map)
 
 
@@ -101,7 +102,7 @@ class TestApplyMapping(unittest.TestCase):
     def setUp(self):
         # Create a base dataframe for tests
         self.df = pd.DataFrame(
-            {"patient_id": [1, 2, 3, 4], "value": ["a", "b", "c", "d"]}
+            {SUBJECT_ID: [1, 2, 3, 4], "value": ["a", "b", "c", "d"]}
         )
         # Create a mapping table
         self.map_table = pd.DataFrame(
@@ -114,7 +115,7 @@ class TestApplyMapping(unittest.TestCase):
             self.df,
             self.map_table,
             join_col="old_id",
-            source_col="patient_id",
+            source_col=SUBJECT_ID,
             target_col="new_id",
             rename_to=None,
             how="inner",
@@ -122,7 +123,7 @@ class TestApplyMapping(unittest.TestCase):
         )
         expected = pd.DataFrame(
             {
-                "patient_id": [1, 2, 3],
+                SUBJECT_ID: [1, 2, 3],
                 "value": ["a", "b", "c"],
                 "new_id": ["A", "B", "C"],
             }
@@ -135,7 +136,7 @@ class TestApplyMapping(unittest.TestCase):
             self.df,
             self.map_table,
             join_col="old_id",
-            source_col="patient_id",
+            source_col=SUBJECT_ID,
             target_col="new_id",
             rename_to=None,
             how="left",
@@ -143,7 +144,7 @@ class TestApplyMapping(unittest.TestCase):
         )
         expected = pd.DataFrame(
             {
-                "patient_id": [1, 2, 3, 4],
+                SUBJECT_ID: [1, 2, 3, 4],
                 "value": ["a", "b", "c", "d"],
                 "new_id": ["A", "B", "C", pd.NA],
             }
@@ -156,7 +157,7 @@ class TestApplyMapping(unittest.TestCase):
             self.df,
             self.map_table,
             join_col="old_id",
-            source_col="patient_id",
+            source_col=SUBJECT_ID,
             target_col="new_id",
             rename_to=None,
             how="inner",
@@ -171,7 +172,7 @@ class TestApplyMapping(unittest.TestCase):
             self.df,
             self.map_table,
             join_col="old_id",
-            source_col="patient_id",
+            source_col=SUBJECT_ID,
             target_col="new_id",
             rename_to="mapped_id",
             how="inner",
@@ -179,7 +180,7 @@ class TestApplyMapping(unittest.TestCase):
         )
         expected = pd.DataFrame(
             {
-                "patient_id": [1, 2, 3],
+                SUBJECT_ID: [1, 2, 3],
                 "value": ["a", "b", "c"],
                 "mapped_id": ["A", "B", "C"],
             }
@@ -206,13 +207,13 @@ class TestApplyMapping(unittest.TestCase):
 
     def test_multiple_matches(self):
         # Test the behavior when there are duplicate join keys in the mapping table.
-        df = pd.DataFrame({"patient_id": [1, 1], "value": ["a", "b"]})
+        df = pd.DataFrame({SUBJECT_ID: [1, 1], "value": ["a", "b"]})
         map_table = pd.DataFrame({"old_id": [1, 1], "new_id": ["A", "AA"]})
         result = apply_mapping(
             df,
             map_table,
             join_col="old_id",
-            source_col="patient_id",
+            source_col=SUBJECT_ID,
             target_col="new_id",
             rename_to=None,
             how="inner",
@@ -221,7 +222,7 @@ class TestApplyMapping(unittest.TestCase):
         # Expect a Cartesian product of the matches.
         expected = pd.DataFrame(
             {
-                "patient_id": [1, 1, 1, 1],
+                SUBJECT_ID: [1, 1, 1, 1],
                 "value": ["a", "a", "b", "b"],
                 "new_id": ["A", "AA", "A", "AA"],
             }
@@ -230,22 +231,25 @@ class TestApplyMapping(unittest.TestCase):
 
     def test_no_mapping_matches(self):
         # Test the case where no rows in df match the mapping table in an inner join.
-        df = pd.DataFrame({"patient_id": [10, 20], "value": ["a", "b"]})
+        df = pd.DataFrame({SUBJECT_ID: [10, 20], "value": ["a", "b"]})
         result = apply_mapping(
             df,
             self.map_table,
             join_col="old_id",
-            source_col="patient_id",
+            source_col=SUBJECT_ID,
             target_col="new_id",
             rename_to=None,
             how="inner",
             drop_source=False,
         )
+        # For empty merge results, pandas creates nullable string dtype with na_value=nan
+        # Create using StringDtype with na_value=nan
+        string_dtype_nan = StringDtype(na_value=np.nan)
         expected = pd.DataFrame(
             {
-                "patient_id": pd.Series([], dtype="int64"),
-                "value": pd.Series([], dtype="object"),
-                "new_id": pd.Series([], dtype="object"),
+                SUBJECT_ID: pd.Series([], dtype="int64"),
+                "value": pd.Series([], dtype=string_dtype_nan),
+                "new_id": pd.Series([], dtype=string_dtype_nan),
             }
         )
 
@@ -253,19 +257,25 @@ class TestApplyMapping(unittest.TestCase):
 
     def test_empty_df(self):
         # Test applying the mapping on an empty dataframe.
-        empty_df = pd.DataFrame(columns=["patient_id", "value"])
+        empty_df = pd.DataFrame(columns=[SUBJECT_ID, "value"])
         result = apply_mapping(
             empty_df,
             self.map_table,
             join_col="old_id",
-            source_col="patient_id",
+            source_col=SUBJECT_ID,
             target_col="new_id",
             rename_to=None,
             how="inner",
             drop_source=False,
         )
-        expected = pd.DataFrame(columns=["patient_id", "value", "new_id"])
-        pd.testing.assert_frame_equal(result, expected)
+        # For empty DataFrames, function returns nullable string dtype for string columns
+        string_dtype_nan = StringDtype(na_value=np.nan)
+        expected = pd.DataFrame({
+            SUBJECT_ID: pd.Series([], dtype=string_dtype_nan),
+            "value": pd.Series([], dtype="object"),
+            "new_id": pd.Series([], dtype=string_dtype_nan),
+        })
+        pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
     def test_empty_map_table(self):
         # Test the scenario where the mapping table is empty.
@@ -274,15 +284,16 @@ class TestApplyMapping(unittest.TestCase):
             self.df,
             empty_map,
             join_col="old_id",
-            source_col="patient_id",
+            source_col=SUBJECT_ID,
             target_col="new_id",
             rename_to=None,
             how="left",
             drop_source=False,
         )
         # For a left join, the new_id column should be NaN for all rows.
+        string_dtype_nan = StringDtype(na_value=np.nan)
         expected = self.df.copy()
-        expected["new_id"] = pd.NA
+        expected["new_id"] = pd.Series([], dtype="object")
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
 
@@ -329,6 +340,8 @@ class TestMapPidsToInts(unittest.TestCase):
         expected = pd.DataFrame(
             {SUBJECT_ID: [1, 2, 1, 3, 2], "other_col": [1, 2, 3, 4, 5]}
         )
+        print(expected[SUBJECT_ID].dtype)
+        print(result[SUBJECT_ID].dtype)
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
 

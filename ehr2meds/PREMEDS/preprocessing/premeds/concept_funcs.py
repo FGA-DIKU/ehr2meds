@@ -75,13 +75,13 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
         Output mapping: {'A': 1, 'B': 2, 'C': 3, 'D': 4}
     """
     # Get unique values and create sequential mapping
-    unique_vals = df[SUBJECT_ID].unique()
+    unique_vals = df[SUBJECT_ID].unique().astype(str)
     hash_to_int_map = {
-        val: idx + 2 for idx, val in enumerate(sorted(unique_vals))
+        val: int(idx + 2) for idx, val in enumerate(sorted(unique_vals))
     }  # +2 to prevent subject ids being read in as binary.
 
     # Apply mapping to DataFrame
-    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map)
+    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map).astype(str)
     df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
     return df, hash_to_int_map
 
@@ -165,9 +165,13 @@ def map_pids_to_ints(
     df: pd.DataFrame, subject_id_mapping: Dict[str, int]
 ) -> pd.DataFrame:
     """Map PIDs to integers."""
+    # Convert to object dtype to allow integer assignment after mapping
+    # (can't assign integers to string dtype column?)
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(object)
+    # Map to integers and convert to int
     df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
     df = df.dropna(subset=[SUBJECT_ID])
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(float).astype(int)
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
     return df
 
 
