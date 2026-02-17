@@ -76,7 +76,7 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
     """
     # Convert to string to handle any array-like values
     df[SUBJECT_ID] = df[SUBJECT_ID].astype(object).astype(str)
-    
+
     # Get unique values and create sequential mapping
     unique_vals = df[SUBJECT_ID].unique()
     hash_to_int_map = {

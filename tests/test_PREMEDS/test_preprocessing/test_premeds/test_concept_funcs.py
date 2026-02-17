@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import pandas as pd
+from pandas import StringDtype
 
 from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, TIMESTAMP
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
@@ -241,11 +242,12 @@ class TestApplyMapping(unittest.TestCase):
             how="inner",
             drop_source=False,
         )
+        string_dtype = StringDtype(na_value=np.nan)
         expected = pd.DataFrame(
             {
                 SUBJECT_ID: pd.Series([], dtype="int64"),
-                "value": pd.Series([], dtype="object"),
-                "new_id": pd.Series([], dtype="object"),
+                "value": pd.Series([], dtype=string_dtype),
+                "new_id": pd.Series([], dtype=string_dtype),
             }
         )
 
@@ -265,11 +267,12 @@ class TestApplyMapping(unittest.TestCase):
             drop_source=False,
         )
         # For empty DataFrames, function returns nullable string dtype for string columns
+        string_dtype = StringDtype(na_value=np.nan)
         expected = pd.DataFrame(
             {
-                SUBJECT_ID: pd.Series([], dtype="object"),
+                SUBJECT_ID: pd.Series([], dtype=string_dtype),
                 "value": pd.Series([], dtype="object"),
-                "new_id": pd.Series([], dtype="object"),
+                "new_id": pd.Series([], dtype=string_dtype),
             }
         )
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
