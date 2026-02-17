@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import pandas as pd
-from pandas import StringDtype
 
 from ehr2meds.PREMEDS.preprocessing.constants import CODE, SUBJECT_ID, TIMESTAMP
 from ehr2meds.PREMEDS.preprocessing.premeds.concept_funcs import (
@@ -242,14 +241,11 @@ class TestApplyMapping(unittest.TestCase):
             how="inner",
             drop_source=False,
         )
-        # For empty merge results, pandas creates nullable string dtype with na_value=nan
-        # Create using StringDtype with na_value=nan
-        string_dtype_nan = StringDtype(na_value=np.nan)
         expected = pd.DataFrame(
             {
                 SUBJECT_ID: pd.Series([], dtype="int64"),
-                "value": pd.Series([], dtype=string_dtype_nan),
-                "new_id": pd.Series([], dtype=string_dtype_nan),
+                "value": pd.Series([], dtype="object"),
+                "new_id": pd.Series([], dtype="object"),
             }
         )
 
@@ -269,12 +265,11 @@ class TestApplyMapping(unittest.TestCase):
             drop_source=False,
         )
         # For empty DataFrames, function returns nullable string dtype for string columns
-        string_dtype_nan = StringDtype(na_value=np.nan)
         expected = pd.DataFrame(
             {
-                SUBJECT_ID: pd.Series([], dtype=string_dtype_nan),
+                SUBJECT_ID: pd.Series([], dtype="object"),
                 "value": pd.Series([], dtype="object"),
-                "new_id": pd.Series([], dtype=string_dtype_nan),
+                "new_id": pd.Series([], dtype="object"),
             }
         )
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)

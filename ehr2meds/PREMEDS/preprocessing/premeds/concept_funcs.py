@@ -74,15 +74,24 @@ def factorize_subject_id(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, int]
         Input df[SUBJECT_ID]: ['A', 'B', 'C', 'D']
         Output mapping: {'A': 1, 'B': 2, 'C': 3, 'D': 4}
     """
+    # Convert to string to handle any array-like values
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(object).astype(str)
+    
     # Get unique values and create sequential mapping
-    unique_vals = df[SUBJECT_ID].unique().astype(str)
+    unique_vals = df[SUBJECT_ID].unique()
     hash_to_int_map = {
         val: int(idx + 2) for idx, val in enumerate(sorted(unique_vals))
     }  # +2 to prevent subject ids being read in as binary.
 
-    # Apply mapping to DataFrame
-    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(hash_to_int_map).astype(str)
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+    # Convert to object dtype before mapping to allow integer assignment
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(object)
+    # Map to integers
+    mapped = df[SUBJECT_ID].map(hash_to_int_map)
+    # Drop rows where mapping failed (NaN values) before converting to int
+    mask = mapped.notna()
+    df = df.loc[mask].copy()
+    # Create a new Series with int64 dtype explicitly
+    df[SUBJECT_ID] = pd.Series(mapped.loc[mask].values, dtype="int64", index=df.index)
     return df, hash_to_int_map
 
 
