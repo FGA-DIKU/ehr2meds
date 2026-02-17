@@ -1,0 +1,107 @@
+paths:
+  output: "data/raw/skin_cancer"
+
+data:
+  nmsc: 
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05 
+          forced_idx: [5, 10] 
+    columns:
+      PNR:
+        type: pnr 
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 5
+              probability: 0.05
+              forced_idx: [3]
+      BehandlingsDato:
+        type: rand_date 
+        args:
+          format: "%d%b%Y"
+      KliniskVurderingTumorType: 
+        type: choice 
+        args:
+          options: ["basal_cell_carcinoma", "squamous_cell_carcinoma", "merkel_cell_carcinoma"] 
+      HistologiskVurderingTumorType:
+        type: choice 
+        args:
+          options: ["basal_cell_carcinoma", "squamous_cell_carcinoma", "merkel_cell_carcinoma"] 
+      GruppeId:
+        type: rand_alnum
+        args:
+          length: 72
+ 
+  pato:  
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    columns:
+      pnr:
+        type: pnr 
+        corruptions: 
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+              forced_idx: [3]
+      C_SNOMEDKODE: 
+        type: rand_alnum 
+        args:
+          length: 6
+      D_REKVDATO: 
+        type: rand_date 
+        args:
+          format: "%d%m%Y"
+
+  mohs:
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    columns:
+      pnr:
+        type: pnr
+      biopsy_date:
+        type: rand_date 
+        args:
+          format: "%Y-%m-%d"
+      sex:
+        type: rand_int 
+        args:
+          min: 0  
+          max: 1 
+      skin_type:
+        type: choice
+        args:
+          options: [1, 2, 3, 4, 5, 6, 999]
+
+  bef:
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    N: 20
+    columns:
+      PNR:
+        type: pnr  
+      OPR_LAND:
+        type: rand_int  
+        args:
+          min: 10000  
+          max: 99999 
+      MOR_ID:
+        type: pnr 
+      FOED_DAG:
+        type: rand_date 
+        args:
+          format: "%d/%m/%Y"
