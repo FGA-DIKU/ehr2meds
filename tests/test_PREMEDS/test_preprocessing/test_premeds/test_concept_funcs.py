@@ -270,11 +270,13 @@ class TestApplyMapping(unittest.TestCase):
         )
         # For empty DataFrames, function returns nullable string dtype for string columns
         string_dtype_nan = StringDtype(na_value=np.nan)
-        expected = pd.DataFrame({
-            SUBJECT_ID: pd.Series([], dtype=string_dtype_nan),
-            "value": pd.Series([], dtype="object"),
-            "new_id": pd.Series([], dtype=string_dtype_nan),
-        })
+        expected = pd.DataFrame(
+            {
+                SUBJECT_ID: pd.Series([], dtype=string_dtype_nan),
+                "value": pd.Series([], dtype="object"),
+                "new_id": pd.Series([], dtype=string_dtype_nan),
+            }
+        )
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
     def test_empty_map_table(self):
@@ -291,7 +293,6 @@ class TestApplyMapping(unittest.TestCase):
             drop_source=False,
         )
         # For a left join, the new_id column should be NaN for all rows.
-        string_dtype_nan = StringDtype(na_value=np.nan)
         expected = self.df.copy()
         expected["new_id"] = pd.Series([], dtype="object")
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
@@ -340,8 +341,6 @@ class TestMapPidsToInts(unittest.TestCase):
         expected = pd.DataFrame(
             {SUBJECT_ID: [1, 2, 1, 3, 2], "other_col": [1, 2, 3, 4, 5]}
         )
-        print(expected[SUBJECT_ID].dtype)
-        print(result[SUBJECT_ID].dtype)
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected)
 
 

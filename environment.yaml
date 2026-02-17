@@ -13,4 +13,4 @@ dependencies:
       - pyarrow
       - tqdm
       - torch
-name: MEDS_test_final
+name: ehr2meds
