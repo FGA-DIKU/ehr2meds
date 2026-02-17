@@ -120,11 +120,4 @@ def mix_function(functions, probabilities):
     selected_func = functions[selected_idx]
     return selected_func["func"](**selected_func["args"])
 
-def rand_alnum(length=8):
-    """
-    Returns a random alphanumeric string of given length.
-    """
-    chars = string.ascii_letters + string.digits
-    return "".join(random.choice(chars) for _ in range(length))
 
-import random
