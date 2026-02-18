@@ -182,7 +182,7 @@ class Normaliser:
 
     def min_max_normalise(self, concept, value):
         if concept in self.min_max_vals:
-            (min_val, max_val) = self.min_max_vals[concept]
+            min_val, max_val = self.min_max_vals[concept]
             if max_val != min_val:
                 normalised_value = (value - min_val) / (max_val - min_val)
                 return round(max(0, min(1, normalised_value)), 3)
