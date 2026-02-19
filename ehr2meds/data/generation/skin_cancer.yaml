@@ -11,13 +11,15 @@ data:
           forced_idx: [5, 10] 
     columns:
       PNR:
-        type: pnr 
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999
         corruptions:
           - type: truncation
             args:
-              max_length: 5
+              max_length: 10
               probability: 0.05
-              forced_idx: [3]
       BehandlingsDato:
         type: rand_date 
         args:
@@ -31,9 +33,11 @@ data:
         args:
           options: ["basal_cell_carcinoma", "squamous_cell_carcinoma", "merkel_cell_carcinoma"] 
       GruppeId:
-        type: rand_alnum
+        type: rand_string
         args:
-          length: 72
+          min_length: 72
+          max_length: 72
+          include_digits: True
  
   pato:  
     N: 20
@@ -44,17 +48,16 @@ data:
           forced_idx: [5, 10]
     columns:
       pnr:
-        type: pnr 
-        corruptions: 
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
-              forced_idx: [3]
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999
       C_SNOMEDKODE: 
-        type: rand_alnum 
+        type: rand_string
         args:
-          length: 6
+          min_length: 6
+          max_length: 6
+          include_digits: True
       D_REKVDATO: 
         type: rand_date 
         args:
@@ -69,7 +72,10 @@ data:
           forced_idx: [5, 10]
     columns:
       pnr:
-        type: pnr
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999
       biopsy_date:
         type: rand_date 
         args:
@@ -77,8 +83,8 @@ data:
       sex:
         type: rand_int 
         args:
-          min: 0  
-          max: 1 
+          min_val: 0  
+          max_val: 1 
       skin_type:
         type: choice
         args:
@@ -93,14 +99,20 @@ data:
     N: 20
     columns:
       PNR:
-        type: pnr  
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999  
       OPR_LAND:
         type: rand_int  
         args:
-          min: 10000  
-          max: 99999 
+          min_val: 10000  
+          max_val: 99999 
       MOR_ID:
-        type: pnr 
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999 
       FOED_DAG:
         type: rand_date 
         args:
