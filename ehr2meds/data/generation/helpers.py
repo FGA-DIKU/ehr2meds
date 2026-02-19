@@ -29,11 +29,8 @@ def rand_date(start=1970, end=2020, format=None):
     Random date generator with optional formatting.
 
     Examples:
-    format=None) -> date object
+    format=None -> date object
     format="%Y-%m-%d" -> "1999-02-01"
-    format="%d/%m/%Y" -> "01/02/1999"
-    format="%d%b%Y" -> "01FEB1999"
-    format="%d%m%Y" -> "01021999"
     """
     delta = date(end, 12, 31) - date(start, 1, 1)
     random_days = random.randint(0, delta.days)
