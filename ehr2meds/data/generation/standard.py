@@ -78,7 +78,7 @@ class StandardGenerator:
                 row = self.generate_corruptions(info, row, i)
                 rows.append(row)
 
-            df = pd.DataFrame(rows)
+            df = pd.DataFrame(rows).convert_dtypes()
             df.to_csv(output_dir / f"{file}.csv", index=False)
 
 
@@ -145,7 +145,7 @@ class StandardWithLinkingGenerator(StandardGenerator):
                 row = self.generate_corruptions(info, row, i)
                 rows.append(row)
 
-            df = pd.DataFrame(rows)
+            df = pd.DataFrame(rows).convert_dtypes()
             df.to_csv(output_dir / f"{file}.csv", index=False)
 
 
