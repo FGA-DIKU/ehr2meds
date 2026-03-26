@@ -1,0 +1,98 @@
+paths:
+  input: "ehr2meds/data/raw/fetal_data/overview"
+  output: "data/summary/tables/fetal_SP"
+
+summary:
+  input_table:
+    path: "ehr2meds/data/raw/fetal_data/overview/overview.csv"
+    key_columns: [MOR_CPR]
+    additional_columns: [cervix_scan_date]
+    time_window:
+      max_date: cervix_scan_date
+        
+  linked_columns: 
+    # earlier_PTB: 
+    #   source_file: Obstetrical_history_2
+    #   type: latest_value
+    #   args: 
+    #     column: Præterm
+    #     multiple: sum
+    #   key_values: 
+    #     MOR_CPR: CPR
+    #     date: Kontakt dato
+
+    earlier_late_abortion:
+      source_file: Obstetrical_history_1.csv
+      type: 
+        function: latest_entry
+        args:
+          target_col: Antal tidligere spontane aborter
+          date_col: Kontakt dato
+      #filter: none
+        # function: 
+        # args: 
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Kontakt dato
+
+    BMI:
+      source_file: Vital parameter.csv
+      filter: 
+        function: include_exclude
+        args: 
+          target_col: Vital_parameter
+          include: ["BMI"]
+          # exclude: []
+      type: 
+        function: latest_entry
+        args:
+          target_col: Værdi
+          date_col: Registreringstidspunkt
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Registreringstidspunkt
+    
+    previous_short_cervix_diag: 
+      source_file: Diagnosis.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+          # exclude_list: [] 
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: ["D002", "D010"]
+          # exclude: []
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    previous_ptb: 
+      source_file: Diagnosis.csv
+      type: 
+        function: has_all_values
+        args:
+          target_col: Diagnosekode
+          include_list: ["D003", "D017"]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    # Requires ``diagnosis.csv`` under ``paths.input`` (e.g. point input at fetal_data/SP).
+    # flerfolds_graviditet:
+    #   source_file: diagnosis
+    #   type: match_on
+    #   args:
+    #     column: Diagnosekode
+    #     value: ["D050", "D051", "D052", "D053", "D054", "D055", "D056", "D057", "D058", "D059"]
+    #     mode: isin
+    #     multiple: exists
+    #   key_values:
+    #     MOR_CPR: CPR
+

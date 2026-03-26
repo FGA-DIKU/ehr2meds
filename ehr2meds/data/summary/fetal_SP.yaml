@@ -1,0 +1,329 @@
+# paths:
+#   input: "../../../../../../../../../"
+#   output: "data/summary/tables/fetal_SP"
+
+summary:
+  input_table:
+    path: "ehr2meds/data/raw/fetal_data/overview/overview.csv"
+    key_columns: [MOR_CPR]
+    additional_columns: [cervix_scan_date]
+    time_window:
+      max_date: cervix_scan_date
+        
+  linked_columns: 
+    SP_PTB_obs_history:
+      source_file: SP/tables/Mor - Obstetrisk Historik DEL 2.csv
+      type: 
+        function: latest_entry
+        args:
+          target_col: Antal tidligere spontane aborter
+          date_col: Kontakt dato
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Kontakt dato
+
+    SP_PTB_diag_history:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: ["DZ358B", "DO609", "DO601"]
+          # exclude: []
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_late_miscarriage_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: ["DZ351A"]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_short_cervix_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: ["DO343", "DO348G", "DO343A", "DO343B", "DZ875A"]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_multi_pregnancy_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: ["DO30"]
+          match: startswith
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_cone_biopsy_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: ["DZ928C", "DO344B"]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_uterine_malformation_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: ["DO340", "DQ518", "DQ519"]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_fibroids_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DD259", "DD250", "DD250C", "DD251", "DD252",
+            "DD250A", "DD250B", "DO341"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_polyhydramnios_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DO410", "DO409"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_vaginal_bleeding_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DO468A", "DO209", "DO208", "DO208A"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_sign_of_PTB_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DO472"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_infections_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DN390A", "DN390", "DA499", "DB349", "DZ038A",
+            "DO234", "DO233", "DO235", "DO239"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_infertility_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DN974", "DN970", "DN979", "DN978A", "DZ319", 
+            "DZ318", "DN978F", "DN971", "DN978B", "DN978E",
+            "DN972", "DN978", "DN978C", "DZ314", "DZ350",
+            "DN978B1", "DZ318A"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_maternal_comorbidity_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DO998", "DO101", "DZ038O", "DO103", "DO992",
+            "DO993B", "DO994", "DO102", "DO993", "DO996A",
+            "DO991", "DO995", "DO993A", "DO997", "DO996",
+            "DO989", "DO988", "DO987", "DO983", "DO985",
+            "DO269", "DO268", "DO266" 
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_PPROM_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DO422", "DO420", "DO424"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_gestational_hypertension_previous_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DZ358Q"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_gestational_hypertension_current_diag:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DO140", "DO149", "DO141", "DZ358Q", "DO139"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato
+
+    SP_ethnicity:
+      source_file: SP/tables/Mor - CPMI - Diagnoseliste.csv
+      type: 
+        function: has_one_of_values
+        args:
+          target_col: Diagnosekode
+      filter: 
+        function: include_exclude
+        args:
+          target_col: Diagnosekode
+          include: [
+            "DO140", "DO149", "DO141", "DZ358Q", "DO139"
+          ]
+      key_values:
+        MOR_CPR: CPR
+      time_window:
+        timestamp: Redigeringsdato

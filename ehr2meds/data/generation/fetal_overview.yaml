@@ -1,0 +1,183 @@
+paths:
+  output: "data/raw/fetal_data/overview"
+
+data: 
+  overview:
+    N: 100
+    columns:
+      MOR_CPR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      BARN_CPR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      Fødselsdato_MOR:
+        type: rand_date
+      cervix_scan_date: 
+        type: rand_datetime
+        type: greater_than_date
+        match:
+          min_date: Fødselsdato_MOR
+      Fødselsdato_BARN:
+        type: greater_than_date
+        match:
+          min_date: cervix_scan_date
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.8
+
+
+linked_data: 
+  Obstetrical_history_1:
+    N: 20
+    columns:
+      Kontakt dato:
+        type: rand_datetime
+      Antal tidligere spontane aborter:
+        type: choice
+        args:
+          options: [1, 2, 3]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.7
+      Præterm: 
+        type: choice
+        args:
+          options: [1]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.9
+    linked_columns:
+      CPR:
+        type: choice
+        file: overview
+        linked_on: [MOR_CPR]
+        rename_to: [CPR]
+  
+  Obstetrical_history_2:
+    N: 20
+    columns:
+      Udfald:
+        type: choice
+        args:
+          options: ["Til termin", "Præterm", "Ektopisk", "Abort", "Spontan abort"]
+      Dato:
+        type: rand_datetime
+      Gestationsalder:
+        type: choice
+        args:
+          options: ["41w0d", "42w0d", "43w0d", "44w0d", "45w0d", "46w0d",
+                    "6w3d", "7w0d", "7w3d", "8w0d", "8w3d", "9w0d", "9w3d",
+                    "10w0d", "10w3d", "11w0d", "11w3d", "12w0d", "12w3d",
+                    "13w0d", "13w3d", "14w0d", "14w3d", "15w0d", "15w3d",
+                    "16w0d", "16w3d", "17w0d", "17w3d", "18w0d", "18w3d",
+                    "19w0d", "19w3d", "20w0d", "20w3d", "21w0d", "21w3d",
+                    "22w0d", "22w3d", "23w0d", "23w3d", "24w0d", "24w3d",
+                    "25w0d", "25w3d", "26w0d", "26w3d", "27w0d", "27w3d",
+                    "28w0d", "28w3d", "29w0d", "29w3d", "30w0d", "30w3d"]
+    linked_columns:
+      CPR:
+        type: choice
+        file: overview
+        linked_on: [MOR_CPR]
+        rename_to: [CPR]
+
+  Yderligere variable vurderingsskema: 
+    N: 20
+    columns:
+      Registreringstidspunkt:
+        type: rand_datetime
+      Registrering:
+        type: choice
+        args:
+          options: ["Præsentation", "Cervix i mm", "Uterus vurdering", "Estimeret blodtab (ml)", "Handlinger"]
+      Værdi: 
+        type: mix_function
+        args:
+          functions:
+            - type: rand_float
+              args:
+                min_val: 0.001
+                max_val: 100
+            - type: rand_int
+              args:
+                min_val: 0
+                max_val: 100
+            - type: choice
+              args:
+                options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos", "Normal", ">500"]
+          probabilities: [0.4, 0.4, 0.2]
+    linked_columns:
+      CPR:
+        type: choice
+        file: overview
+        linked_on: [MOR_CPR]
+        rename_to: [CPR]
+  
+  Vital parameter: 
+    N: 20
+    columns:
+      CPR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      Registreringstidspunkt:
+        type: rand_datetime
+      Vital_parameter:
+        type: choice
+        args:
+          options: ["BT", "NIBP", "Puls", "Respirationsfrekvens", "O2-saturation", "BMI"]
+      Værdi: 
+        type: mix_function
+        args:
+          functions:
+            - type: rand_float
+              args:
+                min_val: 0.001
+                max_val: 100
+            - type: rand_int
+              args:
+                min_val: 0
+                max_val: 100
+            - type: choice
+              args:
+                options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos", "Normal", ">500"]
+          probabilities: [0.4, 0.4, 0.2]
+    linked_columns:
+      CPR:
+        type: choice
+        file: overview
+        linked_on: [MOR_CPR]
+        rename_to: [CPR]
+
+  Diagnosis:
+    N: 100
+    columns:
+      Diagnosekode:
+        type: choice
+        args:
+          options: ["D001", "D002", "D003", "D004", "D005", "D006", "D007", "D008", "D009", "D010",
+                    "D011", "D012", "D013", "D014", "D015", "D016", "D017", "D018", "D019", "D020"
+                    ]
+      Redigeringsdato:
+        type: rand_datetime
+    linked_columns:
+      CPR:
+        type: choice
+        file: overview
+        linked_on: [MOR_CPR]
+        rename_to: [CPR]
