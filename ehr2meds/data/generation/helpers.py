@@ -24,6 +24,7 @@ def rand_int(min_val=0, max_val=100):
 def rand_float(min_val=0.0, max_val=100.0):
     return random.uniform(min_val, max_val)
 
+
 def rand_date(start=1970, end=2020, format=None):
     """
     Random date generator with optional formatting.
@@ -70,6 +71,7 @@ def rand_string(min_length=10, max_length=100, include_digits=True):
             )
         )
 
+
 def choice(options):
     return random.choice(options)
 
@@ -84,6 +86,7 @@ def greater_than_datetime(min_date, end=2020):
     delta = datetime(end, 12, 31) - min_date
     random_seconds = random.randint(0, int(delta.total_seconds()))
     return min_date + timedelta(seconds=random_seconds)
+
 
 # Specialized functions for DST dataset
 def honuge(start_year, end_year):
@@ -100,5 +103,3 @@ def mix_function(functions, probabilities):
     selected_idx = random.choices(range(len(functions)), weights=probabilities, k=1)[0]
     selected_func = functions[selected_idx]
     return selected_func["func"](**selected_func["args"])
-
-

@@ -117,7 +117,7 @@ class Normaliser:
         # Ensure subject_id is treated as integer
         chunk[SUBJECT_ID] = pd.to_numeric(chunk[SUBJECT_ID]).astype("Int64")
         chunk = chunk.reset_index(drop=True)
-        logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+        logger.info(f"Loaded {self.cfg.data.chunksize * counter}")
         return self.process_chunk(chunk)
 
     def _save_chunk(self, chunk: pd.DataFrame, counter: int) -> None:
@@ -145,7 +145,7 @@ class Normaliser:
                 raise ValueError(
                     f"Missing required columns. Available columns: {chunk.columns}"
                 )
-            logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+            logger.info(f"Loaded {self.cfg.data.chunksize * counter}")
             chunk[self.numeric_value] = pd.to_numeric(
                 chunk[self.numeric_value], errors="coerce"
             )

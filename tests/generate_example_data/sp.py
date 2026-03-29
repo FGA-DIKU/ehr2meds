@@ -125,8 +125,10 @@ def generate_procedures(save_dir, hashes, birthdates, deathdates, seed=0):
             ],
             "ServiceDate": dates.dt.date,
             "ServiceTime": dates.apply(
-                lambda x: pd.Timestamp("1970-01-01")
-                + pd.Timedelta(hours=x.hour, minutes=x.minute, seconds=x.second)
+                lambda x: (
+                    pd.Timestamp("1970-01-01")
+                    + pd.Timedelta(hours=x.hour, minutes=x.minute, seconds=x.second)
+                )
             ),
             "ServiceDatetime": dates,
         }

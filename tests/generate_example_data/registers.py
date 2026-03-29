@@ -475,7 +475,7 @@ def generate_register_procedures(save_dir, kont, forloeb, n_concepts=3):
             "tidspunkt_indberetning": report_dates.time,
             "lprindberetningssystem": ["LPR3" for _ in range(n_total)],
             "procedureregistrering_id": [
-                f"PROC{i+n_total:06d}" for i in range(n_total)
+                f"PROC{i + n_total:06d}" for i in range(n_total)
             ],
         }
     )

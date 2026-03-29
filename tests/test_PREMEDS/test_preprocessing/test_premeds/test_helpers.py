@@ -22,7 +22,6 @@ from ehr2meds.PREMEDS.preprocessing.premeds.helpers import (
 
 
 class TestAdtProcessingFunctions(unittest.TestCase):
-
     def setUp(self):
         """Set up common test data."""
         # Mock subject ID mapping
@@ -316,7 +315,6 @@ class TestAdtProcessingFunctions(unittest.TestCase):
 
 
 class TestAddDischargeToLastPatient(unittest.TestCase):
-
     def setUp(self):
         # Define constants that might be needed
         self.subject_id = 12345
