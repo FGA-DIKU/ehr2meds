@@ -41,7 +41,6 @@ class PREMEDSExtractor:
             chunksize=self.chunksize,
             test_rows=cfg.get("test_rows", 1_000_000),
             test=cfg.test,
-            env=cfg.env,
         )
         if cfg.get("register_concepts"):
             # Create data handler for register concepts
@@ -52,7 +51,6 @@ class PREMEDSExtractor:
                 chunksize=self.chunksize,
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,
-                env=cfg.env,
             )
 
             # Create data handler for mappings
@@ -63,7 +61,6 @@ class PREMEDSExtractor:
                 chunksize=self.chunksize,  # not used here
                 test_rows=cfg.get("test_rows", 1_000_000),
                 test=cfg.test,
-                env=cfg.env,
             )
 
         self.concept_processor = ConceptProcessor()

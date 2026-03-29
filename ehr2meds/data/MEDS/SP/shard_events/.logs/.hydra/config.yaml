@@ -1,0 +1,77 @@
+input_dir: ${oc.env:PREMEDS_INPUT_DIR}
+cohort_dir: ${oc.env:MEDS_OUTPUT_DIR}
+_default_description: 'This is a MEDS pipeline ETL. Please set a more detailed description
+  at the top of your specific pipeline
+
+  configuration file.'
+log_dir: ${stage_cfg.output_dir}/.logs
+do_overwrite: false
+seed: 1
+stages:
+- shard_events
+- split_and_shard_subjects
+- convert_to_sharded_events
+- merge_to_MEDS_cohort
+- extract_code_metadata
+- finalize_MEDS_metadata
+- finalize_MEDS_data
+stage_configs:
+  shard_events:
+    row_chunksize: 200000000
+    infer_schema_length: 999999999
+    data_input_dir: ${input_dir}
+  split_and_shard_subjects:
+    is_metadata: true
+    output_dir: ${cohort_dir}/metadata
+    n_subjects_per_shard: 50000
+    external_splits_json_fp: null
+    split_fracs:
+      train: 0.8
+      tuning: 0.1
+      held_out: 0.1
+  convert_to_sharded_events:
+    do_dedup_text_and_numeric: true
+  merge_to_MEDS_cohort:
+    unique_by: '*'
+    additional_sort_by: null
+  extract_code_metadata:
+    is_metadata: true
+    description_separator: '
+
+      '
+  finalize_MEDS_metadata:
+    is_metadata: true
+    do_retype: true
+  finalize_MEDS_data:
+    do_retype: true
+worker: 0
+polling_time: 300
+stage: shard_events
+stage_cfg: ${oc.create:${populate_stage:${stage}, ${input_dir}, ${cohort_dir}, ${stages},
+  ${stage_configs}}}
+etl_metadata:
+  pipeline_name: ???
+  dataset_name: preMEDS
+  dataset_version: 2.0
+  package_name: ${get_package_name:}
+  package_version: ${get_package_version:}
+etl_metadata.pipeline_name: extract
+description: 'This pipeline extracts the preMEDS dataset in longitudinal, sparse form
+  from an input dataset meeting
+
+  select criteria and converts them to the flattened MEDS format. You can control
+  the key arguments to this
+
+  pipeline by setting environment variables:
+
+
+  export EVENT_CONVERSION_CONFIG_FP=event_configs.yaml       # Path to your event
+  conversion config
+
+  export PREMEDS_INPUT_DIR=../preMEDS_w_meta                 # Path to the output
+  dir of the pre-MEDS step
+
+  export MEDS_OUTPUT_DIR=../MEDS_new_data            # Path to where you want the
+  dataset to live'
+event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
+shards_map_fp: ${cohort_dir}/metadata/.shards.json

@@ -1,0 +1,42 @@
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+test: false # Just for testing, use false for full conversion
+
+chunksize: 10_000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+paths:
+  concepts: ehr2meds/data/raw/fetal_data/SP  
+  output: ehr2meds/data/preMEDS/fetal_data/SP
+
+write_file_type: csv 
+
+concepts:
+  diagnosis:
+    filename: diagnosis.csv
+    rename_columns:
+      Diagnosekode: code
+      Redigeringsdato: timestamp
+      CPR: subject_id
+
+  procedure:
+    filename: procedure.csv
+    rename_columns:
+      Procedurekode: code
+      Redigeringsdato: timestamp
+      CPR: subject_id
+  # labtest:
+  #   filename: labtest.csv
+  #   rename_columns:
+  #     BestOrd: code
+  #     Bestillingsdato: timestamp
+  #     CPR: subject_id
+  #     Resultatværdi: numeric_value
+
+patients_info:
+  filename: patient_info.csv
+  rename_columns:
+    CPR: subject_id
+    Birthdate: birthdate
+    Deathdate: deathdate
+    Gender: gender
