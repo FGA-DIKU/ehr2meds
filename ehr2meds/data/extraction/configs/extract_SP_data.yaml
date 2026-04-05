@@ -61,7 +61,76 @@ data_extraction:
           args:
             target_col: ProcedureCode
             match_on: ["UXUD85"]
+            match_type: startswith
         map_columns:
           MOR_CPR: m_cpr
           ProcedureCode: code
           ServiceDate: date
+  
+  fertility_treatment:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Procedurelister.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: ProcedureCode
+            match_on: ["BBHG38", "BJFL0", "AFV01G", ]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          ProcedureCode: code
+          ServiceDate: date
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DZ314", "DZ318", "DZ319"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          ServiceDate: date
+  
+  IVF_pregnancy:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DO003B", "DZ321H", "DZ358F"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          ServiceDate: date
+
+  multi_pregnancy:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - Fødselsresume - DEL 1.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DO30", "DO31"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          ServiceDate: date
+      - source_file: Mor - Fødselsresume - DEL 1.csv
+        type:
+          function: fill_matches
+          args:
+            target_col: "Foster nr."
+            match_on: ["Foster 2", "Foster 3", "Foster 4"]
+            match_type: exact
+            fill_value: "Multiple preg (fødselsresume)"
+        map_columns:
+          MOR_CPR: m_cpr
+          fill_col: code
+          BABY_Fødsel_ID: baby_birth_id
