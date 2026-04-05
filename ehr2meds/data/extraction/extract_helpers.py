@@ -16,3 +16,8 @@ def extract_GA(df, target_col):
     extracted = df[target_col].astype(str).str.extract(r"(?i)(\d+)\s*w", expand=False)
     df[target_col] = pd.to_numeric(extracted, errors="coerce")
     return df
+
+def extract_codes(df, target_col, match_on):
+    """Extract codes from a column, matching on a list of strings."""
+    extracted = df[target_col].astype(str).isin(match_on)
+    return extracted

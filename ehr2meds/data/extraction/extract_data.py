@@ -36,6 +36,7 @@ class DataExtractor:
                     res_df = res_df.merge(
                         source_df, on=key_columns, how="left"
                     )
+            res_df = res_df.drop_duplicates()
             res_df.to_csv(output_dir / f"{data_name}.csv", index=False)
 
 if __name__ == "__main__":
