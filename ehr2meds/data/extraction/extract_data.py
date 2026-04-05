@@ -16,7 +16,15 @@ class DataExtractor:
 
     def run(self, cfg, output_dir: Path):
         output_dir = Path(output_dir)
+        overwrite_files = cfg.get("overwrite_files", True)
         for data_name, data_cfg in cfg["data_extraction"].items():
+            out_path = output_dir / f"{data_name}.csv"
+            if not overwrite_files and out_path.is_file():
+                print(
+                    f"Skipping {data_name!r}: {out_path} already exists "
+                    f"(overwrite_files is false)."
+                )
+                continue
             key_columns = data_cfg["key_columns"]
             res_df = pd.DataFrame(columns=key_columns)
             for source in data_cfg["sources"]:
@@ -42,7 +50,7 @@ class DataExtractor:
                 res_df = self.extract_func_dict[fn](
                     res_df, **data_cfg["filter"]["args"]
                 )
-            res_df.to_csv(output_dir / f"{data_name}.csv", index=False)
+            res_df.to_csv(out_path, index=False)
 
 if __name__ == "__main__":
     random.seed(0)

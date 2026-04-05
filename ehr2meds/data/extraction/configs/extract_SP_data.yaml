@@ -1,6 +1,8 @@
 # Example: run from repo root, e.g.
 #python -m ehr2meds.data.extraction.extract_data --config ehr2meds/data/extraction/SP.yaml --input ehr2meds/data/raw/fetal_data/SP --output ehr2meds/data/summary/tables/fetal_SP
 
+overwrite_files: false
+
 data_extraction:
   GA_delivery:
     key_columns: [m_cpr, date]
@@ -176,10 +178,10 @@ data_extraction:
               target_col: Diagnosekode
               match_on: ["DZ358B", "DO609", "DO601"]
               match_type: startswith
-        map_columns:
-          MOR_CPR: m_cpr
-          Diagnosekode: code
-          Noteret_dato: date
+          map_columns:
+            MOR_CPR: m_cpr
+            Diagnosekode: code
+            Noteret_dato: date
     filter:
       function: drop_empty_columns
       args:
