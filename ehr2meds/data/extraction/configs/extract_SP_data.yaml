@@ -204,10 +204,10 @@ data_extraction:
           function: extract_columns
           args:
             target_cols: ["Præterm"]
-          map_columns:
-            MOR_CPR: m_cpr
-            "Præterm": ptb
-            "Kontakt dato": date
+        map_columns:
+          MOR_CPR: m_cpr
+          "Præterm": ptb
+          "Kontakt dato": date
   
   PPROM_diagnosis:
     key_columns: [m_cpr]
