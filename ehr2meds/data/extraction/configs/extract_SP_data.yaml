@@ -165,7 +165,7 @@ data_extraction:
             target_cols: ["Para"]
         map_columns:
           MOR_CPR: m_cpr
-          "Paritet": parity
+          "Para": parity
           "Kontakt dato": date
   
   ptb_diagnosis:
@@ -208,3 +208,19 @@ data_extraction:
             MOR_CPR: m_cpr
             "Præterm": ptb
             "Kontakt dato": date
+  
+  PPROM_diagnosis:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DO422", "DO420", "DO424"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
+
