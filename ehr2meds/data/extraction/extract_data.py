@@ -30,6 +30,11 @@ class DataExtractor:
                 source_df = source_df[list(map_columns.keys())].rename(
                     columns=map_columns
                 )
+                if "filter" in source:
+                    fn = source["filter"]["function"]
+                    source_df = self.extract_func_dict[fn](
+                        source_df, **source["filter"]["args"]
+                    )
                 if res_df.empty:
                     res_df = source_df
                 else:

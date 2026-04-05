@@ -147,3 +147,7 @@ data_extraction:
           MOR_CPR: m_cpr
           fill_col: code
           BABY_Fødsel_ID: baby_birth_id
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]

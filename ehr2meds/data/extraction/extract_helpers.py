@@ -54,3 +54,7 @@ def fill_matches(
     out = extract_codes(df, target_col, match_on, match_type)
     out[fill_col] = fill_value
     return out
+
+def drop_empty_columns(df, columns: list[str]):
+    """Drop columns that are empty."""
+    return df.dropna(subset=columns)
