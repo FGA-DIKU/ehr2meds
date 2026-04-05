@@ -237,10 +237,36 @@ data_extraction:
         type:
           function: extract_codes
           args:
-            target_cols: ["Registrering"]
+            target_col: Registrering
             match_on: ["Cervixlængde"]
             match_type: startswith
         map_columns:
           MOR_CPR: m_cpr
           "Værdi": cervix_length
           "Registreringstidspunkt": date
+  
+  # cervical_conization_history:
+  #   key_columns: [m_cpr]
+  #   sources:
+  #     - source_file: Mor - CPMI - Diagnoseliste.csv
+  #       type:
+  #         function: extract_codes
+  #         args:
+  #           target_col: Diagnosekode
+  #           match_on: ["DZ928C", "DO344B"]
+  #           match_type: startswith
+  #       map_columns:
+  #         MOR_CPR: m_cpr
+  #         Diagnosekode: code
+  #         Noteret_dato: date
+  #     - source_file: Mor - CPMI - Procedurer.csv
+  #       type:
+  #         function: extract_codes
+  #         args:
+  #           target_col: ProcedureCode
+  #           match_on: ["DO344B"]
+  #           match_type: startswith
+  #       map_columns:
+  #         MOR_CPR: m_cpr
+  #         ProcedureCode: code
+  #         ServiceDate: date
