@@ -30,11 +30,6 @@ class DataExtractor:
                 source_df = source_df[list(map_columns.keys())].rename(
                     columns=map_columns
                 )
-                if "filter" in source:
-                    fn = source["filter"]["function"]
-                    source_df = self.extract_func_dict[fn](
-                        source_df, **source["filter"]["args"]
-                    )
                 if res_df.empty:
                     res_df = source_df
                 else:
@@ -42,6 +37,11 @@ class DataExtractor:
                         source_df, on=key_columns, how="left"
                     )
             res_df = res_df.drop_duplicates()
+            if "filter" in data_cfg:
+                fn = data_cfg["filter"]["function"]
+                res_df = self.extract_func_dict[fn](
+                    res_df, **data_cfg["filter"]["args"]
+                )
             res_df.to_csv(output_dir / f"{data_name}.csv", index=False)
 
 if __name__ == "__main__":
