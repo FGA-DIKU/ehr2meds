@@ -70,7 +70,7 @@ data_extraction:
   fertility_treatment:
     key_columns: [m_cpr]
     sources:
-      - source_file: Mor - CPMI - Procedurelister.csv
+      - source_file: Mor - CPMI - Procedurer.csv
         type:
           function: extract_codes
           args:
@@ -111,7 +111,7 @@ data_extraction:
   multi_pregnancy:
     key_columns: [m_cpr]
     sources:
-      - source_file: Mor - Fødselsresume - DEL 1.csv
+      - source_file: Mor - CPMI - Diagnoseliste.csv
         type:
           function: extract_codes
           args:
