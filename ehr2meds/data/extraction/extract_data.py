@@ -25,6 +25,7 @@ class DataExtractor:
                     f"(overwrite_files is false)."
                 )
                 continue
+            print(f"Extracting {data_name!r}...")
             key_columns = data_cfg["key_columns"]
             res_df = pd.DataFrame(columns=key_columns)
             for source in data_cfg["sources"]:

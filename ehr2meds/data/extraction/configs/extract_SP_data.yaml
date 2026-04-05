@@ -223,4 +223,33 @@ data_extraction:
           MOR_CPR: m_cpr
           Diagnosekode: code
           Noteret_dato: date
+  
+  short_cervix_diagnosis:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DO343", "DO348G", "DO343A", "DO343B", "DZ875A"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
 
+  cervical_length_history:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - Yderligere variable vurderingsskema.csv
+        type:
+          function: extract_codes
+          args:
+            target_cols: ["Registrering"]
+            match_on: ["Cervixlængde"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          "Værdi": cervix_length
+          "Registreringstidspunkt": date
