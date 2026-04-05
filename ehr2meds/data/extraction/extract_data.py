@@ -17,7 +17,8 @@ class DataExtractor:
     def run(self, cfg, output_dir: Path):
         output_dir = Path(output_dir)
         for data_name, data_cfg in cfg["data_extraction"].items():
-            res_df = pd.DataFrame(columns=data_cfg["key_columns"])
+            key_columns = data_cfg["key_columns"]
+            res_df = pd.DataFrame(columns=key_columns)
             for source in data_cfg["sources"]:
                 path = self.input_dir / source["source_file"]
                 source_df = pd.read_csv(path)
@@ -32,7 +33,9 @@ class DataExtractor:
                 if res_df.empty:
                     res_df = source_df
                 else:
-                    res_df = res_df.merge(source_df, on=source["key_columns"], how="left")
+                    res_df = res_df.merge(
+                        source_df, on=key_columns, how="left"
+                    )
             res_df.to_csv(output_dir / f"{data_name}.csv", index=False)
 
 if __name__ == "__main__":

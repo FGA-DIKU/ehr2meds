@@ -17,16 +17,3 @@ data_extraction:
           CPR: m_cpr
           Dato: date
           Gestationsalder: GA
-
-  pregnancy_history:
-    key_columns: [m_cpr, date]
-    sources:
-      - source_file: Obstetrical_history_1.csv
-        type:
-          function: extract_GA
-          args:
-            target_col: Gestationsalder
-        map_columns:
-          CPR: m_cpr
-          Dato: date
-          Gestationsalder: GA
