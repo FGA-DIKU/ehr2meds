@@ -238,7 +238,7 @@ data_extraction:
           function: extract_codes
           args:
             target_col: Registrering
-            match_on: ["Cervixlængde"]
+            match_on: ["Cervix i mm"]
             match_type: startswith
         map_columns:
           MOR_CPR: m_cpr
@@ -270,3 +270,46 @@ data_extraction:
   #         MOR_CPR: m_cpr
   #         ProcedureCode: code
   #         ServiceDate: date
+
+  uterine_malformation_diagnosis:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DO340", "DQ518", "DQ519"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+  
+  fibroids_diagnosis:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
+  
+  polyhydramnios_diagnosis:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DO410", "DO409"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
