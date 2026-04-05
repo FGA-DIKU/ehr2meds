@@ -122,6 +122,7 @@ data_extraction:
           MOR_CPR: m_cpr
           Diagnosekode: code
           Noteret_dato: date
+
   multi_pregnancy_birth_id:
     key_columns: [m_cpr, baby_birth_id]
     sources:
@@ -151,3 +152,57 @@ data_extraction:
       function: drop_empty_columns
       args:
         columns: [code]
+    
+    parity:
+      key_columns: [m_cpr]
+      sources:
+        - source_file: Mor - Obstetrisk Historik DEL 1.csv
+          type:
+            function: extract_columns
+            args:
+              target_cols: ["Para"]
+          map_columns:
+            MOR_CPR: m_cpr
+            "Paritet": parity
+            "Kontakt dato": date
+    
+    ptb_diagnosis:
+      key_columns: [m_cpr]
+      sources:
+        - source_file: Mor - CPMI - Diagnoseliste.csv
+          type:
+            function: extract_codes
+            args:
+              target_col: Diagnosekode
+              match_on: ["DZ358B", "DO609", "DO601"]
+              match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
+
+  ptb_birth_id:
+    key_columns: [m_cpr, baby_birth_id]
+    sources:
+      - source_file: Population.csv
+        type:
+          function: extract_columns
+          args:
+            target_cols: [MOR_CPR, BABY_CPR, Fødselstidspunkt, BABY_Fødsel_ID]
+        map_columns:
+          MOR_CPR: m_cpr
+          BABY_CPR: baby_cpr
+          Fødselstidspunkt: birthdate
+      - source_file: Mor - Obstetrisk Historik DEL 1.csv
+        type:
+          function: extract_columns
+          args:
+            target_cols: ["Præterm"]
+          map_columns:
+            MOR_CPR: m_cpr
+            "Præterm": ptb
+            "Kontakt dato": date
