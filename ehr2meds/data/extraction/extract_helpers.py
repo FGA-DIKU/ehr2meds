@@ -1,8 +1,14 @@
 import pandas as pd
 
 
-def extract_column(df, target_col):
-    return df[target_col]
+def extract_columns(df, target_cols):
+    """Ensure listed columns exist; full frame is passed through for ``map_columns`` selection."""
+    missing = [c for c in target_cols if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"Missing columns {missing}; available: {list(df.columns)}"
+        )
+    return df
 
 
 def extract_GA(df, target_col):

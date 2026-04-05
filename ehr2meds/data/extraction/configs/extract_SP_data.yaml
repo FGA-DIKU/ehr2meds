@@ -1,0 +1,39 @@
+# Example: run from repo root, e.g.
+#python -m ehr2meds.data.extraction.extract_data --config ehr2meds/data/extraction/SP.yaml --input ehr2meds/data/raw/fetal_data/SP --output ehr2meds/data/summary/tables/fetal_SP
+
+data_extraction:
+  GA_delivery:
+    key_columns: [m_cpr, date]
+    sources:
+      - source_file: Mor - Obstetrisk Historik DEL 2.csv
+        type:
+          function: extract_GA
+          args:
+            target_col: Gestationsalder
+        map_columns:
+          MOR_CPR: m_cpr
+          Dato: date
+          Gestationsalder: GA
+
+  maternal_variables:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Patientinfo.csv
+        type:
+          function: extract_columns
+          args:
+            target_cols: [Fødselsdato]
+        map_columns:
+          MOR_CPR: m_cpr
+          Fødselsdato: birthdate
+      - source_file: Mor - Patientinfo tillæg til CPMI.csv
+        type:
+          function: extract_columns
+          args:
+            target_cols: [Alkohol - Antal ugentlige genstande, Rygestatus, Dato for seneste opdatering, Ethnicitet]
+        map_columns:
+          MOR_CPR: m_cpr
+          "Alkohol - Antal ugentlige genstande": alcohol_consumption
+          Rygestatus: smoking
+          "Dato for seneste opdatering": date
+          Ethnicitet: ethnicity
