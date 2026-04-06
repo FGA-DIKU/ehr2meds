@@ -272,7 +272,7 @@ data_extraction:
           ServiceDate: date
 
   cesarean_section:
-    key_columns: [m_cpr, baby_birth_id]
+    key_columns: [m_cpr]
     sources:
       - source_file: Mor - CPMI - Procedurer.csv
         type:
