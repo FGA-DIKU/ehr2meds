@@ -7,7 +7,7 @@ main_table:
   sources:
     - pregnancy_history.csv
     - GA_delivery.csv
-  merge_columns: [m_cpr]
+  merge_columns: [m_cpr, date]
   add_columns:
     - name: pregnancy_start
       function: get_pregnancy_start

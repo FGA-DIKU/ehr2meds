@@ -51,7 +51,7 @@ data_extraction:
         map_columns:
           MOR_CPR: m_cpr
           BABY_CPR: baby_cpr
-          Fødselstidspunkt: birthdate
+          Fødselstidspunkt: date
           BABY_Fødsel_ID: baby_birth_id
   
   cervical_scans:
