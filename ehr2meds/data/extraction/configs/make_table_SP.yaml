@@ -1,0 +1,16 @@
+# Example: run from repo root, e.g.
+#python -m ehr2meds.data.extraction.extract_data --config ehr2meds/data/extraction/SP.yaml --input ehr2meds/data/raw/fetal_data/SP --output ehr2meds/data/summary/tables/fetal_SP
+
+overwrite_files: false
+
+main_table:
+  sources: 
+    - source_files: [pregnancy_history.csv, GA_delivery.csv]
+  merge_columns: [m_cpr]
+  add_columns:
+    - pregnancy start
+      function: get_pregnancy_start
+      args:
+        birthdate: birthdate
+        GA: GA
+

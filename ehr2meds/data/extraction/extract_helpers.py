@@ -65,3 +65,7 @@ def extract_non_nan(df, target_col: str, fill_value, fill_col: str = "fill_col")
     out = df.loc[mask].copy()
     out[fill_col] = fill_value
     return out
+
+def get_pregnancy_start(birthdate: str, GA: str):
+    """Get the pregnancy start date from the birthdate and GA."""
+    return pd.to_datetime(birthdate) - pd.to_timedelta(GA, unit="weeks")
