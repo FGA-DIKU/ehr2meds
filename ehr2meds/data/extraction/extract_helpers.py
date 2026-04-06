@@ -58,3 +58,10 @@ def fill_matches(
 def drop_empty_columns(df, columns: list[str]):
     """Drop columns that are empty."""
     return df.dropna(subset=columns)
+
+def extract_non_nan(df, target_col: str, fill_value, fill_col: str = "fill_col"):
+    """Keep rows where ``target_col`` is non-null; add ``fill_col`` = ``fill_value`` on each row."""
+    mask = df[target_col].notna()
+    out = df.loc[mask].copy()
+    out[fill_col] = fill_value
+    return out

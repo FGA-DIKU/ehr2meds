@@ -245,31 +245,86 @@ data_extraction:
           "Værdi": cervix_length
           "Registreringstidspunkt": date
   
-  # cervical_conization_history:
-  #   key_columns: [m_cpr]
-  #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DZ928C", "DO344B"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
-  #     - source_file: Mor - CPMI - Procedurer.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: ProcedureCode
-  #           match_on: ["DO344B"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         ProcedureCode: code
-  #         ServiceDate: date
+  cervical_conization_history:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DZ928C", "DO344B"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
+      - source_file: Mor - CPMI - Procedurer.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: ProcedureCode
+            match_on: ["KLDC00", "KLDC03"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          ProcedureCode: code
+          ServiceDate: date
+
+  cesarean_section:
+    key_columns: [m_cpr, baby_birth_id]
+    sources:
+      - source_file: Mor - CPMI - Procedurer.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: ProcedureCode
+            match_on: ["KMCA10A", "KMCA10D", "KMCA10E"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          ProcedureCode: code
+          ServiceDate: date
+      - source_file: Mor - Fødselsresume - DEL 1.csv
+        type:
+          function: extract_non_nan 
+          args:
+            target_col: "Udslettet dato/tid"
+            fill_value: "Cesarean section"
+        map_columns:
+          MOR_CPR: m_cpr
+          fill_col: code
+          "Udslettet dato/tid": date
+
+  preclampsia_diagnosis:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
+
+  blood_pressure:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Vitamparametre.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Vital_parameter
+            match_on: ["BT"]
+            match_type: exact
+        map_columns:
+          MOR_CPR: m_cpr
+          "Værdi": blood_pressure
+          "Registreringstidspunkt": date
 
   uterine_malformation_diagnosis:
     key_columns: [m_cpr]
@@ -283,6 +338,8 @@ data_extraction:
             match_type: startswith
         map_columns:
           MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
   
   fibroids_diagnosis:
     key_columns: [m_cpr]
