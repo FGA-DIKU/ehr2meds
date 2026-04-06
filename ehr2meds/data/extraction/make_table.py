@@ -3,8 +3,8 @@ import yaml
 import inspect
 import argparse
 from pathlib import Path
-import ehr2meds.data.summary.filter_helpers as filter_helpers
-import ehr2meds.data.summary.extract_helpers as extract_helpers
+import ehr2meds.data.extraction.filter_helpers as filter_helpers
+import ehr2meds.data.extraction.extract_helpers as extract_helpers
 import random
 import os 
 
@@ -13,20 +13,26 @@ class TableBuilder:
     def __init__(self, filter_func_dict, extract_func_dict, main_cfg, input_path):
         self.filter_func_dict = filter_func_dict
         self.extract_func_dict = extract_func_dict
-        main_df = self.get_main_df(main_cfg)
+        main_df = self.get_main_df(main_cfg, input_path)
         print(main_df.head())
 
     def get_main_df(self, cfg, input_path):
-        main_df = pd.DataFrame()
-        for source in cfg["sources"]:
-            source_path = os.path.join(input_path, source["source_file"])
-            source_df = pd.read_csv(source_path)
-            main_df = main_df.merge(source_df, on=cfg["merge_columns"], how="left")
-        
-        for column in cfg["add_columns"]:
-            fn = self.extract_func_dict[column["function"]]
-            main_df[column] = fn(main_df, **column["args"])
-            
+        files = list(cfg["sources"])
+        if not files:
+            main_df = pd.DataFrame()
+        else:
+            main_df = pd.read_csv(os.path.join(input_path, files[0]))
+            for fname in files[1:]:
+                other = pd.read_csv(os.path.join(input_path, fname))
+                main_df = main_df.merge(other, on=cfg["merge_columns"], how="left")
+
+        for spec in cfg.get("add_columns") or []:
+            fn = self.extract_func_dict[spec["function"]]
+            out_name = spec["name"]
+            args_spec = spec.get("args") or {}
+            kwargs = {param: main_df[col] for param, col in args_spec.items()}
+            main_df[out_name] = fn(**kwargs)
+
         return main_df
 
     # def run(self, cfg, output_dir):

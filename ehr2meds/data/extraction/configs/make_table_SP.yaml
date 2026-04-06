@@ -4,11 +4,12 @@
 overwrite_files: false
 
 main_table:
-  sources: 
-    - source_files: [pregnancy_history.csv, GA_delivery.csv]
+  sources:
+    - pregnancy_history.csv
+    - GA_delivery.csv
   merge_columns: [m_cpr]
   add_columns:
-    - pregnancy start
+    - name: pregnancy_start
       function: get_pregnancy_start
       args:
         birthdate: birthdate
