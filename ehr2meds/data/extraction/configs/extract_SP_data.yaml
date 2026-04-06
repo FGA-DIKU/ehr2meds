@@ -314,7 +314,7 @@ data_extraction:
   blood_pressure:
     key_columns: [m_cpr]
     sources:
-      - source_file: Mor - CPMI - Vitamparametre.csv
+      - source_file: Mor - CPMI - Vitalparametre.csv
         type:
           function: extract_codes
           args:
@@ -323,6 +323,7 @@ data_extraction:
             match_type: exact
         map_columns:
           MOR_CPR: m_cpr
+          Vital_parameter: code
           "Værdi": blood_pressure
           "Registreringstidspunkt": date
 
