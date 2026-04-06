@@ -318,12 +318,12 @@ data_extraction:
         type:
           function: extract_codes
           args:
-            target_col: Vital_parameter
+            target_col: Vital_parametre
             match_on: ["BT"]
             match_type: exact
         map_columns:
           MOR_CPR: m_cpr
-          Vital_parameter: code
+          Vital_parametre: code
           "Værdi": blood_pressure
           "Registreringstidspunkt": date
 
