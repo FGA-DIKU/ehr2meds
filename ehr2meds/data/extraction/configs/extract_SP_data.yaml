@@ -314,7 +314,7 @@ data_extraction:
   blood_pressure:
     key_columns: [m_cpr]
     sources:
-      - source_file: Mor - CPMI - Vitalparametre.csv
+      - source_file: Mor - CPMI - Vital parametre.csv
         type:
           function: extract_codes
           args:
