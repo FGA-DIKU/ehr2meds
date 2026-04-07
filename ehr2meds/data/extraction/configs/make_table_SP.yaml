@@ -15,3 +15,25 @@ main_table:
         birthdate: date
         GA: GA
 
+linked_tables:
+    - name: ptb_from_diagnosis
+      source_file: ptb_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_start
+        timestamp: date
+    - name: ptb_from_birth_id
+      source_file: ptb_birth_id.csv
+      match_on: [baby_birth_id]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_start
+        timestamp: date
+
+collapse_table:
+  name: previous_ptb
+  combine:
+    function: or
+  components:
+    - name: ptb_from_diagnosis, ptb_from_birth_id

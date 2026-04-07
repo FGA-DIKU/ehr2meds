@@ -5,14 +5,16 @@ import argparse
 from pathlib import Path
 import ehr2meds.data.extraction.filter_helpers as filter_helpers
 import ehr2meds.data.extraction.extract_helpers as extract_helpers
+import ehr2meds.data.extraction.collapse_helpers as collapse_helpers
 import random
 import os 
 
 
 class TableBuilder:
-    def __init__(self, filter_func_dict, extract_func_dict, main_cfg, input_path):
+    def __init__(self, filter_func_dict, extract_func_dict, collapse_func_dict, main_cfg, input_path):
         self.filter_func_dict = filter_func_dict
         self.extract_func_dict = extract_func_dict
+        self.collapse_func_dict = collapse_func_dict
         main_df = self.get_main_df(main_cfg, input_path)
         print(main_df.head())
 
@@ -49,27 +51,40 @@ class TableBuilder:
 
         return main_df
 
-    # def run(self, cfg, output_dir):
-    #     input_path = cfg["paths"]["input"]
+    def run(self, cfg, input_path, output_dir):
+        
+        expanded_table = self.main_df.copy()
+        tables = []
+        for linked_table in cfg["linked_tables"]:
+            source_path = os.path.join(input_path, linked_table["source_file"])
+            linked_df = pd.read_csv(source_path)
+            link_func = self.collapsefunc_dict[linked_table["function"]]
+            sub_table = link_func(linked_df, linked_table["match_on"], expanded_table, **linked_table["args"])
+            expanded_table = expanded_table.merge(sub_table, on=linked_table["match_on"], how="left")
 
-    #     tables = []
+        print(expanded_table.head())
+        # main_table = self.main_df
+        # for collapse_table in cfg["collapse_tables"]:
+        #     collapse_func = self.collapse_func_dict[collapse_table["combine"]["function"]]
+        #     sub_table = collapse_func(expanded_table, collapse_table["components"])
+        #     expanded_table = expanded_table.merge(sub_table, on=collapse_table["match_on"], how="left")
+        
+        # for linked_name, linked_cfg in cfg["summary"]["linked_columns"].items():
+        #     source_path = os.path.join(input_path, linked_cfg["source_file"])
+        #     linked_df = self.get_linked_df(linked_cfg, source_path)
 
-    #     for linked_name, linked_cfg in cfg["summary"]["linked_columns"].items():
-    #         source_path = os.path.join(input_path, linked_cfg["source_file"])
-    #         linked_df = self.get_linked_df(linked_cfg, source_path)
+        #     tabl_type = linked_cfg["type"]               
+        #     tabl_func = tabl_type["function"]           
+        #     fn = self.extract_func_dict[tabl_func]            
+        #     args_dict = tabl_type.get("args", {})      
+        #     linked_table = fn(linked_df, linked_name, self.required_columns, **args_dict)
+        #     tables.append(linked_table)
 
-    #         tabl_type = linked_cfg["type"]               
-    #         tabl_func = tabl_type["function"]           
-    #         fn = self.extract_func_dict[tabl_func]            
-    #         args_dict = tabl_type.get("args", {})      
-    #         linked_table = fn(linked_df, linked_name, self.required_columns, **args_dict)
-    #         tables.append(linked_table)
-
-    #     final_table = self.merge_tables(tables)
-    #     print(len(final_table))
-    #     final_table.to_csv(output_dir / "final_table.csv", index=False)
-    #     print(final_table.head())
-    #     print("Saved final table to", output_dir / "final_table.csv")
+        # final_table = self.merge_tables(tables)
+        # print(len(final_table))
+        # final_table.to_csv(output_dir / "final_table.csv", index=False)
+        # print(final_table.head())
+        # print("Saved final table to", output_dir / "final_table.csv")
 
 if __name__ == "__main__":
     random.seed(0)
@@ -104,6 +119,11 @@ if __name__ == "__main__":
         for name, obj in inspect.getmembers(filter_helpers)
         if inspect.isfunction(obj)
     }
+    collapse_func_dict = {
+        name: obj
+        for name, obj in inspect.getmembers(collapse_helpers)
+        if inspect.isfunction(obj)
+    }
 
-    table_builder = TableBuilder(filter_func_dict, extract_func_dict, cfg["main_table"], input_dir)
-    # table_builder.get_main_df(cfg["main_table"])
+    table_builder = TableBuilder(filter_func_dict, extract_func_dict, collapse_func_dict, cfg["main_table"], input_dir)
+    table_builder.run(cfg["linked_tables"], input_dir, output_dir)
