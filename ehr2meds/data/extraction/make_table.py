@@ -15,8 +15,8 @@ class TableBuilder:
         self.filter_func_dict = filter_func_dict
         self.extract_func_dict = extract_func_dict
         self.collapse_func_dict = collapse_func_dict
-        main_df = self.get_main_df(main_cfg, input_path)
-        print(main_df.head())
+        self.main_df = self.get_main_df(main_cfg, input_path)
+        print(self.main_df.head())
 
     def get_main_df(self, cfg, input_path):
         files = list(cfg["sources"])
