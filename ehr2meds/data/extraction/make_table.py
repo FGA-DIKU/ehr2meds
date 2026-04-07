@@ -27,13 +27,16 @@ class TableBuilder:
                 merged = main_df.merge(
                     other,
                     on=cfg["merge_columns"],
-                    how="left",
+                    how="outer",
                     indicator=True,
                 )
-                n_no_match = int((merged["_merge"] == "left_only").sum())
+                n_left_only = int((merged["_merge"] == "left_only").sum())
+                n_right_only = int((merged["_merge"] == "right_only").sum())
+                n_both = int((merged["_merge"] == "both").sum())
                 print(
                     f"Merging '{fname}' on {cfg['merge_columns']}: "
-                    f"{n_no_match}/{len(merged)} rows had no match"
+                    f"both={n_both}, left_only={n_left_only}, right_only={n_right_only} "
+                    f"(total={len(merged)})"
                 )
                 main_df = merged.drop(columns=["_merge"])
 
