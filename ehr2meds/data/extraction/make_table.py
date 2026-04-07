@@ -24,7 +24,18 @@ class TableBuilder:
             main_df = pd.read_csv(os.path.join(input_path, files[0]))
             for fname in files[1:]:
                 other = pd.read_csv(os.path.join(input_path, fname))
-                main_df = main_df.merge(other, on=cfg["merge_columns"], how="left")
+                merged = main_df.merge(
+                    other,
+                    on=cfg["merge_columns"],
+                    how="left",
+                    indicator=True,
+                )
+                n_no_match = int((merged["_merge"] == "left_only").sum())
+                print(
+                    f"Merging '{fname}' on {cfg['merge_columns']}: "
+                    f"{n_no_match}/{len(merged)} rows had no match"
+                )
+                main_df = merged.drop(columns=["_merge"])
 
         for spec in cfg.get("add_columns") or []:
             fn = self.extract_func_dict[spec["function"]]
