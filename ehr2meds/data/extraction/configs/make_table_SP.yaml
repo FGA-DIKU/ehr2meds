@@ -32,8 +32,9 @@ linked_tables:
         timestamp: date
 
 collapse_table:
-  name: previous_ptb
-  combine:
-    function: or
-  components:
-    - name: ptb_from_diagnosis, ptb_from_birth_id
+  - name: previous_ptb
+    combine:
+      function: or
+    components:
+      - name: ptb_from_diagnosis
+      - name: ptb_from_birth_id

@@ -51,16 +51,50 @@ class TableBuilder:
 
         return main_df
 
-    def run(self, cfg, input_path, output_dir):
-        
+    def _apply_linked_rule(self, expanded_table: pd.DataFrame, rule: dict, input_path) -> pd.Series:
+        """
+        Apply a single linked rule and return a boolean Series aligned to expanded_table.
+
+        Expected rule schema (list style):
+          - name: <output column name>
+          - source_file: <csv>
+          - match_on: [..] OR key_map: {main_col: linked_col}
+          - function: <collapse_helpers function name> (default: bool_in_time_window)
+          - args: {...} passed to the collapse function
+        """
+        source_file = rule["source_file"]
+        source_path = os.path.join(input_path, source_file)
+        linked_df = pd.read_csv(source_path)
+
+        key_map = rule.get("key_map")
+        if key_map:
+            linked_df = linked_df.rename(columns=dict(key_map))
+            match_on = list(key_map.keys())
+        else:
+            match_on = list(rule.get("match_on") or [])
+
+        fn_name = rule.get("function") or "bool_in_time_window"
+        link_func = self.collapse_func_dict[fn_name]
+        args = rule.get("args") or {}
+
+        return link_func(
+            df=linked_df,
+            match_on=match_on,
+            expanded_table=expanded_table,
+            **args,
+        )
+
+    def run(self, linked_tables_cfg: list[dict], input_path, output_dir):
         expanded_table = self.main_df.copy()
-        tables = []
-        for linked_table in cfg["linked_tables"]:
-            source_path = os.path.join(input_path, linked_table["source_file"])
-            linked_df = pd.read_csv(source_path)
-            link_func = self.collapsefunc_dict[linked_table["function"]]
-            sub_table = link_func(linked_df, linked_table["match_on"], expanded_table, **linked_table["args"])
-            expanded_table = expanded_table.merge(sub_table, on=linked_table["match_on"], how="left")
+
+        if linked_tables_cfg is None:
+            linked_tables_cfg = []
+
+        for rule in linked_tables_cfg:
+            out_col = rule["name"]
+            expanded_table[out_col] = (
+                self._apply_linked_rule(expanded_table, rule, input_path)
+            )
 
         print(expanded_table.head())
         # main_table = self.main_df
@@ -126,4 +160,4 @@ if __name__ == "__main__":
     }
 
     table_builder = TableBuilder(filter_func_dict, extract_func_dict, collapse_func_dict, cfg["main_table"], input_dir)
-    table_builder.run(cfg["linked_tables"], input_dir, output_dir)
+    table_builder.run(cfg.get("linked_tables") or [], input_dir, output_dir)
