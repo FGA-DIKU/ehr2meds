@@ -1,1 +1,0 @@
-put files that are NOT DEPRECATED azure logic in here.

@@ -3,7 +3,7 @@ paths:
 
 data: 
   patient_info:
-    N: 20
+    N: 25
     columns:
       CPR:
         type: person_id
@@ -31,33 +31,40 @@ data:
         args:
           options: ["Unspecified", "Nordeuropa", "Asien", "Mellemøsten"]
 
+linked_data:
   diagnosis:
-    N: 20
+    N: 100
     columns:
       Diagnosekode:
         type: medical_code
         args:
           prefix: "D"
       Redigeringsdato:
-        type: rand_datetime
+        type: rand_datetime 
+    linked_columns:
       CPR:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
+
+  procedure:
+    N: 100
+    columns:
+      Procedurekode:
+        type: medical_code
+        args:
+          prefix: "P"
+      Redigeringsdato:
+        type: rand_datetime
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
 
   labtest:
     N: 20
     columns:
-      CPR:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
       BestOrd:
         type: rand_string
         args:
@@ -85,17 +92,15 @@ data:
               args:
                 options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
           probabilities: [0.4, 0.4, 0.2]
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
 
   notes:
     N: 20
     columns:
-      CPR:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
       Linjenummer:
         type: rand_int
         args:
@@ -120,3 +125,8 @@ data:
         args:
           min_length: 10
           max_length: 3000
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]

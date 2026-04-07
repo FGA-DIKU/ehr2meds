@@ -8,36 +8,37 @@ dynamic = ["version"]
 description = "A preprocessing pipeline for electronic health records."
 authors = [
     { name = "Kiril Klein", email = "kikl@di.ku.dk" },
-    { name = "Mikkel Odgaard"},
-    { name = "Maria Montgomery"}
+    { name = "Mikkel Odgaard" },
+    { name = "Maria Montgomery" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
     "pandas",
     "numpy",
     "pyarrow",
     "tqdm",
     "azureml-core",
-    "pyarrow",
-    "fastparquet"
+    "fastparquet",
+    "meds==0.3.3",
+    "meds-transforms==0.1.1",
+    "meds_reader",
+    "torch"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "unittests",
+    "pytest",
     "black",
-    "flake8",
-    # Add other development dependencies here
-]
-meds = [
-    "MEDS-transforms>=0.0.7",
+    "flake8"
 ]
 
 [tool.setuptools_scm]
+
 [tool.setuptools.packages.find]
 where = ["."]
