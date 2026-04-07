@@ -12,6 +12,6 @@ main_table:
     - name: pregnancy_start
       function: get_pregnancy_start
       args:
-        birthdate: birthdate
+        birthdate: date
         GA: GA
 
