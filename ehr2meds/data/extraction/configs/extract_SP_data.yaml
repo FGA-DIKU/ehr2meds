@@ -397,7 +397,7 @@ data_extraction:
         type:
           function: fill_matches
           args:
-            target_col: "Måde."
+            target_col: "Måde"
             match_on: ["Vaginal, igangsat", "Vaginal, igangsat (Udgået)"]
             match_type: exact
             fill_value: "Labor induction"
