@@ -51,7 +51,7 @@ class TableBuilder:
 
         return main_df
 
-    def _apply_linked_rule(self, expanded_table: pd.DataFrame, rule: dict, input_path) -> pd.Series:
+    def _apply_linked_rule(self, expanded_table: pd.DataFrame, rule: dict, input_path) -> pd.DataFrame:
         """
         Apply a single linked rule and return a boolean Series aligned to expanded_table.
 
@@ -75,7 +75,8 @@ class TableBuilder:
 
         fn_name = rule.get("function") or "bool_in_time_window"
         link_func = self.collapse_func_dict[fn_name]
-        args = rule.get("args") or {}
+        args = dict(rule.get("args") or {})
+        args.setdefault("name", rule["name"])
 
         return link_func(
             df=linked_df,
@@ -92,9 +93,10 @@ class TableBuilder:
 
         for rule in linked_tables_cfg:
             out_col = rule["name"]
-            expanded_table[out_col] = (
-                self._apply_linked_rule(expanded_table, rule, input_path)
-            )
+            res = self._apply_linked_rule(expanded_table, rule, input_path)
+            expanded_table = expanded_table.merge(res, on=rule["match_on"], how="left")
+            print(res.head())
+            print(expanded_table.head())
 
         print(expanded_table.head())
         # main_table = self.main_df

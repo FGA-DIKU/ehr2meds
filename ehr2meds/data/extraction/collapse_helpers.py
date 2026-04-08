@@ -7,7 +7,8 @@ def bool_in_time_window(
     timestamp: str,
     max_date: str | None = None,
     min_date: str | None = None,
-) -> pd.Series:
+    name: str | None = None,
+) -> pd.DataFrame:
     """
     For each row in expanded_table, return True if df contains at least one matching row
     (based on match_on keys) whose `timestamp` falls within the per-row [min_date, max_date]
@@ -74,4 +75,8 @@ def bool_in_time_window(
     kept_row_ids = merged.loc[merged[timestamp].notna(), "__row_id"].drop_duplicates()
     out = pd.Series(False, index=expanded_table.index, dtype=bool)
     out.iloc[kept_row_ids.to_numpy()] = True
-    return out
+
+    col_name = name or "name"
+    result = expanded_table.copy()
+    result[col_name] = out
+    return result
