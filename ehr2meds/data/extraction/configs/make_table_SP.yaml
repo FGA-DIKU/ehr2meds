@@ -163,8 +163,7 @@ linked_tables:
     - name: labor_induction
       source_file: labor_induction.csv
       match_on: [baby_birth_id]
-      function: 
-        function: is_present_bool
+      function: is_present_bool
         args:
           target_col: [code]
 
