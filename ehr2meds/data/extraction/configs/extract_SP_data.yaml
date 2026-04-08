@@ -251,6 +251,12 @@ data_extraction:
           MOR_CPR: m_cpr
           "Værdi": cervix_length
           "Registreringstidspunkt": date
+    filter:
+      function: bool_match
+      args:
+        target_col: cervix_length
+        op: "<"
+        val: 25
   
   cervical_conization_history:
     key_columns: [m_cpr]

@@ -1,5 +1,7 @@
 import pandas as pd
 
+import ehr2meds.data.extraction.helpers.filter_helpers as filter_helpers
+
 def extract_GA(df, target_col):
     extracted = df[target_col].astype(str).str.extract(r"(?i)(\d+)\s*w", expand=False)
     df[target_col] = pd.to_numeric(extracted, errors="coerce")
@@ -62,32 +64,9 @@ def fill_bool_match(
     """
     Keep rows where a simple boolean condition on ``target_col`` is true; add ``fill_col``.
 
-    - ``op``: one of "==", "!=", ">=", "<=", ">", "<"
-    - ``val``: numeric threshold (int/float). ``target_col`` is coerced to numeric with errors -> NaN
-      (which never matches).
+    Same comparison rules as ``filter_helpers.bool_match``.
     """
-    try:
-        val_num = float(val)
-    except (TypeError, ValueError) as e:
-        raise ValueError(f"val must be numeric; got {val!r}") from e
-
-    s = pd.to_numeric(df[target_col], errors="coerce")
-    if op == "==":
-        mask = s == val_num
-    elif op == "!=":
-        mask = s != val_num
-    elif op == ">=":
-        mask = s >= val_num
-    elif op == "<=":
-        mask = s <= val_num
-    elif op == ">":
-        mask = s > val_num
-    elif op == "<":
-        mask = s < val_num
-    else:
-        raise ValueError(f"Unsupported operator {op!r}; expected one of ==, !=, >=, <=, >, <")
-
-    out = df.loc[mask].copy()
+    out = filter_helpers.bool_match(df, target_col, op, val)
     out[fill_col] = fill_value
     return out
 

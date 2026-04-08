@@ -39,6 +39,11 @@ class DataExtractor:
                     source_df = self.extract_func_dict[fn](
                         source_df, **(type_cfg.get("args") or {})
                     )
+                filter_func = source.get("filter")
+                if filter_func:
+                    source_df = self.filter_func_dict[filter_func](
+                        source_df, **(filter_func.get("args") or {})
+                    )
                 map_columns = source["map_columns"]
                 source_df = source_df[list(map_columns.keys())].rename(
                     columns=map_columns
