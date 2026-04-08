@@ -199,7 +199,6 @@ data_extraction:
           MOR_CPR: m_cpr
           "Præterm": ptb
           "Kontakt dato": date
-          baby_birth_id: baby_birth_id
   
   PPROM_diagnosis:
     key_columns: [m_cpr]

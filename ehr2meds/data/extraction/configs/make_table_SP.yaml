@@ -25,7 +25,7 @@ linked_tables:
         timestamp: date
     - name: ptb_from_birth_id
       source_file: ptb_birth_id.csv
-      match_on: [baby_birth_id]
+      match_on: [m_cpr]
       function: bool_in_time_window
       args:
         max_date: pregnancy_start
