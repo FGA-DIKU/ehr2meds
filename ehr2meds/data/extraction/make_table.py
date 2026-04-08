@@ -42,8 +42,9 @@ class TableBuilder:
                 )
                 main_df = merged.drop(columns=["_merge"])
         
-        for rename_col in cfg.get("rename_columns") or []:
-            main_df.rename(columns={rename_col[0]: rename_col[1]}, inplace=True)
+        rename_columns = cfg.get("rename_columns") or {}
+        if rename_columns:
+            main_df.rename(columns=rename_columns, inplace=True)
 
         for spec in cfg.get("add_columns") or []:
             fn = self.extract_func_dict[spec["function"]]

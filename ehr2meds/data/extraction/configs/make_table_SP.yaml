@@ -15,7 +15,7 @@ main_table:
         birthdate: date
         GA: GA
   rename_columns:
-    - date: pregnancy_end
+    date: pregnancy_end
 
 linked_tables:
     - name: ptb_from_diagnosis
