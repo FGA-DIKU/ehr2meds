@@ -198,25 +198,23 @@ linked_tables:
         max_date: pregnancy_start
         timestamp: date
     
-    - name: current_uterine_malformation
+    - name: uterine_malformation
       source_file: uterine_malformation_diagnosis.csv
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
-        min_date: pregnancy_start
         max_date: pregnancy_end
         timestamp: date
     
-    - name: fibroids_diagnosis
+    - name: fibroids
       source_file: fibroids_diagnosis.csv
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
-        min_date: pregnancy_start
         max_date: pregnancy_end
         timestamp: date
 
-    - name: polyhydramnios_diagnosis
+    - name: polyhydramnios
       source_file: polyhydramnios_diagnosis.csv
       match_on: [m_cpr]
       function: bool_in_time_window
@@ -322,7 +320,7 @@ collapse_table:
     combine:
       function: add_column
     components:
-      - current_uterine_malformation
+      - uterine_malformation
   - name: fibroids
     combine:
       function: add_column
