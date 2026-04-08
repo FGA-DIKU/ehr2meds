@@ -38,9 +38,14 @@ if __name__ == "__main__":
         "--n_samples", type=int, help="Number of samples to summarise.",
         default=10_000,
     )
+    parser.add_argument(
+        "--ignore_columns", type=str, help="Columns to ignore.",
+        default=["m_cpr", "baby_birth_id", "date", "pregnancy_start", "pregnancy_end"],
+    )
     args = parser.parse_args()
 
     table = pd.read_csv(args.table_path)
+    table = table.drop(columns=args.ignore_columns)
     summary = summarise_table(table, args.n_samples)
     summary.to_csv(args.summary_path, index=False)
     print("Saved summary to", args.summary_path)
