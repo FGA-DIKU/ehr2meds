@@ -40,7 +40,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--ignore_columns", type=str, help="Columns to ignore.",
-        default=["m_cpr", "baby_birth_id", "date", "pregnancy_start", "pregnancy_end"],
+        default=["m_cpr", "baby_cpr", "baby_birth_id", "date", "pregnancy_start", "pregnancy_end"],
     )
     args = parser.parse_args()
 
