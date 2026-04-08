@@ -145,7 +145,7 @@ linked_tables:
         max_date: pregnancy_start
         timestamp: date
     - name: short_cervical_length_history
-      source_file: short_cervical_length_history.csv
+      source_file: cervical_length_history.csv
       match_on: [m_cpr]
       function: bool_in_time_window
       args:

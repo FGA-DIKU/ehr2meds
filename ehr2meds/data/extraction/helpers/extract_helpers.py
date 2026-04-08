@@ -53,22 +53,22 @@ def extract_non_nan(df, target_col: str, fill_value, fill_col: str = "fill_col")
     out[fill_col] = fill_value
     return out
 
-def fill_bool_match(
-    df: pd.DataFrame,
-    target_col: str,
-    op: str,
-    val,
-    fill_value,
-    fill_col: str = "fill_col",
-) -> pd.DataFrame:
-    """
-    Keep rows where a simple boolean condition on ``target_col`` is true; add ``fill_col``.
+# def fill_bool_match(
+#     df: pd.DataFrame,
+#     target_col: str,
+#     op: str,
+#     val,
+#     fill_value,
+#     fill_col: str = "fill_col",
+# ) -> pd.DataFrame:
+#     """
+#     Keep rows where a simple boolean condition on ``target_col`` is true; add ``fill_col``.
 
-    Same comparison rules as ``filter_helpers.bool_match``.
-    """
-    out = filter_helpers.bool_match(df, target_col, op, val)
-    out[fill_col] = fill_value
-    return out
+#     Same comparison rules as ``filter_helpers.bool_match``.
+#     """
+#     out = filter_helpers.bool_match(df, target_col, op, val)
+#     out[fill_col] = fill_value
+#     return out
 
 def get_pregnancy_start(birthdate, GA):
     """Pregnancy start = delivery date minus gestational age (works on Series or scalars)."""
