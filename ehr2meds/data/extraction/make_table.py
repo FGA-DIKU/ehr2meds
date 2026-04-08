@@ -94,9 +94,7 @@ class TableBuilder:
         for rule in linked_tables_cfg:
             out_col = rule["name"]
             res = self._apply_linked_rule(expanded_table, rule, input_path)
-            expanded_table = expanded_table.merge(res, on=rule["match_on"], how="left")
-            print(res.head())
-            print(expanded_table.head())
+            expanded_table = res
 
         print(expanded_table.head())
         # main_table = self.main_df
