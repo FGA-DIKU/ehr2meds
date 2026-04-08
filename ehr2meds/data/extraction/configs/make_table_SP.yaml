@@ -86,7 +86,7 @@ linked_tables:
       function: bool_in_time_window
       args:
         min_date: pregnancy_start
-        max_date: pregnancy_ed
+        max_date: pregnancy_end
         timestamp: date
     - name: fertility_treatment
       source_file: fertility_treatment.csv
