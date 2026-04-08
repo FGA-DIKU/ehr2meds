@@ -73,7 +73,7 @@ class TableBuilder:
         else:
             match_on = list(rule.get("match_on") or [])
 
-        fn_name = rule.get("function") or "bool_in_time_window"
+        fn_name = rule.get("function")
         link_func = self.collapse_func_dict[fn_name]
         args = dict(rule.get("args") or {})
         args.setdefault("name", rule["name"])
@@ -95,6 +95,7 @@ class TableBuilder:
             out_col = rule["name"]
             res = self._apply_linked_rule(expanded_table, rule, input_path)
             expanded_table = res
+            print(expanded_table.head())
 
         print(expanded_table.head())
         # main_table = self.main_df
