@@ -30,7 +30,7 @@ linked_tables:
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
-        max_date: pregnancy_end
+        max_date: pregnancy_start
         timestamp: date
 
 collapse_table:
