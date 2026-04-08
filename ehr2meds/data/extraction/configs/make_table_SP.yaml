@@ -79,7 +79,7 @@ collapse_table:
     combine:
       function: add_column
     components: 
-      - BMI_before_pregnancy
+      - maternal_BMI
   - name: previous_ptb
     combine:
       function: or_columns
