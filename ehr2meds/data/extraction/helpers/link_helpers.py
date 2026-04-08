@@ -12,8 +12,6 @@ def merge_on_match_on(
     """Merge df onto expanded_table using `match_on` keys, carrying `extra_cols` from expanded_table."""
     cols = list(match_on)
     if extra_cols:
-        # Some helpers pass column names that actually live in `df` (not expanded_table),
-        # so only carry through columns that exist in expanded_table.
         cols.extend([c for c in extra_cols if c in expanded_table.columns])
     # Always require match keys to exist on expanded_table.
     base = expanded_table[cols].copy()
@@ -93,7 +91,14 @@ def get_time_difference(df: pd.DataFrame,
     merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[start_time, end_time])
     merged[start_time] = pd.to_datetime(merged[start_time], errors="coerce")
     merged[end_time] = pd.to_datetime(merged[end_time], errors="coerce")
-    merged[name] = (merged[end_time] - merged[start_time]).dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit))
+    delta = merged[end_time] - merged[start_time]
+    unit_norm = str(unit).lower()
+    if unit_norm in {"years"}: #pandas Timedelta not supporting "years".
+        merged[name] = delta.dt.total_seconds() / (3600 * 24 * 365.25)
+    elif unit_norm in {"months"}:
+        merged[name] = delta.dt.total_seconds() / (3600 * 24 * (365.25 / 12.0))
+    else:
+        merged[name] = delta.dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit_norm))
     return merged
 
 def latest_entry(df: pd.DataFrame,
