@@ -31,10 +31,12 @@ class DataExtractor:
             for source in data_cfg["sources"]:
                 path = self.input_dir / source["source_file"]
                 source_df = pd.read_csv(path)
-                fn = source["type"]["function"]
-                source_df = self.extract_func_dict[fn](
-                    source_df, **source["type"]["args"]
-                )
+                type_cfg = source.get("type") or {}
+                fn = type_cfg.get("function")
+                if fn:
+                    source_df = self.extract_func_dict[fn](
+                        source_df, **(type_cfg.get("args") or {})
+                    )
                 map_columns = source["map_columns"]
                 source_df = source_df[list(map_columns.keys())].rename(
                     columns=map_columns

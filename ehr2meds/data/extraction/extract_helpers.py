@@ -41,7 +41,6 @@ def extract_codes(df, target_col: str, match_on: list[str], match_type: str):
         raise ValueError(f"Invalid match type: {match_type}")
     return df.loc[mask].copy()
 
-
 def fill_matches(
     df,
     target_col: str,
@@ -62,6 +61,46 @@ def drop_empty_columns(df, columns: list[str]):
 def extract_non_nan(df, target_col: str, fill_value, fill_col: str = "fill_col"):
     """Keep rows where ``target_col`` is non-null; add ``fill_col`` = ``fill_value`` on each row."""
     mask = df[target_col].notna()
+    out = df.loc[mask].copy()
+    out[fill_col] = fill_value
+    return out
+
+def fill_bool_match(
+    df: pd.DataFrame,
+    target_col: str,
+    op: str,
+    val,
+    fill_value,
+    fill_col: str = "fill_col",
+) -> pd.DataFrame:
+    """
+    Keep rows where a simple boolean condition on ``target_col`` is true; add ``fill_col``.
+
+    - ``op``: one of "==", "!=", ">=", "<=", ">", "<"
+    - ``val``: numeric threshold (int/float). ``target_col`` is coerced to numeric with errors -> NaN
+      (which never matches).
+    """
+    try:
+        val_num = float(val)
+    except (TypeError, ValueError) as e:
+        raise ValueError(f"val must be numeric; got {val!r}") from e
+
+    s = pd.to_numeric(df[target_col], errors="coerce")
+    if op == "==":
+        mask = s == val_num
+    elif op == "!=":
+        mask = s != val_num
+    elif op == ">=":
+        mask = s >= val_num
+    elif op == "<=":
+        mask = s <= val_num
+    elif op == ">":
+        mask = s > val_num
+    elif op == "<":
+        mask = s < val_num
+    else:
+        raise ValueError(f"Unsupported operator {op!r}; expected one of ==, !=, >=, <=, >, <")
+
     out = df.loc[mask].copy()
     out[fill_col] = fill_value
     return out

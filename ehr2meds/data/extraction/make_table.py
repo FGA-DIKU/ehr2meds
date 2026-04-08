@@ -94,8 +94,13 @@ class TableBuilder:
         for rule in linked_tables_cfg:
             out_col = rule["name"]
             res = self._apply_linked_rule(expanded_table, rule, input_path)
-            expanded_table = res
-            print(expanded_table.head())
+
+            # Check no new rows
+            if len(res) != len(expanded_table) or not res.index.equals(expanded_table.index):
+                raise ValueError(
+                    f"Linked rule {out_col!r} returned a table with different rows/index "
+                    f"(expected len={len(expanded_table)}, got len={len(res)})."
+                )
 
         print(expanded_table.head())
         # main_table = self.main_df

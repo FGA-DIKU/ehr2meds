@@ -18,35 +18,6 @@ def bool_in_time_window(
     - timestamp: column in df containing the event date/time
     - min_date/max_date: column names in expanded_table (not literals)
     """
-    if not match_on:
-        raise ValueError("match_on must be a non-empty list of key columns.")
-    missing_main = [c for c in match_on if c not in expanded_table.columns]
-    if missing_main:
-        raise ValueError(
-            f"expanded_table missing match_on columns {missing_main}; "
-            f"available: {list(expanded_table.columns)}"
-        )
-    missing_linked = [c for c in match_on if c not in df.columns]
-    if missing_linked:
-        raise ValueError(
-            f"df missing match_on columns {missing_linked}; "
-            f"available: {list(df.columns)}"
-        )
-    if timestamp not in df.columns:
-        raise ValueError(
-            f"df missing timestamp column {timestamp!r}; available: {list(df.columns)}"
-        )
-    if max_date is not None and max_date not in expanded_table.columns:
-        raise ValueError(
-            f"expanded_table missing max_date column {max_date!r}; "
-            f"available: {list(expanded_table.columns)}"
-        )
-    if min_date is not None and min_date not in expanded_table.columns:
-        raise ValueError(
-            f"expanded_table missing min_date column {min_date!r}; "
-            f"available: {list(expanded_table.columns)}"
-        )
-
     # Keep a stable row id to collapse back to one boolean per expanded row after merge
     # (merge can create multiple rows per expanded_table row).
     bound_cols: list[str] = []
