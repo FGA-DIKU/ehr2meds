@@ -176,22 +176,61 @@ def get_time_difference(df: pd.DataFrame,
         merged[name] = delta.dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit_norm))
     return merged
 
-def get_GA_at_date(df: pd.DataFrame,
+def get_GA_at_date(
+    df: pd.DataFrame,
     match_on: list[str],
     expanded_table: pd.DataFrame,
     date: str,
     GA_col: str,
-    birth_date: str,
+    pregnancy_start: str,
+    pregnancy_end: str,
     name: str | None = None,
 ) -> pd.DataFrame:
-    """Get GA at date."""
-    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[date, birth_date, GA_col])
+    """
+    Estimate GA in weeks at ``date`` using GA at delivery (``GA_col``, weeks) and
+    ``pregnancy_end`` as the delivery time. Only merged rows with
+    ``pregnancy_start <= date <= pregnancy_end`` are kept. If several linked rows
+    qualify for one expanded row, the row with the latest ``date`` is used.
+    """
+    if date not in df.columns or GA_col not in df.columns:
+        raise KeyError(
+            f"expected {date!r} and {GA_col!r} on linked df; have {list(df.columns)}"
+        )
+
+    merged = merge_on_match_on(
+        df, expanded_table, match_on=match_on, extra_cols=[pregnancy_start, pregnancy_end]
+    )
     merged[date] = pd.to_datetime(merged[date], errors="coerce")
-    merged[birth_date] = pd.to_datetime(merged[birth_date], errors="coerce")
-    weeks_between = (merged[birth_date] - merged[date]).dt.days / 7
-    GA_at_date = merged[GA_col] - weeks_between
-    expanded_table[name] = GA_at_date
-    return expanded_table
+    merged[pregnancy_start] = pd.to_datetime(merged[pregnancy_start], errors="coerce")
+    merged[pregnancy_end] = pd.to_datetime(merged[pregnancy_end], errors="coerce")
+
+    in_window = (
+        merged[date].notna()
+        & merged[pregnancy_start].notna()
+        & merged[pregnancy_end].notna()
+        & (merged[date] >= merged[pregnancy_start])
+        & (merged[date] <= merged[pregnancy_end])
+    )
+    merged = merged.loc[in_window].copy()
+    ga_at_delivery = pd.to_numeric(merged[GA_col], errors="coerce")
+    weeks_to_end = (merged[pregnancy_end] - merged[date]).dt.days / 7.0
+    merged["_GA_at_date"] = ga_at_delivery - weeks_to_end
+
+    col_name = name or "name"
+    result = expanded_table.copy()
+    out = pd.Series([pd.NA] * len(expanded_table), dtype=object, index=expanded_table.index)
+
+    if merged.empty:
+        result[col_name] = out
+        return result
+
+    idx = merged.groupby("__row_id", sort=False)[date].idxmax()
+    picked = merged.loc[idx]
+    row_ids = picked["__row_id"].to_numpy()
+    vals = picked["_GA_at_date"].to_numpy()
+    out.iloc[row_ids] = vals
+    result[col_name] = out
+    return result
 
 def latest_entry(df: pd.DataFrame,
     match_on: list[str],

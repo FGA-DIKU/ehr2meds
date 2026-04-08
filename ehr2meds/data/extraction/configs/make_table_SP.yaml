@@ -26,7 +26,8 @@ linked_tables:
       args:
         date: scan_date
         GA_col: GA_scan
-        birth_date: birth_date
+        pregnancy_start: pregnancy_start
+        pregnancy_end: pregnancy_end
 
     # maternal variables
     - name: ethnicity
