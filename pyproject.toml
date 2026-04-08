@@ -43,3 +43,25 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+
+[tool.ruff]
+line-length = 127
+
+
+[tool.ruff.lint]
+# "E": style/error codes (PEP 8–type errors, e.g. if x == None).
+# "F": Pyflakes-style errors (unused variables, undefined names, etc.).
+# "I": import-related issues (import order, duplicates, etc.).
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+no-sections = true
+combine-as-imports = true
+
+[tool.ruff.format]
+# quote-style = "double": Ruff prefers " over ' when it reformats strings, as long as it’s safe.
+# indent-style = "space": indentation uses spaces, not tabs.
+quote-style = "double"
+indent-style = "space"
+

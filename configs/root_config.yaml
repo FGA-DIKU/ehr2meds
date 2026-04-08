@@ -1,0 +1,9 @@
+hydra:
+  verbose: false
+  output_subdir: hydra
+  run:
+    dir: ${oc.env:EHR2MEDS_DATA}/logs/${hydra:job.config_name}
+
+logging:
+  level: INFO
+  path: ${oc.env:EHR2MEDS_DATA}/logs/${hydra:job.config_name}

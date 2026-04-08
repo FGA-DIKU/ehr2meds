@@ -1,51 +1,35 @@
-import argparse
+import hydra
 import pathlib
-import shutil
-from os.path import join
-from pathlib import Path
-
-
-from ehr2meds.preMEDS.config import load_config
+from dotenv import load_dotenv
+from ehr2meds.paths import get_config_path
 from ehr2meds.preMEDS.extractor import PREMEDSExtractor
 from ehr2meds.preMEDS.logging import setup_logging
+from omegaconf import DictConfig, OmegaConf
+from os.path import join
+
+load_dotenv()
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="MEDS preprocessing script")
-    parser.add_argument(
-        "--config",
-        type=str,
-        required=True,
-        help="Path to configuration file (.yaml)",
-    )
-    return parser.parse_args()
-
-
-def run_pre_MEDS(config_path):
+@hydra.main(
+    config_path=get_config_path(),
+    config_name="root_config",
+    version_base="1.2",
+)
+def main(cfg: DictConfig) -> None:
     """
     Run PREMEDS preprocessing with the given config file.
 
     :param config_path: Full path to the config file
     """
-    # Load config directly from provided path
-    root = Path("ehr2meds")
-    config_path = root / "configs" / config_path
-    cfg = load_config(config_path)
-
     # Create output directory
-    pathlib.Path(cfg.paths.output).mkdir(
-        parents=True, exist_ok=True
-    )  # changed to output instead of output_dir
+    pathlib.Path(cfg.paths.output).mkdir(parents=True, exist_ok=True)  # changed to output instead of output_dir
 
     # Copy config to output directory
-    shutil.copyfile(
-        config_path,
-        join(cfg.paths.output, "config.yaml"),
-    )
-
+    OmegaConf.save(cfg, join(cfg.paths.output, "config.yaml"))
+    print(cfg)
     setup_logging(
-        log_dir=cfg.get("logging", {}).get("path"),
-        log_level=cfg.get("logging", {}).get("level"),
+        log_dir=cfg["logging"]["path"],
+        log_level=cfg["logging"]["level"],
         name="preMEDS.log",
     )
 
@@ -55,5 +39,4 @@ def run_pre_MEDS(config_path):
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    run_pre_MEDS(args.config)
+    main()

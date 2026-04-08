@@ -1,10 +1,9 @@
 import logging
 import os
+import pandas as pd
 from abc import ABC, abstractmethod
 from os.path import join
 from typing import Iterator, List, Optional
-
-import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +24,7 @@ class BaseDataLoader(ABC):
         self.chunksize = chunksize
         self.test = test
 
-    def load_dataframe(
-        self, filename: str, cols: Optional[List[str]] = None
-    ) -> pd.DataFrame:
+    def load_dataframe(self, filename: str, cols: Optional[List[str]] = None) -> pd.DataFrame:
         """Default implementation for loading entire files using pandas."""
         file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
@@ -49,9 +46,7 @@ class BaseDataLoader(ABC):
             if counts[best_sep] > 0:
                 return best_sep
 
-    def _load_csv(
-        self, file_path: str, cols: Optional[List[str]] = None
-    ) -> pd.DataFrame:
+    def _load_csv(self, file_path: str, cols: Optional[List[str]] = None) -> pd.DataFrame:
         """Try primary separator first, then fallback."""
         for encoding in self.CSV_ENCODINGS:
             for separator in self.KNOWN_SEPARATORS:
@@ -68,9 +63,7 @@ class BaseDataLoader(ABC):
         raise ValueError(f"Unable to read file {file_path} with any encoding")
 
     @abstractmethod
-    def load_chunks(
-        self, filename: str, cols: Optional[List[str]] = None
-    ) -> Iterator[pd.DataFrame]:
+    def load_chunks(self, filename: str, cols: Optional[List[str]] = None) -> Iterator[pd.DataFrame]:
         """Abstract method for chunk loading - implementations will differ."""
         pass
 
@@ -87,9 +80,7 @@ class StandardDataLoader(BaseDataLoader):
     """Local file system data loader using pandas"""
 
     # Now only needs to implement chunk loading
-    def load_chunks(
-        self, filename: str, cols: Optional[List[str]] = None
-    ) -> Iterator[pd.DataFrame]:
+    def load_chunks(self, filename: str, cols: Optional[List[str]] = None) -> Iterator[pd.DataFrame]:
         file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
         if file_path.endswith(".parquet"):
@@ -99,9 +90,7 @@ class StandardDataLoader(BaseDataLoader):
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
 
-    def _load_parquet_chunks(
-        self, file_path: str, cols: Optional[list[str]]
-    ) -> Iterator[pd.DataFrame]:
+    def _load_parquet_chunks(self, file_path: str, cols: Optional[list[str]]) -> Iterator[pd.DataFrame]:
         import pyarrow.parquet as pq
 
         # Open the ParquetFile to enable reading by row groups
@@ -112,18 +101,14 @@ class StandardDataLoader(BaseDataLoader):
         chunks_read = 0
 
         # Read and yield row groups
-        for i, batch in enumerate(
-            pf.iter_batches(batch_size=self.chunksize, columns=cols)
-        ):
+        for i, batch in enumerate(pf.iter_batches(batch_size=self.chunksize, columns=cols)):
             if chunks_read >= max_chunks:
                 break
             df = batch.to_pandas()
             chunks_read += 1
             yield df
 
-    def _load_csv_chunks(
-        self, file_path: str, cols: Optional[List[str]] = None
-    ) -> Iterator[pd.DataFrame]:
+    def _load_csv_chunks(self, file_path: str, cols: Optional[List[str]] = None) -> Iterator[pd.DataFrame]:
         """Load CSV in chunks, trying separators in priority order."""
         separator = self._detect_separator(file_path)
         for encoding in self.CSV_ENCODINGS:
@@ -141,11 +126,7 @@ class StandardDataLoader(BaseDataLoader):
                     yield chunk
                 return  # Exit if reading was successful
             except Exception as e:
-                logger.info(
-                    f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}"
-                )
+                logger.info(f"Failed with separator '{separator}' and encoding {encoding}: {str(e)}")
                 continue
 
-        raise ValueError(
-            f"Unable to read file {file_path} with any encoding/separator combination"
-        )
+        raise ValueError(f"Unable to read file {file_path} with any encoding/separator combination")

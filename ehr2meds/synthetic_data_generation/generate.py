@@ -1,8 +1,8 @@
+import hashlib
+import numpy as np
 import random
 import string
-import hashlib
-from datetime import date, datetime, timedelta, time
-import numpy as np
+from datetime import date, datetime, time, timedelta
 
 
 def medical_code(prefix="", min=100, max=999):
@@ -65,11 +65,7 @@ def rand_string(min_length=10, max_length=100, include_digits=True):
             )
         )
     else:
-        return "".join(
-            random.choices(
-                string.ascii_letters, k=random.randint(min_length, max_length)
-            )
-        )
+        return "".join(random.choices(string.ascii_letters, k=random.randint(min_length, max_length)))
 
 
 def choice(options):

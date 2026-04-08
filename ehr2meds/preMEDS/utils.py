@@ -1,18 +1,16 @@
-from typing import Dict, List, Tuple, Optional
-
 import pandas as pd
-
 from ehr2meds.preMEDS.constants import (
-    CODE,
-    MANDATORY_COLUMNS,
-    SUBJECT_ID,
-    TIMESTAMP,
     ADMISSION_ADT,
     ADMISSION_IND,
+    CODE,
     DEPT_PREFIX,
     DISCHARGE_ADT,
+    MANDATORY_COLUMNS,
     MOVE_ADT,
+    SUBJECT_ID,
+    TIMESTAMP,
 )
+from typing import Dict, List, Optional, Tuple
 
 
 def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
@@ -53,14 +51,10 @@ def check_columns(df: pd.DataFrame, columns_map: dict):
     missing_columns = set(columns_map.keys()) - set(df.columns)
     if missing_columns:
         available_columns = pd.DataFrame({"Available Columns": sorted(df.columns)})
-        requested_columns = pd.DataFrame(
-            {"Requested Columns": sorted(columns_map.keys())}
-        )
+        requested_columns = pd.DataFrame({"Requested Columns": sorted(columns_map.keys())})
         error_msg = f"\nMissing columns: {sorted(missing_columns)}\n\n"
         error_msg += "Columns comparison:\n"
-        error_msg += (
-            f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
-        )
+        error_msg += f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
         raise ValueError(error_msg)
 
 
@@ -175,9 +169,7 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
     return df
 
 
-def map_pids_to_ints(
-    df: pd.DataFrame, subject_id_mapping: Dict[str, int]
-) -> pd.DataFrame:
+def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
     """Map PIDs to integers."""
     # Convert to object dtype to allow integer assignment after mapping
     # (can't assign integers to string dtype column?)
@@ -239,9 +231,7 @@ def unroll_columns(df: pd.DataFrame, concept_config: dict) -> List[pd.DataFrame]
     return processed_dfs
 
 
-def preprocess_admissions_df(
-    df: pd.DataFrame, admissions_config: dict, subject_id_mapping: Dict[str, int]
-) -> pd.DataFrame:
+def preprocess_admissions_df(df: pd.DataFrame, admissions_config: dict, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
     """Preprocess the admissions DataFrame."""
     # Select and rename columns
     df = select_and_rename_columns(df, admissions_config.get("rename_columns", {}))
@@ -272,10 +262,7 @@ def initialize_patient_state(last_patient_data: Optional[dict]) -> dict:
 
 def finalize_previous_patient(events: list, patient_state: dict) -> None:
     """Add discharge event for previous patient if needed."""
-    if (
-        patient_state["admission_start"] is not None
-        and patient_state["last_transfer"] is not None
-    ):
+    if patient_state["admission_start"] is not None and patient_state["last_transfer"] is not None:
         events.append(
             {
                 SUBJECT_ID: patient_state["current_patient_id"],
@@ -303,9 +290,7 @@ def process_patient_events(
         timestamp_in = row["timestamp_in"]
 
         if event_type == ADMISSION_IND.lower():
-            handle_admission_event(
-                subject_id, timestamp_in, dept, row, patient_state, events
-            )
+            handle_admission_event(subject_id, timestamp_in, dept, row, patient_state, events)
         elif event_type == "flyt ind" and patient_state["admission_start"] is not None:
             handle_transfer_event(
                 subject_id,
@@ -328,10 +313,7 @@ def handle_admission_event(
 ) -> None:
     """Handle a new admission event."""
     # If there was a previous admission, add discharge at last transfer
-    if (
-        patient_state["admission_start"] is not None
-        and patient_state["last_transfer"] is not None
-    ):
+    if patient_state["admission_start"] is not None and patient_state["last_transfer"] is not None:
         events.append(
             {
                 SUBJECT_ID: subject_id,
@@ -408,10 +390,7 @@ def create_events_dataframe(events: list) -> pd.DataFrame:
 
 def prepare_last_patient_info(patient_state: dict) -> Optional[dict]:
     """Prepare information about the last patient for the next chunk."""
-    if (
-        patient_state["current_patient_id"] is not None
-        and patient_state["admission_start"] is not None
-    ):
+    if patient_state["current_patient_id"] is not None and patient_state["admission_start"] is not None:
         return {
             SUBJECT_ID: patient_state["current_patient_id"],
             "admission_start": patient_state["admission_start"],

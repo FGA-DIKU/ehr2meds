@@ -1,10 +1,9 @@
-from pathlib import Path
 import os
 
 
 def get_config_path():
-    return Path(os.getenv("EHR2MEDS_CONFIG_PATH"))
+    return os.getenv("EHR2MEDS_CONFIGS")
 
 
 def get_data_path():
-    return Path(os.getenv("EHR2MEDS_DATA"))
+    return os.getenv("EHR2MEDS_DATA")

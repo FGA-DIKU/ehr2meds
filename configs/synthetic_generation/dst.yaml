@@ -1,5 +1,10 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+  
 paths:
-  output: "raw/DST"
+  output: ${oc.env:EHR2MEDS_DATA}/raw/DST
 
 data:
   LPR3_kontakter: 

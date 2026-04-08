@@ -1,5 +1,10 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
 paths:
-  output: "raw/skin_cancer"
+  output: ${oc.env:EHR2MEDS_DATA}/raw/skin_cancer
 
 data:
   nmsc: 

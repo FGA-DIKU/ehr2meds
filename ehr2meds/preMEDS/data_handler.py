@@ -1,11 +1,9 @@
 import logging
 import os
-from typing import Iterator, Optional
-
 import pandas as pd
-
 from ehr2meds.preMEDS.constants import FILENAME
 from ehr2meds.preMEDS.dataloading import StandardDataLoader
+from typing import Iterator, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +38,7 @@ class DataHandler:
         # Initialize the appropriate data loader
         self.data_loader = StandardDataLoader(path, chunksize, test)
 
-    def load_pandas(
-        self, filename: str, cols: Optional[list[str]] = None
-    ) -> pd.DataFrame:
+    def load_pandas(self, filename: str, cols: Optional[list[str]] = None) -> pd.DataFrame:
         return self.data_loader.load_dataframe(filename=filename, cols=cols)
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:

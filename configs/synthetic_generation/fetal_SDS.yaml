@@ -1,5 +1,10 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
 paths:
-  output: "raw/fetal_data/SDS"
+  output: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS
 
 data: # Mangler DAR
   BDB_amning:

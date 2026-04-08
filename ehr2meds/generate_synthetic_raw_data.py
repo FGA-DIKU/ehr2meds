@@ -1,13 +1,13 @@
-import pandas as pd
-import yaml
-import inspect
-import argparse
-from pathlib import Path
-import ehr2meds.synthetic_data_generation.generate as generators
 import ehr2meds.synthetic_data_generation.corrupt as corruptors
+import ehr2meds.synthetic_data_generation.generate as generators
+import hydra
+import inspect
+import pandas as pd
 import random
-from ehr2meds.paths import get_config_path, get_data_path
 from dotenv import load_dotenv
+from ehr2meds.paths import get_config_path
+from omegaconf import DictConfig, OmegaConf
+from pathlib import Path
 
 load_dotenv()
 
@@ -18,9 +18,7 @@ def handle_mix_function(call_args, generators_dict):
         if func_cfg["type"] in generators_dict:
             func_cfg["func"] = generators_dict[func_cfg["type"]]
         else:
-            raise ValueError(
-                f"Function {func_cfg['type']} not found in generators_dict"
-            )
+            raise ValueError(f"Function {func_cfg['type']} not found in generators_dict")
     return callable_args
 
 
@@ -44,13 +42,9 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
         if "corruptions" in col_cfg:
             for corruption in col_cfg["corruptions"]:
                 if corruption["type"] not in corruptors_dict:
-                    raise ValueError(
-                        f"Unknown corruption function type: {corruption['type']}"
-                    )
+                    raise ValueError(f"Unknown corruption function type: {corruption['type']}")
                 corruption_fn = corruptors_dict[corruption["type"]]
-                value = corruption_fn(
-                    value, row_index=row_index, **corruption.get("args", {})
-                )
+                value = corruption_fn(value, row_index=row_index, **corruption.get("args", {}))
 
         row[column_name] = value
     return row
@@ -77,8 +71,7 @@ def generate_linked_columns(table_cfg, row, output_dir):
         linked_file_path = output_dir / f"{linked_file}.csv"
         if not linked_file_path.exists():
             raise ValueError(
-                f"Linked file '{linked_file_path}' not found. "
-                f"Make sure it's generated in the 'data' section first."
+                f"Linked file '{linked_file_path}' not found. Make sure it's generated in the 'data' section first."
             )
         linked_df = pd.read_csv(linked_file_path)
 
@@ -133,33 +126,21 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
         df.to_csv(output_dir / f"{table_name}.csv", index=False)
 
 
-if __name__ == "__main__":
+@hydra.main(
+    config_path=get_config_path(),
+    config_name="root_config",
+    version_base="1.2",
+)
+def main(cfg: DictConfig) -> None:
     random.seed(0)
-
-    parser = argparse.ArgumentParser(
-        description="Generate synthetic datasets based on a YAML configuration."
-    )
-    parser.add_argument(
-        "--config", type=str, help="Path to the YAML configuration file."
-    )
-    args = parser.parse_args()
-
-    cfg_root = get_config_path()
-    data_root = get_data_path()
-    with open(cfg_root / args.config) as f:
-        cfg = yaml.safe_load(f)
-    output_dir = data_root / cfg["paths"]["output"]
+    output_dir = Path(cfg.paths.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    generators_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(generators)
-        if inspect.isfunction(obj)
-    }
-    corruptors_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(corruptors)
-        if inspect.isfunction(obj)
-    }
+    generators_dict = {name: obj for name, obj in inspect.getmembers(generators) if inspect.isfunction(obj)}
+    corruptors_dict = {name: obj for name, obj in inspect.getmembers(corruptors) if inspect.isfunction(obj)}
 
-    generate_tables(cfg, output_dir, generators_dict, corruptors_dict)
+    generate_tables(OmegaConf.to_container(cfg), output_dir, generators_dict, corruptors_dict)
+
+
+if __name__ == "__main__":
+    main()

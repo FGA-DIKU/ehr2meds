@@ -1,32 +1,30 @@
-from typing import Dict, Optional, Tuple
 import pandas as pd
 from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (
+    apply_mapping,
     clean_data,
     convert_numeric_columns,
-    fill_missing_values,
-    map_pids_to_ints,
-    prefix_codes,
-    select_and_rename_columns,
-    apply_mapping,
-    unroll_columns,
     create_events_dataframe,
+    fill_missing_values,
     finalize_previous_patient,
     initialize_patient_state,
+    map_pids_to_ints,
+    prefix_codes,
     prepare_last_patient_info,
     preprocess_admissions_df,
     process_patient_events,
+    select_and_rename_columns,
+    unroll_columns,
 )
+from typing import Dict, Optional, Tuple
 
 
 class SPConceptProcessor:
     """Handles the processing of medical concepts"""
 
     @staticmethod
-    def process(
-        df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]
-    ) -> pd.DataFrame:
+    def process(df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
         """
         Main method for processing a single concept's data
         """
@@ -75,19 +73,14 @@ class SPConceptProcessor:
 
         for subject_id, patient_df in df.groupby(SUBJECT_ID):
             # Handle patient transition if needed
-            if (
-                patient_state["current_patient_id"] is not None
-                and subject_id != patient_state["current_patient_id"]
-            ):
+            if patient_state["current_patient_id"] is not None and subject_id != patient_state["current_patient_id"]:
                 finalize_previous_patient(events, patient_state)
 
             # Set current patient
             patient_state["current_patient_id"] = subject_id
 
             # Process this patient's events
-            process_patient_events(
-                subject_id, patient_df, patient_state, events, admissions_config
-            )
+            process_patient_events(subject_id, patient_df, patient_state, events, admissions_config)
 
         # Convert events to DataFrame and sort
         result_df = create_events_dataframe(events)
@@ -134,9 +127,7 @@ class RegisterConceptProcessor:
 
         df = convert_numeric_columns(df, concept_config)
 
-        df = RegisterConceptProcessor._apply_sp_pid_link(
-            df, register_sp_link, join_link_col, target_link_col
-        )
+        df = RegisterConceptProcessor._apply_sp_pid_link(df, register_sp_link, join_link_col, target_link_col)
 
         df = map_pids_to_ints(df, subject_id_mapping)
 
@@ -153,7 +144,9 @@ class RegisterConceptProcessor:
         """
         Apply SP PID link.
         We can expect the subject_id is present in df at the end of processing.
-        The column names in the link file will be provided via config. There will be a join column and a target column and we can essentially reuse our apply_mapping function, just accessing args differently.
+        The column names in the link file will be provided via config.
+        There will be a join column and a target column and we can essentially reuse our apply_mapping function,
+        just accessing args differently.
         """
         if SUBJECT_ID not in df.columns:
             raise ValueError(f"SUBJECT_ID column not found in df: {df.columns}")
@@ -169,9 +162,7 @@ class RegisterConceptProcessor:
         )
 
     @staticmethod
-    def _apply_mappings(
-        df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler"
-    ) -> pd.DataFrame:
+    def _apply_mappings(df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler") -> pd.DataFrame:
         if concept_config.get("mappings"):
             for mapping in concept_config.mappings:
                 map_table = data_handler.load_pandas(
@@ -199,14 +190,10 @@ class RegisterConceptProcessor:
         return df
 
     @staticmethod
-    def _combine_datetime_columns(
-        df: pd.DataFrame, concept_config: dict
-    ) -> pd.DataFrame:
+    def _combine_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
         if "combine_datetime" in concept_config:
-            for target_col, date_time_cols in concept_config[
-                "combine_datetime"
-            ].items():
+            for target_col, date_time_cols in concept_config["combine_datetime"].items():
                 date_col = date_time_cols.get("date_col")
                 time_col = date_time_cols.get("time_col")
                 if date_col in df.columns and time_col in df.columns:
