@@ -42,5 +42,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     table = pd.read_csv(args.table_path)
-    summary = summarise_table(table)
+    summary = summarise_table(table, args.n_samples)
     summary.to_csv(args.summary_path, index=False)
+    print("Saved summary to", args.summary_path)
