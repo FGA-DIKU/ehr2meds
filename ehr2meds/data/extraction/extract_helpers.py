@@ -1,15 +1,5 @@
 import pandas as pd
 
-
-def extract_columns(df, target_cols):
-    missing = [c for c in target_cols if c not in df.columns]
-    if missing:
-        raise ValueError(
-            f"Missing columns {missing}; available: {list(df.columns)}"
-        )
-    return df
-
-
 def extract_GA(df, target_col):
     extracted = df[target_col].astype(str).str.extract(r"(?i)(\d+)\s*w", expand=False)
     df[target_col] = pd.to_numeric(extracted, errors="coerce")
@@ -53,10 +43,6 @@ def fill_matches(
     out = extract_codes(df, target_col, match_on, match_type)
     out[fill_col] = fill_value
     return out
-
-def drop_empty_columns(df, columns: list[str]):
-    """Drop columns that are empty."""
-    return df.dropna(subset=columns)
 
 def extract_non_nan(df, target_col: str, fill_value, fill_col: str = "fill_col"):
     """Keep rows where ``target_col`` is non-null; add ``fill_col`` = ``fill_value`` on each row."""

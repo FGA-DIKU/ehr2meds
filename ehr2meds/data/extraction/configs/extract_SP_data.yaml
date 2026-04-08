@@ -21,18 +21,10 @@ data_extraction:
     key_columns: [m_cpr]
     sources:
       - source_file: Mor - CPMI - Patientinfo.csv
-        # type:
-        #   function: extract_columns
-        #   args:
-        #     target_cols: [Fødselsdato]
         map_columns:
           MOR_CPR: m_cpr
           Fødselsdato: birthdate
       - source_file: Mor - Patientinfo tillæg til CPMI.csv
-        # type:
-        #   function: extract_columns
-        #   args:
-        #     target_cols: [Alkohol - Antal ugentlige genstande, Rygestatus, Dato for seneste opdatering, Etnicitet]
         map_columns:
           MOR_CPR: m_cpr
           "Alkohol - Antal ugentlige genstande": alcohol_consumption
@@ -44,10 +36,6 @@ data_extraction:
     key_columns: [m_cpr]
     sources:
       - source_file: Population.csv
-        # type:
-        #   function: extract_columns
-        #   args:
-        #     target_cols: [MOR_CPR, BABY_CPR, Fødselstidspunkt, BABY_Fødsel_ID]
         map_columns:
           MOR_CPR: m_cpr
           BABY_CPR: baby_cpr
@@ -129,10 +117,6 @@ data_extraction:
     key_columns: [m_cpr, baby_birth_id]
     sources:
       - source_file: Population.csv
-        # type:
-        #   function: extract_columns
-        #   args:
-        #     target_cols: [MOR_CPR, BABY_CPR, Fødselstidspunkt, BABY_Fødsel_ID]
         map_columns:
           MOR_CPR: m_cpr
           BABY_CPR: baby_cpr
@@ -182,10 +166,6 @@ data_extraction:
             op: ">="
             val: 1
             fill_value: "Parity >= 1 (obs his 1)"
-        # type:
-        #   function: extract_columns
-        #   args:
-        #     target_cols: ["Para"]
         map_columns:
           MOR_CPR: m_cpr
           "Para": parity

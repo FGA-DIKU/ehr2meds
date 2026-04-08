@@ -36,3 +36,7 @@ def include_exclude(df, target_col, include=None, exclude=None, match="exact_mat
         out = out[~_match_mask(s, list(exclude), match)]
 
     return out
+
+def drop_empty_columns(df, columns: list[str]):
+    """Drop columns that are empty."""
+    return df.dropna(subset=columns)

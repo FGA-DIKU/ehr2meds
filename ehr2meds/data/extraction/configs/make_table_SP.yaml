@@ -23,12 +23,12 @@ linked_tables:
       args:
         max_date: pregnancy_start
         timestamp: date
-    - name: ptb_from_birth_id
+    - name: ptb_obs_history
       source_file: ptb_birth_id.csv
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
-        max_date: pregnancy_start
+        max_date: date
         timestamp: date
 
 collapse_table:

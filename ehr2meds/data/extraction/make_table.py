@@ -101,13 +101,14 @@ class TableBuilder:
                     f"Linked rule {out_col!r} returned a table with different rows/index "
                     f"(expected len={len(expanded_table)}, got len={len(res)})."
                 )
-
-        print(expanded_table.head())
-        # main_table = self.main_df
+            expanded_table = res 
+            print(expanded_table.head())
+        
         # for collapse_table in cfg["collapse_tables"]:
         #     collapse_func = self.collapse_func_dict[collapse_table["combine"]["function"]]
         #     sub_table = collapse_func(expanded_table, collapse_table["components"])
         #     expanded_table = expanded_table.merge(sub_table, on=collapse_table["match_on"], how="left")
+        #     print(expanded_table.head())
         
         # for linked_name, linked_cfg in cfg["summary"]["linked_columns"].items():
         #     source_path = os.path.join(input_path, linked_cfg["source_file"])

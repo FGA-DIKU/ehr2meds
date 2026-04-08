@@ -7,11 +7,12 @@ import pandas as pd
 import yaml
 
 import ehr2meds.data.extraction.extract_helpers as extract_helpers
-
+import ehr2meds.data.extraction.filter_helpers as filter_helpers
 
 class DataExtractor:
-    def __init__(self, extract_func_dict, input_dir: Path):
+    def __init__(self, extract_func_dict, filter_func_dict, input_dir: Path):
         self.extract_func_dict = extract_func_dict
+        self.filter_func_dict = filter_func_dict
         self.input_dir = Path(input_dir)
 
     def run(self, cfg, output_dir: Path):
@@ -50,7 +51,7 @@ class DataExtractor:
             res_df = res_df.drop_duplicates()
             if "filter" in data_cfg:
                 fn = data_cfg["filter"]["function"]
-                res_df = self.extract_func_dict[fn](
+                res_df = self.filter_func_dict[fn](
                     res_df, **data_cfg["filter"]["args"]
                 )
             res_df.to_csv(out_path, index=False)
@@ -89,6 +90,10 @@ if __name__ == "__main__":
         for name, obj in inspect.getmembers(extract_helpers)
         if inspect.isfunction(obj) and obj.__module__ == extract_helpers.__name__
     }
-
-    data_extractor = DataExtractor(extract_func_dict, input_dir)
+    filter_func_dict = {
+        name: obj
+        for name, obj in inspect.getmembers(filter_helpers)
+        if inspect.isfunction(obj) and obj.__module__ == filter_helpers.__name__
+    }
+    data_extractor = DataExtractor(extract_func_dict, filter_func_dict, input_dir)
     data_extractor.run(cfg, output_dir)
