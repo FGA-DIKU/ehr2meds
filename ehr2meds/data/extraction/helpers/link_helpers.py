@@ -113,5 +113,5 @@ def latest_entry(df: pd.DataFrame,
     merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[date_col, max_date])
     merged[date_col] = pd.to_datetime(merged[date_col], errors="coerce")
     merged = merged[merged[date_col] <= pd.to_datetime(max_date, errors="coerce")]
-    merged[name] = merged[target_col].max()
-    return merged
+    expanded_table[name] = merged[target_col].max()
+    return expanded_table
