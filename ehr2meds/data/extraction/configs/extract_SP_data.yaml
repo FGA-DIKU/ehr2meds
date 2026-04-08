@@ -58,6 +58,7 @@ data_extraction:
   
   cervical_scans:
     key_columns: [m_cpr]
+    combine: merge
     sources:
       - source_file: Mor - CPMI - Procedurer.csv
         type:
@@ -70,6 +71,15 @@ data_extraction:
           MOR_CPR: m_cpr
           ProcedureCode: code
           ServiceDate: date
+      - source_file: Mor - Obstetrisk Historik DEL 2.csv
+        type:
+          function: extract_GA
+          args:
+            target_col: Gestationsalder
+        map_columns:
+          MOR_CPR: m_cpr
+          Dato: date
+          Gestationsalder: GA_scan
   
   fertility_treatment:
     key_columns: [m_cpr, code,]

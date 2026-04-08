@@ -19,26 +19,19 @@ def merge_on_match_on(
     merged = base.merge(df, on=match_on, how="left")
     return merged
 
-def bool_in_time_window(
+
+def _merge_rows_matching_bool_in_time_window(
     df: pd.DataFrame,
     match_on: list[str],
     expanded_table: pd.DataFrame,
     timestamp: str,
     max_date: str | None = None,
     min_date: str | None = None,
-    name: str | None = None,
 ) -> pd.DataFrame:
     """
-    For each row in expanded_table, return True if df contains at least one matching row
-    (based on match_on keys) whose `timestamp` falls within the per-row [min_date, max_date]
-    window defined by columns in expanded_table. Bounds are optional.
-
-    - match_on: list of key columns present in both df and expanded_table
-    - timestamp: column in df containing the event date/time
-    - min_date/max_date: column names in expanded_table (not literals)
+    Merge linked ``df`` onto ``expanded_table`` and keep rows that pass the same
+    time-window rules as :func:`bool_in_time_window` (including non-null ``timestamp``).
     """
-    # Keep a stable row id to collapse back to one boolean per expanded row after merge
-    # (merge can create multiple rows per expanded_table row).
     bound_cols: list[str] = []
     if min_date is not None:
         bound_cols.append(min_date)
@@ -57,8 +50,34 @@ def bool_in_time_window(
         merged[max_date] = pd.to_datetime(merged[max_date], errors="coerce")
         merged = merged[merged[timestamp] <= merged[max_date]]
 
+    merged = merged.loc[merged[timestamp].notna()]
+    return merged
+
+
+def bool_in_time_window(
+    df: pd.DataFrame,
+    match_on: list[str],
+    expanded_table: pd.DataFrame,
+    timestamp: str,
+    max_date: str | None = None,
+    min_date: str | None = None,
+    name: str | None = None,
+) -> pd.DataFrame:
+    """
+    For each row in expanded_table, return True if df contains at least one matching row
+    (based on match_on keys) whose `timestamp` falls within the per-row [min_date, max_date]
+    window defined by columns in expanded_table. Bounds are optional.
+
+    - match_on: list of key columns present in both df and expanded_table
+    - timestamp: column in df containing the event date/time
+    - min_date/max_date: column names in expanded_table (not literals)
+    """
+    merged = _merge_rows_matching_bool_in_time_window(
+        df, match_on, expanded_table, timestamp, max_date=max_date, min_date=min_date
+    )
+
     # True if any linked rows remain for that expanded row id.
-    kept_row_ids = merged.loc[merged[timestamp].notna(), "__row_id"].drop_duplicates()
+    kept_row_ids = merged["__row_id"].drop_duplicates()
     out = pd.Series(False, index=expanded_table.index, dtype=bool)
     out.iloc[kept_row_ids.to_numpy()] = True
 
@@ -183,3 +202,42 @@ def is_present_bool(
     merged = merge_on_match_on(df, expanded_table, match_on=match_on)
     expanded_table[name] = merged[target_col].notna().astype(bool)
     return expanded_table
+
+def value_in_time_window(
+    df: pd.DataFrame,
+    match_on: list[str],
+    expanded_table: pd.DataFrame,
+    timestamp: str,
+    target_col: str,
+    max_date: str | None = None,
+    min_date: str | None = None,
+    name: str | None = None,
+) -> pd.DataFrame:
+    """
+    Reuse the same linked rows as ``bool_in_time_window``; for each expanded row where
+    that function would be True, set ``name`` to ``target_col`` from the **latest**
+    matching linked row (by ``timestamp``). Otherwise missing.
+    """
+    if target_col not in df.columns:
+        raise KeyError(
+            f"target_col {target_col!r} not in linked dataframe; have {list(df.columns)}"
+        )
+
+    merged = _merge_rows_matching_bool_in_time_window(
+        df, match_on, expanded_table, timestamp, max_date=max_date, min_date=min_date
+    )
+    col_name = name or "name"
+    result = expanded_table.copy()
+    out = pd.Series([pd.NA] * len(expanded_table), dtype=object, index=expanded_table.index)
+
+    if merged.empty:
+        result[col_name] = out
+        return result
+
+    idx = merged.groupby("__row_id", sort=False)[timestamp].idxmax()
+    picked = merged.loc[idx]
+    row_ids = picked["__row_id"].to_numpy()
+    vals = picked[target_col].to_numpy()
+    out.iloc[row_ids] = vals
+    result[col_name] = out
+    return result

@@ -18,6 +18,17 @@ main_table:
     date: pregnancy_end
 
 linked_tables:
+    # time variables
+    - name: cervical_scans
+      source_file: cervical_scans.csv
+      match_on: [m_cpr]
+      function: value_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+        target_col: GA_scan
+
     # maternal variables
     - name: ethnicity
       source_file: static_maternal_variables.csv
@@ -331,3 +342,8 @@ collapse_table:
       function: add_column
     components:
       - polyhydramnios
+  - name: cervical_scans
+    combine:
+      function: add_column
+    components:
+      - cervical_scans
