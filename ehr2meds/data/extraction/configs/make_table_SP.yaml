@@ -236,14 +236,10 @@ collapse_table:
       - earlier_ptb_from_diagnosis
       - earlier_ptb_obs_history
   - name: previous_pprom
-    function: add_column
+    combine:
+      function: or_columns
     components:
       - pprom_previous_pregnancy
-  - name: current_pprom
-    combine:
-      function: add_column
-    components:
-      - pprom_current_pregnancy
   - name: previous_short_cervical_length
     combine:
       function: or
