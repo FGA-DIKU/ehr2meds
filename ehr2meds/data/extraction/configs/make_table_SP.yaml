@@ -24,7 +24,7 @@ linked_tables:
         max_date: pregnancy_start
         timestamp: date
     - name: ptb_obs_history
-      source_file: ptb_birth_id.csv
+      source_file: ptb_obs_history.csv
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
@@ -37,4 +37,4 @@ collapse_table:
       function: or
     components:
       - name: ptb_from_diagnosis
-      - name: ptb_from_birth_id
+      - name: ptb_obs_history
