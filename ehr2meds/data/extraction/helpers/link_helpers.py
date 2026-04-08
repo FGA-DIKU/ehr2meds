@@ -87,7 +87,7 @@ def get_time_difference(df: pd.DataFrame,
     name: str | None = None,
 ) -> pd.DataFrame:
     """Compute time difference between start and end time."""
-    merged = merge_on_match_on(df, expanded_table, match_on=match_on)
+    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[start_time, end_time])
     merged[start_time] = pd.to_datetime(merged[start_time], errors="coerce")
     merged[end_time] = pd.to_datetime(merged[end_time], errors="coerce")
     merged[name] = (merged[end_time] - merged[start_time]).dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit))
@@ -102,7 +102,7 @@ def latest_entry(df: pd.DataFrame,
     name: str | None = None,
 ) -> pd.DataFrame:
     """Get latest entry for each group defined by ``required_cols``."""
-    merged = merge_on_match_on(df, expanded_table, match_on=match_on)
+    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[date_col, max_date])
     merged[date_col] = pd.to_datetime(merged[date_col], errors="coerce")
     merged = merged[merged[date_col] <= pd.to_datetime(max_date, errors="coerce")]
     merged[name] = merged[target_col].max()
