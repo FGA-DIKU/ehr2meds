@@ -17,7 +17,7 @@ data_extraction:
           Dato: date
           Gestationsalder: GA
 
-  maternal_variables:
+  static_maternal_variables:
     key_columns: [m_cpr]
     sources:
       - source_file: Mor - CPMI - Patientinfo.csv
@@ -27,11 +27,23 @@ data_extraction:
       - source_file: Mor - Patientinfo tillæg til CPMI.csv
         map_columns:
           MOR_CPR: m_cpr
+          Etnicitet: ethnicity
+  
+  dynamic_maternal_variables:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - Patientinfo tillæg til CPMI.csv
+        map_columns:
+          MOR_CPR: m_cpr
           "Alkohol - Antal ugentlige genstande": alcohol_consumption
           Rygestatus: smoking
           "Dato for seneste opdatering": date
-          Etnicitet: ethnicity
-  
+      - source_file: Mor - Fødselsresume - DEL 1.csv
+        map_columns:
+          MOR_CPR: m_cpr
+          "Vægt før graviditet": BMI_before_pregnancy
+          BABY_Fødsel_ID: baby_birth_id
+
   pregnancy_history:
     key_columns: [m_cpr]
     sources:
@@ -377,3 +389,20 @@ data_extraction:
           MOR_CPR: m_cpr
           Diagnosekode: code
           Noteret_dato: date
+
+  labor_induction: 
+    key_columns: [m_cpr, baby_birth_id]
+    sources:
+      - source_file: Mor - Fødselsresume - DEL 1.csv
+        type:
+          function: fill_matches
+          args:
+            target_col: "Måde."
+            match_on: ["Vaginal, igangsat", "Vaginal, igangsat (Udgået)"]
+            match_type: exact
+            fill_value: "Labor induction")"
+        map_columns:
+          MOR_CPR: m_cpr
+          fill_col: code
+          BABY_Fødsel_ID: baby_birth_id
+          
