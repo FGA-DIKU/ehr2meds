@@ -69,6 +69,8 @@ linked_tables:
       source_file: multi_pregnancy_birth_id.csv
       match_on: [baby_birth_id]
       function: is_present_bool
+      args:
+        target_col: [code]
     - name: multi_pregnancy_obs_history
       source_file: multi_pregnancy_obs_history.csv
       match_on: [m_cpr]
