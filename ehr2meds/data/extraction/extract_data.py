@@ -47,7 +47,7 @@ class DataExtractor:
                     res_df = source_df
                 else:
                     if combine_type == "merge":
-                        res_df = pd.concat([res_df, source_df], ignore_index=True)
+                        res_df = pd.merge(res_df, source_df, on=key_columns, how="left")
                     elif combine_type == "concat":
                         res_df = pd.concat([res_df, source_df], ignore_index=True)
                     else:
