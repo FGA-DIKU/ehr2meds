@@ -286,7 +286,8 @@ def get_GA_at_date(
     result[col_name] = out
     return result
 
-def latest_entry(df: pd.DataFrame,
+def latest_entry(
+    df: pd.DataFrame,
     match_on: list[str],
     expanded_table: pd.DataFrame,
     target_col: str,
@@ -294,12 +295,44 @@ def latest_entry(df: pd.DataFrame,
     max_date: str,
     name: str | None = None,
 ) -> pd.DataFrame:
-    """Get latest entry for each group defined by ``required_cols``."""
-    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[date_col, max_date, target_col])
+    """
+    For each expanded row, among linked rows with ``date_col`` on or before that row's
+    ``max_date`` column, take ``target_col`` from the row with the latest ``date_col``.
+    """
+    col_name = name or "name"
+    if target_col not in df.columns:
+        raise KeyError(
+            f"latest_entry: target_col {target_col!r} not in linked dataframe; have {list(df.columns)}"
+        )
+
+    merged = merge_on_match_on(
+        df, expanded_table, match_on=match_on, extra_cols=[date_col, max_date]
+    )
+    if target_col not in merged.columns:
+        raise KeyError(
+            f"latest_entry: target_col {target_col!r} missing after merge; have {list(merged.columns)}"
+        )
+
     merged[date_col] = pd.to_datetime(merged[date_col], errors="coerce")
-    merged = merged[merged[date_col] <= pd.to_datetime(max_date, errors="coerce")]
-    expanded_table[name] = merged[target_col].max()
-    return expanded_table
+    merged[max_date] = pd.to_datetime(merged[max_date], errors="coerce")
+
+    merged = merged.loc[merged[date_col].notna() & merged[max_date].notna()]
+    merged = merged[merged[date_col] <= merged[max_date]]
+
+    result = expanded_table.copy()
+    out = pd.Series([pd.NA] * len(expanded_table), dtype=object, index=expanded_table.index)
+
+    if merged.empty:
+        result[col_name] = out
+        return result
+
+    idx = merged.groupby("__row_id", sort=False)[date_col].idxmax()
+    picked = merged.loc[idx]
+    row_ids = picked["__row_id"].to_numpy()
+    vals = picked[target_col].to_numpy()
+    out.iloc[row_ids] = vals
+    result[col_name] = out
+    return result
 
 def is_present_bool(
     df: pd.DataFrame,
