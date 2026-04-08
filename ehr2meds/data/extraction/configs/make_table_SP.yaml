@@ -97,7 +97,7 @@ linked_tables:
         max_date: pregnancy_start
         timestamp: date
     - name: fertility_treatment_diagnosis
-      source_file: fertility_treatment_diagnosis.csv
+      source_file: fertility_treatment_procedure.csv
       match_on: [m_cpr]
       function: bool_in_time_shifted_window
       args:
@@ -161,8 +161,7 @@ collapse_table:
     combine:
       function: or_columns
     components: 
-      - fertility_treatment_procedure
-      - fertility_treatment_diagnosis
+      - fertility_treatment
       - ivf_pregnancy
   - name: multiple_pregnancy
     combine:

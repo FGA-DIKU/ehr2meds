@@ -45,9 +45,7 @@ class DataExtractor:
                 if res_df.empty:
                     res_df = source_df
                 else:
-                    res_df = res_df.merge(
-                        source_df, on=key_columns, how="left"
-                    )
+                    res_df = res_df.append(source_df)
             res_df = res_df.drop_duplicates()
             if "filter" in data_cfg:
                 fn = data_cfg["filter"]["function"]

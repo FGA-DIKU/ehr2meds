@@ -69,8 +69,8 @@ data_extraction:
           ProcedureCode: code
           ServiceDate: date
   
-  fertility_treatment_procedure:
-    key_columns: [m_cpr]
+  fertility_treatment:
+    key_columns: [m_cpr, code,]
     sources:
       - source_file: Mor - CPMI - Procedurer.csv
         type:
@@ -83,9 +83,6 @@ data_extraction:
           MOR_CPR: m_cpr
           ProcedureCode: code
           ServiceDate: date
-  fertility_treatment_diagnosis:
-    key_columns: [m_cpr]
-    sources:
       - source_file: Mor - CPMI - Diagnoseliste.csv
         type:
           function: extract_codes
@@ -131,12 +128,6 @@ data_extraction:
   multi_pregnancy_birth_id:
     key_columns: [m_cpr, baby_birth_id]
     sources:
-      - source_file: Population.csv
-        map_columns:
-          MOR_CPR: m_cpr
-          BABY_CPR: baby_cpr
-          Fødselstidspunkt: birthdate
-          BABY_Fødsel_ID: baby_birth_id
       - source_file: Mor - Fødselsresume - DEL 1.csv
         type:
           function: fill_matches
@@ -259,7 +250,7 @@ data_extraction:
           "Værdi": cervix_length
           "Registreringstidspunkt": date
   
-  cervical_conization_diagnosis:
+  cervical_conization_history:
     key_columns: [m_cpr]
     sources:
       - source_file: Mor - CPMI - Diagnoseliste.csv
@@ -273,9 +264,6 @@ data_extraction:
           MOR_CPR: m_cpr
           Diagnosekode: code
           Noteret_dato: date
-  cervical_conization_procedure:
-    key_columns: [m_cpr]
-    sources:
       - source_file: Mor - CPMI - Procedurer.csv
         type:
           function: extract_codes
