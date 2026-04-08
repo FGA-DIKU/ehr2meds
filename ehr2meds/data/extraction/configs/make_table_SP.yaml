@@ -242,7 +242,7 @@ collapse_table:
       - pprom_previous_pregnancy
   - name: previous_short_cervical_length
     combine:
-      function: or
+      function: or_columns
     components:
       - previous_short_cervical_length_history
       - previous_short_cervix_diagnosis
