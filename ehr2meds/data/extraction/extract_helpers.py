@@ -95,19 +95,3 @@ def get_pregnancy_start(birthdate, GA):
     """Pregnancy start = delivery date minus gestational age (works on Series or scalars)."""
     ga_weeks = pd.to_numeric(GA, errors="coerce")
     return pd.to_datetime(birthdate) - pd.to_timedelta(ga_weeks * 7, unit="d")
-
-def extract_columns(df, target_cols: list[str]):
-    """Extract columns from dataframe."""
-    return df[target_cols]
-
-def get_time_difference(df, start_time: str, end_time: str, unit: str):
-    """Compute time difference between start and end time."""
-    df[start_time] = pd.to_datetime(df[start_time], errors="coerce")
-    df[end_time] = pd.to_datetime(df[end_time], errors="coerce")
-    return (df[end_time] - df[start_time]).dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit))
-
-def latest_entry(df, target_col: str, date_col: str, max_date: str):
-    """Get latest entry for each group defined by ``required_cols``."""
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df = df[df[date_col] <= pd.to_datetime(max_date, errors="coerce")]
-    return df[target_col].max()
