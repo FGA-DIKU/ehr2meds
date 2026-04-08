@@ -78,7 +78,7 @@ class TableBuilder:
             match_on = list(rule.get("match_on") or [])
 
         fn_name = rule.get("function")
-        link_func = self.extract_func_dict[fn_name]
+        link_func = self.filter_func_dict[fn_name]
         args = dict(rule.get("args") or {})
         args.setdefault("name", rule["name"])
 
