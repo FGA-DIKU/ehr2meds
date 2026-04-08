@@ -7,9 +7,17 @@ def drop_empty_columns(df, columns: list[str]):
     """Drop columns that are empty."""
     return df.dropna(subset=columns)
 
-def merge_on_match_on(df: pd.DataFrame, expanded_table: pd.DataFrame, match_on: list[str]):
-    """Merge df onto expanded_table on match_on keys."""
-    base = expanded_table[match_on].copy()
+def merge_on_match_on(
+    df: pd.DataFrame,
+    expanded_table: pd.DataFrame,
+    match_on: list[str],
+    extra_cols: list[str] | None = None,
+):
+    """Merge df onto expanded_table using `match_on` keys, carrying `extra_cols` from expanded_table."""
+    cols = list(match_on)
+    if extra_cols:
+        cols.extend(extra_cols)
+    base = expanded_table[cols].copy()
     base["__row_id"] = range(len(expanded_table))
     merged = base.merge(df, on=match_on, how="left")
     return merged
@@ -40,7 +48,9 @@ def bool_in_time_window(
     if max_date is not None:
         bound_cols.append(max_date)
 
-    merged = merge_on_match_on(df, expanded_table, match_on + bound_cols)
+    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=bound_cols)
+
+    merged[timestamp] = pd.to_datetime(merged[timestamp], errors="coerce")
 
     if min_date is not None:
         merged[min_date] = pd.to_datetime(merged[min_date], errors="coerce")
@@ -67,7 +77,7 @@ def extract_columns(    df: pd.DataFrame,
     name: str | None = None,
 ) -> pd.DataFrame:
     """Extract columns from dataframe."""
-    merged = merge_on_match_on(df, expanded_table, match_on)
+    merged = merge_on_match_on(df, expanded_table, match_on=match_on)
     merged[name] = merged[target_cols]
     return merged
 
