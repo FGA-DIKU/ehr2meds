@@ -18,6 +18,45 @@ main_table:
     date: pregnancy_end
 
 linked_tables:
+    # maternal variables
+    - name: ethnicity
+      source_file: static_maternal_variables.csv
+      match_on: [m_cpr]
+      function: extract_columns
+      args:
+        target_cols: [ethnicity]
+    - name: maternal_age
+      source_file: static_maternal_variables.csv
+      match_on: [m_cpr]
+      function: get_time_difference
+      args:
+        start_time: birthdate
+        end_time: pregnancy_start
+        unit: years
+    - name: maternal_BMI
+      source_file: dynamic_maternal_variables.csv
+      match_on: [baby_birth_id]
+      function: extract_columns
+      args:
+        target_cols: [BMI_before_pregnancy]
+    - name: alcohol_consumption
+      source_file: dynamic_maternal_variables.csv
+      match_on: [m_cpr]
+      function: latest_entry
+      args:
+        target_cols: [alcohol_consumption]
+        date_col: date
+        max_date: pregnancy_start
+    - name: smoking
+      source_file: dynamic_maternal_variables.csv
+      match_on: [m_cpr]
+      function: latest_entry
+      args:
+        target_cols: [smoking]
+        date_col: date
+        max_date: pregnancy_start
+
+    # pregnancy history
     - name: ptb_from_diagnosis
       source_file: ptb_diagnosis.csv
       match_on: [m_cpr]
@@ -32,44 +71,13 @@ linked_tables:
       args:
         max_date: pregnancy_start
         timestamp: date
-    - name: ethnicity
-      source_file: static_maternal_variables.csv
-      match_on: [m_cpr]
-      function: extract_columns
-      args:
-        target_cols: [ethnicity]
-    # - name: maternal_age
-    #   source_file: static_maternal_variables.csv
-    #   match_on: [m_cpr]
-    #   function: get_time_difference
-    #   args:
-    #     start_time: birthdate
-    #     end_time: pregnancy_start
-    #     unit: years
-    - name: maternal_BMI
-      source_file: dynamic_maternal_variables.csv
-      match_on: [baby_birth_id]
-      function: extract_columns
-      args:
-        target_cols: [BMI_before_pregnancy]
-    # - name: alcohol_consumption
-    #   source_file: dynamic_maternal_variables.csv
-    #   match_on: [m_cpr]
-    #   function: latest_entry
-    #   args:
-    #     target_cols: [alcohol_consumption]
-    #     date_col: date
-    #     max_date: pregnancy_start
-    # - name: smoking
-    #   source_file: dynamic_maternal_variables.csv
-    #   match_on: [m_cpr]
-    #   function: latest_entry
-    #   args:
-    #     target_cols: [smoking]
-    #     date_col: date
-    #     max_date: pregnancy_start
 
 collapse_table:
+  - name: m_age
+    combine:
+      function: add_column
+    components: 
+      - maternal_age
   - name: m_ethnicity
     combine:
       function: add_column
@@ -80,6 +88,18 @@ collapse_table:
       function: add_column
     components: 
       - maternal_BMI
+  - name: m_alcohol_consumption
+    combine:
+      function: add_column
+    components: 
+      - alcohol_consumption
+  - name: m_smoking
+    combine:
+      function: add_column
+    components: 
+      - smoking
+
+    # pregnancy history
   - name: previous_ptb
     combine:
       function: or_columns
