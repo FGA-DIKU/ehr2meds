@@ -171,3 +171,15 @@ def latest_entry(df: pd.DataFrame,
     merged = merged[merged[date_col] <= pd.to_datetime(max_date, errors="coerce")]
     expanded_table[name] = merged[target_col].max()
     return expanded_table
+
+def is_present_bool(
+    df: pd.DataFrame,
+    match_on: list[str],
+    expanded_table: pd.DataFrame,
+    target_col: str,
+    name: str | None = None,
+) -> pd.DataFrame:
+    """Return True if target_col is present in df."""
+    merged = merge_on_match_on(df, expanded_table, match_on=match_on)
+    expanded_table[name] = merged[target_col].notna().astype(bool)
+    return expanded_table

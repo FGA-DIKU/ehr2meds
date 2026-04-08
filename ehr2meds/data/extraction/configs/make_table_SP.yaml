@@ -68,11 +68,7 @@ linked_tables:
     - name: multi_pregnancy_birth_id
       source_file: multi_pregnancy_birth_id.csv
       match_on: [baby_birth_id]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
+      function: is_present_bool
     - name: multi_pregnancy_obs_history
       source_file: multi_pregnancy_obs_history.csv
       match_on: [m_cpr]
