@@ -18,7 +18,7 @@ def summarise_table(df: pd.DataFrame, n_samples: int) -> pd.DataFrame:
                 col_summary = {}
             else:
                 col_summary = {
-                    k: {"count": int(v), "pct": float(v / n * 100.0)}
+                    k: {"count": int(v), "pct": float(v / 10000 * 100.0)}
                     for k, v in vc.items()
                 }
 
