@@ -12,7 +12,10 @@ def merge_on_match_on(
     """Merge df onto expanded_table using `match_on` keys, carrying `extra_cols` from expanded_table."""
     cols = list(match_on)
     if extra_cols:
-        cols.extend(extra_cols)
+        # Some helpers pass column names that actually live in `df` (not expanded_table),
+        # so only carry through columns that exist in expanded_table.
+        cols.extend([c for c in extra_cols if c in expanded_table.columns])
+    # Always require match keys to exist on expanded_table.
     base = expanded_table[cols].copy()
     base["__row_id"] = range(len(expanded_table))
     merged = base.merge(df, on=match_on, how="left")
