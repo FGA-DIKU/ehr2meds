@@ -106,7 +106,7 @@ class TableBuilder:
             res = self._apply_linked_rule(expanded_table, rule, input_path)
             self._check_new_rows(expanded_table, res, out_col)
             expanded_table[out_col] = res[out_col].fillna(False).astype(bool)
-            print(expanded_table.head())
+            print(expanded_table.head(20))
         return expanded_table
 
     def get_collapsed_table(self, expanded_table: pd.DataFrame, cfg: dict):
@@ -125,29 +125,13 @@ class TableBuilder:
             final_table[out_col] = res[out_col]
         return final_table
 
-    def run(self, cfg: dict, input_path, output_dir):
+    def run(self, cfg: dict, input_path, output_dir, save_name):
         expanded_table = self.get_expanded_table(cfg, input_path)
         final_table = self.get_collapsed_table(expanded_table, cfg)
 
-        # TODO write output_dir once format decided; for now show head.
-        print(final_table.head())
-
-        # for linked_name, linked_cfg in cfg["summary"]["linked_columns"].items():
-        #     source_path = os.path.join(input_path, linked_cfg["source_file"])
-        #     linked_df = self.get_linked_df(linked_cfg, source_path)
-
-        #     tabl_type = linked_cfg["type"]               
-        #     tabl_func = tabl_type["function"]           
-        #     fn = self.extract_func_dict[tabl_func]            
-        #     args_dict = tabl_type.get("args", {})      
-        #     linked_table = fn(linked_df, linked_name, self.required_columns, **args_dict)
-        #     tables.append(linked_table)
-
-        # final_table = self.merge_tables(tables)
-        # print(len(final_table))
-        # final_table.to_csv(output_dir / "final_table.csv", index=False)
-        # print(final_table.head())
-        # print("Saved final table to", output_dir / "final_table.csv")
+        print(final_table.head(20))
+        final_table.to_csv(output_dir / f"{save_name}.csv", index=False)
+        print("Saved final table to", output_dir / f"{save_name}.csv")
 
 if __name__ == "__main__":
     random.seed(0)
@@ -163,6 +147,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--output", type=str, help="Path to the output directory."
+    )
+    parser.add_argument(
+        "--save_name", type=str, help="Name of the table to save."
+        default="final_table"
     )
     args = parser.parse_args()
 
@@ -189,4 +177,4 @@ if __name__ == "__main__":
     }
 
     table_builder = TableBuilder(filter_func_dict, extract_func_dict, collapse_func_dict, cfg["main_table"], input_dir)
-    table_builder.run(cfg, input_dir, output_dir)
+    table_builder.run(cfg, input_dir, output_dir, args.save_name)
