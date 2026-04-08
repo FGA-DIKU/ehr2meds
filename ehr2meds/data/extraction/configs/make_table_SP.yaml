@@ -70,16 +70,19 @@ linked_tables:
     #     max_date: pregnancy_start
 
 collapse_table:
-  - name: maternal_age
+  - name: m_ethnicity
     combine:
       function: add_column
-      args: 
-        col_name: maternal_age
     components: 
-      - maternal_age
-  # - name: previous_ptb
-  #   combine:
-  #     function: or_columns
-  #   components:
-  #     - ptb_from_diagnosis
-  #     - ptb_obs_history
+      - ethnicity
+  - name: m_BMI
+    combine:
+      function: add_column
+    components: 
+      - BMI_before_pregnancy
+  - name: previous_ptb
+    combine:
+      function: or_columns
+    components:
+      - ptb_from_diagnosis
+      - ptb_obs_history
