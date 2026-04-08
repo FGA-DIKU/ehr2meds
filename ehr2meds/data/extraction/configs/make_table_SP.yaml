@@ -216,7 +216,7 @@ linked_tables:
         max_date: pregnancy_end
         timestamp: date
 
-    - polyhydramnios_diagnosis
+    - name: polyhydramnios_diagnosis
       source_file: polyhydramnios_diagnosis.csv
       match_on: [m_cpr]
       function: bool_in_time_window
