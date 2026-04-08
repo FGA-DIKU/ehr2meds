@@ -291,6 +291,11 @@ collapse_table:
       function: or_columns
     components:
       - pprom_previous_pregnancy
+  - name: current_pprom
+    combine:
+      function: add_column
+    components:
+      - pprom_current_pregnancy
   - name: previous_short_cervical_length
     combine:
       function: or_columns

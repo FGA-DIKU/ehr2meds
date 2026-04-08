@@ -18,7 +18,15 @@ def summarise_table(df: pd.DataFrame, n_samples: int) -> pd.DataFrame:
             col_summary = float(series.mean())
             
         else:
-            col_summary = series.value_counts(dropna=False).to_dict() # Counts for categorical/object columns
+            vc = series.value_counts(dropna=False)
+            n = len(series)
+            if n == 0:
+                col_summary = {}
+            else:
+                col_summary = {
+                    k: {"count": int(v), "pct": float(v / n * 100.0)}
+                    for k, v in vc.items()
+                }
 
         rows.append(
             {
