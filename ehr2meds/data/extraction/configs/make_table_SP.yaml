@@ -207,7 +207,7 @@ linked_tables:
         max_date: pregnancy_end
         timestamp: date
     
-    - name fibroids_diagnosis
+    - name: fibroids_diagnosis
       source_file: fibroids_diagnosis.csv
       match_on: [m_cpr]
       function: bool_in_time_window
