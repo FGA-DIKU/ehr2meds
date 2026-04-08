@@ -6,8 +6,8 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-import ehr2meds.data.extraction.extract_helpers as extract_helpers
-import ehr2meds.data.extraction.filter_helpers as filter_helpers
+import ehr2meds.data.extraction.helpers.extract_helpers as extract_helpers
+import ehr2meds.data.extraction.helpers.filter_helpers as filter_helpers
 
 class DataExtractor:
     def __init__(self, extract_func_dict, filter_func_dict, input_dir: Path):
