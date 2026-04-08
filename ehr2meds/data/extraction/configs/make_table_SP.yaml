@@ -58,7 +58,7 @@ linked_tables:
       args:
         target_col: alcohol_consumption
         date_col: date
-        max_date: pregnancy_start
+        max_date: pregnancy_end
     - name: smoking
       source_file: dynamic_maternal_variables.csv
       match_on: [m_cpr]
