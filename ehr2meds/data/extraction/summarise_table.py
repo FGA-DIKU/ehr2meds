@@ -31,7 +31,7 @@ def summarise_table(df: pd.DataFrame, n_samples: int) -> pd.DataFrame:
 
     out = pd.DataFrame(rows)
     # Print only the summary view.
-    print(out[["column", "summary"]])
+    print(out)
     return out
 
 

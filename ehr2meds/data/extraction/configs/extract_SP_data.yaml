@@ -171,13 +171,6 @@ data_extraction:
     key_columns: [m_cpr]
     sources:
       - source_file: Mor - Obstetrisk Historik DEL 1.csv
-        type:
-          function: fill_bool_match
-          args:
-            target_col: "Flerfold"
-            op: ">="
-            val: 1
-            fill_value: "Parity >= 1 (obs his 1)"
         map_columns:
           MOR_CPR: m_cpr
           "Para": parity

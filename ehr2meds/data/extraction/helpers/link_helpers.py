@@ -67,6 +67,62 @@ def bool_in_time_window(
     result[col_name] = out
     return result
 
+def bool_in_time_shifted_window(
+    df: pd.DataFrame,
+    match_on: list[str],
+    expanded_table: pd.DataFrame,
+    timestamp: str,
+    max_date: str | None = None,
+    min_date: str | None = None,
+    shift_max_days: int | None = None,
+    shift_min_days: int | None = None,
+    name: str | None = None,
+) -> pd.DataFrame:
+    """
+    Shift optional lower/upper bounds by calendar days, then delegate to ``bool_in_time_window``.
+
+    Apply shifts on one ``expanded_table`` copy so min and max shifts compose correctly.
+    """
+    if shift_min_days is None and shift_max_days is None:
+        return bool_in_time_window(
+            df=df,
+            match_on=match_on,
+            expanded_table=expanded_table,
+            timestamp=timestamp,
+            max_date=max_date,
+            min_date=min_date,
+            name=name,
+        )
+
+    shifted = expanded_table.copy()
+    out_min = min_date
+    out_max = max_date
+
+    if shift_min_days is not None:
+        shifted_min_col = f"__shifted_{min_date}"
+        shifted[shifted_min_col] = pd.to_datetime(shifted[min_date], errors="coerce") - pd.to_timedelta(
+            shift_min_days, unit="d"
+        )
+        out_min = shifted_min_col
+
+    if shift_max_days is not None:
+        shifted_max_col = f"__shifted_{max_date}"
+        shifted = expanded_table.copy()
+        shifted[shifted_max_col] = pd.to_datetime(shifted[max_date], errors="coerce") + pd.to_timedelta(
+            shift_max_days, unit="d"
+        )
+        out_max = shifted_max_col
+
+    return bool_in_time_window(
+        df=df,
+        match_on=match_on,
+        expanded_table=shifted,
+        timestamp=timestamp,
+        max_date=out_max,
+        min_date=out_min,
+        name=name,
+    )
+
 def extract_column(    
     df: pd.DataFrame,
     match_on: list[str],

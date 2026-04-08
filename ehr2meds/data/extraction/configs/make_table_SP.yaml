@@ -56,15 +56,66 @@ linked_tables:
         date_col: date
         max_date: pregnancy_start
 
-    # pregnancy history
-    - name: ptb_from_diagnosis
+    # pregnancy variables
+    - name: multi_pregnancy_diagnosis
+      source_file: multi_pregnancy_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+    - name: multi_pregnancy_birth_id
+      source_file: multi_pregnancy_birth_id.csv
+      match_on: [baby_birth_id]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+    - name: multi_pregnancy_obs_history
+      source_file: multi_pregnancy_obs_history.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+
+    - name: ivf_pregnancy
+      source_file: IVF_pregnancy.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_ed
+        timestamp: date
+    - name: fertility_treatment
+      source_file: fertility_treatment.csv
+      match_on: [m_cpr]
+      function: bool_in_time_shifted_window
+      args:
+        shift_max_days: 365
+        max_date: pregnancy_start
+        timestamp: date
+
+    - name: parity
+      source_file: parity.csv
+      match_on: [m_cpr]
+      function: latest_entry
+      args:
+        target_col: [parity]
+        date_col: date
+        max_date: pregnancy_start
+
+    - name: earlier_ptb_from_diagnosis
       source_file: ptb_diagnosis.csv
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
         max_date: pregnancy_start
         timestamp: date
-    - name: ptb_obs_history
+    - name: earlier_ptb_obs_history
       source_file: ptb_obs_history.csv
       match_on: [m_cpr]
       function: bool_in_time_window
@@ -100,9 +151,27 @@ collapse_table:
       - smoking
 
     # pregnancy history
+  - name: conception_w_fertility_treatment
+    combine:
+      function: or_columns
+    components: 
+      - fertility_treatment
+      - ivf_pregnancy
+  - name: multiple_pregnancy
+    combine:
+      function: or_columns
+    components:
+      - multi_pregnancy_diagnosis
+      - multi_pregnancy_birth_id
+      - multi_pregnancy_obs_history
+  - name: parity
+    combine:
+      function: add_column
+    components: 
+      - parity
   - name: previous_ptb
     combine:
       function: or_columns
     components:
-      - ptb_from_diagnosis
-      - ptb_obs_history
+      - earlier_ptb_from_diagnosis
+      - earlier_ptb_obs_history
