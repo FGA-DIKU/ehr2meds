@@ -105,7 +105,7 @@ class TableBuilder:
             out_col = rule["name"]
             res = self._apply_linked_rule(expanded_table, rule, input_path)
             self._check_new_rows(expanded_table, res, out_col)
-            expanded_table[out_col] = res[out_col].fillna(False).astype(bool)
+            expanded_table[out_col] = res[out_col].fillna(False)
             print(expanded_table.head(20))
         return expanded_table
 
