@@ -102,11 +102,11 @@ class TableBuilder:
 
         linked_tables_cfg = cfg.get("linked_tables") or []
         for rule in linked_tables_cfg:
+            print(rule)
             out_col = rule["name"]
             res = self._apply_linked_rule(expanded_table, rule, input_path)
             self._check_new_rows(expanded_table, res, out_col)
             expanded_table[out_col] = res[out_col]
-            print(expanded_table.head(20))
         return expanded_table
 
     def get_collapsed_table(self, expanded_table: pd.DataFrame, cfg: dict):
@@ -129,7 +129,6 @@ class TableBuilder:
         expanded_table = self.get_expanded_table(cfg, input_path)
         final_table = self.get_collapsed_table(expanded_table, cfg)
 
-        print(final_table.head(20))
         final_table.to_csv(output_dir / f"{save_name}.csv", index=False)
         print("Saved final table to", output_dir / f"{save_name}.csv")
 

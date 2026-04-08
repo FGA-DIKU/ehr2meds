@@ -154,7 +154,24 @@ def extract_column(
     expanded_table[name] = merged[target_col]
     return expanded_table
 
-def get_time_difference(df: pd.DataFrame,
+# Seconds per calendar unit (approximate; matches prior get_time_difference behaviour).
+_SECONDS_PER_YEAR = 3600 * 24 * 365.25
+_SECONDS_PER_MONTH = 3600 * 24 * (365.25 / 12.0)
+# Divisors for total_seconds() to express a timedelta in the given unit.
+_UNIT_SECONDS = {
+    "days": 86400.0,
+    "hours": 3600.0,
+    "minutes": 60.0,
+    "seconds": 1.0,
+    "weeks": 86400.0 * 7,
+    "milliseconds": 1e-3,
+    "microseconds": 1e-6,
+    "nanoseconds": 1e-9,
+}
+
+
+def get_time_difference(
+    df: pd.DataFrame,
     match_on: list[str],
     expanded_table: pd.DataFrame,
     start_time: str,
@@ -163,17 +180,54 @@ def get_time_difference(df: pd.DataFrame,
     name: str | None = None,
 ) -> pd.DataFrame:
     """Compute time difference between start and end time."""
-    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[start_time, end_time])
+    col_name = name or "name"
+    merged = merge_on_match_on(
+        df, expanded_table, match_on=match_on, extra_cols=[start_time, end_time]
+    )
+    missing = [c for c in (start_time, end_time) if c not in merged.columns]
+    if missing:
+        raise KeyError(
+            "get_time_difference: missing column(s) after merge: "
+            f"{missing}; start_time={start_time!r}, end_time={end_time!r}; "
+            f"have {list(merged.columns)}"
+        )
+
     merged[start_time] = pd.to_datetime(merged[start_time], errors="coerce")
     merged[end_time] = pd.to_datetime(merged[end_time], errors="coerce")
-    delta = merged[end_time] - merged[start_time]
-    unit_norm = str(unit).lower()
-    if unit_norm in {"years"}: #pandas Timedelta not supporting "years".
-        merged[name] = delta.dt.total_seconds() / (3600 * 24 * 365.25)
-    elif unit_norm in {"months"}:
-        merged[name] = delta.dt.total_seconds() / (3600 * 24 * (365.25 / 12.0))
-    else:
-        merged[name] = delta.dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit_norm))
+    try:
+        delta = merged[end_time] - merged[start_time]
+    except Exception as e:
+        raise ValueError(
+            f"get_time_difference: could not subtract {end_time!r} - {start_time!r}: {e}"
+        ) from e
+
+    if not hasattr(delta, "dt"):
+        raise TypeError(
+            f"get_time_difference: expected a timedelta Series for "
+            f"{end_time!r} - {start_time!r}, got {type(delta).__name__}"
+        )
+
+    unit_norm = str(unit).lower().strip()
+    try:
+        if unit_norm == "years":
+            merged[col_name] = delta.dt.total_seconds() / _SECONDS_PER_YEAR
+        elif unit_norm == "months":
+            merged[col_name] = delta.dt.total_seconds() / _SECONDS_PER_MONTH
+        elif unit_norm in _UNIT_SECONDS:
+            merged[col_name] = delta.dt.total_seconds() / _UNIT_SECONDS[unit_norm]
+        else:
+            raise ValueError(
+                "get_time_difference: unsupported unit "
+                f"{unit!r} (normalized {unit_norm!r}). "
+                f"Use 'years', 'months', or one of: {sorted(_UNIT_SECONDS)}"
+            )
+    except ValueError:
+        raise
+    except Exception as e:
+        raise ValueError(
+            f"get_time_difference: failed to convert delta to unit {unit!r}: {e}"
+        ) from e
+
     return merged
 
 def get_GA_at_date(
