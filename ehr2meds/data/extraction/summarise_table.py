@@ -11,17 +11,9 @@ def summarise_table(df: pd.DataFrame, n_samples: int) -> pd.DataFrame:
         nan_count = int(series.isna().sum())
         nan_pct = float(series.isna().mean() * 100.0)
         
-        if pd.api.types.is_bool_dtype(series):
-            vc = series.value_counts(dropna=False)
-            n = len(series)
-            if n == 0:
-                col_summary = {}
-            else:
-                col_summary = {
-                    k: {"count": int(v), "pct": float(v / 10000 * 100.0)}
-                    for k, v in vc.items()
-                }
-
+        if pd.api.types.is_bool_dtype(series): # Count positive (True) values
+            col_summary = float(series.sum() / 10000 * 100.0)
+            
         elif pd.api.types.is_numeric_dtype(series): # Average for numeric columns
             col_summary = float(series.mean())
             
