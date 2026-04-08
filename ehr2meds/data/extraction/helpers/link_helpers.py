@@ -176,6 +176,23 @@ def get_time_difference(df: pd.DataFrame,
         merged[name] = delta.dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit_norm))
     return merged
 
+def get_GA_at_date(df: pd.DataFrame,
+    match_on: list[str],
+    expanded_table: pd.DataFrame,
+    date: str,
+    GA_col: str,
+    birth_date: str,
+    name: str | None = None,
+) -> pd.DataFrame:
+    """Get GA at date."""
+    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[date, birth_date, GA_col])
+    merged[date] = pd.to_datetime(merged[date], errors="coerce")
+    merged[birth_date] = pd.to_datetime(merged[birth_date], errors="coerce")
+    weeks_between = (merged[birth_date] - merged[date]).dt.days / 7
+    GA_at_date = merged[GA_col] - weeks_between
+    expanded_table[name] = GA_at_date
+    return expanded_table
+
 def latest_entry(df: pd.DataFrame,
     match_on: list[str],
     expanded_table: pd.DataFrame,

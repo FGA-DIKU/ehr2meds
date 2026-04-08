@@ -70,7 +70,7 @@ data_extraction:
         map_columns:
           MOR_CPR: m_cpr
           ProcedureCode: code
-          ServiceDate: date
+          ServiceDate: scan_date
       - source_file: Mor - Obstetrisk Historik DEL 2.csv
         type:
           function: extract_GA
@@ -78,7 +78,7 @@ data_extraction:
             target_col: Gestationsalder
         map_columns:
           MOR_CPR: m_cpr
-          Dato: date
+          Dato: birth_date
           Gestationsalder: GA_scan
   
   fertility_treatment:
