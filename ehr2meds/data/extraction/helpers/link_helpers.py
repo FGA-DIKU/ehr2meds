@@ -75,8 +75,8 @@ def extract_columns(
 ) -> pd.DataFrame:
     """Extract columns from dataframe."""
     merged = merge_on_match_on(df, expanded_table, match_on=match_on)
-    merged[name] = merged[target_cols]
-    return merged
+    expanded_table[name] = merged[target_cols]
+    return expanded_table
 
 # def get_time_difference(df, start_time: str, end_time: str, unit: str):
 #     """Compute time difference between start and end time."""
