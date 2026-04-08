@@ -295,7 +295,7 @@ def latest_entry(df: pd.DataFrame,
     name: str | None = None,
 ) -> pd.DataFrame:
     """Get latest entry for each group defined by ``required_cols``."""
-    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[date_col, max_date])
+    merged = merge_on_match_on(df, expanded_table, match_on=match_on, extra_cols=[date_col, max_date, target_col])
     merged[date_col] = pd.to_datetime(merged[date_col], errors="coerce")
     merged = merged[merged[date_col] <= pd.to_datetime(max_date, errors="coerce")]
     expanded_table[name] = merged[target_col].max()
