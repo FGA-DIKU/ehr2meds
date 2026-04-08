@@ -150,7 +150,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--save_name", type=str, help="Name of the table to save."
-        default="final_table"
+        default="final_table",
     )
     args = parser.parse_args()
 
