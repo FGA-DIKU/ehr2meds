@@ -63,21 +63,23 @@ def extract_columns(    df: pd.DataFrame,
     match_on: list[str],
     expanded_table: pd.DataFrame,
     target_cols: list[str],
+    name: str | None = None,
 ) -> pd.DataFrame:
     """Extract columns from dataframe."""
     base = expanded_table[match_on].copy()
     base["__row_id"] = range(len(expanded_table))
     merged = base.merge(df, on=match_on, how="left")
-    return df[target_cols]
+    merged[name] = merged[target_cols]
+    return merged
 
-def get_time_difference(df, start_time: str, end_time: str, unit: str):
-    """Compute time difference between start and end time."""
-    df[start_time] = pd.to_datetime(df[start_time], errors="coerce")
-    df[end_time] = pd.to_datetime(df[end_time], errors="coerce")
-    return (df[end_time] - df[start_time]).dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit))
+# def get_time_difference(df, start_time: str, end_time: str, unit: str):
+#     """Compute time difference between start and end time."""
+#     df[start_time] = pd.to_datetime(df[start_time], errors="coerce")
+#     df[end_time] = pd.to_datetime(df[end_time], errors="coerce")
+#     return (df[end_time] - df[start_time]).dt.total_seconds() / (3600 * 24 * getattr(pd.Timedelta, unit))
 
-def latest_entry(df, target_col: str, date_col: str, max_date: str):
-    """Get latest entry for each group defined by ``required_cols``."""
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df = df[df[date_col] <= pd.to_datetime(max_date, errors="coerce")]
-    return df[target_col].max()
+# def latest_entry(df, target_col: str, date_col: str, max_date: str):
+#     """Get latest entry for each group defined by ``required_cols``."""
+#     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+#     df = df[df[date_col] <= pd.to_datetime(max_date, errors="coerce")]
+#     return df[target_col].max()
