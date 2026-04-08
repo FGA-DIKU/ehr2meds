@@ -35,7 +35,7 @@ linked_tables:
     - name: ethnicity
       source_file: static_maternal_variables.csv
       match_on: [m_cpr]
-      function: include_columns
+      function: extract_columns
       args:
         target_cols: [ethnicity]
     - name: maternal_age
@@ -49,7 +49,7 @@ linked_tables:
     - name: maternal_BMI
       source_file: dynamic_maternal_variables.csv
       match_on: [baby_birth_id]
-      function: include_columns
+      function: extract_columns
       args:
         target_cols: [BMI_before_pregnancy]
     - name: alcohol_consumption
