@@ -182,6 +182,48 @@ linked_tables:
         min_date: pregnancy_start
         max_date: pregnancy_end
         timestamp: date
+    - name: preclampsia_diagnosis_test
+      source_file: preclampsia_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_end
+        timestamp: date
+
+    - name: previous_cervical_conization_history
+      source_file: cervical_conization_history.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_start
+        timestamp: date
+    
+    - name: current_uterine_malformation
+      source_file: uterine_malformation_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+    
+    - name fibroids_diagnosis
+      source_file: fibroids_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+
+    - polyhydramnios_diagnosis
+      source_file: polyhydramnios_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
 
 collapse_table:
   - name: m_age
@@ -266,3 +308,26 @@ collapse_table:
       function: add_column
     components:
       - current_preclampsia_diagnosis
+  - name: preclampsia_test
+    combine:
+      function: add_column
+    components:
+      - preclampsia_diagnosis_test
+  - name: cervical_conization
+    combine:
+      function: add_column
+    components:
+      - previous_cervical_conization_history
+  - name: uterine_malformation
+    combine:
+      function: add_column
+    components:
+      - current_uterine_malformation
+  - name: fibroids
+    combine:
+      function: add_column
+    components:
+      - fibroids_diagnosis
+  - name: polyhydramnios
+    combine:
+      function: add_column
