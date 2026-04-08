@@ -3,16 +3,16 @@ import yaml
 import inspect
 import argparse
 from pathlib import Path
-import ehr2meds.data.extraction.filter_helpers as filter_helpers
-import ehr2meds.data.extraction.extract_helpers as extract_helpers
-import ehr2meds.data.extraction.collapse_helpers as collapse_helpers
+import ehr2meds.data.extraction.helpers.extract_helpers as extract_helpers
+import ehr2meds.data.extraction.helpers.collapse_helpers as collapse_helpers
+import ehr2meds.data.extraction.helpers.link_helpers as link_helpers
 import random
 import os 
 
 
 class TableBuilder:
-    def __init__(self, filter_func_dict, extract_func_dict, collapse_func_dict, main_cfg, input_path):
-        self.filter_func_dict = filter_func_dict
+    def __init__(self, link_func_dict, extract_func_dict, collapse_func_dict, main_cfg, input_path):
+        self.link_func_dict = link_func_dict
         self.extract_func_dict = extract_func_dict
         self.collapse_func_dict = collapse_func_dict
         self.main_df = self.get_main_df(main_cfg, input_path)
@@ -78,7 +78,7 @@ class TableBuilder:
             match_on = list(rule.get("match_on") or [])
 
         fn_name = rule.get("function")
-        link_func = self.filter_func_dict[fn_name]
+        link_func = self.link_func_dict[fn_name]
         args = dict(rule.get("args") or {})
         args.setdefault("name", rule["name"])
 
@@ -105,7 +105,6 @@ class TableBuilder:
             out_col = rule["name"]
             res = self._apply_linked_rule(expanded_table, rule, input_path)
             self._check_new_rows(expanded_table, res, out_col)
-            expanded_table[out_col] = res[out_col].fillna(False)
             print(expanded_table.head(20))
         return expanded_table
 
@@ -165,9 +164,9 @@ if __name__ == "__main__":
         for name, obj in inspect.getmembers(extract_helpers)
         if inspect.isfunction(obj)
     }
-    filter_func_dict = {
+    link_func_dict = {
         name: obj
-        for name, obj in inspect.getmembers(filter_helpers)
+        for name, obj in inspect.getmembers(link_helpers)
         if inspect.isfunction(obj)
     }
     collapse_func_dict = {
@@ -176,5 +175,5 @@ if __name__ == "__main__":
         if inspect.isfunction(obj)
     }
 
-    table_builder = TableBuilder(filter_func_dict, extract_func_dict, collapse_func_dict, cfg["main_table"], input_dir)
+    table_builder = TableBuilder(link_func_dict, extract_func_dict, collapse_func_dict, cfg["main_table"], input_dir)
     table_builder.run(cfg, input_dir, output_dir, args.save_name)

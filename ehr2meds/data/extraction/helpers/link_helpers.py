@@ -3,10 +3,6 @@
 import pandas as pd
 
 
-def drop_empty_columns(df, columns: list[str]):
-    """Drop columns that are empty."""
-    return df.dropna(subset=columns)
-
 def merge_on_match_on(
     df: pd.DataFrame,
     expanded_table: pd.DataFrame,
@@ -70,7 +66,8 @@ def bool_in_time_window(
     result[col_name] = out
     return result
 
-def extract_columns(    df: pd.DataFrame,
+def extract_columns(    
+    df: pd.DataFrame,
     match_on: list[str],
     expanded_table: pd.DataFrame,
     target_cols: list[str],
