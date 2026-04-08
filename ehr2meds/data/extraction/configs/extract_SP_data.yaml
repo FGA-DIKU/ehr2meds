@@ -400,7 +400,7 @@ data_extraction:
             target_col: "Måde."
             match_on: ["Vaginal, igangsat", "Vaginal, igangsat (Udgået)"]
             match_type: exact
-            fill_value: "Labor induction")"
+            fill_value: "Labor induction"
         map_columns:
           MOR_CPR: m_cpr
           fill_col: code
