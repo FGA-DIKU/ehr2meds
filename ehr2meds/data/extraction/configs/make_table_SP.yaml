@@ -88,16 +88,8 @@ linked_tables:
         min_date: pregnancy_start
         max_date: pregnancy_end
         timestamp: date
-    - name: fertility_treatment_procedure
-      source_file: fertility_treatment_procedure.csv
-      match_on: [m_cpr]
-      function: bool_in_time_shifted_window
-      args:
-        shift_max_days: 365
-        max_date: pregnancy_start
-        timestamp: date
-    - name: fertility_treatment_diagnosis
-      source_file: fertility_treatment_procedure.csv
+    - name: fertility_treatment
+      source_file: fertility_treatment.csv
       match_on: [m_cpr]
       function: bool_in_time_shifted_window
       args:
@@ -123,6 +115,22 @@ linked_tables:
         timestamp: date
     - name: earlier_ptb_obs_history
       source_file: ptb_obs_history.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_start
+        timestamp: date
+
+    - name: pprom_current_pregnancy
+      source_file: pprom_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+    - name: pprom_previous_pregnancy
+      source_file: pprom_obs_history.csv
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
@@ -181,3 +189,12 @@ collapse_table:
     components:
       - earlier_ptb_from_diagnosis
       - earlier_ptb_obs_history
+  - name: previous_pprom
+    function: add_column
+    components:
+      - pprom_previous_pregnancy
+  - name: current_pprom
+    combine:
+      function: add_column
+    components:
+      - pprom_current_pregnancy
