@@ -162,11 +162,11 @@ linked_tables:
 
     - name: labor_induction
       source_file: labor_induction.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
+      match_on: [baby_birth_id]
+      function: 
+        function: is_present_bool
+        args:
+          target_col: [code]
 
 collapse_table:
   - name: m_age
