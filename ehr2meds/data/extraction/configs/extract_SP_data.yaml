@@ -70,7 +70,7 @@ data_extraction:
           ServiceDate: date
   
   fertility_treatment:
-    key_columns: [m_cpr]
+    key_columns: [m_cpr, code, date]
     sources:
       - source_file: Mor - CPMI - Procedurer.csv
         type:
