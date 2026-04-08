@@ -56,7 +56,7 @@ linked_tables:
       match_on: [m_cpr]
       function: latest_entry
       args:
-        target_col: [alcohol_consumption]
+        target_col: alcohol_consumption
         date_col: date
         max_date: pregnancy_start
     - name: smoking
@@ -64,7 +64,7 @@ linked_tables:
       match_on: [m_cpr]
       function: latest_entry
       args:
-        target_col: [smoking]
+        target_col: smoking
         date_col: date
         max_date: pregnancy_start
 
@@ -114,7 +114,7 @@ linked_tables:
       match_on: [m_cpr]
       function: latest_entry
       args:
-        target_col: [parity]
+        target_col: parity
         date_col: date
         max_date: pregnancy_start
 
