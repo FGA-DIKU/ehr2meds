@@ -51,3 +51,11 @@ def bool_in_time_window(
     result = expanded_table.copy()
     result[col_name] = out
     return result
+
+
+def or_columns(expanded_table: pd.DataFrame, name: str, components: list[dict]) -> pd.DataFrame:
+    """Boolean OR across component columns (NaN -> False)."""
+    cols = components
+    result = expanded_table.copy()
+    result[name] = expanded_table[cols].fillna(False).astype(bool).any(axis=1).astype(bool)
+    return result

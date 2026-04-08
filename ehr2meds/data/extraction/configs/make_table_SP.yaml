@@ -14,6 +14,8 @@ main_table:
       args:
         birthdate: date
         GA: GA
+  rename_columns:
+    - date: pregnancy_end
 
 linked_tables:
     - name: ptb_from_diagnosis
@@ -28,13 +30,13 @@ linked_tables:
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
-        max_date: date
+        max_date: pregnancy_end
         timestamp: date
 
 collapse_table:
   - name: previous_ptb
     combine:
-      function: or
+      function: or_columns
     components:
-      - name: ptb_from_diagnosis
-      - name: ptb_obs_history
+      - ptb_from_diagnosis
+      - ptb_obs_history

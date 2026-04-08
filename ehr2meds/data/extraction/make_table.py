@@ -41,6 +41,9 @@ class TableBuilder:
                     f"(total={len(merged)})"
                 )
                 main_df = merged.drop(columns=["_merge"])
+        
+        for rename_col in cfg.get("rename_columns") or []:
+            main_df.rename(columns={rename_col[0]: rename_col[1]}, inplace=True)
 
         for spec in cfg.get("add_columns") or []:
             fn = self.extract_func_dict[spec["function"]]
@@ -84,32 +87,50 @@ class TableBuilder:
             expanded_table=expanded_table,
             **args,
         )
+    
+    def _check_new_rows(self, expanded_table: pd.DataFrame, res: pd.DataFrame, out_col: str):
+        if len(res) != len(expanded_table) or not res.index.equals(expanded_table.index):
+            raise ValueError(
+                f"Linked rule {out_col!r} returned a table with different rows/index "
+                f"(expected len={len(expanded_table)}, got len={len(res)})."
+            )
+        return res
 
-    def run(self, linked_tables_cfg: list[dict], input_path, output_dir):
+    def get_expanded_table(self, cfg: dict, input_path):
         expanded_table = self.main_df.copy()
 
-        if linked_tables_cfg is None:
-            linked_tables_cfg = []
-
+        linked_tables_cfg = cfg.get("linked_tables") or []
         for rule in linked_tables_cfg:
             out_col = rule["name"]
             res = self._apply_linked_rule(expanded_table, rule, input_path)
-
-            # Check no new rows
-            if len(res) != len(expanded_table) or not res.index.equals(expanded_table.index):
-                raise ValueError(
-                    f"Linked rule {out_col!r} returned a table with different rows/index "
-                    f"(expected len={len(expanded_table)}, got len={len(res)})."
-                )
-            expanded_table = res 
+            self._check_new_rows(expanded_table, res, out_col)
+            expanded_table[out_col] = res[out_col].fillna(False).astype(bool)
             print(expanded_table.head())
-        
-        # for collapse_table in cfg["collapse_tables"]:
-        #     collapse_func = self.collapse_func_dict[collapse_table["combine"]["function"]]
-        #     sub_table = collapse_func(expanded_table, collapse_table["components"])
-        #     expanded_table = expanded_table.merge(sub_table, on=collapse_table["match_on"], how="left")
-        #     print(expanded_table.head())
-        
+        return expanded_table
+
+    def get_collapsed_table(self, expanded_table: pd.DataFrame, cfg: dict):
+        final_table = self.main_df.copy()
+
+        for collapse_spec in (cfg.get("collapse_table") or []):
+            out_col = collapse_spec["name"]
+            fn_name = collapse_spec.get("combine").get("function")
+            collapse_func = self.collapse_func_dict[fn_name]
+            res = collapse_func(
+                expanded_table=expanded_table,
+                name=out_col,
+                components=collapse_spec.get("components") or [],
+            )
+            self._check_new_rows(expanded_table, res, out_col)
+            final_table[out_col] = res[out_col]
+        return final_table
+
+    def run(self, cfg: dict, input_path, output_dir):
+        expanded_table = self.get_expanded_table(cfg, input_path)
+        final_table = self.get_collapsed_table(expanded_table, cfg)
+
+        # TODO write output_dir once format decided; for now show head.
+        print(final_table.head())
+
         # for linked_name, linked_cfg in cfg["summary"]["linked_columns"].items():
         #     source_path = os.path.join(input_path, linked_cfg["source_file"])
         #     linked_df = self.get_linked_df(linked_cfg, source_path)
@@ -167,4 +188,4 @@ if __name__ == "__main__":
     }
 
     table_builder = TableBuilder(filter_func_dict, extract_func_dict, collapse_func_dict, cfg["main_table"], input_dir)
-    table_builder.run(cfg.get("linked_tables") or [], input_dir, output_dir)
+    table_builder.run(cfg, input_dir, output_dir)
