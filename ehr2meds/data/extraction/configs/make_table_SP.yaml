@@ -325,7 +325,9 @@ collapse_table:
     combine:
       function: add_column
     components:
-      - fibroids_diagnosis
+      - fibroids
   - name: polyhydramnios
     combine:
       function: add_column
+    components:
+      - polyhydramnios
