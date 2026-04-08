@@ -144,8 +144,24 @@ linked_tables:
       args:
         max_date: pregnancy_start
         timestamp: date
-    - name: short_cervical_length_history
-      source_file: cervical_length_history.csv
+    - name: previous_short_cervical_length_history
+      source_file: short_cervical_length_history.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_start
+        timestamp: date
+
+    - name: cesarean_section
+      source_file: cesarean_section.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_start
+        timestamp: date
+
+    - name: labor_induction
+      source_file: labor_induction.csv
       match_on: [m_cpr]
       function: bool_in_time_window
       args:
@@ -213,3 +229,19 @@ collapse_table:
       function: add_column
     components:
       - pprom_current_pregnancy
+  - name: previous_short_cervical_length
+    combine:
+      function: or
+    components:
+      - previous_short_cervical_length_history
+      - previous_short_cervix_diagnosis
+  - name: cesarean_section
+    combine:
+      function: add_column
+    components:
+      - cesarean_section
+  - name: labor_induction
+    combine:
+      function: add_column
+    components:
+      - labor_induction
