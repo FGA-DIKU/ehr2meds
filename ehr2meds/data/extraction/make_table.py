@@ -114,7 +114,7 @@ class TableBuilder:
 
         for collapse_spec in (cfg.get("collapse_table") or []):
             out_col = collapse_spec["name"]
-            fn_name = collapse_spec.get("combine").get("function")
+            fn_name = collapse_spec["combine"]["function"]
             collapse_func = self.collapse_func_dict[fn_name]
             res = collapse_func(
                 expanded_table=expanded_table,
