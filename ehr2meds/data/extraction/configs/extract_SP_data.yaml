@@ -19,6 +19,7 @@ data_extraction:
 
   static_maternal_variables:
     key_columns: [m_cpr]
+    combine: merge
     sources:
       - source_file: Mor - CPMI - Patientinfo.csv
         map_columns:
@@ -31,6 +32,7 @@ data_extraction:
   
   dynamic_maternal_variables:
     key_columns: [m_cpr]
+    combine: merge
     sources:
       - source_file: Mor - Patientinfo tillæg til CPMI.csv
         map_columns:

@@ -28,6 +28,7 @@ class DataExtractor:
                 continue
             print(f"Extracting {data_name!r}...")
             key_columns = data_cfg["key_columns"]
+            combine_type = data_cfg.get("combine") or "concat"
             res_df = pd.DataFrame(columns=key_columns)
             for source in data_cfg["sources"]:
                 path = self.input_dir / source["source_file"]
@@ -45,7 +46,12 @@ class DataExtractor:
                 if res_df.empty:
                     res_df = source_df
                 else:
-                    res_df = pd.concat([res_df, source_df], ignore_index=True)
+                    if combine_type == "merge":
+                        res_df = pd.concat([res_df, source_df], ignore_index=True)
+                    elif combine_type == "concat":
+                        res_df = pd.concat([res_df, source_df], ignore_index=True)
+                    else:
+                        raise ValueError(f"Invalid combine type: {combine_type}")
             res_df = res_df.drop_duplicates()
             if "filter" in data_cfg:
                 fn = data_cfg["filter"]["function"]
