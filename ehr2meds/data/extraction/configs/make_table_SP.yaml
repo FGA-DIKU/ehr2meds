@@ -88,8 +88,16 @@ linked_tables:
         min_date: pregnancy_start
         max_date: pregnancy_end
         timestamp: date
-    - name: fertility_treatment
-      source_file: fertility_treatment.csv
+    - name: fertility_treatment_procedure
+      source_file: fertility_treatment_procedure.csv
+      match_on: [m_cpr]
+      function: bool_in_time_shifted_window
+      args:
+        shift_max_days: 365
+        max_date: pregnancy_start
+        timestamp: date
+    - name: fertility_treatment_diagnosis
+      source_file: fertility_treatment_diagnosis.csv
       match_on: [m_cpr]
       function: bool_in_time_shifted_window
       args:
@@ -153,7 +161,8 @@ collapse_table:
     combine:
       function: or_columns
     components: 
-      - fertility_treatment
+      - fertility_treatment_procedure
+      - fertility_treatment_diagnosis
       - ivf_pregnancy
   - name: multiple_pregnancy
     combine:
