@@ -6,6 +6,10 @@ from pathlib import Path
 import ehr2meds.synthetic_data_generation.generate as generators
 import ehr2meds.synthetic_data_generation.corrupt as corruptors
 import random
+from ehr2meds.paths import get_config_path, get_data_path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def handle_mix_function(call_args, generators_dict):
@@ -140,11 +144,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    root = Path("ehr2meds")
-
-    with open(root / "configs" / args.config) as f:
+    cfg_root = get_config_path()
+    data_root = get_data_path()
+    with open(cfg_root / args.config) as f:
         cfg = yaml.safe_load(f)
-    output_dir = root / cfg["paths"]["output"]
+    output_dir = data_root / cfg["paths"]["output"]
     output_dir.mkdir(parents=True, exist_ok=True)
 
     generators_dict = {

@@ -1,5 +1,5 @@
 paths:
-  output: "data/raw/DST"
+  output: "raw/DST"
 
 data:
   LPR3_kontakter: 

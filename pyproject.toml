@@ -23,12 +23,13 @@ dependencies = [
     "numpy",
     "pyarrow",
     "tqdm",
-    "azureml-core",
     "fastparquet",
     "meds==0.3.3",
     "meds-transforms==0.1.1",
     "meds_reader",
-    "torch"
+    "torch",
+    "ruff==0.15.1",
+    "dotenv==0.9.9",
 ]
 
 [project.optional-dependencies]

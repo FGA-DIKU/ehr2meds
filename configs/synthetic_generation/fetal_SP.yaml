@@ -1,5 +1,5 @@
 paths:
-  output: "data/raw/fetal_data/SP"
+  output: "raw/fetal_data/SP"
 
 data: 
   patient_info:

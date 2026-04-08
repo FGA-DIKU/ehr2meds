@@ -1,5 +1,5 @@
 paths:
-  output: "data/raw/skin_cancer"
+  output: "raw/skin_cancer"
 
 data:
   nmsc: 

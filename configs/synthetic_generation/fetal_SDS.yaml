@@ -1,5 +1,5 @@
 paths:
-  output: "data/raw/fetal_data/SDS"
+  output: "raw/fetal_data/SDS"
 
 data: # Mangler DAR
   BDB_amning:
