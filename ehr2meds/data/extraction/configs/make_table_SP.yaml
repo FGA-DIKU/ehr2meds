@@ -22,9 +22,9 @@ linked_tables:
     - name: ethnicity
       source_file: static_maternal_variables.csv
       match_on: [m_cpr]
-      function: extract_columns
+      function: extract_column
       args:
-        target_cols: [ethnicity]
+        target_col: [ethnicity]
     - name: maternal_age
       source_file: static_maternal_variables.csv
       match_on: [m_cpr]
@@ -36,15 +36,15 @@ linked_tables:
     - name: maternal_BMI
       source_file: dynamic_maternal_variables.csv
       match_on: [baby_birth_id]
-      function: extract_columns
+      function: extract_column
       args:
-        target_cols: [BMI_before_pregnancy]
+        target_col: [BMI_before_pregnancy]
     - name: alcohol_consumption
       source_file: dynamic_maternal_variables.csv
       match_on: [m_cpr]
       function: latest_entry
       args:
-        target_cols: [alcohol_consumption]
+        target_col: [alcohol_consumption]
         date_col: date
         max_date: pregnancy_start
     - name: smoking
@@ -52,7 +52,7 @@ linked_tables:
       match_on: [m_cpr]
       function: latest_entry
       args:
-        target_cols: [smoking]
+        target_col: [smoking]
         date_col: date
         max_date: pregnancy_start
 

@@ -67,16 +67,16 @@ def bool_in_time_window(
     result[col_name] = out
     return result
 
-def extract_columns(    
+def extract_column(    
     df: pd.DataFrame,
     match_on: list[str],
     expanded_table: pd.DataFrame,
-    target_cols: list[str],
+    target_col: str,
     name: str | None = None,
 ) -> pd.DataFrame:
-    """Extract columns from dataframe."""
+    """Extract column from dataframe."""
     merged = merge_on_match_on(df, expanded_table, match_on=match_on)
-    expanded_table[name] = merged[target_cols]
+    expanded_table[name] = merged[target_col]
     return expanded_table
 
 def get_time_difference(df: pd.DataFrame,
