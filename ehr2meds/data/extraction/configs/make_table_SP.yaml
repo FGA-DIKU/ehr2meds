@@ -164,8 +164,24 @@ linked_tables:
       source_file: labor_induction.csv
       match_on: [baby_birth_id]
       function: is_present_bool
-        args:
-          target_col: [code]
+      args:
+        target_col: [code]
+    
+    - name: previous_preclampsia_diagnosis
+      source_file: preclampsia_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_start
+        timestamp: date
+    - name: current_preclampsia_diagnosis
+      source_file: preclampsia_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
 
 collapse_table:
   - name: m_age
@@ -244,3 +260,13 @@ collapse_table:
       function: add_column
     components:
       - labor_induction
+  - name: previous_preclampsia
+    combine:
+      function: add_column
+    components:
+      - previous_preclampsia_diagnosis
+  - name: current_preclampsia
+    combine:
+      function: add_column
+    components:
+      - current_preclampsia_diagnosis
