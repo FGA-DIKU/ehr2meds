@@ -3,7 +3,7 @@ import argparse
 import random
 
 def summarise_table(df: pd.DataFrame, n_samples: int) -> pd.DataFrame:
-    df_sample = df.sample(n=10_000, random_state=42)
+    df_sample = df.sample(n=n_samples, random_state=42)
     summary = {}
 
     for col in df_sample.columns:
@@ -18,9 +18,8 @@ def summarise_table(df: pd.DataFrame, n_samples: int) -> pd.DataFrame:
         else:
             summary[col] = series.value_counts(dropna=False).to_dict() # Counts for categorical/object columns
 
-    summary_df = pd.DataFrame.from_dict(summary, orient="index", columns=["summary"])
-    print(summary_df)
-    return summary_df
+    print(summary)
+    return summary
 
 
 if __name__ == "__main__":
