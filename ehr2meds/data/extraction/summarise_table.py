@@ -12,7 +12,7 @@ def summarise_table(df: pd.DataFrame, n_samples: int) -> pd.DataFrame:
         nan_pct = float(series.isna().mean() * 100.0)
         
         if pd.api.types.is_bool_dtype(series): # Count positive (True) values
-            col_summary = float(series.sum() / 10000 * 100.0)
+            col_summary = float(series.sum() / n_samples * 100.0)
             
         elif pd.api.types.is_numeric_dtype(series): # Average for numeric columns
             col_summary = float(series.mean())
