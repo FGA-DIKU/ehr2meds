@@ -410,3 +410,51 @@ data_extraction:
           fill_col: code
           BABY_Fødsel_ID: baby_birth_id
           
+
+  vaginal_bleeding_diagnosis:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DO468A", "DO209", "DO208", "DO208A"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
+  
+  infections_in_pregnancy:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DN390A", "DN390", "DA499", "DB349", "DZ038A", "DO234", "DO233", "DO235", "DO239"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date
+
+  maternal_comorbidity_diagnosis:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: Mor - CPMI - Diagnoseliste.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Diagnosekode
+            match_on: ["DO998", "DO101", "DZ038O", "DO103", "DO992", "DO993B", "DO994", 
+                       "DO102", "DO993", "DO996A", "DO991", "DO995", "DO993A", "DO997", 
+                       "DO996", "DO989", "DO988", "DO987", "DO983", "DO985", "DO269", 
+                       "DO268", "DO266"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          Diagnosekode: code
+          Noteret_dato: date

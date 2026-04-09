@@ -235,6 +235,32 @@ linked_tables:
         max_date: pregnancy_end
         timestamp: date
 
+    - name: vaginal_bleeding
+      source_file: vaginal_bleeding_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+    
+    - name: infections_in_pregnancy
+      source_file: infections_in_pregnancy.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        min_date: pregnancy_start
+        max_date: pregnancy_end
+        timestamp: date
+
+    - name: maternal_comorbidity
+      source_file: maternal_comorbidity_diagnosis.csv
+      match_on: [m_cpr]
+      function: bool_in_time_window
+      args:
+        max_date: pregnancy_start
+        timestamp: date
+
 collapse_table:
   - name: m_age
     combine:
@@ -353,3 +379,18 @@ collapse_table:
       function: add_column
     components:
       - cervical_scan_GA
+  - name: vaginal_bleeding
+    combine:
+      function: add_column
+    components:
+      - vaginal_bleeding
+  - name: infections_in_pregnancy
+    combine:
+      function: add_column
+    components:
+      - infections_in_pregnancy
+  - name: maternal_comorbidity
+    combine:
+      function: add_column
+    components:
+      - maternal_comorbidity
