@@ -21,6 +21,7 @@ subject:
 diagnosis:
   diagnosis:
     code:
+      - "D"
       - col(code)
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
@@ -28,6 +29,7 @@ diagnosis:
 procedure:
   procedure:
     code:
+      - "P"
       - col(code)
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
@@ -35,6 +37,7 @@ procedure:
 labtest:
   labtest:
     code:
+      - "LAB"
       - col(code)
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
@@ -43,6 +46,7 @@ labtest:
 admissions:
   admissions:
     code:
+      - "A"
       - col(code)
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"

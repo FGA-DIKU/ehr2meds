@@ -48,6 +48,7 @@ def rand_datetime(start=1970, end=2020):
     random_seconds = random.randint(0, int(delta.total_seconds()))
     return datetime(start, 1, 1) + timedelta(seconds=random_seconds)
 
+
 def rand_datetimeseconds(start=1970, end=2020):
     fmt = "%Y-%m-%d %H:%M:%S.%f"
     delta = datetime(end, 12, 31) - datetime(start, 1, 1)
@@ -57,6 +58,7 @@ def rand_datetimeseconds(start=1970, end=2020):
         seconds=random_seconds, microseconds=random_microseconds
     )
     return dt.strftime(fmt)
+
 
 def rand_time():
     hour = random.randint(0, 23)
@@ -74,7 +76,11 @@ def rand_string(min_length=10, max_length=100, include_digits=True):
             )
         )
     else:
-        return "".join(random.choices(string.ascii_letters, k=random.randint(min_length, max_length)))
+        return "".join(
+            random.choices(
+                string.ascii_letters, k=random.randint(min_length, max_length)
+            )
+        )
 
 
 def choice(options):

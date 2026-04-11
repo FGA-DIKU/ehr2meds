@@ -10,7 +10,7 @@ from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (
     factorize_subject_id,
     select_and_rename_columns,
-    convert_timestamp_columns
+    convert_timestamp_columns,
 )
 
 from os.path import split
@@ -35,7 +35,10 @@ class PREMEDSExtractor:
         logger.info(f"test {cfg.test}")
         self.chunksize = cfg.get("chunksize", 500_000)
         if cfg.get("align_timestamps"):
-            self.time_stamp_dict = {'names': cfg.align_timestamps.names, 'format': cfg.align_timestamps.format}
+            self.time_stamp_dict = {
+                "names": cfg.align_timestamps.names,
+                "format": cfg.align_timestamps.format,
+            }
         else:
             self.time_stamp_dict = None
 
@@ -92,7 +95,9 @@ class PREMEDSExtractor:
             **self.cfg.patients_info.get("file_info", {}),
         )
         # Use columns_map to subset and rename the columns.
-        df = select_and_rename_columns(df, self.cfg.patients_info.get("rename_columns", {}))
+        df = select_and_rename_columns(
+            df, self.cfg.patients_info.get("rename_columns", {})
+        )
         logger.info(f"Number of patients after selecting columns: {len(df)}")
 
         df, hash_to_int_map = factorize_subject_id(df)
@@ -110,7 +115,12 @@ class PREMEDSExtractor:
         """Process all medical concepts"""
         for concept_type, concept_config in self.cfg.get("concepts", {}).items():
             try:
-                self._process_concept_chunks(concept_type, concept_config, subject_id_mapping, self.time_stamp_dict)
+                self._process_concept_chunks(
+                    concept_type,
+                    concept_config,
+                    subject_id_mapping,
+                    self.time_stamp_dict,
+                )
             except Exception as e:
                 logger.warning(f"Error processing {concept_type}: {str(e)}")
 
@@ -119,7 +129,9 @@ class PREMEDSExtractor:
         # Load the register-SP mapping once - this maps register PIDs to SP hashes
         register_sp_link = self._get_register_sp_link()
 
-        for concept_type, concept_config in self.cfg.get("register_concepts", {}).items():
+        for concept_type, concept_config in self.cfg.get(
+            "register_concepts", {}
+        ).items():
             logger.info(f"Processing register concept: {concept_type}")
             try:
                 self.process_register_concept_chunks(
@@ -153,7 +165,9 @@ class PREMEDSExtractor:
                 target_link_col=self.cfg.pid_link.target_col,  #  for linking to sp data
             )
 
-            self._safe_save(self.register_data_handler, processed_chunk, concept_type, first_chunk)
+            self._safe_save(
+                self.register_data_handler, processed_chunk, concept_type, first_chunk
+            )
             first_chunk = False
 
     def _process_concept_chunks(
@@ -168,11 +182,17 @@ class PREMEDSExtractor:
             self.data_handler.load_chunks(concept_config),
             desc=f"Chunks {concept_type}",
         ):
-            processed_chunk = self.concept_processor.process(chunk, concept_config, subject_id_mapping, time_stamp_dict)
-            self._safe_save(self.data_handler, processed_chunk, concept_type, first_chunk)
+            processed_chunk = self.concept_processor.process(
+                chunk, concept_config, subject_id_mapping, time_stamp_dict
+            )
+            self._safe_save(
+                self.data_handler, processed_chunk, concept_type, first_chunk
+            )
             first_chunk = False
 
-    def _safe_save(self, data_handler, processed_chunk, concept_type, first_chunk: bool) -> None:
+    def _safe_save(
+        self, data_handler, processed_chunk, concept_type, first_chunk: bool
+    ) -> None:
         if not processed_chunk.empty:
             mode = "w" if first_chunk else "a"
             data_handler.save(processed_chunk, concept_type, mode=mode)
@@ -187,27 +207,3 @@ class PREMEDSExtractor:
             **self.cfg.pid_link.get("file_info", {}),
         )
         return register_sp_link
-
-    def format_admissions(self, admissions_config: dict, subject_id_mapping: Dict[str, int], time_stamp_dict: Optional[dict] = None) -> None:
-        """Process the admissions concept separately, handling patients across chunks."""
-        first_chunk = True
-        last_patient_data = None  # Store data for patient that spans chunks
-
-        for chunk in tqdm(
-            self.data_handler.load_chunks(admissions_config),
-            desc="Chunks admissions",
-        ):
-            # Process the chunk with any carried over patient data
-            processed_chunk = SPConceptProcessor.process_adt_admissions(
-                chunk, admissions_config, subject_id_mapping, last_patient_data
-            )
-
-            self._safe_save(self.data_handler, processed_chunk, "admissions", first_chunk)
-            first_chunk = False
-
-        # # Process any remaining last patient data
-        # final_df = add_discharge_to_last_patient(last_patient_data)
-        # if time_stamp_dict:
-        #     final_df = convert_timestamp_columns(final_df, **time_stamp_dict)
-        # if not final_df.empty:
-        #     self.data_handler.save(final_df, "admissions", mode="a")

@@ -35,16 +35,37 @@ concepts:
       Redigeringsdato: timestamp
       CPR: subject_id
 
-
   admissions:
     filename: admissions.csv
     rename_columns:
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
-      Afsnit: section
-      ADT_haendelse: type
-      CPR: subject_id 
-    use_adm_move: true
+      Afsnit: code
+      CPR: subject_id
+    melt_table:
+      - target_name: timestamp
+        source_cols: [timestamp_in, timestamp_out]
+        prefix_col: code
+        prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
+
+
+  # admissions:
+  #   filename: admissions.csv
+  #   rename_columns:
+  #     Flyt_ind: timestamp_in
+  #     Flyt_ud: timestamp_out
+  #     Afsnit: section
+  #     ADT_haendelse: type
+  #     CPR: subject_id
+  #   melt_table:
+  #     - target_name: code
+  #       source_cols: [type, section]
+  #       prefix_col: code
+  #       prefix_map: {type: TYPE/, section: SECTION/}
+  #     - target_name: timestamp
+  #       source_cols: [timestamp_in, timestamp_out]
+  #       prefix_col: code
+  #       prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
 
   labtest:
     filename: labtest.asc

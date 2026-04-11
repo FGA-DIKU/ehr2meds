@@ -18,7 +18,9 @@ def handle_mix_function(call_args, generators_dict):
         if func_cfg["type"] in generators_dict:
             func_cfg["func"] = generators_dict[func_cfg["type"]]
         else:
-            raise ValueError(f"Function {func_cfg['type']} not found in generators_dict")
+            raise ValueError(
+                f"Function {func_cfg['type']} not found in generators_dict"
+            )
     return callable_args
 
 
@@ -42,9 +44,13 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
         if "corruptions" in col_cfg:
             for corruption in col_cfg["corruptions"]:
                 if corruption["type"] not in corruptors_dict:
-                    raise ValueError(f"Unknown corruption function type: {corruption['type']}")
+                    raise ValueError(
+                        f"Unknown corruption function type: {corruption['type']}"
+                    )
                 corruption_fn = corruptors_dict[corruption["type"]]
-                value = corruption_fn(value, row_index=row_index, **corruption.get("args", {}))
+                value = corruption_fn(
+                    value, row_index=row_index, **corruption.get("args", {})
+                )
 
         row[column_name] = value
     return row
@@ -99,6 +105,7 @@ def generate_linked_columns(table_cfg, row, output_dir):
 
     return row
 
+
 def _save_df(df, output_dir, table_name, save_info):
     file_type = save_info["file_type"]
     args = save_info["args"]
@@ -108,6 +115,7 @@ def _save_df(df, output_dir, table_name, save_info):
         df.to_csv(output_dir / f"{table_name}.asc", index=False, **args)
     else:
         raise ValueError(f"Unknown file type: {file_type}")
+
 
 def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
     # Iterate through each file and its corresponding configuration
@@ -133,7 +141,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
             row = generate_linked_columns(table_cfg, row, output_dir)
             row = generate_corruptions(table_cfg, row, i, corruptors_dict)
             rows.append(row)
-            
+
         df = pd.DataFrame(rows).convert_dtypes()
         if "save_info" in table_cfg:
             _save_df(df, output_dir, table_name, table_cfg["save_info"])
@@ -151,10 +159,20 @@ def main(cfg: DictConfig) -> None:
     output_dir = Path(cfg.paths.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    generators_dict = {name: obj for name, obj in inspect.getmembers(generators) if inspect.isfunction(obj)}
-    corruptors_dict = {name: obj for name, obj in inspect.getmembers(corruptors) if inspect.isfunction(obj)}
+    generators_dict = {
+        name: obj
+        for name, obj in inspect.getmembers(generators)
+        if inspect.isfunction(obj)
+    }
+    corruptors_dict = {
+        name: obj
+        for name, obj in inspect.getmembers(corruptors)
+        if inspect.isfunction(obj)
+    }
 
-    generate_tables(OmegaConf.to_container(cfg), output_dir, generators_dict, corruptors_dict)
+    generate_tables(
+        OmegaConf.to_container(cfg), output_dir, generators_dict, corruptors_dict
+    )
 
 
 if __name__ == "__main__":
