@@ -60,7 +60,7 @@ linked_data:
         args:
           prefix: "P"
       Redigeringsdato:
-        type: rand_datetime
+        type: rand_datetimeseconds
     linked_columns:
       CPR:
         type: choice
@@ -68,13 +68,20 @@ linked_data:
         linked_on: [CPR]
 
   labtest:
-    N: 20
+    N: 40
     columns:
       BestOrd:
-        type: rand_string
+        type: mix_function
         args:
-          min_length: 20
-          max_length: 100
+          functions:
+            - type: rand_string
+              args:
+                min_length: 20
+                max_length: 100
+            - type: choice
+              args:
+                options: ["EKG", "KBT", "Blodprøve", "Andet", "BT", "COVID"]
+          probabilities: [0.5, 0.5]
       Bestillingsdato:
         type: rand_datetime
       Enhed:
@@ -130,6 +137,30 @@ linked_data:
         args:
           min_length: 10
           max_length: 3000
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
+
+  admissions:
+    N: 40
+    columns:
+      Flyt_ind:
+        type: rand_date
+      Flyt_ud:
+        type: greater_than_date
+        match:
+          min_date: Flyt_ind
+      ADT_haendelse:
+        type: choice
+        args:
+          options: ["Indlæggelse", "Flyt_ind", "Tilbage fra orlov"]
+      Afsnit:
+        type: choice
+        args:
+          options: ["HGH, AKUTKLINIK GE-GAMMEL", "NOH COAC0821, ØJENAFD. AMBULATORIEAFSNIT", 
+                    "NEURO", "CARDIO", "NEFRO"]
     linked_columns:
       CPR:
         type: choice

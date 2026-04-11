@@ -48,6 +48,15 @@ def rand_datetime(start=1970, end=2020):
     random_seconds = random.randint(0, int(delta.total_seconds()))
     return datetime(start, 1, 1) + timedelta(seconds=random_seconds)
 
+def rand_datetimeseconds(start=1970, end=2020):
+    fmt = "%Y-%m-%d %H:%M:%S.%f"
+    delta = datetime(end, 12, 31) - datetime(start, 1, 1)
+    random_seconds = random.randint(0, int(delta.total_seconds()))
+    random_microseconds = random.randint(0, 999_999)
+    dt = datetime(start, 1, 1) + timedelta(
+        seconds=random_seconds, microseconds=random_microseconds
+    )
+    return dt.strftime(fmt)
 
 def rand_time():
     hour = random.randint(0, 23)

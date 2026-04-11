@@ -32,10 +32,10 @@ procedure:
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-# labtest:
-#   labtest:
-#     code:
-#       - col(code)
-#     time: col(timestamp)
-#     time_format: "%Y-%m-%d %H:%M:%S"
-#     numeric_value: col(numeric_value)
+labtest:
+  labtest:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    numeric_value: col(numeric_value)

@@ -10,21 +10,20 @@ from ehr2meds.preMEDS.utils import (
     finalize_previous_patient,
     initialize_patient_state,
     map_pids_to_ints,
-    prefix_codes,
     prepare_last_patient_info,
     preprocess_admissions_df,
     process_patient_events,
     select_and_rename_columns,
     unroll_columns,
+    convert_timestamp_columns
 )
 from typing import Dict, Optional, Tuple
 
 
 class SPConceptProcessor:
-    """Handles the processing of medical concepts"""
 
     @staticmethod
-    def process(df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
+    def process(df: pd.DataFrame, concept_config: dict, subject_id_mapping: Dict[str, int], time_stamp_dict: Optional[dict] = None) -> pd.DataFrame:
         """
         Main method for processing a single concept's data
         """
@@ -32,7 +31,9 @@ class SPConceptProcessor:
         if concept_config.get("fillna"):
             df = fill_missing_values(df, concept_config.fillna)
 
-        df = prefix_codes(df, concept_config.get("code_prefix", None))
+        if time_stamp_dict:
+            print(f"Converting timestamp columns: {time_stamp_dict}")
+            df = convert_timestamp_columns(df, **time_stamp_dict)
 
         df = convert_numeric_columns(df, concept_config)
         df = map_pids_to_ints(df, subject_id_mapping)

@@ -20,14 +20,6 @@ def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFra
     df = df.rename(columns=columns_map)
     return df
 
-
-def prefix_codes(df: pd.DataFrame, code_prefix: str = None) -> pd.DataFrame:
-    """Add a prefix to the entries in the code column."""
-    if code_prefix and CODE in df.columns:
-        df[CODE] = code_prefix + df[CODE].astype(str)
-    return df
-
-
 def fill_missing_values(df: pd.DataFrame, fillna_cfg: dict) -> pd.DataFrame:
     """
     Fill missing values using specified columns and regex patterns.
@@ -431,3 +423,11 @@ def add_discharge_to_last_patient(last_patient_data: Optional[dict]) -> pd.DataF
         final_df = final_df.sort_values([SUBJECT_ID, TIMESTAMP])
 
     return final_df
+
+
+def convert_timestamp_columns(df: pd.DataFrame, names: List[str], format: str) -> pd.DataFrame:
+    """Convert timestamps to global format."""
+    for name in names:
+        if name in df.columns:
+            df[name] = pd.to_datetime(df[name]).dt.strftime(format)
+    return df

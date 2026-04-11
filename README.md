@@ -22,6 +22,13 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    ```
 
    Example configuration files can be found in the [PREMEDS/configs](./ehr2meds/PREMEDS/configs).
+   
+   The main functionalities of this is to 
+   * Map subject ID hashes to integer values to ensure compatibility with MEDS
+   * (optional) rename the raw column names to streamline the data input
+   * Fill missing values from different data sources
+   * Connect visit ids etc with subject ids for the register data
+   * Streamline timestamp inputs to one type
 
 2. **PREMEDS → MEDS Conversion:**  
    Transforms preMEDS data into a finalized MEDS cohort format.  

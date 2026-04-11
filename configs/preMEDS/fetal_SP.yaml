@@ -6,6 +6,11 @@ defaults:
 test: false # Just for testing, use false for full conversion
 
 chunksize: 10_000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+
+align_timestamps: # removes information that is not in the global format
+  names: [timestamp]
+  format: "%Y-%m-%d %H:%M:%S"
+
 paths:
   concepts: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SP  
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP
@@ -26,13 +31,14 @@ concepts:
       Procedurekode: code
       Redigeringsdato: timestamp
       CPR: subject_id
-  # labtest:
-  #   filename: labtest.csv
-  #   rename_columns:
-  #     BestOrd: code
-  #     Bestillingsdato: timestamp
-  #     CPR: subject_id
-  #     Resultatværdi: numeric_value
+
+  labtest:
+    filename: labtest.csv
+    rename_columns:
+      BestOrd: code
+      Bestillingsdato: timestamp
+      CPR: subject_id
+      Resultatværdi: numeric_value
 
 patients_info:
   filename: patient_info.csv
