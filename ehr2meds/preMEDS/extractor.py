@@ -90,6 +90,7 @@ class PREMEDSExtractor:
         df = self.data_handler.load_pandas(
             self.cfg.patients_info.filename,
             cols=list(self.cfg.patients_info.get("rename_columns", {}).keys()),
+            **self.cfg.patients_info.get("file_info", {}),
         )
         # Use columns_map to subset and rename the columns.
         df = select_and_rename_columns(df, self.cfg.patients_info.get("rename_columns", {}))
@@ -187,6 +188,7 @@ class PREMEDSExtractor:
         register_sp_link = self.link_file_handler.load_pandas(
             split(self.cfg.paths.pid_link)[1],
             cols=[pid_link_cfg.join_col, pid_link_cfg.target_col],
+            **self.cfg.pid_link.get("file_info", {}),
         )
         return register_sp_link
 

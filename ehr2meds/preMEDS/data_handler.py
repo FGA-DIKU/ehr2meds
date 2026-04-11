@@ -2,7 +2,7 @@ import logging
 import os
 import pandas as pd
 from ehr2meds.preMEDS.constants import FILENAME
-from ehr2meds.preMEDS.dataloading import StandardDataLoader
+from ehr2meds.preMEDS.dataloading import DataLoader
 from typing import Iterator, Optional
 
 logger = logging.getLogger(__name__)
@@ -36,16 +36,17 @@ class DataHandler:
         self.file_type = file_type
 
         # Initialize the appropriate data loader
-        self.data_loader = StandardDataLoader(path, chunksize, test)
+        self.data_loader = DataLoader(path, chunksize, test)
 
-    def load_pandas(self, filename: str, cols: Optional[list[str]] = None) -> pd.DataFrame:
-        return self.data_loader.load_dataframe(filename=filename, cols=cols)
+    def load_pandas(self, filename: str, cols: Optional[list[str]] = None, **kwargs) -> pd.DataFrame:
+        return self.data_loader.load_dataframe(filename=filename, cols=cols, **kwargs)
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:
         cols = list(cfg.get("rename_columns", {}).keys())
         return self.data_loader.load_chunks(
             filename=cfg[FILENAME],
             cols=cols if len(cols) > 0 else None,
+            **cfg.get("file_info", {}),
         )
 
     def save(self, df: pd.DataFrame, filename: str, mode: str = "w") -> None:

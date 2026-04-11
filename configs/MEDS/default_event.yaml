@@ -39,3 +39,10 @@ labtest:
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
     numeric_value: col(numeric_value)
+
+admissions:
+  admissions:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"

@@ -99,6 +99,15 @@ def generate_linked_columns(table_cfg, row, output_dir):
 
     return row
 
+def _save_df(df, output_dir, table_name, save_info):
+    file_type = save_info["file_type"]
+    args = save_info["args"]
+    if file_type == "csv":
+        df.to_csv(output_dir / f"{table_name}.csv", index=False, **args)
+    elif file_type == "asc":
+        df.to_csv(output_dir / f"{table_name}.asc", index=False, **args)
+    else:
+        raise ValueError(f"Unknown file type: {file_type}")
 
 def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
     # Iterate through each file and its corresponding configuration
@@ -111,7 +120,10 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
             rows.append(row)
 
         df = pd.DataFrame(rows).convert_dtypes()
-        df.to_csv(output_dir / f"{table_name}.csv", index=False)
+        if "save_info" in table_cfg:
+            _save_df(df, output_dir, table_name, table_cfg["save_info"])
+        else:
+            df.to_csv(output_dir / f"{table_name}.csv", index=False)
 
     for table_name, table_cfg in cfg.get("linked_data", {}).items():
         rows = []
@@ -121,9 +133,12 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
             row = generate_linked_columns(table_cfg, row, output_dir)
             row = generate_corruptions(table_cfg, row, i, corruptors_dict)
             rows.append(row)
-
+            
         df = pd.DataFrame(rows).convert_dtypes()
-        df.to_csv(output_dir / f"{table_name}.csv", index=False)
+        if "save_info" in table_cfg:
+            _save_df(df, output_dir, table_name, table_cfg["save_info"])
+        else:
+            df.to_csv(output_dir / f"{table_name}.csv", index=False)
 
 
 @hydra.main(

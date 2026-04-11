@@ -51,6 +51,11 @@ linked_data:
         type: choice
         file: patient_info
         linked_on: [CPR]
+    save_info:
+      file_type: csv
+      args:
+        sep: "\t"
+        encoding: "iso8859-1"
 
   procedure:
     N: 100
@@ -80,7 +85,7 @@ linked_data:
                 max_length: 100
             - type: choice
               args:
-                options: ["EKG", "KBT", "Blodprøve", "Andet", "BT", "COVID"]
+                options: ["EKG", "KBT", "Blodprøve, UG:2", "Andet", "BT", "COVID", "test;længde"]
           probabilities: [0.5, 0.5]
       Bestillingsdato:
         type: rand_datetime
@@ -109,6 +114,11 @@ linked_data:
         type: choice
         file: patient_info
         linked_on: [CPR]
+    save_info:
+      file_type: asc
+      args:
+        sep: "|"
+        encoding: "latin1"
 
   notes:
     N: 20

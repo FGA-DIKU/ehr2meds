@@ -24,6 +24,9 @@ concepts:
       Diagnosekode: code
       Redigeringsdato: timestamp
       CPR: subject_id
+    file_info:
+      sep: "\t"
+      encoding: "iso8859-1"
 
   procedure:
     filename: procedure.csv
@@ -32,13 +35,28 @@ concepts:
       Redigeringsdato: timestamp
       CPR: subject_id
 
+
+  admissions:
+    filename: admissions.csv
+    rename_columns:
+      Flyt_ind: timestamp_in
+      Flyt_ud: timestamp_out
+      Afsnit: section
+      ADT_haendelse: type
+      CPR: subject_id 
+    use_adm_move: true
+
   labtest:
-    filename: labtest.csv
+    filename: labtest.asc
     rename_columns:
       BestOrd: code
       Bestillingsdato: timestamp
       CPR: subject_id
       Resultatværdi: numeric_value
+    file_info:
+      sep: "|"
+      encoding: "latin1"
+
 
 patients_info:
   filename: patient_info.csv
