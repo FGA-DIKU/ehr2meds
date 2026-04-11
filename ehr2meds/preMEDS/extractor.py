@@ -8,7 +8,6 @@ from ehr2meds.preMEDS.concept_processors import (
 from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (
-    add_discharge_to_last_patient,
     factorize_subject_id,
     select_and_rename_columns,
     convert_timestamp_columns
@@ -110,9 +109,6 @@ class PREMEDSExtractor:
     def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process all medical concepts"""
         for concept_type, concept_config in self.cfg.get("concepts", {}).items():
-            if concept_type == "admissions":
-                self.format_admissions(concept_config, subject_id_mapping, self.time_stamp_dict)
-                continue  # continue to next concept
             try:
                 self._process_concept_chunks(concept_type, concept_config, subject_id_mapping, self.time_stamp_dict)
             except Exception as e:
@@ -202,16 +198,16 @@ class PREMEDSExtractor:
             desc="Chunks admissions",
         ):
             # Process the chunk with any carried over patient data
-            processed_chunk, last_patient_data = SPConceptProcessor.process_adt_admissions(
+            processed_chunk = SPConceptProcessor.process_adt_admissions(
                 chunk, admissions_config, subject_id_mapping, last_patient_data
             )
 
             self._safe_save(self.data_handler, processed_chunk, "admissions", first_chunk)
             first_chunk = False
 
-        # Process any remaining last patient data
-        final_df = add_discharge_to_last_patient(last_patient_data)
-        if time_stamp_dict:
-            final_df = convert_timestamp_columns(final_df, **time_stamp_dict)
-        if not final_df.empty:
-            self.data_handler.save(final_df, "admissions", mode="a")
+        # # Process any remaining last patient data
+        # final_df = add_discharge_to_last_patient(last_patient_data)
+        # if time_stamp_dict:
+        #     final_df = convert_timestamp_columns(final_df, **time_stamp_dict)
+        # if not final_df.empty:
+        #     self.data_handler.save(final_df, "admissions", mode="a")
