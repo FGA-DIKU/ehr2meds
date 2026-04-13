@@ -230,17 +230,24 @@ data_extraction:
         map_columns:
           CPR_BARN: baby_cpr
           PPROM: code
+        type:
+          function: extract_codes
+          args:
+            target_col: code
+            match_on: [" "]
+            match_type: exact
+            exclude: True
       - source_file: mfr.csv
         map_columns:
           CPR_BARN: baby_cpr
           PROM: code
-    filter:
-      function: extract_codes
-      args:
-        target_col: code
-        match_on: [" "]
-        match_type: exact
-        exclude: True
+        type:
+          function: extract_codes
+          args:
+            target_col: code
+            match_on: [" "]
+            match_type: exact
+            exclude: True
 
   # PPROM_diag:
   #   key_columns: [m_cpr]
@@ -380,12 +387,12 @@ data_extraction:
           map_columns:
             FK_MR: mfr_id
             SKSKODE: code
-      filter:
-        function: extract_codes
-        args:
-          target_col: code
-          match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
-          match_type: startswith
+          type:
+            function: extract_codes
+            args:
+              target_col: code
+              match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
+              match_type: startswith
 
   preclampsia_MFR3:
     key_columns: [birth_id]
@@ -400,12 +407,12 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           Diagnosekode: code
-    filter:
-      function: extract_codes
-      args:
-        target_col: code
-        match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
-        match_type: startswith
+        type:
+          function: extract_codes
+          args:
+            target_col: code
+            match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
+            match_type: startswith
 
 
   uterine_malformation_MFR3:
@@ -421,12 +428,12 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           Diagnosekode: code
-    filter:
-      function: extract_codes
-      args:
-        target_col: code
-        match_on: ["DO340", "DQ518", "DQ519"]
-        match_type: startswith
+        type:
+          function: extract_codes
+          args:
+            target_col: code
+            match_on: ["DO340", "DQ518", "DQ519"]
+            match_type: startswith
   
   # fibroids_diagnosis:
   #   key_columns: [m_cpr]
