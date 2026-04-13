@@ -53,12 +53,26 @@ data_extraction:
           FoedselsDato_Barn: birthdate
           BMI_Mor: maternal_BMI
           Alder_Mor: maternal_age
+        type:
+          function: extract_codes
+          args:
+            target_col: CPRnummer_Barn
+            match_on: ["INVALID"]
+            match_type: exact
+            exclude: True
       - source_file: mfr.csv
         map_columns:
           CPR_BARN: baby_cpr
           RYGERSTATUS_MODER: smoking
           BMI_MODER: maternal_BMI
           ALDER_MODER: maternal_age
+        type:
+          function: extract_codes
+          args:
+            target_col: CPR_BARN
+            match_on: ["INVALID"]
+            match_type: exact
+            exclude: True
   
   # TODO cervical_scans_MFR2
 
