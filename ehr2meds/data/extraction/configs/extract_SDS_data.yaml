@@ -165,7 +165,7 @@ data_extraction:
         op: "<"
         val: 259
 
-  PRROM_MFR2:
+  PPROM_MFR2:
     key_columns: [baby_cpr, m_cpr, date]
     sources:
       - source_file: mfr.csv
