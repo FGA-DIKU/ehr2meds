@@ -33,6 +33,13 @@ data_extraction:
           FOEDSELSDATO: date
 
   # TODO ethnicity 
+  country_of_origin:
+    key_columns: [m_cpr]
+    sources:
+      - source_file: indvandrer_efterkommer.csv
+        map_columns:
+          V_PNR: m_cpr
+          oprindelses_land_tekst: country_of_origin
   
   dynamic_maternal_variables:
     key_columns: [baby_cpr]
@@ -78,6 +85,21 @@ data_extraction:
           StartDato_Procedure: scan_date
   
   # TODO fertility_treatment  
+  ivf_treatment: 
+    key_columns: [m_cpr]
+    sources:
+      - source_file: ivf_behandlingsforloeb.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Graviditet
+            match_on: ["Ja"]
+            match_type: exact
+        map_columns:
+          CPRnummer: m_cpr
+          Graviditet: code
+          Transferering_dato: date
+
   multi_pregnancy_MFR3:
     key_columns: [baby_cpr]
     sources:
