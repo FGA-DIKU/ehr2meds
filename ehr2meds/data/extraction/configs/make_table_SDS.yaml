@@ -12,7 +12,7 @@ main_table:
   sources:
     - pregnancy_history.csv
     - GA_delivery.csv
-  merge_columns: [baby_cpr]
+  merge_columns: [baby_cpr, date]
   add_columns:
     - name: GA_weeks
       function: get_GA_weeks
