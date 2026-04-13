@@ -337,7 +337,7 @@ data_extraction:
           PK_MFR: mfr_id
       - source_file: kejsersnit.csv
         map_columns:
-          FK_MR: mfr_id
+          FK_MFR: mfr_id
           SKSKODE: code
 
   cesarean_section_MFR2_main:
@@ -391,7 +391,7 @@ data_extraction:
               match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
               match_type: startswith
           map_columns:
-            FK_MR: mfr_id
+            FK_MFR: mfr_id
             SKSKODE: code
 
   preclampsia_MFR3:
@@ -476,7 +476,7 @@ data_extraction:
           PK_MFR: mfr_id
       - source_file: igangsaettelse.csv
         map_columns:
-          FK_MR: mfr_id
+          FK_MFR: mfr_id
           SKSKODE: code
 
   labor_induction_HSP_MFR3:
