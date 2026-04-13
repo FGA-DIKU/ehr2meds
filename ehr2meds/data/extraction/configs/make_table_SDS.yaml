@@ -52,19 +52,19 @@ linked_tables:
     match_on: [baby_cpr]
     function: extract_column
     args:
-      target_col: maternal_age
+      target_col: [maternal_age]
   - name: maternal_BMI
     source_file: dynamic_maternal_variables.csv
     match_on: [baby_cpr]
     function: extract_column
     args:
-      target_col: maternal_BMI
+      target_col: [maternal_BMI]
   - name: smoking
     source_file: dynamic_maternal_variables.csv
     match_on: [baby_cpr]
     function: extract_column
     args:
-      target_col: smoking
+      target_col: [smoking]
 
   - name: multi_pregnancy_MFR2
     source_file: multi_pregnancy_MFR2.csv
