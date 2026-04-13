@@ -14,7 +14,7 @@ main_table:
     - GA_delivery.csv
   merge_columns: [baby_cpr, date]
   add_columns:
-    - name: GA_weeks
+    - name: GA
       function: get_GA_weeks
       args:
         GA_days: GA_days
@@ -43,7 +43,7 @@ linked_tables:
     function: get_GA_at_date
     args:
       date: scan_date
-      GA_col: GA_weeks
+      GA_col: GA_scan
       pregnancy_start: pregnancy_start
       pregnancy_end: pregnancy_end
 
