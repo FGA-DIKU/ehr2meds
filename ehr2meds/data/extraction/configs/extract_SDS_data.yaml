@@ -43,7 +43,6 @@ data_extraction:
   
   dynamic_maternal_variables:
     key_columns: [baby_cpr]
-    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
