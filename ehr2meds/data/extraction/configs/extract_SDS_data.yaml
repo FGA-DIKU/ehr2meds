@@ -152,16 +152,16 @@ data_extraction:
     key_columns: [baby_cpr]
     sources:
       - source_file: mfr.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: FLERFOLDSGRAVIDITET
+            match_on: [" "]
+            match_type: exact
+            exclude: True
         map_columns:
           CPR_BARN: baby_cpr
           FLERFOLDSGRAVIDITET: code
-    type:
-      function: extract_codes
-      args:
-        target_col: code
-        match_on: [" "]
-        match_type: exact
-        exclude: True
 
   parity:
     key_columns: [baby_cpr, m_cpr, date]
@@ -227,27 +227,27 @@ data_extraction:
       #     CPRnummer_Mor: m_cpr
       #     Paritet: parity
       - source_file: mfr.csv
-        map_columns:
-          CPR_BARN: baby_cpr
-          PPROM: code
         type:
           function: extract_codes
           args:
-            target_col: code
+            target_col: PPROM
             match_on: [" "]
             match_type: exact
             exclude: True
-      # - source_file: mfr.csv
-      #   map_columns:
-      #     CPR_BARN: baby_cpr
-      #     PROM: code
-      #   type:
-      #     function: extract_codes
-      #     args:
-      #       target_col: code
-      #       match_on: [" "]
-      #       match_type: exact
-      #       exclude: True
+        map_columns:
+          CPR_BARN: baby_cpr
+          PPROM: code
+      - source_file: mfr.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: PROM
+            match_on: [" "]
+            match_type: exact
+            exclude: True
+        map_columns:
+          CPR_BARN: baby_cpr
+          PROM: code
 
   # PPROM_diag:
   #   key_columns: [m_cpr]
@@ -344,34 +344,34 @@ data_extraction:
     key_columns: [baby_cpr, m_cpr, date]
     sources:
       - source_file: mfr.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: MARKOERT_KEJSERSNIT
+            match_on: [1]
+            match_type: exact
         map_columns:
           CPR_BARN: baby_cpr
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           MARKOERT_KEJSERSNIT: code
-        type:
-          function: extract_codes
-          args:
-            target_col: code
-            match_on: [1]
-            match_type: exact
 
   cesarean_section_MFR3_main:
     key_columns: [baby_cpr, m_cpr, date]
     sources:
       - source_file: nyfoedte.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Kejsersnit
+            match_on: [-1]
+            match_type: exact
+            exclude: True
         map_columns:
           CPRnummer_Barn: baby_cpr
           CPRnummer_Mor: m_cpr
           FoedselsDato_Barn: date
           Kejsersnit: code
-        type:
-          function: extract_codes
-          args:
-            target_col: code
-            match_on: [-1]
-            match_type: exact
-            exclude: True
 
 
   preclampsia_MFR2:
@@ -384,15 +384,15 @@ data_extraction:
             FOEDSELSDATO: date
             PK_MFR: mfr_id
         - source_file: graviditetskomplikation.csv
-          map_columns:
-            FK_MR: mfr_id
-            SKSKODE: code
           type:
             function: extract_codes
             args:
-              target_col: code
+              target_col: SKSKODE
               match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
               match_type: startswith
+          map_columns:
+            FK_MR: mfr_id
+            SKSKODE: code
 
   preclampsia_MFR3:
     key_columns: [birth_id]
@@ -404,15 +404,15 @@ data_extraction:
           FoedselsDato_Barn: date
           DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
-        map_columns:
-          DW_EK_Foedsel: birth_id
-          Diagnosekode: code
         type:
           function: extract_codes
           args:
-            target_col: code
+            target_col: Diagnosekode
             match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
             match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          Diagnosekode: code
 
 
   uterine_malformation_MFR3:
@@ -425,15 +425,15 @@ data_extraction:
           FoedselsDato_Barn: date
           DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
-        map_columns:
-          DW_EK_Foedsel: birth_id
-          Diagnosekode: code
         type:
-          function: extract_codes
+          function: Diagnosekode
           args:
             target_col: code
             match_on: ["DO340", "DQ518", "DQ519"]
             match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          Diagnosekode: code
   
   # fibroids_diagnosis:
   #   key_columns: [m_cpr]
@@ -483,31 +483,31 @@ data_extraction:
     key_columns: [baby_cpr]
     sources:
       - source_file: nyfoedte.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Igangsaettelse_HSP
+            match_on: ["Ja"]
+            match_type: exact
         map_columns:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           Igangsaettelse_HSP: code
-        type:
-          function: extract_codes
-          args:
-            target_col: code
-            match_on: ["Ja"]
-            match_type: exact
 
   labor_induction_Ballon_MFR3:
     key_columns: [baby_cpr]
     sources:
       - source_file: nyfoedte.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Igangsaettelse_Ballon_kateter
+            match_on: ["Ja"]
+            match_type: exact
         map_columns:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           Igangsaettelse_Ballon_kateter: code
-        type:
-          function: extract_codes
-          args:
-            target_col: code
-            match_on: ["Ja"]
-            match_type: exact
 
   # vaginal_bleeding_diagnosis:
   #   key_columns: [m_cpr]
