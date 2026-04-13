@@ -61,3 +61,7 @@ def get_pregnancy_start(birthdate, GA):
     """Pregnancy start = delivery date minus gestational age (works on Series or scalars)."""
     ga_weeks = pd.to_numeric(GA, errors="coerce")
     return pd.to_datetime(birthdate) - pd.to_timedelta(ga_weeks * 7, unit="d")
+
+def get_GA_weeks(GA_days):
+    """Convert GA in days to GA in weeks."""
+    return pd.to_numeric(GA_days, errors="coerce") / 7.0

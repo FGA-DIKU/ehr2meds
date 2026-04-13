@@ -1,0 +1,335 @@
+# Build the SDS summary table from CSVs produced by extract_SDS_data.yaml, e.g.
+# python -m ehr2meds.data.extraction.extract_data \
+#   --config ehr2meds/data/extraction/configs/extract_SDS_data.yaml \
+#   --input <raw_dir> --output <extracted_dir>
+# python -m ehr2meds.data.extraction.make_table \
+#   --config ehr2meds/data/extraction/configs/make_table_SDS.yaml \
+#   --input <extracted_dir> --output <out_dir> --save_name fetal_SDS
+
+overwrite_files: false
+
+main_table:
+  sources:
+    - pregnancy_history.csv
+    - GA_delivery.csv
+  merge_columns: [baby_cpr, date]
+  add_columns:
+    - name: GA_weeks
+      function: get_GA_weeks
+      args:
+        GA_days: GA_days
+    - name: pregnancy_start
+      function: get_pregnancy_start
+      args:
+        birthdate: date
+        GA: GA_weeks
+  rename_columns:
+    date: pregnancy_end
+
+linked_tables:
+  # Cervical length ultrasound codes (MFR2 / MFR3); GA at scan from delivery GA_days on main row.
+  # - name: cervical_scan_GA_MFR2
+  #   source_file: cervical_scans_MFR2.csv
+  #   match_on: [baby_cpr]
+  #   function: get_GA_at_date
+  #     args:
+  #       date: scan_date
+  #       GA_col: GA_weeks
+  #       pregnancy_start: pregnancy_start
+  #       pregnancy_end: pregnancy_end
+  - name: cervical_scan_GA_MFR3
+    source_file: cervical_scans_MFR3.csv
+    match_on: [baby_cpr]
+    function: get_GA_at_date
+    args:
+      date: date
+      GA_col: GA_weeks
+      pregnancy_start: pregnancy_start
+      pregnancy_end: pregnancy_end
+
+  - name: maternal_age
+    source_file: dynamic_maternal_variables.csv
+    match_on: [baby_cpr]
+    function: extract_column
+    args:
+      target_col: maternal_age
+  - name: maternal_BMI
+    source_file: dynamic_maternal_variables.csv
+    match_on: [baby_cpr]
+    function: extract_column
+    args:
+      target_col: maternal_BMI
+  - name: smoking
+    source_file: dynamic_maternal_variables.csv
+    match_on: [baby_cpr]
+    function: extract_column
+    args:
+      target_col: smoking
+
+  - name: multi_pregnancy_MFR2
+    source_file: multi_pregnancy_MFR2.csv
+    match_on: [baby_cpr]
+    function: is_present_bool
+    args:
+      target_col: code
+  - name: multi_pregnancy_MFR3
+    source_file: multi_pregnancy_MFR3.csv
+    match_on: [baby_cpr]
+    function: is_present_bool
+    args:
+      target_col: code
+
+  - name: parity
+    source_file: parity.csv
+    match_on: [baby_cpr]
+    function: extract_column
+    args:
+      target_col: parity
+
+  - name: earlier_ptb
+    source_file: ptb_GA_under_37.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
+
+  - name: pprom_current_pregnancy
+    source_file: PPROM_MFR3.csv
+    match_on: [baby_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+  - name: pprom_previous_pregnancy
+    source_file: PPROM_MFR3.csv
+    match_on: [baby_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
+  # TODO MFR2 PPROM flags lack event dates in extract; presence-only prior to time-based rules.
+
+  # - name: cesarean_section_MFR2_main
+  #   source_file: cesarean_section_MFR2_main.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_start
+  #     timestamp: date
+  # - name: cesarean_section_MFR3_main
+  #   source_file: cesarean_section_MFR3_main.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_start
+  #     timestamp: date
+
+  # - name: labor_induction_HSP_MFR3
+  #   source_file: labor_induction_HSP_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: is_present_bool
+  #   args:
+  #     target_col: code
+  # - name: labor_induction_Ballon_MFR3
+  #   source_file: labor_induction_Ballon_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: is_present_bool
+  #   args:
+  #     target_col: code
+
+  # - name: previous_preclampsia_diagnosis
+  #   source_file: preclampsia_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_start
+  #     timestamp: date
+  # - name: current_preclampsia_diagnosis
+  #   source_file: preclampsia_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     min_date: pregnancy_start
+  #     max_date: pregnancy_end
+  #     timestamp: date
+  # - name: preclampsia_diagnosis_test
+  #   source_file: preclampsia_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_end
+  #     timestamp: date
+
+  # - name: previous_cervical_conization_history
+  #   source_file: cervical_conization_history_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_start
+  #     timestamp: date
+
+  # - name: uterine_malformation
+  #   source_file: uterine_malformation_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_end
+  #     timestamp: date
+
+  # - name: fibroids
+  #   source_file: fibroids_diagnosis_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_end
+  #     timestamp: date
+
+  # - name: polyhydramnios
+  #   source_file: polyhydramnios_diagnosis_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     min_date: pregnancy_start
+  #     max_date: pregnancy_end
+  #     timestamp: date
+
+  # - name: vaginal_bleeding
+  #   source_file: vaginal_bleeding_diagnosis_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     min_date: pregnancy_start
+  #     max_date: pregnancy_end
+  #     timestamp: date
+
+  # - name: infections_in_pregnancy
+  #   source_file: infections_in_pregnancy_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     min_date: pregnancy_start
+  #     max_date: pregnancy_end
+  #     timestamp: date
+
+  # - name: maternal_comorbidity
+  #   source_file: maternal_comorbidity_diagnosis_MFR3.csv
+  #   match_on: [baby_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_start
+  #     timestamp: date
+
+collapse_table:
+  - name: m_age
+    combine:
+      function: add_column
+    components:
+      - maternal_age
+  - name: m_BMI
+    combine:
+      function: add_column
+    components:
+      - maternal_BMI
+  - name: m_smoking
+    combine:
+      function: add_column
+    components:
+      - smoking
+
+  - name: multiple_pregnancy
+    combine:
+      function: or_columns
+    components:
+      - multi_pregnancy_MFR2
+      - multi_pregnancy_MFR3
+  - name: parity
+    combine:
+      function: add_column
+    components:
+      - parity
+  - name: previous_ptb
+    combine:
+      function: add_column
+    components:
+      - earlier_ptb
+  # - name: previous_pprom
+  #   combine:
+  #     function: or_columns
+  #   components:
+  #     - pprom_previous_pregnancy
+  #     - pprom_MFR2
+  # - name: current_pprom
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - pprom_current_pregnancy
+  # - name: cesarean_section
+  #   combine:
+  #     function: or_columns
+  #   components:
+  #     - cesarean_section_MFR2_main
+  #     - cesarean_section_MFR3_main
+  # - name: labor_induction
+  #   combine:
+  #     function: or_columns
+  #   components:
+  #     - labor_induction_HSP_MFR3
+  #     - labor_induction_Ballon_MFR3
+  # - name: previous_preclampsia
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - previous_preclampsia_diagnosis
+  # - name: current_preclampsia
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - current_preclampsia_diagnosis
+  # - name: preclampsia_test
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - preclampsia_diagnosis_test
+  # - name: cervical_conization
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - previous_cervical_conization_history
+  # - name: uterine_malformation
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - uterine_malformation
+  # - name: fibroids
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - fibroids
+  # - name: polyhydramnios
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - polyhydramnios
+  # - name: cervical_scan_GA
+  #   combine:
+  #     function: coalesce_first
+  #   components:
+  #     - cervical_scan_GA_MFR2
+  #     - cervical_scan_GA_MFR3
+  # - name: vaginal_bleeding
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - vaginal_bleeding
+  # - name: infections_in_pregnancy
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - infections_in_pregnancy
+  # - name: maternal_comorbidity
+  #   combine:
+  #     function: add_column
+  #   components:
+  #     - maternal_comorbidity

@@ -33,24 +33,8 @@ data_extraction:
           FOEDSELSDATO: date
 
   # TODO ethnicity 
-  # static_maternal_variables:
-  #   key_columns: [m_cpr, baby]
-  #   combine: merge
-  #   sources:
-  #     - source_file: nyfoedte.csv
-  #       map_columns:
-  #         CPRnummer_Mor: m_cpr
-  #         CPRnummer_Barn: baby_cpr
-  #     - source_file: mfr.csv
-  #       map_columns:
-  #         CPR_BARN: baby_cpr
-  #         CPR_MODER: m_cpr
-  #     # - source_file: Mor - Patientinfo tillæg til CPMI.csv
-  #     #   map_columns:
-  #     #     MOR_CPR: m_cpr
-  #     #     Etnicitet: ethnicity
   
-  dynamic_maternal_variables_MFR3:
+  dynamic_maternal_variables:
     key_columns: [baby_cpr]
     combine: merge
     sources:
@@ -69,25 +53,7 @@ data_extraction:
           BMI_MODER: maternal_BMI
           ALDER_MODER: maternal_age
   
-  cervical_scans_MFR2:
-    key_columns: [mfr_id]
-    sources:
-      - source_file: mfr.csv
-        map_columns:
-          CPR_BARN: baby_cpr
-          CPR_MODER: m_cpr
-          FOEDSELSDATO: date
-          PK_MFR: mfr_id
-      - source_file: ultralyd.csv
-        type:
-          function: extract_codes
-          args:
-            target_col: SKSKODE
-            match_on: ["UXUD85"]
-            match_type: startswith
-        map_columns:
-          FK_MFR: mfr_id
-          SKSKODE: code
+  # TODO cervical_scans_MFR2
 
   cervical_scans_MFR3:
     key_columns: [birth_id]
@@ -109,50 +75,9 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           ProcedureKode: code
+          StartDato_Procedure: scan_date
   
-  # TODO fertility_treatment
-  # fertility_treatment:
-  #   key_columns: [m_cpr, code,]
-  #   sources:
-  #     - source_file: Mor - CPMI - Procedurer.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: ProcedureCode
-  #           match_on: ["BBHG38", "BJFL0", "AFV01G", ]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         ProcedureCode: code
-  #         ServiceDate: date
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DZ314", "DZ318", "DZ319"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
-  
-  # IVF_pregnancy:
-  #   key_columns: [m_cpr]
-  #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DO003B", "DZ321H", "DZ358F"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
-
-  
+  # TODO fertility_treatment  
   multi_pregnancy_MFR3:
     key_columns: [baby_cpr]
     sources:
@@ -232,6 +157,7 @@ data_extraction:
         map_columns:
           CPR_BARN: baby_cpr
           PPROM: code
+          FOEDSELSDATO: date
       - source_file: mfr.csv
         type:
           function: extract_codes
@@ -253,6 +179,7 @@ data_extraction:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           DW_EK_Foedsel: birth_id
+          FoedselsDato_Barn: date
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -324,12 +251,12 @@ data_extraction:
         type:
           function: extract_codes
           args:
-            target_col: ProcedureCode
+            target_col: ProcedureKode
             match_on: ["KLDC00", "KLDC03"]
             match_type: startswith
         map_columns:
           DW_EK_Foedsel: birth_id
-          ProcedureCode: code
+          ProcedureKode: code
 
   cesarean_section_MFR2:
     key_columns: [mfr_id]

@@ -20,3 +20,15 @@ def add_column(expanded_table: pd.DataFrame, name: str, components: list[dict]) 
     result = expanded_table.copy()
     result[name] = expanded_table[cols]
     return result
+
+
+def coalesce_first(
+    expanded_table: pd.DataFrame, name: str, components: list[str]
+) -> pd.DataFrame:
+    """First non-null across ``components`` (left-to-right), for numeric or other dtypes."""
+    result = expanded_table.copy()
+    acc = expanded_table[components[0]]
+    for c in components[1:]:
+        acc = acc.combine_first(expanded_table[c])
+    result[name] = acc
+    return result
