@@ -58,7 +58,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     table = pd.read_csv(args.table_path)
-    table = table.drop(columns=args.ignore_columns)
+    for col in args.ignore_columns:
+        if col in table.columns:
+            table = table.drop(columns=[col])
     summary_df = summarise_table(table, args.n_samples)
     summary_df.to_csv(args.summary_path, index=False)
     print("Saved summary to", args.summary_path)
