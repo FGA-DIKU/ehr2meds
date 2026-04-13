@@ -155,7 +155,7 @@ data_extraction:
         map_columns:
           CPR_BARN: baby_cpr
           FLERFOLDSGRAVIDITET: code
-    filter:
+    type:
       function: extract_codes
       args:
         target_col: code
@@ -342,12 +342,12 @@ data_extraction:
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           MARKOERT_KEJSERSNIT: code
-    filter:
-      function: extract_codes
-      args:
-        target_col: code
-        match_on: [1]
-        match_type: exact
+        type:
+          function: extract_codes
+          args:
+            target_col: code
+            match_on: [1]
+            match_type: exact
 
   cesarean_section_MFR3_main:
     key_columns: [baby_cpr, m_cpr, date]
@@ -358,13 +358,13 @@ data_extraction:
           CPRnummer_Mor: m_cpr
           FoedselsDato_Barn: date
           Kejsersnit: code
-    filter:
-      function: extract_codes
-      args:
-        target_col: code
-        match_on: [-1]
-        match_type: exact
-        exclude: True
+        type:
+          function: extract_codes
+          args:
+            target_col: code
+            match_on: [-1]
+            match_type: exact
+            exclude: True
 
 
   preclampsia_MFR2:
@@ -480,12 +480,12 @@ data_extraction:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           Igangsaettelse_HSP: code
-    filter:
-      function: extract_codes
-      args:
-        target_col: code
-        match_on: ["Ja"]
-        match_type: exact
+        type:
+          function: extract_codes
+          args:
+            target_col: code
+            match_on: ["Ja"]
+            match_type: exact
 
   labor_induction_Ballon_MFR3:
     key_columns: [baby_cpr]
@@ -495,12 +495,12 @@ data_extraction:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           Igangsaettelse_Ballon_kateter: code
-    filter:
-      function: extract_codes
-      args:
-        target_col: code
-        match_on: ["Ja"]
-        match_type: exact
+        type:
+          function: extract_codes
+          args:
+            target_col: code
+            match_on: ["Ja"]
+            match_type: exact
 
   # vaginal_bleeding_diagnosis:
   #   key_columns: [m_cpr]
