@@ -32,6 +32,7 @@ data_extraction:
           GESTATIONSALDER_DAGE: GA_days
           FOEDSELSDATO: date
 
+  # TODO ethnicity 
   # static_maternal_variables:
   #   key_columns: [m_cpr, baby]
   #   combine: merge
@@ -67,31 +68,49 @@ data_extraction:
           RYGERSTATUS_MODER: smoking
           BMI_MODER: maternal_BMI
           ALDER_MODER: maternal_age
-  # cervical_scans:
-  #   key_columns: [m_cpr]
-  #   combine: merge
-  #   sources:
-  #     - source_file: Mor - CPMI - Procedurer.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: ProcedureCode
-  #           match_on: ["UXUD85"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         ProcedureCode: code
-  #         ServiceDate: scan_date
-  #     - source_file: Mor - Obstetrisk Historik DEL 2.csv
-  #       type:
-  #         function: extract_GA
-  #         args:
-  #           target_col: Gestationsalder
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Dato: birth_date
-  #         Gestationsalder: GA_scan
   
+  cervical_scans_MFR2:
+    key_columns: [mfr_id]
+    sources:
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
+          FOEDSELSDATO: date
+          PK_MFR: mfr_id
+      - source_file: ultralyd.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: SKSKODE
+            match_on: ["UXUD85"]
+            match_type: startswith
+        map_columns:
+          FK_MFR: mfr_id
+          SKSKODE: code
+
+  cervical_scans_MFR3:
+    key_columns: [birth_id]
+    combine: merge
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+      - source_file: mor_procedurer.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: ProcedureKode
+            match_on: ["UXUD85"]
+            match_type: startswith
+        map_columns:
+          MOR_CPR: m_cpr
+          ProcedureKode: code
+  
+  # TODO fertility_treatment
   # fertility_treatment:
   #   key_columns: [m_cpr, code,]
   #   sources:
@@ -177,25 +196,6 @@ data_extraction:
           CPR_MODER: m_cpr
           PARITET: parity
   
-  # ptb_GA:
-  #   key_columns: [m_cpr, baby_cpr]
-  #   sources:
-  #     - source_file: nyfoedte.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DZ358B", "DO609", "DO601"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
-  #   filter:
-  #     function: drop_empty_columns
-  #     args:
-  #       columns: [code]
-  
   ptb_GA_under_37:
     key_columns: [baby_cpr, m_cpr, date]
     sources:
@@ -218,14 +218,9 @@ data_extraction:
         op: "<"
         val: 259
 
-  PRROM:
+  PRROM_MFR2:
     key_columns: [baby_cpr, m_cpr, date]
     sources:
-      # - source_file: nyfoedte.csv
-      #   map_columns:
-      #     CPRnummer_Barn: baby_cpr
-      #     CPRnummer_Mor: m_cpr
-      #     Paritet: parity
       - source_file: mfr.csv
         type:
           function: extract_codes
@@ -249,20 +244,25 @@ data_extraction:
           CPR_BARN: baby_cpr
           PROM: code
 
-  # PPROM_diag:
-  #   key_columns: [m_cpr]
-  #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DO422", "DO420", "DO424"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
+  PPROM_MFR3:
+    key_columns: [birth_id]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+      - source_file: mor_diagnoser.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: DiagnoseKode
+            match_on: ["DO422", "DO420", "DO424"]
+            match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          DiagnoseKode: code
   
   # short_cervix_diagnosis:
   #   key_columns: [m_cpr]
@@ -299,32 +299,37 @@ data_extraction:
   #       target_col: cervix_length
   #       op: "<"
   #       val: 25
-  
-  # cervical_conization_history:
-  #   key_columns: [m_cpr]
-  #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DZ928C", "DO344B"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
-  #     - source_file: Mor - CPMI - Procedurer.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: ProcedureCode
-  #           match_on: ["KLDC00", "KLDC03"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         ProcedureCode: code
-  #         ServiceDate: date
+
+  # TODO cervical_conization_history in MFR2
+  cervical_conization_history_MFR3:
+    key_columns: [birth_id]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+      - source_file: mor_diagnoser.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: DiagnoseKode
+            match_on: ["DZ928C", "DO344B"]
+            match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          DiagnoseKode: code
+      - source_file: mor_procedurer.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: ProcedureCode
+            match_on: ["KLDC00", "KLDC03"]
+            match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          ProcedureCode: code
 
   cesarean_section_MFR2:
     key_columns: [mfr_id]
@@ -435,35 +440,85 @@ data_extraction:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
   
-  # fibroids_diagnosis:
-  #   key_columns: [m_cpr]
-  #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
+  fibroids_diagnosis_MFR2:
+    key_columns: [mfr_id]
+    sources:
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
+          FOEDSELSDATO: date
+          PK_MFR: mfr_id
+      - source_file: graviditetskomplikation.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: SKSKODE
+            match_on: ["DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341"]
+            match_type: startswith
+        map_columns:
+          FK_MFR: mfr_id
+          SKSKODE: code
   
-  # polyhydramnios_diagnosis:
-  #   key_columns: [m_cpr]
-  #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DO410", "DO409"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
+  fibroids_diagnosis_MFR3:
+    key_columns: [birth_id]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+      - source_file: mor_diagnoser.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: DiagnoseKode
+            match_on: ["DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341"]
+            match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          DiagnoseKode: code
+  
+  polyhydramnios_diagnosis_MFR2:
+    key_columns: [mfr_id]
+    sources:
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
+          FOEDSELSDATO: date
+          PK_MFR: mfr_id
+      - source_file: graviditetskomplikation.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: SKSKODE
+            match_on: ["DO410", "DO409"]
+            match_type: startswith
+        map_columns:
+          FK_MFR: mfr_id
+          SKSKODE: code
+  
+  polyhydramnios_diagnosis_MFR3:
+    key_columns: [birth_id]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+      - source_file: mor_diagnoser.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: DiagnoseKode
+            match_on: ["DO410", "DO409"]
+            match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          DiagnoseKode: code
 
   labor_induction_MFR2: 
     key_columns: [mfr_id]
@@ -501,58 +556,115 @@ data_extraction:
         type:
           function: extract_codes
           args:
-            target_col: Igangsaettelse_Ballon_kateter
+            target_col: Igangsaettelse_Ballonkateter
             match_on: ["Ja"]
             match_type: exact
         map_columns:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
-          Igangsaettelse_Ballon_kateter: code
+          Igangsaettelse_Ballonkateter: code
 
-  # vaginal_bleeding_diagnosis:
-  #   key_columns: [m_cpr]
+  # TODO vaginal_bleeding_diagnosis in MFR2
+  vaginal_bleeding_diagnosis_MFR3:
+    key_columns: [birth_id]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+      - source_file: mor_diagnoser.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: DiagnoseKode
+            match_on: ["DO468A", "DO209", "DO208", "DO208A"]
+            match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          DiagnoseKode: code
+
+  # infections_in_pregnancy_MFR2:
+  #   key_columns: [mfr_id]
   #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
+  #     - source_file: mfr.csv
+  #       map_columns:
+  #         CPR_BARN: baby_cpr
+  #         CPR_MODER: m_cpr
+  #         FOEDSELSDATO: date
+  #         PK_MFR: mfr_id
+  #     - source_file: graviditetskomplikation.csv
   #       type:
   #         function: extract_codes
   #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DO468A", "DO209", "DO208", "DO208A"]
+  #           target_col: SKSKODE
+  #           match_on: ["DO410", "DO409"]
   #           match_type: startswith
   #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
+  #         FK_MFR: mfr_id
+  #         SKSKODE: code
   
-  # infections_in_pregnancy:
-  #   key_columns: [m_cpr]
-  #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
-  #       type:
-  #         function: extract_codes
-  #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DN390A", "DN390", "DA499", "DB349", "DZ038A", "DO234", "DO233", "DO235", "DO239"]
-  #           match_type: startswith
-  #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
+  infections_in_pregnancy_MFR3:
+    key_columns: [birth_id]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+      - source_file: mor_diagnoser.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: DiagnoseKode
+            match_on: ["DN390A", "DN390", "DA499", "DB349", "DZ038A", "DO234", "DO233", "DO235", "DO239"]
+            match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          DiagnoseKode: code
 
-  # maternal_comorbidity_diagnosis:
-  #   key_columns: [m_cpr]
+  # TODO maternal_comorbidity_diagnosis in MFR2
+  # maternal_comorbidity_diagnosis_MFR2:
+  #   key_columns: [mfr_id]
   #   sources:
-  #     - source_file: Mor - CPMI - Diagnoseliste.csv
+  #     - source_file: mfr.csv
+  #       map_columns:
+  #         CPR_BARN: baby_cpr
+  #         CPR_MODER: m_cpr
+  #         FOEDSELSDATO: date
+  #         PK_MFR: mfr_id
+  #     - source_file: graviditetskomplikation.csv
   #       type:
   #         function: extract_codes
   #         args:
-  #           target_col: Diagnosekode
-  #           match_on: ["DO998", "DO101", "DZ038O", "DO103", "DO992", "DO993B", "DO994", 
-  #                      "DO102", "DO993", "DO996A", "DO991", "DO995", "DO993A", "DO997", 
-  #                      "DO996", "DO989", "DO988", "DO987", "DO983", "DO985", "DO269", 
-  #                      "DO268", "DO266"]
+  #           target_col: SKSKODE
+  #           match_on: ["DO410", "DO409"]
   #           match_type: startswith
   #       map_columns:
-  #         MOR_CPR: m_cpr
-  #         Diagnosekode: code
-  #         Noteret_dato: date
+  #         FK_MFR: mfr_id
+  #         SKSKODE: code
+  
+  maternal_comorbidity_diagnosis_MFR3:
+    key_columns: [birth_id]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+      - source_file: mor_diagnoser.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: DiagnoseKode
+            match_on: ["DO998", "DO101", "DZ038O", "DO103", "DO992", "DO993B", "DO994", 
+                       "DO102", "DO993", "DO996A", "DO991", "DO995", "DO993A", "DO997", 
+                       "DO996", "DO989", "DO988", "DO987", "DO983", "DO985", "DO269", 
+                       "DO268", "DO266"]
+            match_type: startswith
+        map_columns:
+          DW_EK_Foedsel: birth_id
+          DiagnoseKode: code
