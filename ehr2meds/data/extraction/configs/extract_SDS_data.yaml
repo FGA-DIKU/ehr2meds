@@ -407,12 +407,12 @@ data_extraction:
         type:
           function: extract_codes
           args:
-            target_col: Diagnosekode
+            target_col: DiagnoseKode
             match_on: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
             match_type: startswith
         map_columns:
           DW_EK_Foedsel: birth_id
-          Diagnosekode: code
+          DiagnoseKode: code
 
 
   uterine_malformation_MFR3:
@@ -426,14 +426,14 @@ data_extraction:
           DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
         type:
-          function: Diagnosekode
+          function: DiagnoseKode
           args:
             target_col: code
             match_on: ["DO340", "DQ518", "DQ519"]
             match_type: startswith
         map_columns:
           DW_EK_Foedsel: birth_id
-          Diagnosekode: code
+          DiagnoseKode: code
   
   # fibroids_diagnosis:
   #   key_columns: [m_cpr]
