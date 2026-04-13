@@ -21,7 +21,7 @@ main_table:
     - name: pregnancy_start
       function: get_pregnancy_start
       args:
-        date: date
+        birthdate: date
         GA: GA_weeks
   rename_columns:
     date: pregnancy_end
