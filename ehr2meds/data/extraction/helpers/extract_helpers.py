@@ -12,7 +12,7 @@ def extract_regex_matches(df, target_col: str, regex: str):
     mask = df[target_col].astype(str).str.contains(regex, regex=True, na=False)
     return df.loc[mask].copy()
 
-def extract_codes(df, target_col: str, match_on: list[str], match_type: str):
+def extract_codes(df, target_col: str, match_on: list[str], match_type: str, exclude:bool=False):
     """Filter rows by ``target_col``. ``match_on`` is a list; a row matches if **any** option matches."""
     s = df[target_col].astype(str)
     if match_type == "exact":
@@ -31,6 +31,8 @@ def extract_codes(df, target_col: str, match_on: list[str], match_type: str):
             mask |= s.str.contains(p, regex=False, na=False)
     else:
         raise ValueError(f"Invalid match type: {match_type}")
+    if exclude:
+        mask = ~mask
     return df.loc[mask].copy()
 
 def fill_matches(
@@ -52,23 +54,6 @@ def extract_non_nan(df, target_col: str, fill_value, fill_col: str = "fill_col")
     out = df.loc[mask].copy()
     out[fill_col] = fill_value
     return out
-
-# def fill_bool_match(
-#     df: pd.DataFrame,
-#     target_col: str,
-#     op: str,
-#     val,
-#     fill_value,
-#     fill_col: str = "fill_col",
-# ) -> pd.DataFrame:
-#     """
-#     Keep rows where a simple boolean condition on ``target_col`` is true; add ``fill_col``.
-
-#     Same comparison rules as ``filter_helpers.bool_match``.
-#     """
-#     out = filter_helpers.bool_match(df, target_col, op, val)
-#     out[fill_col] = fill_value
-#     return out
 
 def get_pregnancy_start(birthdate, GA):
     """Pregnancy start = delivery date minus gestational age (works on Series or scalars)."""
