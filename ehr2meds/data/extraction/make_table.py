@@ -46,6 +46,7 @@ class TableBuilder:
             fn = self.extract_func_dict[spec["function"]]
             out_name = spec["name"]
             args_spec = spec.get("args") or {}
+            print(main_df.head())
             kwargs = {param: main_df[col] for param, col in args_spec.items()}
             main_df[out_name] = fn(**kwargs)
 
