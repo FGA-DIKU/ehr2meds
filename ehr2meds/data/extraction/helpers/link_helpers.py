@@ -250,6 +250,8 @@ def get_GA_at_date(
         raise KeyError(
             f"expected {date!r} and {GA_col!r} on linked df; have {list(df.columns)}"
         )
+    if GA_col == "GA_scan_days":
+        df[GA_col] = pd.to_numeric(df[GA_col], errors="coerce") / 7.0
 
     merged = merge_on_match_on(
         df, expanded_table, match_on=match_on, extra_cols=[pregnancy_start, pregnancy_end]

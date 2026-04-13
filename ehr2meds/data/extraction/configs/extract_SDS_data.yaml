@@ -71,6 +71,7 @@ data_extraction:
           CPRnummer_Mor: m_cpr
           CPRnummer_Barn: baby_cpr
           DW_EK_Foedsel: birth_id
+          Gestationsalder: GA_scan_days
       - source_file: mor_procedurer.csv
         type:
           function: extract_codes
