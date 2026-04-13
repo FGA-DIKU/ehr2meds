@@ -203,7 +203,7 @@ data_extraction:
         map_columns:
           CPRnummer_Barn: baby_cpr
           Gestationsalder: GA_days
-          Cprnummer_Mor: m_cpr
+          CPRnummer_Mor: m_cpr
           FoedselsDato_Barn: date
       - source_file: mfr.csv
         map_columns:
