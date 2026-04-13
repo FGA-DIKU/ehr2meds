@@ -347,14 +347,14 @@ data_extraction:
         type:
           function: extract_codes
           args:
-            target_col: MARKOERT_KEJSERSNIT
+            target_col: MARKOER_KEJSERSNIT
             match_on: [1]
             match_type: exact
         map_columns:
           CPR_BARN: baby_cpr
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
-          MARKOERT_KEJSERSNIT: code
+          MARKOER_KEJSERSNIT: code
 
   cesarean_section_MFR3_main:
     key_columns: [baby_cpr, m_cpr, date]
