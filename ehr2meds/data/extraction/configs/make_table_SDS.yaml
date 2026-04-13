@@ -42,7 +42,7 @@ linked_tables:
     match_on: [baby_cpr]
     function: get_GA_at_date
     args:
-      date: date
+      date: scan_date
       GA_col: GA_weeks
       pregnancy_start: pregnancy_start
       pregnancy_end: pregnancy_end

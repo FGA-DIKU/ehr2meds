@@ -70,7 +70,6 @@ data_extraction:
         map_columns:
           CPRnummer_Mor: m_cpr
           CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
           DW_EK_Foedsel: birth_id
       - source_file: mor_procedurer.csv
         type:
