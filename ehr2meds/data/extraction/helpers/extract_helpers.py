@@ -14,6 +14,8 @@ def extract_regex_matches(df, target_col: str, regex: str):
 
 def extract_codes(df, target_col: str, match_on: list[str], match_type: str, exclude:bool=False):
     """Filter rows by ``target_col``. ``match_on`` is a list; a row matches if **any** option matches."""
+    if target_col not in df.columns:
+        raise ValueError(f"Column {target_col} not found in dataframe {df.columns}")
     s = df[target_col].astype(str)
     if match_type == "exact":
         mask = s.isin(match_on)
