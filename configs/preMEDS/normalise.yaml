@@ -1,0 +1,24 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+test: false
+env: local
+run_name: normalise_labs
+paths:
+  input: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP/labtest.csv
+  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP
+
+file_name: labtest_norm_min_max.csv
+  
+data:
+  norm_type: Min_max
+  chunksize: 30000000
+  test_rows: 1000000
+  dist_path: null  # Optional path to distribution data
+  numeric_value: numeric_value

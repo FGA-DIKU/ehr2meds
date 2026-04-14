@@ -38,6 +38,10 @@ python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP
 
 Adjust `--config-name` if you use a different PREMEDS profile.
 
+Optionally you can also normalise the data, using 
+```bash
+python ehr2meds/normalise_premeds.py --config-name preMEDS/normalise     
+```
 ---
 
 ### 3. PREMEDS → MEDS
