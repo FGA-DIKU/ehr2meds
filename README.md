@@ -60,17 +60,17 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
 
 3. **Normalization:**  
    (Optional) Normalizes lab test data before MEDS conversion.  
-   You need to run [normalise_premeds.py](./ehr2meds/normalise_premeds.py) to run the normalization.
+   You need to run [normalize_premeds.py](./ehr2meds/normalize_premeds.py) to run the normalization.
    Example:
 
    ```bash
-   python ehr2meds/normalise_premeds.py --config-name <config_path> 
+   python ehr2meds/normalize_premeds.py --config-name <config_path> 
    ```
 
    Example:
 
    ```bash
-   python ehr2meds/normalise_premeds.py --config-name preMEDS/normalise     
+   python ehr2meds/normalize_premeds.py --config-name preMEDS/normalise     
    ```
 
    Example configuration files can be found in the [configs/preMEDS](./ehr2meds/configs/preMEDS).

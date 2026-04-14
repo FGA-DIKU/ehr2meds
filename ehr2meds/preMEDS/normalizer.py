@@ -12,12 +12,12 @@ from ehr2meds.preMEDS.dataloading import DataLoader
 logger = logging.getLogger(__name__)
 
 
-class Normaliser:
+class Normalizer:
     def __init__(self, cfg) -> None:
         self.cfg = cfg
         self.test = cfg.test
         logger.info(f"test {self.test}")
-        self.normalisation_type = cfg.data["norm_type"]
+        self.normalization_type = cfg.data["norm_type"]
         self._init_data_loader()
 
         # Initialize distribution data placeholders
@@ -38,10 +38,10 @@ class Normaliser:
         print("Getting lab distribution")
         dist = self.get_lab_values()
         self._process_distribution_data(dist)
-        print("Normalising data")
-        self.normalise_data()
+        print("Normalizing data")
+        self.normalize_data()
 
-    def normalise_data(self):
+    def normalize_data(self):
         counter = 0
         for chunk in tqdm(
             self.data_loader.load_chunks(
@@ -56,14 +56,14 @@ class Normaliser:
 
     def _process_distribution_data(self, dist: Dict[str, List[float]]) -> None:
         """Process distribution data based on normalization type."""
-        if self.normalisation_type == "Min_max":
+        if self.normalization_type == "Min_max":
             self._process_minmax_distribution(dist)
-        elif self.normalisation_type == "Categorise":
+        elif self.normalization_type == "Categorise":
             self._process_category_distribution(dist)
-        elif self.normalisation_type == "Quantiles":
+        elif self.normalization_type == "Quantiles":
             self._process_quantile_distribution(dist)
         else:
-            raise ValueError("Invalid type of normalisation")
+            raise ValueError("Invalid type of normalization")
 
     def _process_minmax_distribution(self, dist: Dict[str, List[float]]) -> None:
         """Process distribution data for min-max normalization."""
@@ -160,10 +160,10 @@ class Normaliser:
         return lab_val_dict
 
     def process_chunk(self, chunk):
-        chunk[self.numeric_value] = chunk.apply(self.normalise, axis=1)
+        chunk[self.numeric_value] = chunk.apply(self.normalize, axis=1)
         return chunk
 
-    def normalise(self, row):
+    def normalize(self, row):
         concept = row[CODE]
         value = row[self.numeric_value]
         if not pd.notnull(pd.to_numeric(value, errors="coerce")):
@@ -171,19 +171,19 @@ class Normaliser:
         else:
             value = pd.to_numeric(value)
 
-        if self.normalisation_type == "Min_max":
-            return self.min_max_normalise(concept, value)
-        elif self.normalisation_type == "Quantiles":
+        if self.normalization_type == "Min_max":
+            return self.min_max_normalize(concept, value)
+        elif self.normalization_type == "Quantiles":
             return self.quantile(concept, value)
         else:
-            Warning(f"Normalisation type {self.normalisation_type} not implemented")
+            Warning(f"Normalization type {self.normalization_type} not implemented")
 
-    def min_max_normalise(self, concept, value):
+    def min_max_normalize(self, concept, value):
         if concept in self.min_max_vals:
             min_val, max_val = self.min_max_vals[concept]
             if max_val != min_val:
-                normalised_value = (value - min_val) / (max_val - min_val)
-                return round(max(0, min(1, normalised_value)), 3)
+                normalized_value = (value - min_val) / (max_val - min_val)
+                return round(max(0, min(1, normalized_value)), 3)
             else:
                 return "UNIQUE"
         else:

@@ -2,7 +2,7 @@ import hydra
 import pathlib
 from dotenv import load_dotenv
 from ehr2meds.paths import get_config_path
-from ehr2meds.preMEDS.normaliser import Normaliser
+from ehr2meds.preMEDS.normalizer import Normalizer
 from ehr2meds.preMEDS.logging import setup_logging
 from omegaconf import DictConfig, OmegaConf
 from os.path import join
@@ -17,7 +17,7 @@ load_dotenv()
 )
 def main(cfg: DictConfig) -> None:
     """
-    Run PREMEDS preprocessing with the given config file.
+    Run normalization on preMEDS data with the given config file.
 
     :param config_path: Full path to the config file
     """
@@ -38,8 +38,8 @@ def main(cfg: DictConfig) -> None:
     )
 
 
-    normaliser = Normaliser(cfg)
-    normaliser()
+    normalizer = Normalizer(cfg)
+    normalizer()
     return cfg
 
 
