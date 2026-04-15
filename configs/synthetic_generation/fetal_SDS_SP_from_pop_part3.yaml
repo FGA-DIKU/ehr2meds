@@ -1,0 +1,150 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+paths:
+  output: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population
+
+N: 1000 
+linked_data:
+  diagnosis:
+    N: ${N}
+    columns:
+      Diagnosekode:
+        type: medical_code
+        args:
+          prefix: "D"
+      Redigeringsdato:
+        type: rand_datetime 
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
+    save_info:
+      file_type: csv
+      args:
+        sep: "\t"
+        encoding: "iso8859-1"
+
+  procedure:
+    N: ${N}
+    columns:
+      Procedurekode:
+        type: medical_code
+        args:
+          prefix: "P"
+      Redigeringsdato:
+        type: rand_datetime
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
+
+  labtest:
+    N: ${N}
+    columns:
+      BestOrd:
+        type: mix_function
+        args:
+          functions:
+            - type: rand_string
+              args:
+                min_length: 20
+                max_length: 100
+            - type: choice
+              args:
+                options: ["EKG", "KBT", "Blodprøve, UG:2", "Andet", "BT", "COVID", "test;længde"]
+          probabilities: [0.5, 0.5]
+      Bestillingsdato:
+        type: rand_datetime
+      Enhed:
+        type: choice
+        args:
+          options: ["fl", "mmol/l", "10^9/l", "fmol", "U/L"]
+      Resultatværdi:
+        type: mix_function
+        args:
+          functions:
+            - type: rand_float
+              args:
+                min_val: 0.001
+                max_val: 100
+            - type: rand_int
+              args:
+                min_val: 0
+                max_val: 300
+            - type: choice
+              args:
+                options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
+          probabilities: [0.4, 0.4, 0.2]
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
+    save_info:
+      file_type: asc
+      args:
+        sep: "|"
+        encoding: "latin1"
+
+  notes:
+    N: ${N}
+    columns:
+      Linjenummer:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 10
+      Redigeringstidspunkt:
+        type: rand_datetime
+      Notetype:
+        type: choice
+        args:
+          options: ["Opfølgning", "Indlæggelse", "Operation"]
+      Speciale:
+        type: choice
+        args:
+          options: ["Nefrologi", "Gastroenterologi", "Kardiologi", "Endokrinologi", "Nervensundhed", "Andet"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+      note:
+        type: rand_string
+        args:
+          min_length: 10
+          max_length: 3000
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
+
+
+  admissions:
+    N: ${N}
+    columns:
+      Flyt_ind:
+        type: rand_date
+      Flyt_ud:
+        type: greater_than_date
+        match:
+          min_date: Flyt_ind
+      ADT_haendelse:
+        type: choice
+        args:
+          options: ["Indlæggelse", "Flyt_ind", "Tilbage fra orlov"]
+      Afsnit:
+        type: choice
+        args:
+          options: ["HGH, AKUTKLINIK GE-GAMMEL", "NOH COAC0821, ØJENAFD. AMBULATORIEAFSNIT", 
+                    "NEURO", "CARDIO", "NEFRO"]
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]

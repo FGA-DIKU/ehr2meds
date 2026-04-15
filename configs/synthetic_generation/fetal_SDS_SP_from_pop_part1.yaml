@@ -1,0 +1,198 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+paths:
+  output: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population
+
+N: 1000
+
+data: 
+  population:
+    N: 1500
+    columns:
+      CPR_BARN:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      CPR_MOR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+
+linked_data:
+  MFR2_main:
+    N: ${N}
+    columns:
+      PK_MFR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      CPR_FADER:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      MARKOER_KEJSERSNIT:
+        type: medical_code
+        args:
+          prefix: "KM"
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: -1
+              probability: 0.5
+      ALDER_MODER:
+        type: rand_int
+        args:
+          min_val: 18
+          max_val: 45
+      VAEGTE_MODER:
+        type: rand_float
+        args:
+          min_val: 40
+          max_val: 120
+      BMI_MODER:
+        type: rand_float
+        args:
+          min_val: 18
+          max_val: 40
+      PARITET:
+        type: choice
+        args:
+          options: [1, 2, 3, 4]
+      FOEDSELSDATO:
+        type: rand_date
+      GESTATIONSDAGE:
+        type: rand_int
+        args:
+          min_val: 200
+          max_val: 315
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "."
+              probability: 0.05
+      LEVENDE_ELLER_DOD:
+        type: choice
+        args:
+          options: ["Levende", "Død"]
+      MARKOER_IGANGSAETTELSE:
+        type: choice
+        args:
+          options: [1, ""]
+    linked_columns:
+      CPR_BARN:
+        type: choice_unique
+        file: population
+        linked_on: [CPR_BARN]
+      CPR_MODER:
+        type: choice
+        file: population
+        linked_on: [CPR_MOR]
+        rename_to: [CPR_MODER]
+
+  MFR3_Nyfoedte:
+    N: ${N}
+    columns:
+      nyfoedt_id:
+        type: rand_int
+        args:
+          min_val: 100000
+          max_val: 999999
+      birth_id:
+        type: rand_int
+        args:
+          min_val: 100000
+          max_val: 999999
+      CPRNummer_Mor:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      Foedselsdato:
+        type: rand_date
+      Gestationsalder:
+        type: rand_int
+        args:
+          min_val: 200
+          max_val: 315
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "."
+              probability: 0.05
+      AntalDoedFoedte:
+        type: choice
+        args:
+          options: [0, 1, 2]
+      Paritet:
+        type: choice
+        args:
+          options: [1, 2, 3, 4]
+      AntalLevendefoedte:
+        type: choice
+        args:
+          options: [0, 1, 2]
+      Vaegt_Mor:
+        type: rand_float
+        args:
+          min_val: 40
+          max_val: 120
+      Hoejde_Mor:
+        type: rand_float
+        args:
+          min_val: 150
+          max_val: 200
+      BMI_Mor:
+        type: rand_float
+        args:
+          min_val: 18
+          max_val: 40
+      Tobak_forbrug:
+        type: medical_code
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: -1
+              probability: 0.05
+      Vaegt_Barn:
+        type: rand_float
+        args:
+          min_val: 40
+          max_val: 120
+      Laengde_Barn:
+        type: rand_float
+        args:
+          min_val: 150
+          max_val: 200
+      Kejsersnit:
+        type: medical_code
+        args:
+          prefix: "KM"
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: -1
+              probability: 0.5
+    linked_columns:
+      CPRNummer_Barn:
+        type: choice_unique
+        file: population
+        linked_on: [CPR_BARN]
+        rename_to: [CPRNummer_Barn]
+

@@ -107,26 +107,11 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
     return row, unused_idxs
 
 
-def _save_df(df, output_dir, table_name, save_info):
-    file_type = save_info["file_type"]
-    args = save_info["args"]
-    if file_type == "csv":
-        df.to_csv(output_dir / f"{table_name}.csv", index=False, **args)
-    elif file_type == "asc":
-        df.to_csv(output_dir / f"{table_name}.asc", index=False, **args)
-    else:
-        raise ValueError(f"Unknown file type: {file_type}")
-
-
-def _save_df(df, output_dir, table_name, save_info):
-    file_type = save_info["file_type"]
-    args = save_info["args"]
-    if file_type == "csv":
-        df.to_csv(output_dir / f"{table_name}.csv", index=False, **args)
-    elif file_type == "asc":
-        df.to_csv(output_dir / f"{table_name}.asc", index=False, **args)
-    else:
-        raise ValueError(f"Unknown file type: {file_type}")
+def save_df(df, output_dir, table_name, save_info):
+    file_type = save_info.get("file_type", "csv")
+    assert file_type in ["csv", "asc"]
+    args = save_info.get("args", [])
+    df.to_csv(output_dir / f"{table_name}.{file_type}", index=False, **args)
 
 
 def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
@@ -141,7 +126,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
 
         df = pd.DataFrame(rows).convert_dtypes()
         if "save_info" in table_cfg:
-            _save_df(df, output_dir, table_name, table_cfg["save_info"])
+            save_df(df, output_dir, table_name, table_cfg["save_info"])
         else:
             df.to_csv(output_dir / f"{table_name}.csv", index=False)
 
