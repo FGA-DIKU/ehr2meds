@@ -18,9 +18,7 @@ def handle_mix_function(call_args, generators_dict):
         if func_cfg["type"] in generators_dict:
             func_cfg["func"] = generators_dict[func_cfg["type"]]
         else:
-            raise ValueError(
-                f"Function {func_cfg['type']} not found in generators_dict"
-            )
+            raise ValueError(f"Function {func_cfg['type']} not found in generators_dict")
     return callable_args
 
 
@@ -32,7 +30,7 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
 
         col_args = col_cfg.get("args", {}).copy()
         if col_cfg["type"] == "mix_function":
-            col_args = handle_mix_function(col_args, generators_dict)
+            col_args = handle_mix_function(OmegaConf.to_container(col_args), generators_dict)
 
         # Handle dependencies between columns using the "match" key
         if "match" in col_cfg:
@@ -44,13 +42,9 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
         if "corruptions" in col_cfg:
             for corruption in col_cfg["corruptions"]:
                 if corruption["type"] not in corruptors_dict:
-                    raise ValueError(
-                        f"Unknown corruption function type: {corruption['type']}"
-                    )
+                    raise ValueError(f"Unknown corruption function type: {corruption['type']}")
                 corruption_fn = corruptors_dict[corruption["type"]]
-                value = corruption_fn(
-                    value, row_index=row_index, **corruption.get("args", {})
-                )
+                value = corruption_fn(value, row_index=row_index, **corruption.get("args", {}))
 
         row[column_name] = value
     return row
@@ -66,7 +60,7 @@ def generate_corruptions(info, row, row_index, corruptors_dict):
     return row
 
 
-def generate_linked_columns(table_cfg, row, output_dir):
+def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
     for _, col_info in table_cfg["linked_columns"].items():
         linked_file = col_info["file"]
         linked_on = col_info["linked_on"]
@@ -95,6 +89,13 @@ def generate_linked_columns(table_cfg, row, output_dir):
         if linked_type == "choice":
             selected_idx = random.randint(0, len(linked_cols) - 1)
             selected_row = linked_cols.iloc[[selected_idx]].copy()
+        elif linked_type == "choice_unique":
+            if unused_idxs is None:
+                unused_idxs = linked_df.index.tolist()  # Initialize with all indices of the linked DataFrame
+                random.shuffle(unused_idxs)  # Shuffle indices to ensure random selection
+            selected_idx = unused_idxs.pop()
+            selected_row = linked_cols.loc[[selected_idx]].copy()
+            linked_df.at[selected_idx, "used"] = True  # Mark this row as used
         else:
             raise ValueError(f"Unknown linked type: {linked_type}")
         # Insert column to row
@@ -103,7 +104,18 @@ def generate_linked_columns(table_cfg, row, output_dir):
 
         row.update(selected_row.iloc[0])
 
-    return row
+    return row, unused_idxs
+
+
+def _save_df(df, output_dir, table_name, save_info):
+    file_type = save_info["file_type"]
+    args = save_info["args"]
+    if file_type == "csv":
+        df.to_csv(output_dir / f"{table_name}.csv", index=False, **args)
+    elif file_type == "asc":
+        df.to_csv(output_dir / f"{table_name}.asc", index=False, **args)
+    else:
+        raise ValueError(f"Unknown file type: {file_type}")
 
 
 def _save_df(df, output_dir, table_name, save_info):
@@ -119,7 +131,7 @@ def _save_df(df, output_dir, table_name, save_info):
 
 def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
     # Iterate through each file and its corresponding configuration
-    for table_name, table_cfg in cfg["data"].items():
+    for table_name, table_cfg in cfg.get("data", {}).items():
         rows = []
         for i in range(table_cfg["N"]):
             row = {}
@@ -135,10 +147,11 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
 
     for table_name, table_cfg in cfg.get("linked_data", {}).items():
         rows = []
+        unused_idxs = None  # Reset unused indices for each linked table to ensure uniqueness within that table
         for i in range(table_cfg["N"]):
             row = {}
             row = generate_rows(table_cfg, row, i, generators_dict, corruptors_dict)
-            row = generate_linked_columns(table_cfg, row, output_dir)
+            row, unused_idxs = generate_linked_columns(table_cfg, row, output_dir, unused_idxs=unused_idxs)
             row = generate_corruptions(table_cfg, row, i, corruptors_dict)
             rows.append(row)
 
@@ -159,20 +172,10 @@ def main(cfg: DictConfig) -> None:
     output_dir = Path(cfg.paths.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    generators_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(generators)
-        if inspect.isfunction(obj)
-    }
-    corruptors_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(corruptors)
-        if inspect.isfunction(obj)
-    }
+    generators_dict = {name: obj for name, obj in inspect.getmembers(generators) if inspect.isfunction(obj)}
+    corruptors_dict = {name: obj for name, obj in inspect.getmembers(corruptors) if inspect.isfunction(obj)}
 
-    generate_tables(
-        OmegaConf.to_container(cfg), output_dir, generators_dict, corruptors_dict
-    )
+    generate_tables(cfg, output_dir, generators_dict, corruptors_dict)
 
 
 if __name__ == "__main__":
