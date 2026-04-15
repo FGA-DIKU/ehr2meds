@@ -66,6 +66,7 @@ def get_GA_weeks(GA_days):
     """Convert GA in days to GA in weeks."""
     return pd.to_numeric(GA_days, errors="coerce") / 7.0
 
-def convert_to_numeric(df, target_col: str):
-    df[target_col] = pd.to_numeric(df[target_col], errors="coerce")
+def convert_to_numeric(df, columns: list[str]):
+    for col in columns:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
     return df
