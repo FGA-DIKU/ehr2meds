@@ -356,7 +356,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       contact_id: 
         type: choice
-        file: LPR3_kontakter
+        file: kontakter
         linked_on: [contact_id]
         rename_to: [contact_id_new]
     
@@ -375,7 +375,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       contact_id: 
         type: choice
-        file: LPR3_kontakter
+        file: kontakter
         linked_on: [contact_id]
         rename_to: [contact_id_new]
 
@@ -500,12 +500,11 @@ linked_data: # Data that needs to be linked to the data above
         args:
           min_val: 1
           max_val: 600000
-    
     linked_columns:
-      birth_id:
-        type: choice
-        file: MFR3_nyfoedte
-        linked_on: [birth_id]
+      DW_EK_Nyfoedt:
+        type: choice_unique
+        file: nyfoedte
+        linked_on: [DW_EK_Nyfoedt]
 
   patient_info:
     N: ${N}
