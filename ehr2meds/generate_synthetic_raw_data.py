@@ -100,7 +100,7 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
             raise ValueError(f"Unknown linked type: {linked_type}")
         # Insert column to row
         if rename_to:
-            selected_row = selected_row.rename(columns=dict(zip(linked_on, rename_to)))
+            selected_row = selected_row.rename(columns=dict(zip(linked_on, rename_to, strict=True)))
 
         row.update(selected_row.iloc[0])
 

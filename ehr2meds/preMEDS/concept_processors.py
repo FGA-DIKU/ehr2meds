@@ -5,12 +5,12 @@ from ehr2meds.preMEDS.utils import (
     apply_mapping,
     clean_data,
     convert_numeric_columns,
+    convert_timestamp_columns,
     fill_missing_values,
     map_pids_to_ints,
+    melt_table,
     select_and_rename_columns,
     unroll_columns,
-    convert_timestamp_columns,
-    melt_table,
 )
 from typing import Dict, Optional
 
@@ -74,9 +74,7 @@ class RegisterConceptProcessor:
 
         df = convert_numeric_columns(df, concept_config)
 
-        df = RegisterConceptProcessor._apply_sp_pid_link(
-            df, register_sp_link, join_link_col, target_link_col
-        )
+        df = RegisterConceptProcessor._apply_sp_pid_link(df, register_sp_link, join_link_col, target_link_col)
 
         df = map_pids_to_ints(df, subject_id_mapping)
 
@@ -111,9 +109,7 @@ class RegisterConceptProcessor:
         )
 
     @staticmethod
-    def _apply_mappings(
-        df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler"
-    ) -> pd.DataFrame:
+    def _apply_mappings(df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler") -> pd.DataFrame:
         if concept_config.get("mappings"):
             for mapping in concept_config.mappings:
                 map_table = data_handler.load_pandas(
@@ -141,14 +137,10 @@ class RegisterConceptProcessor:
         return df
 
     @staticmethod
-    def _combine_datetime_columns(
-        df: pd.DataFrame, concept_config: dict
-    ) -> pd.DataFrame:
+    def _combine_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
         if "combine_datetime" in concept_config:
-            for target_col, date_time_cols in concept_config[
-                "combine_datetime"
-            ].items():
+            for target_col, date_time_cols in concept_config["combine_datetime"].items():
                 date_col = date_time_cols.get("date_col")
                 time_col = date_time_cols.get("time_col")
                 if date_col in df.columns and time_col in df.columns:

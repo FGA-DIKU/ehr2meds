@@ -29,14 +29,12 @@ dependencies = [
     "meds_reader",
     "torch",
     "ruff==0.15.1",
-    "dotenv==0.9.9",
+    "python-dotenv==0.9.9",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "black",
-    "flake8"
 ]
 
 [tool.setuptools_scm]

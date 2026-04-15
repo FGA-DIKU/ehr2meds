@@ -1,7 +1,7 @@
 import logging
 import os
 import pandas as pd
-from abc import ABC, abstractmethod
+from abc import ABC
 from os.path import join
 from typing import Iterator, List, Optional
 
@@ -21,9 +21,7 @@ class DataLoader(ABC):
         self.chunksize = chunksize
         self.test = test
 
-    def load_dataframe(
-        self, filename: str, cols: Optional[List[str]] = None, **kwargs
-    ) -> pd.DataFrame:
+    def load_dataframe(self, filename: str, cols: Optional[List[str]] = None, **kwargs) -> pd.DataFrame:
         """Default implementation for loading entire files using pandas."""
         file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
@@ -34,14 +32,10 @@ class DataLoader(ABC):
         else:
             raise ValueError(f"Unsupported file type: {file_path}")
 
-    def _load_csv(
-        self, file_path: str, cols: Optional[List[str]] = None, **kwargs
-    ) -> pd.DataFrame:
+    def _load_csv(self, file_path: str, cols: Optional[List[str]] = None, **kwargs) -> pd.DataFrame:
         return pd.read_csv(file_path, usecols=cols, **kwargs)
 
-    def load_chunks(
-        self, filename: str, cols: Optional[List[str]] = None, **kwargs
-    ) -> Iterator[pd.DataFrame]:
+    def load_chunks(self, filename: str, cols: Optional[List[str]] = None, **kwargs) -> Iterator[pd.DataFrame]:
         file_path = self._get_file_path(filename)
         self._check_file_exists(file_path)
         if file_path.endswith(".parquet"):
@@ -59,9 +53,7 @@ class DataLoader(ABC):
         if not os.path.exists(file_path):
             raise ValueError(f"File {file_path} does not exist")
 
-    def _load_parquet_chunks(
-        self, file_path: str, cols: Optional[list[str]]
-    ) -> Iterator[pd.DataFrame]:
+    def _load_parquet_chunks(self, file_path: str, cols: Optional[list[str]]) -> Iterator[pd.DataFrame]:
         import pyarrow.parquet as pq
 
         # Open the ParquetFile to enable reading by row groups
@@ -72,22 +64,16 @@ class DataLoader(ABC):
         chunks_read = 0
 
         # Read and yield row groups
-        for i, batch in enumerate(
-            pf.iter_batches(batch_size=self.chunksize, columns=cols)
-        ):
+        for i, batch in enumerate(pf.iter_batches(batch_size=self.chunksize, columns=cols)):
             if chunks_read >= max_chunks:
                 break
             df = batch.to_pandas()
             chunks_read += 1
             yield df
 
-    def _load_csv_chunks(
-        self, file_path: str, cols: Optional[List[str]] = None, **kwargs
-    ) -> Iterator[pd.DataFrame]:
+    def _load_csv_chunks(self, file_path: str, cols: Optional[List[str]] = None, **kwargs) -> Iterator[pd.DataFrame]:
         """Load CSV in chunks, using pandas read_csv."""
-        chunk_iter = pd.read_csv(
-            file_path, chunksize=self.chunksize, usecols=cols, **kwargs
-        )
+        chunk_iter = pd.read_csv(file_path, chunksize=self.chunksize, usecols=cols, **kwargs)
         for i, chunk in enumerate(chunk_iter):
             if self.test and i >= N_TEST_CHUNKS:
                 break

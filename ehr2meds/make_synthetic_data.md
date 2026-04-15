@@ -38,9 +38,9 @@ python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP
 
 Adjust `--config-name` if you use a different PREMEDS profile.
 
-Optionally you can also normalise the data, using 
+Optionally you can also normalise the data after converting to preMEDS, using 
 ```bash
-python ehr2meds/normalise_premeds.py --config-name preMEDS/normalise     
+python ehr2meds/normalize_premeds.py --config-name preMEDS/normalize     
 ```
 ---
 
@@ -51,7 +51,7 @@ Invoke the MEDS transform shell script with four arguments: PREMEDS input direct
 **Template:**
 
 ```bash
-bash ehr2meds/MEDS/MEDS_transform/run.sh \
+bash ehr2meds/convert_premeds_to_meds.sh \
   <PREMEDS_DIR> \
   <PIPELINE_CONFIG_FP> \
   <EVENT_CONFIG_FP> \

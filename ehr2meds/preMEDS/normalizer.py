@@ -1,13 +1,12 @@
 import logging
-from os.path import dirname, join, split
-from typing import Dict, List
-
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-
 from ehr2meds.preMEDS.constants import CODE, SUBJECT_ID
 from ehr2meds.preMEDS.dataloading import DataLoader
+from os.path import dirname, join, split
+from tqdm import tqdm
+from typing import Dict, List
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -69,16 +68,8 @@ class Normalizer:
         """Process distribution data for min-max normalization."""
         self.min_max_vals = {
             concept: (
-                (
-                    np.percentile(dist[concept], 0.01 * 100)
-                    if len(dist[concept]) > 1
-                    else dist[concept][0]
-                ),
-                (
-                    np.percentile(dist[concept], 0.99 * 100)
-                    if len(dist[concept]) > 1
-                    else dist[concept][0]
-                ),
+                (np.percentile(dist[concept], 0.01 * 100) if len(dist[concept]) > 1 else dist[concept][0]),
+                (np.percentile(dist[concept], 0.99 * 100) if len(dist[concept]) > 1 else dist[concept][0]),
             )
             for concept in dist
             if dist[concept]
@@ -87,11 +78,7 @@ class Normalizer:
     def _process_category_distribution(self, dist: Dict[str, List[float]]) -> None:
         """Process distribution data for categorization."""
         self.quantiles = {
-            concept: (
-                np.percentile(sorted(dist[concept]), [25, 50, 75])
-                if len(dist[concept]) > 0
-                else (0, 0, 0)
-            )
+            concept: (np.percentile(sorted(dist[concept]), [25, 50, 75]) if len(dist[concept]) > 0 else (0, 0, 0))
             for concept in dist
         }
 
@@ -100,10 +87,7 @@ class Normalizer:
         self.n_quantiles = self.cfg.data["n_quantiles"]
         self.quantiles = {
             concept: (
-                [
-                    np.percentile(sorted(dist[concept]), i)
-                    for i in np.linspace(100 / self.n_quantiles, 100, self.n_quantiles)
-                ]
+                [np.percentile(sorted(dist[concept]), i) for i in np.linspace(100 / self.n_quantiles, 100, self.n_quantiles)]
                 if len(dist[concept]) > 0
                 else [0] * self.n_quantiles
             )
@@ -115,7 +99,7 @@ class Normalizer:
         # Ensure subject_id is treated as integer
         chunk[SUBJECT_ID] = pd.to_numeric(chunk[SUBJECT_ID]).astype("Int64")
         chunk = chunk.reset_index(drop=True)
-        logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
+        logger.info(f"Loaded {self.cfg.data.chunksize * counter}")
         return self.process_chunk(chunk)
 
     def _save_chunk(self, chunk: pd.DataFrame, counter: int) -> None:
@@ -140,13 +124,9 @@ class Normalizer:
             desc="Building lab distribution",
         ):
             if self.numeric_value not in chunk.columns or CODE not in chunk.columns:
-                raise ValueError(
-                    f"Missing required columns. Available columns: {chunk.columns}"
-                )
-            logger.info(f"Loaded {self.cfg.data.chunksize*counter}")
-            chunk[self.numeric_value] = pd.to_numeric(
-                chunk[self.numeric_value], errors="coerce"
-            )
+                raise ValueError(f"Missing required columns. Available columns: {chunk.columns}")
+            logger.info(f"Loaded {self.cfg.data.chunksize * counter}")
+            chunk[self.numeric_value] = pd.to_numeric(chunk[self.numeric_value], errors="coerce")
             chunk = chunk.dropna(subset=[self.numeric_value])
             grouped = chunk.groupby(CODE)[self.numeric_value].apply(list).to_dict()
 
@@ -176,7 +156,7 @@ class Normalizer:
         elif self.normalization_type == "Quantiles":
             return self.quantile(concept, value)
         else:
-            Warning(f"Normalization type {self.normalization_type} not implemented")
+            warnings.warn(f"Normalization type {self.normalization_type} not implemented")
 
     def min_max_normalize(self, concept, value):
         if concept in self.min_max_vals:
@@ -195,9 +175,7 @@ class Normalizer:
         else:
             quantile_values = self.quantiles[concept]
             if len(quantile_values) != self.n_quantiles:
-                raise ValueError(
-                    f"Expected {self.n_quantiles} quantiles for concept '{concept}'"
-                )
+                raise ValueError(f"Expected {self.n_quantiles} quantiles for concept '{concept}'")
             for i, q in enumerate(quantile_values, start=1):
                 if value <= q:
                     return f"Q{i}"
