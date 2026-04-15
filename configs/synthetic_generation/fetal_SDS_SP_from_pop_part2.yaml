@@ -62,7 +62,7 @@ data: # Mangler DAR
           min_val: 1
           max_val: 5
 
-  IVF: 
+  ivf_behandlingsforloeb: 
     N: ${N}
     columns:
       CPRnummer:
@@ -108,7 +108,7 @@ data: # Mangler DAR
           min_val: 150
           max_val: 200
 
-  LAB_DATABASE: # Could also add the lower and upper limits
+  lab_dm_forsker: # Could also add the lower and upper limits
     N: ${N}
     columns:
       PATIENT_CPR:
@@ -119,9 +119,9 @@ data: # Mangler DAR
               max_length: 10
               probability: 0.05
               forced_idx: [3]
-      SAMPLING_DATE:
+      SAMPLINGDATE:
         type: rand_datetime
-      SAMPLING_TIME:
+      SAMPLINGTIME:
         type: rand_time
       ANALYSISCODE:
         type: medical_code
@@ -194,7 +194,8 @@ data: # Mangler DAR
           min_val: 1
           max_val: 1000000000
 
-  LPR3_kontakter: 
+  kontakter: 
+  #LPR3
     N: ${N}
     corruptions:
       - type: row_dropout
@@ -239,7 +240,8 @@ data: # Mangler DAR
           min_val: 1
           max_val: 600000
 
-  LSR_epikur:
+  epikur:
+  #LSR
     N: ${N}
     columns:
       cpr:
@@ -264,6 +266,7 @@ data: # Mangler DAR
           max_val: 999999
 
   SSR_GP:
+  # Dont know what this is on NGC
     N: ${N}
     columns:
       CPR:
@@ -287,7 +290,8 @@ data: # Mangler DAR
           max_val: 52
 
 linked_data: # Data that needs to be linked to the data above
-  BDB_amning:
+  amning_afl:
+  #BDB
     N: ${N}
     linked_columns:
       CPR:
@@ -305,7 +309,8 @@ linked_data: # Data that needs to be linked to the data above
           min_val: 0
           max_val: 200
   
-  BDB_maalinger:
+  maalinger_afl:
+  #BDB
     N: ${N}
     linked_columns:
       CPR:
@@ -317,14 +322,14 @@ linked_data: # Data that needs to be linked to the data above
         type: rand_datetime
         args:
           start: 2000
-      MEASUREMENT_DATE:
+      MEASUREMENTDATE:
         type: rand_datetime
         args:
           start: 2000
-      MEASUREMENT_TIME:
-        type: greater_than_datetime
-        match:
-          min_date: MEASUREMENT_DATE
+      #MEASUREMENT_TIME:
+      #  type: greater_than_datetime
+      #  match:
+      #    min_date: MEASUREMENT_DATE
       HEIGHT:
         type: rand_float
         args:
@@ -335,7 +340,8 @@ linked_data: # Data that needs to be linked to the data above
         args:
           min_val: 2500
           max_val: 70000
-  LPR3_diagnoser:
+  diagnoser:
+  #LPR3
     N: ${N}
     columns:
       diagnosekode:
@@ -354,7 +360,8 @@ linked_data: # Data that needs to be linked to the data above
         linked_on: [contact_id]
         rename_to: [contact_id_new]
     
-  LPR3_procedurer_kirurgi:
+  procedurer_kirurgi:
+  #LPR3
     N: ${N}
     columns:
       procedurekode:
@@ -418,7 +425,8 @@ linked_data: # Data that needs to be linked to the data above
         linked_on: [K_RECNUM]
         rename_to: [V_RECNUM]
   
-  MFR2_infections:
+  infektioner:
+  #MFR2
     N: ${N}
     columns:
       SKSKODE:
@@ -432,11 +440,12 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       PK_MFR:
         type: choice
-        file: MFR2_mfr
+        file: mfr
         linked_on: [PK_MFR]
         rename_to: [FK_MFR]
   
-  MFR2_blood:
+  blodmaengde:
+  #MFR2
     N: ${N}
     columns:
       SKSKODE:
@@ -460,11 +469,12 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       PK_MFR:
         type: choice
-        file: MFR2_mfr
+        file: mfr
         linked_on: [PK_MFR]
         rename_to: [FK_MFR]
 
-  MFR3_barn_kontakter: 
+  barn_kontakter:
+  #MFR3 
     N: ${N}
     columns:
       Aktionsdiagnose:

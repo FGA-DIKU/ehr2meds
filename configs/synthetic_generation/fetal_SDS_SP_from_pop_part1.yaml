@@ -28,7 +28,8 @@ data:
               probability: 0.05
 
 linked_data:
-  MFR2_mfr:
+  mfr:
+  # MFR2_main
     N: ${N}
     columns:
       PK_MFR:
@@ -104,7 +105,8 @@ linked_data:
         linked_on: [CPR_MOR]
         rename_to: [CPR_MODER]
 
-  MFR3_nyfoedte:
+  nyfoedte:
+  #MFR3_nyfoedte
     N: ${N}
     columns:
       nyfoedt_id:
