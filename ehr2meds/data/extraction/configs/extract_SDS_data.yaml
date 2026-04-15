@@ -270,6 +270,29 @@ data_extraction:
   #       op: "<"
   #       val: 25
 
+
+  late_miscarriage:
+    key_columns: [baby_cpr, m_cpr, date]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Barn: baby_cpr
+          Gestationsalder: GA_days
+          CPRnummer_Mor: m_cpr
+          FoedselsDato_Barn: date
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          GESTATIONSALDER_DAGE: GA_days
+          FOEDSELSDATO: date
+          CPR_MODER: m_cpr
+    filter:
+      function: bool_match_min_max
+      args:
+        target_col: GA_days
+        min_val: 84
+        max_val: 154
+
   # TODO cervical_conization_history in MFR2
   cervical_conization_history_MFR3:
     key_columns: [birth_id]

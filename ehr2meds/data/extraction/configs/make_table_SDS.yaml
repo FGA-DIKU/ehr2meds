@@ -111,17 +111,24 @@ linked_tables:
       timestamp: date
 
   # TODO late miscarriage
+  - name: late_miscarriage
+    source_file: late_miscarriage.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
 
   - name: pprom_previous_pregnancy_MFR3
     source_file: PPROM_MFR3.csv
-    match_on: [baby_cpr]
+    match_on: [m_cpr]
     function: bool_in_time_window
     args:
       max_date: pregnancy_start
       timestamp: date
   - name: pprom_previous_pregnancy_MFR2
     source_file: PPROM_MFR2.csv
-    match_on: [baby_cpr]
+    match_on: [m_cpr]
     function: bool_in_time_window
     args:
       max_date: pregnancy_start

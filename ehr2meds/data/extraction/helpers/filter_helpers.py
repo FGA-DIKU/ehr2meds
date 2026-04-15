@@ -31,3 +31,9 @@ def bool_match(df, target_col: str, op: str, val):
         )
 
     return df.loc[mask].copy()
+
+
+def bool_match_min_max(df, target_col: str, min_val: float, max_val: float):
+    s = pd.to_numeric(df[target_col], errors="coerce")
+    mask = (s >= min_val) & (s <= max_val)
+    return df.loc[mask].copy()
