@@ -82,6 +82,13 @@ linked_tables:
       shift_max_days: 365
       max_date: pregnancy_start
       timestamp: date
+  
+  - name: country_of_origin
+    source_file: country_of_origin.csv
+    match_on: [m_cpr]
+    function: extract_column
+    args:
+      target_col: [country_of_origin]
 
   ##########################
   #Obstetric history (previous pregnancies)
@@ -347,6 +354,11 @@ collapse_table:
     components:
       - cervical_scan_GA_MFR3
 
+  - name: m_country_of_origin
+    combine:
+      function: add_column
+    components:
+      - country_of_origin
   - name: m_age
     combine:
       function: add_column
