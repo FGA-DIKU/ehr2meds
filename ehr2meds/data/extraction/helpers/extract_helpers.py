@@ -65,3 +65,7 @@ def get_pregnancy_start(birthdate, GA):
 def get_GA_weeks(GA_days):
     """Convert GA in days to GA in weeks."""
     return pd.to_numeric(GA_days, errors="coerce") / 7.0
+
+def convert_to_numeric(df, target_col: str):
+    df[target_col] = pd.to_numeric(df[target_col], errors="coerce")
+    return df

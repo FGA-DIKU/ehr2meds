@@ -56,19 +56,19 @@ linked_tables:
   # Maternal variables
   ##########################
   - name: maternal_age
-    source_file: dynamic_maternal_variables.csv
+    source_file: maternal_age.csv
     match_on: [baby_cpr]
     function: extract_column
     args:
       target_col: [maternal_age]
   - name: maternal_BMI
-    source_file: dynamic_maternal_variables.csv
+    source_file: maternal_BMI.csv
     match_on: [baby_cpr]
     function: extract_column
     args:
       target_col: [maternal_BMI]
   - name: smoking
-    source_file: dynamic_maternal_variables.csv
+    source_file: smoking.csv
     match_on: [baby_cpr]
     function: extract_column
     args:

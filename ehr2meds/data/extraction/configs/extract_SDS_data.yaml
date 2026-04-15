@@ -41,7 +41,50 @@ data_extraction:
           V_PNR: m_cpr
           oprindelses_land_tekst: country_of_origin
   
-  dynamic_maternal_variables:
+
+  maternal_age:
+    key_columns: [baby_cpr]
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Barn: baby_cpr
+          Alder_Mor: maternal_age
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          ALDER_MODER: maternal_age
+        type:
+          function: convert_to_numeric
+          args:
+            columns: [ALDER_MODER]
+  maternal_BMI:
+    key_columns: [baby_cpr]
+    # combine: merge
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Barn: baby_cpr
+          BMI_Mor: maternal_BMI
+        type:
+          function: extract_codes
+          args:
+            target_col: BMI_Mor
+            match_on: [-1]
+            match_type: exact
+            exclude: True
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          BMI_MODER: maternal_BMI
+        type:
+          function: extract_codes
+          args:
+            target_col: BMI_MODER
+            match_on: ["."]
+            match_type: exact
+            exclude: True
+
+  smoking:
     key_columns: [baby_cpr]
     # combine: merge
     sources:
@@ -49,17 +92,10 @@ data_extraction:
         map_columns:
           CPRnummer_Barn: baby_cpr
           Tobaksforbrug: smoking
-          # "Alkoholforbrug": alcohol_consumption
-          FoedselsDato_Barn: birthdate
-          BMI_Mor: maternal_BMI
-          Alder_Mor: maternal_age
       - source_file: mfr.csv
         map_columns:
           CPR_BARN: baby_cpr
           RYGERSTATUS_MODER: smoking
-          BMI_MODER: maternal_BMI
-          ALDER_MODER: maternal_age
-          FOEDSELSDATO: birthdate
   
   # # TODO cervical_scans_MFR2
   # cervical_scans_MFR2:
