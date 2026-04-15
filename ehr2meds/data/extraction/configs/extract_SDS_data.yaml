@@ -378,10 +378,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           ProcedureKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+    # filter:
+      # function: drop_empty_columns
+      # args:
+      #   columns: [code]
 
   cesarean_section_MFR2:
     key_columns: [mfr_id]
