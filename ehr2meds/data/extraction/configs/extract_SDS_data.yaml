@@ -78,7 +78,6 @@ data_extraction:
             target_col: SKSKODE
             match_on: ["UXUD85"]
             match_type: startswith
-            FK_MFR: mfr_id
         map_columns:
           FK_MFR: mfr_id
           SKSKODE: code
