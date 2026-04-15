@@ -187,7 +187,7 @@ data_extraction:
         val: 259
 
   PPROM_MFR2:
-    key_columns: [baby_cpr, m_cpr, date]
+    key_columns: [baby_cpr]
     sources:
       - source_file: mfr.csv
         type:
@@ -199,6 +199,7 @@ data_extraction:
             exclude: True
         map_columns:
           CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
           PPROM: code
           FOEDSELSDATO: date
       - source_file: mfr.csv
