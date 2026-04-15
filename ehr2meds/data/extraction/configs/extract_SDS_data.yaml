@@ -49,6 +49,10 @@ data_extraction:
         map_columns:
           CPRnummer_Barn: baby_cpr
           Alder_Mor: maternal_age
+        type:
+          function: convert_to_numeric
+          args:
+            columns: [ALDER_Mor]
       - source_file: mfr.csv
         map_columns:
           CPR_BARN: baby_cpr
@@ -57,6 +61,7 @@ data_extraction:
           function: convert_to_numeric
           args:
             columns: [ALDER_MODER]
+
   maternal_BMI:
     key_columns: [baby_cpr]
     # combine: merge

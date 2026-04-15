@@ -18,13 +18,10 @@ def summarise_table(df: pd.DataFrame, n_samples: int) -> pd.DataFrame:
             col_summary = float(series.mean())
             
         else:
-            # Counts + percentages for categorical/object columns (including NaNs).
+            # Percentages for categorical/object columns (including NaNs).
             counts = series.value_counts(dropna=False)
             pcts = (counts / float(n_samples) * 100.0).round(3)
-            col_summary = {
-                str(k): {"count": int(counts.loc[k]), "pct": float(pcts.loc[k])}
-                for k in counts.index
-            }
+            col_summary = {str(k): float(pcts.loc[k]) for k in counts.index}
 
         rows.append(
             {
