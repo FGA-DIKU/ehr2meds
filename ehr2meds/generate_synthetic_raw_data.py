@@ -107,11 +107,17 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
     return row, unused_idxs
 
 
-def save_df(df, output_dir, table_name, save_info):
-    file_type = save_info.get("file_type", "csv")
-    assert file_type in ["csv", "asc"]
-    args = save_info.get("args", [])
-    df.to_csv(output_dir / f"{table_name}.{file_type}", index=False, **args)
+def save_df(df, output_dir, table_name, saving_cfg):
+    ext = saving_cfg.get("file_type", "csv")
+    assert ext in ["csv", "asc"]
+    sep = saving_cfg.get("sep", ",")
+    encoding = saving_cfg.get("encoding", None)
+    df.to_csv(
+        output_dir / f"{table_name}.{ext}",
+        index=False,
+        sep=sep,
+        encoding=encoding,
+    )
 
 
 def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
@@ -125,10 +131,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
             rows.append(row)
 
         df = pd.DataFrame(rows).convert_dtypes()
-        if "save_info" in table_cfg:
-            save_df(df, output_dir, table_name, table_cfg["save_info"])
-        else:
-            df.to_csv(output_dir / f"{table_name}.csv", index=False)
+        save_df(df, output_dir, table_name, saving_cfg=table_cfg.get("save_info", {}))
 
     for table_name, table_cfg in cfg.get("linked_data", {}).items():
         rows = []
@@ -141,10 +144,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
             rows.append(row)
 
         df = pd.DataFrame(rows).convert_dtypes()
-        if "save_info" in table_cfg:
-            _save_df(df, output_dir, table_name, table_cfg["save_info"])
-        else:
-            df.to_csv(output_dir / f"{table_name}.csv", index=False)
+        save_df(df, output_dir, table_name, saving_cfg=table_cfg.get("save_info", {}))
 
 
 @hydra.main(
