@@ -28,7 +28,7 @@ data:
               probability: 0.05
 
 linked_data:
-  MFR2_main:
+  MFR2_mfr:
     N: ${N}
     columns:
       PK_MFR:
@@ -75,7 +75,7 @@ linked_data:
           options: [1, 2, 3, 4]
       FOEDSELSDATO:
         type: rand_date
-      GESTATIONSDAGE:
+      GESTATIONSDAGE_DAGE:
         type: rand_int
         args:
           min_val: 200
@@ -85,10 +85,10 @@ linked_data:
             args:
               new_value: "."
               probability: 0.05
-      LEVENDE_ELLER_DOD:
+      LEVENDE_ELLER_DODFOEDT:
         type: choice
         args:
-          options: ["Levende", "Død"]
+          options: ["Levendefødt", "Død"]
       MARKOER_IGANGSAETTELSE:
         type: choice
         args:
@@ -104,7 +104,7 @@ linked_data:
         linked_on: [CPR_MOR]
         rename_to: [CPR_MODER]
 
-  MFR3_Nyfoedte:
+  MFR3_nyfoedte:
     N: ${N}
     columns:
       nyfoedt_id:

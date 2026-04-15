@@ -432,7 +432,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       PK_MFR:
         type: choice
-        file: MFR2_main
+        file: MFR2_mfr
         linked_on: [PK_MFR]
         rename_to: [FK_MFR]
   
@@ -460,7 +460,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       PK_MFR:
         type: choice
-        file: MFR2_main
+        file: MFR2_mfr
         linked_on: [PK_MFR]
         rename_to: [FK_MFR]
 
@@ -494,7 +494,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       birth_id:
         type: choice
-        file: MFR3_Nyfoedte
+        file: MFR3_nyfoedte
         linked_on: [birth_id]
 
   patient_info:
