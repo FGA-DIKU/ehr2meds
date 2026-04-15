@@ -264,6 +264,7 @@ data_extraction:
 
   PPROM_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -349,6 +350,7 @@ data_extraction:
   # TODO cervical_conization_history in MFR2
   cervical_conization_history_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -451,6 +453,7 @@ data_extraction:
 
   preclampsia_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -476,6 +479,7 @@ data_extraction:
 
   uterine_malformation_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -520,6 +524,7 @@ data_extraction:
   
   fibroids_diagnosis_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -564,6 +569,7 @@ data_extraction:
   
   polyhydramnios_diagnosis_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -633,6 +639,7 @@ data_extraction:
   # TODO vaginal_bleeding_diagnosis in MFR2
   vaginal_bleeding_diagnosis_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -677,6 +684,7 @@ data_extraction:
   
   infections_in_pregnancy_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -722,6 +730,7 @@ data_extraction:
   
   maternal_comorbidity_diagnosis_MFR3:
     key_columns: [birth_id]
+    combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
