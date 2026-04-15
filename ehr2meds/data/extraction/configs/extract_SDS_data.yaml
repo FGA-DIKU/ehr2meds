@@ -148,6 +148,10 @@ data_extraction:
           DW_EK_Foedsel: birth_id
           ProcedureKode: code
           StartDato_Procedure: scan_date
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
   
   # TODO fertility_treatment  
   ivf_treatment: 
@@ -278,6 +282,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
   
   # short_cervix_diagnosis:
   #   key_columns: [m_cpr]
@@ -358,6 +366,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
       - source_file: mor_procedurer.csv
         type:
           function: extract_codes
@@ -368,6 +380,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           ProcedureKode: code
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
 
   cesarean_section_MFR2:
     key_columns: [mfr_id]
@@ -456,6 +472,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
 
 
   uterine_malformation_MFR3:
@@ -477,6 +497,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
   
   fibroids_diagnosis_MFR2:
     key_columns: [mfr_id]
@@ -517,6 +541,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
   
   polyhydramnios_diagnosis_MFR2:
     key_columns: [mfr_id]
@@ -557,6 +585,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
 
   labor_induction_MFR2: 
     key_columns: [mfr_id]
@@ -621,7 +653,11 @@ data_extraction:
             match_type: startswith
         map_columns:
           DW_EK_Foedsel: birth_id
-          DiagnoseKode: code
+          DiagnoseKode: code'
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
 
   # infections_in_pregnancy_MFR2:
   #   key_columns: [mfr_id]
@@ -662,6 +698,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
 
   # TODO maternal_comorbidity_diagnosis in MFR2
   # maternal_comorbidity_diagnosis_MFR2:
@@ -706,3 +746,7 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+        filter:
+          function: drop_empty_columns
+          args:
+            columns: [code]
