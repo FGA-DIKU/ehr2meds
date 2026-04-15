@@ -52,7 +52,7 @@ data_extraction:
         type:
           function: convert_to_numeric
           args:
-            columns: [ALDER_Mor]
+            columns: [Alder_Mor]
       - source_file: mfr.csv
         map_columns:
           CPR_BARN: baby_cpr
