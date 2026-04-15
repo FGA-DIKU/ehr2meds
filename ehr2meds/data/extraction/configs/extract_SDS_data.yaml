@@ -61,6 +61,27 @@ data_extraction:
           ALDER_MODER: maternal_age
   
   # TODO cervical_scans_MFR2
+  cervical_scans_MFR2:
+    key_columns: [mfr_id]
+    sources:
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
+          FOEDSELSDATO: date
+          PK_MFR: mfr_id
+          GESTATIONSALDER_DAGE: GA_scan_days
+      - source_file: ultralyd.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: SKSKODE
+            match_on: ["UXUD85"]
+            match_type: startswith
+            FK_MFR: mfr_id
+        map_columns:
+          FK_MFR: mfr_id
+          SKSKODE: code
 
   cervical_scans_MFR3:
     key_columns: [birth_id]
