@@ -649,7 +649,7 @@ data_extraction:
             match_type: startswith
         map_columns:
           DW_EK_Foedsel: birth_id
-          DiagnoseKode: code'
+          DiagnoseKode: code
     filter:
       function: drop_empty_columns
       args:
