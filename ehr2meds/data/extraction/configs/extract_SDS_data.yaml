@@ -43,7 +43,7 @@ data_extraction:
   
   dynamic_maternal_variables:
     key_columns: [baby_cpr]
-    combine: merge
+    # combine: merge
     sources:
       - source_file: nyfoedte.csv
         map_columns:
@@ -59,6 +59,7 @@ data_extraction:
           RYGERSTATUS_MODER: smoking
           BMI_MODER: maternal_BMI
           ALDER_MODER: maternal_age
+          FOEDSELSDATO: birthdate
   
   # # TODO cervical_scans_MFR2
   # cervical_scans_MFR2:
