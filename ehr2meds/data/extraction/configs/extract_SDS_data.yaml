@@ -77,12 +77,15 @@ data_extraction:
           CPR_BARN: baby_cpr
           BMI_MODER: maternal_BMI
         type:
-          function: extract_codes
-          args:
-            target_col: BMI_MODER
-            match_on: ["."]
-            match_type: exact
-            exclude: True
+          - function: extract_codes
+            args:
+              target_col: BMI_MODER
+              match_on: ["."]
+              match_type: exact
+              exclude: True
+          - function: convert_to_numeric
+            args:
+              columns: [BMI_MODER]
 
   smoking:
     key_columns: [baby_cpr]

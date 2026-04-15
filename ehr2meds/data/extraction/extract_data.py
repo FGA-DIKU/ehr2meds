@@ -33,12 +33,21 @@ class DataExtractor:
             for source in data_cfg["sources"]:
                 path = self.input_dir / source["source_file"]
                 source_df = pd.read_csv(path)
-                type_cfg = source.get("type") or {}
-                fn = type_cfg.get("function")
-                if fn:
-                    source_df = self.extract_func_dict[fn](
-                        source_df, **(type_cfg.get("args") or {})
-                    )
+                type_cfg = source.get("type")
+                # Allow either a single transform mapping:
+                #   type: {function: ..., args: {...}}
+                # or a pipeline:
+                #   type:
+                #     - {function: ..., args: {...}}
+                #     - {function: ..., args: {...}}
+                if type_cfg:
+                    steps = type_cfg if isinstance(type_cfg, list) else [type_cfg]
+                    for step in steps:
+                        fn = (step or {}).get("function")
+                        if fn:
+                            source_df = self.extract_func_dict[fn](
+                                source_df, **((step or {}).get("args") or {})
+                            )
                 filter_func = source.get("filter")
                 if filter_func:
                     source_df = self.filter_func_dict[filter_func](
