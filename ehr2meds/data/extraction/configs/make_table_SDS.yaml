@@ -37,20 +37,11 @@ linked_tables:
   #   source_file: cervical_scans_MFR2.csv
   #   match_on: [baby_cpr]
   #   function: get_GA_at_date
-  #     args:
-  #       date: scan_date
-  #       GA_col: GA_weeks
-  #       pregnancy_start: pregnancy_start
-  #       pregnancy_end: pregnancy_end
-  - name: cervical_scan_GA_MFR2
-    source_file: cervical_scans_MFR2.csv
-    match_on: [baby_cpr]
-    function: get_GA_at_date
-    args:
-      date: scan_date
-      GA_col: GA_scan_days
-      pregnancy_start: pregnancy_start
-      pregnancy_end: pregnancy_end
+  #   args:
+  #     date: scan_date
+  #     GA_col: GA_scan_days
+  #     pregnancy_start: pregnancy_start
+  #     pregnancy_end: pregnancy_end
   - name: cervical_scan_GA_MFR3
     source_file: cervical_scans_MFR3.csv
     match_on: [baby_cpr]
