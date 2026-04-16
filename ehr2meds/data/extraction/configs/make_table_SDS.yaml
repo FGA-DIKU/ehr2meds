@@ -314,7 +314,8 @@ linked_tables:
     match_on: [baby_cpr]
     function: bool_in_time_window
     args:
-      max_date: pregnancy_start
+      min_date: pregnancy_start
+      max_date: pregnancy_end
       timestamp: date
 
 
