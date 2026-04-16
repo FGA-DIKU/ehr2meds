@@ -419,7 +419,7 @@ collapse_table:
 
   - name: current_cervical_conization
     combine:
-      function: add_column
+      function: or_columns
     components:
       - current_cervical_conization_diagnoses_MFR3
       - current_cervical_conization_procedures_MFR3
