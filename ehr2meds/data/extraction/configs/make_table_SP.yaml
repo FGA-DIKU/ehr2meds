@@ -148,21 +148,21 @@ linked_tables:
       max_date: pregnancy_start
       timestamp: date
 
-  - name: previous_cesarean_section_procedures
-    source_file: cesarean_section_procedures.csv
-    match_on: [m_cpr]
-    function: bool_in_time_window
-    args:
-      max_date: pregnancy_start
-      timestamp: date
-  - name: current_cesarean_section_procedures
-    source_file: cesarean_section_procedures.csv
-    match_on: [m_cpr]
-    function: bool_in_time_window
-    args:
-      min_date: pregnancy_start
-      max_date: pregnancy_end
-      timestamp: date
+  # - name: previous_cesarean_section_procedures
+  #   source_file: cesarean_section_procedures.csv
+  #   match_on: [m_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     max_date: pregnancy_start
+  #     timestamp: date
+  # - name: current_cesarean_section_procedures
+  #   source_file: cesarean_section_procedures.csv
+  #   match_on: [m_cpr]
+  #   function: bool_in_time_window
+  #   args:
+  #     min_date: pregnancy_start
+  #     max_date: pregnancy_end
+  #     timestamp: date
   - name: previous_cesarean_section_history
     source_file: cesarean_section_history.csv
     match_on: [m_cpr]
