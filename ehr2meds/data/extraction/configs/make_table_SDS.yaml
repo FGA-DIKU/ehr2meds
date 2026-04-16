@@ -167,8 +167,16 @@ linked_tables:
   ##########################
   # Current pregnancy (cervical)
   ##########################
-  - name: previous_cervical_conization_history_MFR3
-    source_file: cervical_conization_history_MFR3.csv
+  - name: current_cervical_conization_diagnoses_MFR3
+    source_file: cervical_conization_diagnoses_MFR3.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_start
+      timestamp: date
+  - name: current_cervical_conization_procedures_MFR3
+    source_file: cervical_conization_procedures_MFR3.csv
     match_on: [m_cpr]
     function: bool_in_time_window
     args:
@@ -409,11 +417,12 @@ collapse_table:
       - previous_preclampsia_diagnosis_MFR3
       - previous_preclampsia_diagnosis_MFR2
 
-  - name: cervical_conization
+  - name: current_cervical_conization
     combine:
       function: add_column
     components:
-      - previous_cervical_conization_history_MFR3
+      - current_cervical_conization_diagnoses_MFR3
+      - current_cervical_conization_procedures_MFR3
 
   - name: multiple_pregnancy
     combine:

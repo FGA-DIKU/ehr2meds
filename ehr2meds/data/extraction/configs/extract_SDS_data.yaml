@@ -348,7 +348,7 @@ data_extraction:
         max_val: 154
 
   # TODO cervical_conization_history in MFR2
-  cervical_conization_history_MFR3:
+  cervical_conization_diagnoses_MFR3:
     key_columns: [birth_id]
     combine: merge
     sources:
@@ -368,6 +368,21 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
+
+  cervical_conization_procedures_MFR3:
+    key_columns: [birth_id]
+    combine: merge
+    sources:
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
       - source_file: mor_procedurer.csv
         type:
           function: extract_codes
@@ -378,10 +393,10 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           ProcedureKode: code
-    # filter:
-      # function: drop_empty_columns
-      # args:
-      #   columns: [code]
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
 
   cesarean_section_MFR2:
     key_columns: [mfr_id]
