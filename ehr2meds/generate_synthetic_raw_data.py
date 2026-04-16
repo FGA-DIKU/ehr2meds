@@ -95,7 +95,6 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
                 random.shuffle(unused_idxs)  # Shuffle indices to ensure random selection
             selected_idx = unused_idxs.pop()
             selected_row = linked_cols.loc[[selected_idx]].copy()
-            linked_df.at[selected_idx, "used"] = True  # Mark this row as used
         else:
             raise ValueError(f"Unknown linked type: {linked_type}")
         # Insert column to row

@@ -156,7 +156,7 @@ class Normalizer:
         elif self.normalization_type == "Quantiles":
             return self.quantile(concept, value)
         else:
-            warnings.warn(f"Normalization type {self.normalization_type} not implemented")
+            raise NotImplementedError(f"Normalization type {self.normalization_type} not implemented")
 
     def min_max_normalize(self, concept, value):
         if concept in self.min_max_vals:

@@ -32,13 +32,17 @@ linked_data:
   # MFR2_main
     N: ${N}
     columns:
-      PK_MFR:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
+
+      ALDER_MODER:
+        type: rand_int
+        args:
+          min_val: 18
+          max_val: 45
+      BMI_MODER:
+        type: rand_float
+        args:
+          min_val: 18
+          max_val: 40
       CPR_FADER:
         type: person_id
         corruptions:
@@ -46,25 +50,30 @@ linked_data:
             args:
               max_length: 10
               probability: 0.05
-      ALDER_MODER:
-        type: rand_int
-        args:
-          min_val: 18
-          max_val: 45
+      PK_MFR:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
       VAEGTE_MODER:
         type: rand_float
         args:
           min_val: 40
           max_val: 120
-      BMI_MODER:
-        type: rand_float
-        args:
-          min_val: 18
-          max_val: 40
+
       PARITET:
         type: choice
         args:
           options: [1, 2, 3, 4]
+      FOEDSELSLOEBENUMMER:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
       FOEDSELSDATO:
         type: rand_date
       GESTATIONSALDER_DAGE:
@@ -122,13 +131,6 @@ linked_data:
         args:
           min_val: 18
           max_val: 40
-      CPRnummer_Mor:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
       DW_EK_Nyfoedt:
         type: person_id
         corruptions:
@@ -143,7 +145,7 @@ linked_data:
             args:
               max_length: 10
               probability: 0.05
-      Foedselsdato:
+      FoedselsDato_Barn:
         type: rand_date
       Gestationsalder:
         type: rand_int
@@ -186,6 +188,10 @@ linked_data:
         args:
           min_val: 150
           max_val: 200
+      LevendefoedtDoedfoedt:
+        type: choice
+        args:
+          options: [1, 2]
       Paritet:
         type: choice
         args:
@@ -213,4 +219,8 @@ linked_data:
         file: population
         linked_on: [CPR_BARN]
         rename_to: [CPRnummer_Barn]
-
+      CPRnummer_Mor:
+        type: choice
+        file: population
+        linked_on: [CPR_MOR]
+        rename_to: [CPRnummer_Mor]
