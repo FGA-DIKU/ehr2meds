@@ -2,6 +2,7 @@
 #python -m ehr2meds.data.extraction.extract_data --config ehr2meds/data/extraction/SP.yaml --input ehr2meds/data/raw/fetal_data/SP --output ehr2meds/data/summary/tables/fetal_SP
 
 overwrite_files: false
+drop_empty_rows: [m_cpr]
 
 data_extraction:
   GA_delivery:
