@@ -469,13 +469,13 @@ collapse_table:
     combine:
       function: or_columns
     components:
-      - previous_cesarean_section_procedures
+      # - previous_cesarean_section_procedures
       - previous_cesarean_section_history
   - name: current_cesarean_section
     combine:
       function: or_columns
     components:
-      - current_cesarean_section_procedures
+      # - current_cesarean_section_procedures
       - current_cesarean_section_history
   - name: labor_induction
     combine:
