@@ -322,6 +322,10 @@ data_extraction:
           MOR_CPR: m_cpr
           fill_col: code
           "Udslettet dato/tid": date
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code, m_cpr, date]
 
   preclampsia_diagnosis:
     key_columns: [m_cpr]
