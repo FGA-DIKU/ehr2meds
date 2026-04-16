@@ -173,7 +173,7 @@ linked_tables:
     function: bool_in_time_window
     args:
       min_date: pregnancy_start
-      max_date: pregnancy_start
+      max_date: pregnancy_end
       timestamp: date
   - name: current_cervical_conization_procedures_MFR3
     source_file: cervical_conization_procedures_MFR3.csv
