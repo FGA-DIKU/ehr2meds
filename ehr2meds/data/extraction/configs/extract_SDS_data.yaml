@@ -197,6 +197,10 @@ data_extraction:
         map_columns:
           CPR_BARN: baby_cpr
           FLERFOLDSGRAVIDITET: code
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
 
   parity:
     key_columns: [baby_cpr, m_cpr, date]
@@ -261,6 +265,10 @@ data_extraction:
         map_columns:
           CPR_BARN: baby_cpr
           PROM: code
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
 
   PPROM_MFR3:
     key_columns: [birth_id]
@@ -448,6 +456,7 @@ data_extraction:
 
   preclampsia_MFR2:
       key_columns: [mfr_id]
+      combine: merge
       sources:
         - source_file: mfr.csv
           map_columns:
@@ -465,6 +474,10 @@ data_extraction:
           map_columns:
             FK_MFR: mfr_id
             SKSKODE: code
+      filter:
+        function: drop_empty_columns
+        args:
+          columns: [code]
 
   preclampsia_MFR3:
     key_columns: [birth_id]
@@ -519,6 +532,7 @@ data_extraction:
   
   fibroids_diagnosis_MFR2:
     key_columns: [mfr_id]
+    combine: merge
     sources:
       - source_file: mfr.csv
         map_columns:
@@ -536,6 +550,10 @@ data_extraction:
         map_columns:
           FK_MFR: mfr_id
           SKSKODE: code
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
   
   fibroids_diagnosis_MFR3:
     key_columns: [birth_id]
@@ -564,6 +582,7 @@ data_extraction:
   
   polyhydramnios_diagnosis_MFR2:
     key_columns: [mfr_id]
+    combine: merge
     sources:
       - source_file: mfr.csv
         map_columns:
@@ -581,6 +600,10 @@ data_extraction:
         map_columns:
           FK_MFR: mfr_id
           SKSKODE: code
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
   
   polyhydramnios_diagnosis_MFR3:
     key_columns: [birth_id]

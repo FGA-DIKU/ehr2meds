@@ -1,9 +1,17 @@
-# Example: run from repo root, e.g.
-#python -m ehr2meds.data.extraction.extract_data --config ehr2meds/data/extraction/SP.yaml --input ehr2meds/data/raw/fetal_data/SP --output ehr2meds/data/summary/tables/fetal_SP
+# Build the SP summary table from CSVs produced by extract_SP_data.yaml, e.g.
+# python -m ehr2meds.data.extraction.extract_data \
+#   --config ehr2meds/data/extraction/configs/extract_SP_data.yaml \
+#   --input <raw_dir> --output <extracted_dir>
+# python -m ehr2meds.data.extraction.make_table \
+#   --config ehr2meds/data/extraction/configs/make_table_SP.yaml \
+#   --input <extracted_dir> --output <out_dir> --save_name fetal_SP
 
 overwrite_files: false
-drop_empty_columns: [m_cpr]
+drop_empty_rows: [m_cpr]
 
+##########################
+# Main table
+##########################
 main_table:
   sources:
     - pregnancy_history.csv
@@ -19,300 +27,315 @@ main_table:
     date: pregnancy_end
 
 linked_tables:
-    # time variables
-    - name: cervical_scan_GA
-      source_file: cervical_scans.csv
-      match_on: [m_cpr]
-      function: get_GA_at_date
-      args:
-        date: scan_date
-        GA_col: GA_scan
-        pregnancy_start: pregnancy_start
-        pregnancy_end: pregnancy_end
+  ##########################
+  # GAs
+  ##########################
+  - name: cervical_scan_GA
+    source_file: cervical_scans.csv
+    match_on: [m_cpr]
+    function: get_GA_at_date
+    args:
+      date: scan_date
+      GA_col: GA_scan
+      pregnancy_start: pregnancy_start
+      pregnancy_end: pregnancy_end
 
-    # maternal variables
-    - name: ethnicity
-      source_file: static_maternal_variables.csv
-      match_on: [m_cpr]
-      function: extract_column
-      args:
-        target_col: [ethnicity]
-    - name: maternal_age
-      source_file: static_maternal_variables.csv
-      match_on: [m_cpr]
-      function: get_time_difference
-      args:
-        start_time: birthdate
-        end_time: pregnancy_start
-        unit: years
-    - name: maternal_BMI
-      source_file: dynamic_maternal_variables.csv
-      match_on: [baby_birth_id]
-      function: extract_column
-      args:
-        target_col: [BMI_before_pregnancy]
-    - name: alcohol_consumption
-      source_file: dynamic_maternal_variables.csv
-      match_on: [m_cpr]
-      function: latest_entry
-      args:
-        target_col: alcohol_consumption
-        date_col: date
-        max_date: pregnancy_end
-    - name: smoking
-      source_file: dynamic_maternal_variables.csv
-      match_on: [m_cpr]
-      function: latest_entry
-      args:
-        target_col: smoking
-        date_col: date
-        max_date: pregnancy_start
+  ##########################
+  # Maternal variables
+  ##########################
+  - name: ethnicity
+    source_file: static_maternal_variables.csv
+    match_on: [m_cpr]
+    function: extract_column
+    args:
+      target_col: ethnicity
+  - name: maternal_age
+    source_file: static_maternal_variables.csv
+    match_on: [m_cpr]
+    function: get_time_difference
+    args:
+      start_time: birthdate
+      end_time: pregnancy_start
+      unit: years
+  - name: maternal_BMI
+    source_file: dynamic_maternal_variables.csv
+    match_on: [baby_birth_id]
+    function: extract_column
+    args:
+      target_col: BMI_before_pregnancy
+  - name: alcohol_consumption
+    source_file: dynamic_maternal_variables.csv
+    match_on: [m_cpr]
+    function: latest_entry
+    args:
+      target_col: alcohol_consumption
+      date_col: date
+      max_date: pregnancy_end
+  - name: smoking
+    source_file: dynamic_maternal_variables.csv
+    match_on: [m_cpr]
+    function: latest_entry
+    args:
+      target_col: smoking
+      date_col: date
+      max_date: pregnancy_start
 
-    # pregnancy variables
-    - name: multi_pregnancy_diagnosis
-      source_file: multi_pregnancy_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
-    - name: multi_pregnancy_birth_id
-      source_file: multi_pregnancy_birth_id.csv
-      match_on: [baby_birth_id]
-      function: is_present_bool
-      args:
-        target_col: [code]
-    - name: multi_pregnancy_obs_history
-      source_file: multi_pregnancy_obs_history.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
+  ##########################
+  # Pregnancy history / fertility
+  ##########################
+  - name: ivf_pregnancy
+    source_file: IVF_pregnancy.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+  - name: fertility_treatment
+    source_file: fertility_treatment.csv
+    match_on: [m_cpr]
+    function: bool_in_time_shifted_window
+    args:
+      shift_max_days: 365
+      max_date: pregnancy_start
+      timestamp: date
 
-    - name: ivf_pregnancy
-      source_file: IVF_pregnancy.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
-    - name: fertility_treatment
-      source_file: fertility_treatment.csv
-      match_on: [m_cpr]
-      function: bool_in_time_shifted_window
-      args:
-        shift_max_days: 365
-        max_date: pregnancy_start
-        timestamp: date
+  ##########################
+  # Obstetric history (previous pregnancies)
+  ##########################
+  - name: parity
+    source_file: parity.csv
+    match_on: [m_cpr]
+    function: latest_entry
+    args:
+      target_col: parity
+      date_col: date
+      max_date: pregnancy_start
 
-    - name: parity
-      source_file: parity.csv
-      match_on: [m_cpr]
-      function: latest_entry
-      args:
-        target_col: parity
-        date_col: date
-        max_date: pregnancy_start
+  - name: earlier_ptb_from_diagnosis
+    source_file: ptb_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
+  - name: earlier_ptb_obs_history
+    source_file: ptb_obs_history.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
 
-    - name: earlier_ptb_from_diagnosis
-      source_file: ptb_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
-    - name: earlier_ptb_obs_history
-      source_file: ptb_obs_history.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
+  - name: pprom_previous_pregnancy
+    source_file: PPROM_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
 
-    - name: pprom_current_pregnancy
-      source_file: PPROM_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
-    - name: pprom_previous_pregnancy
-      source_file: PPROM_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
+  - name: previous_short_cervix_diagnosis
+    source_file: short_cervix_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
+  - name: previous_short_cervical_length_history
+    source_file: short_cervical_length_history.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
 
-    - name: previous_short_cervix_diagnosis
-      source_file: short_cervix_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
-    - name: previous_short_cervical_length_history
-      source_file: short_cervical_length_history.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
+  - name: cesarean_section
+    source_file: cesarean_section.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
 
-    - name: cesarean_section
-      source_file: cesarean_section.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
+  - name: previous_preclampsia_diagnosis
+    source_file: preclampsia_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
 
-    - name: labor_induction
-      source_file: labor_induction.csv
-      match_on: [baby_birth_id]
-      function: is_present_bool
-      args:
-        target_col: [code]
-    
-    - name: previous_preclampsia_diagnosis
-      source_file: preclampsia_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
-    - name: current_preclampsia_diagnosis
-      source_file: preclampsia_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
-    - name: preclampsia_diagnosis_test
-      source_file: preclampsia_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_end
-        timestamp: date
+  - name: previous_cervical_conization_history
+    source_file: cervical_conization_history.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
 
-    - name: previous_cervical_conization_history
-      source_file: cervical_conization_history.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
-    
-    - name: uterine_malformation
-      source_file: uterine_malformation_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_end
-        timestamp: date
-    
-    - name: fibroids
-      source_file: fibroids_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_end
-        timestamp: date
+  ##########################
+  # Current pregnancy
+  ##########################
+  - name: multi_pregnancy_diagnosis
+    source_file: multi_pregnancy_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+  - name: multi_pregnancy_birth_id
+    source_file: multi_pregnancy_birth_id.csv
+    match_on: [baby_birth_id]
+    function: is_present_bool
+    args:
+      target_col: code
+  - name: multi_pregnancy_obs_history
+    source_file: multi_pregnancy_obs_history.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
 
-    - name: polyhydramnios
-      source_file: polyhydramnios_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
+  - name: current_preclampsia_diagnosis
+    source_file: preclampsia_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+  - name: preclampsia_diagnosis_test
+    source_file: preclampsia_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_end
+      timestamp: date
 
-    - name: vaginal_bleeding
-      source_file: vaginal_bleeding_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
-    
-    - name: infections_in_pregnancy
-      source_file: infections_in_pregnancy.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        min_date: pregnancy_start
-        max_date: pregnancy_end
-        timestamp: date
+  - name: uterine_malformation
+    source_file: uterine_malformation_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_end
+      timestamp: date
+  
+  - name: fibroids
+    source_file: fibroids_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_end
+      timestamp: date
 
-    - name: maternal_comorbidity
-      source_file: maternal_comorbidity_diagnosis.csv
-      match_on: [m_cpr]
-      function: bool_in_time_window
-      args:
-        max_date: pregnancy_start
-        timestamp: date
+  - name: polyhydramnios
+    source_file: polyhydramnios_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+
+  - name: vaginal_bleeding
+    source_file: vaginal_bleeding_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+  
+  - name: infections_in_pregnancy
+    source_file: infections_in_pregnancy.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+
+  - name: pprom_current_pregnancy
+    source_file: PPROM_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+
+  - name: labor_induction
+    source_file: labor_induction.csv
+    match_on: [baby_birth_id]
+    function: is_present_bool
+    args:
+      target_col: code
+
+  - name: maternal_comorbidity
+    source_file: maternal_comorbidity_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
 
 collapse_table:
+  - name: cervical_scan_GA
+    combine:
+      function: add_column
+    components:
+      - cervical_scan_GA
+
   - name: m_age
     combine:
       function: add_column
-    components: 
+    components:
       - maternal_age
   - name: m_ethnicity
     combine:
       function: add_column
-    components: 
+    components:
       - ethnicity
   - name: m_BMI
     combine:
       function: add_column
-    components: 
+    components:
       - maternal_BMI
   - name: m_alcohol_consumption
     combine:
       function: add_column
-    components: 
+    components:
       - alcohol_consumption
   - name: m_smoking
     combine:
       function: add_column
-    components: 
+    components:
       - smoking
 
-    # pregnancy history
   - name: conception_w_fertility_treatment
     combine:
       function: or_columns
-    components: 
+    components:
       - fertility_treatment
       - ivf_pregnancy
-  - name: multiple_pregnancy
-    combine:
-      function: or_columns
-    components:
-      - multi_pregnancy_diagnosis
-      - multi_pregnancy_birth_id
-      - multi_pregnancy_obs_history
+
   - name: parity
     combine:
       function: add_column
-    components: 
+    components:
       - parity
+
   - name: previous_ptb
     combine:
       function: or_columns
     components:
       - earlier_ptb_from_diagnosis
       - earlier_ptb_obs_history
+
   - name: previous_pprom
     combine:
       function: or_columns
@@ -323,22 +346,28 @@ collapse_table:
       function: add_column
     components:
       - pprom_current_pregnancy
+
   - name: previous_short_cervical_length
     combine:
       function: or_columns
     components:
       - previous_short_cervical_length_history
       - previous_short_cervix_diagnosis
-  - name: cesarean_section
+
+  - name: cervical_conization
     combine:
       function: add_column
     components:
-      - cesarean_section
-  - name: labor_induction
+      - previous_cervical_conization_history
+
+  - name: multiple_pregnancy
     combine:
-      function: add_column
+      function: or_columns
     components:
-      - labor_induction
+      - multi_pregnancy_diagnosis
+      - multi_pregnancy_birth_id
+      - multi_pregnancy_obs_history
+
   - name: previous_preclampsia
     combine:
       function: add_column
@@ -354,11 +383,7 @@ collapse_table:
       function: add_column
     components:
       - preclampsia_diagnosis_test
-  - name: cervical_conization
-    combine:
-      function: add_column
-    components:
-      - previous_cervical_conization_history
+
   - name: uterine_malformation
     combine:
       function: add_column
@@ -374,11 +399,7 @@ collapse_table:
       function: add_column
     components:
       - polyhydramnios
-  - name: cervical_scan_GA
-    combine:
-      function: add_column
-    components:
-      - cervical_scan_GA
+
   - name: vaginal_bleeding
     combine:
       function: add_column
@@ -394,3 +415,14 @@ collapse_table:
       function: add_column
     components:
       - maternal_comorbidity
+
+  - name: cesarean_section
+    combine:
+      function: add_column
+    components:
+      - cesarean_section
+  - name: labor_induction
+    combine:
+      function: add_column
+    components:
+      - labor_induction
