@@ -216,6 +216,23 @@ linked_tables:
       min_date: pregnancy_start
       max_date: pregnancy_end
       timestamp: date
+  
+  - name: current_short_cervix_diagnosis
+    source_file: short_cervix_diagnosis.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+  - name: current_short_cervical_length_history
+    source_file: short_cervical_length_history.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
 
   - name: uterine_malformation
     source_file: uterine_malformation_diagnosis.csv
@@ -363,6 +380,13 @@ collapse_table:
       function: add_column
     components:
       - current_cervical_conization
+  
+  - name: current_short_cervical_length
+    combine:
+      function: or_columns
+    components:
+      - current_short_cervical_length_history
+      - current_short_cervix_diagnosis
 
   - name: multiple_pregnancy
     combine:
