@@ -308,8 +308,10 @@ data_extraction:
           MOR_CPR: m_cpr
           ProcedureCode: code
           ServiceDate: date
+
   cesarean_section_history:
     key_columns: [m_cpr]
+    sources:
       - source_file: Mor - Fødselsresume - DEL 1.csv
         type:
           function: extract_non_nan 
