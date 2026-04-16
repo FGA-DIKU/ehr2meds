@@ -148,15 +148,30 @@ linked_tables:
       max_date: pregnancy_start
       timestamp: date
 
-  - name: previous_cesarean_section
-    source_file: cesarean_section.csv
+  - name: previous_cesarean_section_procedures
+    source_file: cesarean_section_procedures.csv
     match_on: [m_cpr]
     function: bool_in_time_window
     args:
       max_date: pregnancy_start
       timestamp: date
-  - name: current_cesarean_section
-    source_file: cesarean_section.csv
+  - name: current_cesarean_section_procedures
+    source_file: cesarean_section_procedures.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
+  - name: previous_cesarean_section_history
+    source_file: cesarean_section_history.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      max_date: pregnancy_start
+      timestamp: date
+  - name: current_cesarean_section_history
+    source_file: cesarean_section_history.csv
     match_on: [m_cpr]
     function: bool_in_time_window
     args:
@@ -452,14 +467,16 @@ collapse_table:
 
   - name: previous_cesarean_section
     combine:
-      function: add_column
+      function: or_columns
     components:
-      - previous_cesarean_section
+      - previous_cesarean_section_procedures
+      - previous_cesarean_section_history
   - name: current_cesarean_section
     combine:
-      function: add_column
+      function: or_columns
     components:
-      - current_cesarean_section
+      - current_cesarean_section_procedures
+      - current_cesarean_section_history
   - name: labor_induction
     combine:
       function: add_column
