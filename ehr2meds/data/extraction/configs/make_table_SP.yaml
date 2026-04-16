@@ -109,8 +109,6 @@ linked_tables:
     function: extract_column
     args:
       target_col: parity
-      date_col: date
-      max_date: pregnancy_start
 
   - name: earlier_ptb_from_diagnosis
     source_file: ptb_diagnosis.csv
@@ -150,12 +148,20 @@ linked_tables:
       max_date: pregnancy_start
       timestamp: date
 
-  - name: cesarean_section
+  - name: previous_cesarean_section
     source_file: cesarean_section.csv
     match_on: [m_cpr]
     function: bool_in_time_window
     args:
       max_date: pregnancy_start
+      timestamp: date
+  - name: current_cesarean_section
+    source_file: cesarean_section.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
       timestamp: date
 
   - name: previous_preclampsia_diagnosis
@@ -444,11 +450,16 @@ collapse_table:
     components:
       - maternal_comorbidity
 
-  - name: cesarean_section
+  - name: previous_cesarean_section
     combine:
       function: add_column
     components:
-      - cesarean_section
+      - previous_cesarean_section
+  - name: current_cesarean_section
+    combine:
+      function: add_column
+    components:
+      - current_cesarean_section
   - name: labor_induction
     combine:
       function: add_column
