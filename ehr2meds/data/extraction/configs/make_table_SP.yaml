@@ -106,7 +106,7 @@ linked_tables:
   - name: parity
     source_file: parity.csv
     match_on: [m_cpr]
-    function: latest_entry
+    function: extract_column
     args:
       target_col: parity
       date_col: date
@@ -166,14 +166,6 @@ linked_tables:
       max_date: pregnancy_start
       timestamp: date
 
-  - name: previous_cervical_conization_history
-    source_file: cervical_conization_history.csv
-    match_on: [m_cpr]
-    function: bool_in_time_window
-    args:
-      max_date: pregnancy_start
-      timestamp: date
-
   ##########################
   # Current pregnancy
   ##########################
@@ -215,12 +207,22 @@ linked_tables:
     args:
       max_date: pregnancy_end
       timestamp: date
+  
+  - name: current_cervical_conization
+    source_file: cervical_conization_history.csv
+    match_on: [m_cpr]
+    function: bool_in_time_window
+    args:
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
 
   - name: uterine_malformation
     source_file: uterine_malformation_diagnosis.csv
     match_on: [m_cpr]
     function: bool_in_time_window
     args:
+      min_date: pregnancy_start
       max_date: pregnancy_end
       timestamp: date
   
@@ -229,6 +231,7 @@ linked_tables:
     match_on: [m_cpr]
     function: bool_in_time_window
     args:
+      min_date: pregnancy_start
       max_date: pregnancy_end
       timestamp: date
 
@@ -280,7 +283,8 @@ linked_tables:
     match_on: [m_cpr]
     function: bool_in_time_window
     args:
-      max_date: pregnancy_start
+      min_date: pregnancy_start
+      max_date: pregnancy_end
       timestamp: date
 
 collapse_table:
@@ -354,11 +358,11 @@ collapse_table:
       - previous_short_cervical_length_history
       - previous_short_cervix_diagnosis
 
-  - name: cervical_conization
+  - name: current_cervical_conization
     combine:
       function: add_column
     components:
-      - previous_cervical_conization_history
+      - current_cervical_conization
 
   - name: multiple_pregnancy
     combine:
