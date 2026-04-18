@@ -443,6 +443,31 @@ linked_data: # Data that needs to be linked to the data above
         file: mfr
         linked_on: [PK_MFR]
         rename_to: [FK_MFR]
+
+  graviditetskomplikationer:
+    N: ${N}
+    columns:
+      SKSKODE:
+        type: mix_function
+        args:
+          functions:
+            - type: medical_code
+              args:
+                prefix: "DD"
+            - type: choice
+              args:
+                options: ["DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341", "DO3414"]
+          probabilities: [0.7, 0.3]
+      KODETYPE:
+        type: choice
+        args:
+          options: ["A", "B", "+"]
+    linked_columns:
+      PK_MFR:
+        type: choice
+        file: mfr
+        linked_on: [PK_MFR]
+        rename_to: [FK_MFR]
   
   blodmaengde:
   #MFR2
@@ -505,6 +530,54 @@ linked_data: # Data that needs to be linked to the data above
         type: choice_unique
         file: nyfoedte
         linked_on: [DW_EK_Nyfoedt]
+
+  mor_diagnoser:
+  #MFR3 
+    N: ${N}
+    columns:
+      DiagnoseKode:
+        type: mix_function
+        args:
+          functions:
+            - type: medical_code
+              args:
+                prefix: "DD"
+            - type: choice
+              args:
+                options: ["DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341", "DO3414"]
+          probabilities: [0.7, 0.3]
+      DiagnoseType:
+        type: choice
+        args:
+          options: ["A", "B", "+"]
+    linked_columns:
+      DW_EK_Foedsel:
+        type: choice_unique
+        file: nyfoedte
+        linked_on: [DW_EK_Foedsel]
+
+  mor_procedurer:
+  #MFR3 
+    N: ${N}
+    columns:
+      ProcedureKode:
+        type: mix_function
+        args:
+          functions:
+            - type: medical_code
+              args:
+                prefix: "DD"
+            - type: choice
+              args:
+                options: ["KLDC00", "KLDC03"]
+          probabilities: [0.7, 0.3]
+      StartDato_Procedure:
+        type: rand_date
+    linked_columns:
+      DW_EK_Foedsel:
+        type: choice_unique
+        file: nyfoedte
+        linked_on: [DW_EK_Foedsel]
 
   patient_info:
     N: ${N}

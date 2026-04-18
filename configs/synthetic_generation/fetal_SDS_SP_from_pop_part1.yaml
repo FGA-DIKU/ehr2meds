@@ -126,6 +126,18 @@ linked_data:
         type: choice
         args:
           options: [0, 1, 2]
+      Alder_Mor:
+        type: mix_function
+        args:
+          functions:
+            - type: rand_int
+              args:
+                min_val: 18
+                max_val: 45
+            - type: choice
+              args:
+                options: ["."]
+          probabilities: [0.9, 0.1]
       BMI_Mor:
         type: rand_float
         args:
