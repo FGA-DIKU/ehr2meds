@@ -530,10 +530,10 @@ data_extraction:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           DW_EK_Foedsel: birth_id
-    # filter:
-    #   function: drop_empty_columns
-    #   args:
-    #     columns: [code]
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
   
   fibroids_diagnosis_MFR2:
     key_columns: [mfr_id]
@@ -555,10 +555,10 @@ data_extraction:
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           PK_MFR: mfr_id
-    # filter:
-    #   function: drop_empty_columns
-    #   args:
-    #     columns: [code]
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
   
   fibroids_diagnosis_MFR3:
     key_columns: [birth_id]
@@ -605,10 +605,10 @@ data_extraction:
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           PK_MFR: mfr_id
-    # filter:
-    #   function: drop_empty_columns
-    #   args:
-    #     columns: [code]
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
   
   polyhydramnios_diagnosis_MFR3:
     key_columns: [birth_id]
@@ -630,10 +630,10 @@ data_extraction:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           DW_EK_Foedsel: birth_id
-    # filter:
-    #   function: drop_empty_columns
-    #   args:
-    #     columns: [code]
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
 
   labor_induction_MFR2: 
     key_columns: [mfr_id]
