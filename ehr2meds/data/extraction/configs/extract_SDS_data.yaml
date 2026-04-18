@@ -654,6 +654,22 @@ data_extraction:
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           PK_MFR: mfr_id
+  
+  labor_induction_MFR2_main:
+    key_columns: [baby_cpr, m_cpr, date]
+    sources:
+      - source_file: mfr.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: MARKOER_IGANGSAETTELSE
+            match_on: ["1"] 
+            match_type: exact
+        map_columns:
+          CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
+          FOEDSELSDATO: date
+          MARKOER_IGANGSAETTELSE: code
 
   labor_induction_HSP_MFR3:
     key_columns: [baby_cpr]

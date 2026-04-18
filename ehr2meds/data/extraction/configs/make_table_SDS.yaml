@@ -343,12 +343,6 @@ linked_tables:
     function: extract_column
     args:
       target_col: [code]
-  - name: labor_induction_HSP_MFR3
-    source_file: labor_induction_HSP_MFR3.csv
-    match_on: [baby_cpr]
-    function: extract_column
-    args:
-      target_col: [code]
   - name: labor_induction_Ballon_MFR3
     source_file: labor_induction_Ballon_MFR3.csv
     match_on: [baby_cpr]
@@ -363,6 +357,12 @@ linked_tables:
       target_col: [code]
   - name: labor_induction_MFR2
     source_file: labor_induction_MFR2.csv
+    match_on: [baby_cpr]
+    function: extract_column
+    args:
+      target_col: [code]
+  - name: labor_induction_MFR2_main
+    source_file: labor_induction_MFR2_main.csv
     match_on: [baby_cpr]
     function: extract_column
     args:
@@ -517,6 +517,7 @@ collapse_table:
       - labor_induction_Ballon_MFR3
       - labor_induction_MFR2
       - labor_induction_Medicinsk_MFR3
+      - labor_induction_MFR2_main
   - name: cesarean_section
     combine:
       function: or_columns

@@ -57,6 +57,8 @@ class DataExtractor:
                 source_df = source_df[list(map_columns.keys())].rename(
                     columns=map_columns
                 )
+                print("Extracting from ", path)
+                print("Number of rows: ", len(source_df))
                 if res_df.empty:
                     res_df = source_df
                 else:
