@@ -406,22 +406,22 @@ data_extraction:
   cesarean_section_MFR2:
     key_columns: [mfr_id]
     sources:
-      - source_file: mfr.csv
+      - source_file: kejsersnit.csv
+        map_columns:
+          FK_MFR: mfr_id
+          SKSKODE: code
         type:
           function: extract_codes
           args:
             target_col: SKSKODE
             match_on: ["KMCA"]
             match_type: startswith
+      - source_file: mfr.csv
         map_columns:
           CPR_BARN: baby_cpr
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           PK_MFR: mfr_id
-      - source_file: kejsersnit.csv
-        map_columns:
-          FK_MFR: mfr_id
-          SKSKODE: code
 
   cesarean_section_MFR2_main:
     key_columns: [baby_cpr, m_cpr, date]
