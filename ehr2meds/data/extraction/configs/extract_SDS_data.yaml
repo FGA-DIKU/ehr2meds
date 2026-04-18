@@ -131,12 +131,6 @@ data_extraction:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          DW_EK_Foedsel: birth_id
-          Gestationsalder: GA_scan_days
       - source_file: mor_procedurer.csv
         type:
           function: extract_codes
@@ -148,10 +142,16 @@ data_extraction:
           DW_EK_Foedsel: birth_id
           ProcedureKode: code
           StartDato_Procedure: scan_date
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          DW_EK_Foedsel: birth_id
+          Gestationsalder: GA_scan_days
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
   
   # TODO fertility_treatment  
   ivf_treatment: 
@@ -191,16 +191,15 @@ data_extraction:
           function: extract_codes
           args:
             target_col: FLERFOLDSGRAVIDITET
-            match_on: [" "]
-            match_type: exact
-            exclude: True
+            match_on: ["DO30"]
+            match_type: startswith
         map_columns:
           CPR_BARN: baby_cpr
           FLERFOLDSGRAVIDITET: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
 
   parity:
     key_columns: [baby_cpr, m_cpr, date]
@@ -246,9 +245,8 @@ data_extraction:
           function: extract_codes
           args:
             target_col: PPROM
-            match_on: [" "]
-            match_type: exact
-            exclude: True
+            match_on: ["DO4"]
+            match_type: startswith
         map_columns:
           CPR_BARN: baby_cpr
           CPR_MODER: m_cpr
@@ -259,9 +257,8 @@ data_extraction:
           function: extract_codes
           args:
             target_col: PROM
-            match_on: [" "]
-            match_type: exact
-            exclude: True
+            match_on: ["DO4"]
+            match_type: startswith
         map_columns:
           CPR_BARN: baby_cpr
           PROM: code
@@ -274,13 +271,6 @@ data_extraction:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
-          DW_EK_Foedsel: birth_id
-          FoedselsDato_Barn: date
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -291,10 +281,17 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+          FoedselsDato_Barn: date
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
   
   # short_cervix_diagnosis:
   #   key_columns: [m_cpr]
@@ -360,12 +357,6 @@ data_extraction:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
-          DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -376,21 +367,21 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
-
-  cervical_conization_procedures_MFR3:
-    key_columns: [birth_id]
-    combine: merge
-    sources:
       - source_file: nyfoedte.csv
         map_columns:
           CPRnummer_Mor: m_cpr
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
+
+  cervical_conization_procedures_MFR3:
+    key_columns: [birth_id]
+    combine: merge
+    sources:
       - source_file: mor_procedurer.csv
         type:
           function: extract_codes
@@ -401,15 +392,27 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           ProcedureKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
 
   cesarean_section_MFR2:
     key_columns: [mfr_id]
     sources:
       - source_file: mfr.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: SKSKODE
+            match_on: ["KMCA"]
+            match_type: startswith
         map_columns:
           CPR_BARN: baby_cpr
           CPR_MODER: m_cpr
@@ -428,7 +431,7 @@ data_extraction:
           function: extract_codes
           args:
             target_col: MARKOER_KEJSERSNIT
-            match_on: [1]
+            match_on: ["1"]
             match_type: exact
         map_columns:
           CPR_BARN: baby_cpr
@@ -444,7 +447,7 @@ data_extraction:
           function: extract_codes
           args:
             target_col: Kejsersnit
-            match_on: [-1]
+            match_on: ["-1"]
             match_type: exact
             exclude: True
         map_columns:
@@ -458,12 +461,6 @@ data_extraction:
       key_columns: [mfr_id]
       combine: merge
       sources:
-        - source_file: mfr.csv
-          map_columns:
-            CPR_BARN: baby_cpr
-            CPR_MODER: m_cpr
-            FOEDSELSDATO: date
-            PK_MFR: mfr_id
         - source_file: graviditetskomplikation.csv
           type:
             function: extract_codes
@@ -474,21 +471,21 @@ data_extraction:
           map_columns:
             FK_MFR: mfr_id
             SKSKODE: code
-      filter:
-        function: drop_empty_columns
-        args:
-          columns: [code]
+        - source_file: mfr.csv
+          map_columns:
+            CPR_BARN: baby_cpr
+            CPR_MODER: m_cpr
+            FOEDSELSDATO: date
+            PK_MFR: mfr_id
+      # filter:
+      #   function: drop_empty_columns
+      #   args:
+      #     columns: [code]
 
   preclampsia_MFR3:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
-          DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -499,22 +496,22 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
-
-
-  uterine_malformation_MFR3:
-    key_columns: [birth_id]
-    combine: merge
-    sources:
       - source_file: nyfoedte.csv
         map_columns:
           CPRnummer_Mor: m_cpr
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
+
+
+  uterine_malformation_MFR3:
+    key_columns: [birth_id]
+    combine: merge
+    sources:
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -525,21 +522,21 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
   
   fibroids_diagnosis_MFR2:
     key_columns: [mfr_id]
     combine: merge
     sources:
-      - source_file: mfr.csv
-        map_columns:
-          CPR_BARN: baby_cpr
-          CPR_MODER: m_cpr
-          FOEDSELSDATO: date
-          PK_MFR: mfr_id
       - source_file: graviditetskomplikation.csv
         type:
           function: extract_codes
@@ -550,21 +547,21 @@ data_extraction:
         map_columns:
           FK_MFR: mfr_id
           SKSKODE: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
+          FOEDSELSDATO: date
+          PK_MFR: mfr_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
   
   fibroids_diagnosis_MFR3:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
-          DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -575,21 +572,21 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
   
   polyhydramnios_diagnosis_MFR2:
     key_columns: [mfr_id]
     combine: merge
     sources:
-      - source_file: mfr.csv
-        map_columns:
-          CPR_BARN: baby_cpr
-          CPR_MODER: m_cpr
-          FOEDSELSDATO: date
-          PK_MFR: mfr_id
       - source_file: graviditetskomplikation.csv
         type:
           function: extract_codes
@@ -600,21 +597,21 @@ data_extraction:
         map_columns:
           FK_MFR: mfr_id
           SKSKODE: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: mfr.csv
+        map_columns:
+          CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
+          FOEDSELSDATO: date
+          PK_MFR: mfr_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
   
   polyhydramnios_diagnosis_MFR3:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
-          DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -625,24 +622,36 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
 
   labor_induction_MFR2: 
     key_columns: [mfr_id]
     sources:
+      - source_file: igangsaettelse.csv
+        map_columns:
+          FK_MFR: mfr_id
+          SKSKODE: code
+        type:
+          function: extract_codes
+          args:
+            target_col: SKSKODE
+            match_on: ["KMAC", "BKHD"]
+            match_type: startswith
       - source_file: mfr.csv
         map_columns:
           CPR_BARN: baby_cpr
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           PK_MFR: mfr_id
-      - source_file: igangsaettelse.csv
-        map_columns:
-          FK_MFR: mfr_id
-          SKSKODE: code
 
   labor_induction_HSP_MFR3:
     key_columns: [baby_cpr]
@@ -673,18 +682,26 @@ data_extraction:
           CPRnummer_Barn: baby_cpr
           FoedselsDato_Barn: date
           Igangsaettelse_Ballonkateter: code
+  labor_induction_Medicinsk_MFR3:
+    key_columns: [baby_cpr]
+    sources:
+      - source_file: nyfoedte.csv
+        type:
+          function: extract_codes
+          args:
+            target_col: Igangsaettelse_Medicinsk
+            match_on: ["Ja"]
+            match_type: exact
+        map_columns:
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          Igangsaettelse_Medicinsk: code
 
   # TODO vaginal_bleeding_diagnosis in MFR2
   vaginal_bleeding_diagnosis_MFR3:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
-          DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -695,10 +712,16 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
 
   # infections_in_pregnancy_MFR2:
   #   key_columns: [mfr_id]
@@ -724,12 +747,6 @@ data_extraction:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
-          DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -740,10 +757,16 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
 
   # TODO maternal_comorbidity_diagnosis in MFR2
   # maternal_comorbidity_diagnosis_MFR2:
@@ -770,12 +793,6 @@ data_extraction:
     key_columns: [birth_id]
     combine: merge
     sources:
-      - source_file: nyfoedte.csv
-        map_columns:
-          CPRnummer_Mor: m_cpr
-          CPRnummer_Barn: baby_cpr
-          FoedselsDato_Barn: date
-          DW_EK_Foedsel: birth_id
       - source_file: mor_diagnoser.csv
         type:
           function: extract_codes
@@ -789,7 +806,13 @@ data_extraction:
         map_columns:
           DW_EK_Foedsel: birth_id
           DiagnoseKode: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
+      - source_file: nyfoedte.csv
+        map_columns:
+          CPRnummer_Mor: m_cpr
+          CPRnummer_Barn: baby_cpr
+          FoedselsDato_Barn: date
+          DW_EK_Foedsel: birth_id
+    # filter:
+    #   function: drop_empty_columns
+    #   args:
+    #     columns: [code]
