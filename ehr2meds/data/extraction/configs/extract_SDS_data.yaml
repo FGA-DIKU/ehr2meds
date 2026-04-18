@@ -252,6 +252,10 @@ data_extraction:
           CPR_MODER: m_cpr
           PPROM: code
           FOEDSELSDATO: date
+  
+  PROM_MFR2:
+    key_columns: [baby_cpr]
+    sources:
       - source_file: mfr.csv
         type:
           function: extract_codes
@@ -261,11 +265,9 @@ data_extraction:
             match_type: startswith
         map_columns:
           CPR_BARN: baby_cpr
+          CPR_MODER: m_cpr
+          FOEDSELSDATO: date
           PROM: code
-    filter:
-      function: drop_empty_columns
-      args:
-        columns: [code]
 
   PPROM_MFR3:
     key_columns: [birth_id]
