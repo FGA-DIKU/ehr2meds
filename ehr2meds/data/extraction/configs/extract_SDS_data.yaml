@@ -620,6 +620,10 @@ data_extraction:
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           PK_MFR: mfr_id
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
   
   labor_induction_MFR2_main:
     key_columns: [baby_cpr, m_cpr, date]
@@ -636,6 +640,10 @@ data_extraction:
           CPR_MODER: m_cpr
           FOEDSELSDATO: date
           MARKOER_IGANGSAETTELSE: code
+    filter:
+      function: drop_empty_columns
+      args:
+        columns: [code]
 
   labor_induction_HSP_MFR3:
     key_columns: [baby_cpr]
