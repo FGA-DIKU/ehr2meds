@@ -176,7 +176,7 @@ linked_tables:
   ##########################
   - name: current_cervical_conization_diagnoses_MFR3
     source_file: cervical_conization_diagnoses_MFR3.csv
-    match_on: [b_cpr]
+    match_on: [baby_cpr]
     function: bool_in_time_window
     args:
       min_date: pregnancy_start
@@ -184,7 +184,7 @@ linked_tables:
       timestamp: date
   - name: current_cervical_conization_procedures_MFR3
     source_file: cervical_conization_procedures_MFR3.csv
-    match_on: [b_cpr]
+    match_on: [baby_cpr]
     function: bool_in_time_window
     args:
       min_date: pregnancy_start
