@@ -626,7 +626,7 @@ data_extraction:
         columns: [code]
   
   labor_induction_MFR2_main:
-    key_columns: [baby_cpr, m_cpr, date]
+    key_columns: [baby_cpr]
     sources:
       - source_file: mfr.csv
         type:
