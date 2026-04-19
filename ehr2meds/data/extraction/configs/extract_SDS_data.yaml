@@ -176,6 +176,7 @@ data_extraction:
         map_columns:
           CPRnummer_Barn: baby_cpr
           AntalBoernIFoedslen: code
+          FoedselsDato_Barn: date
     filter:
       function: bool_match
       args:
