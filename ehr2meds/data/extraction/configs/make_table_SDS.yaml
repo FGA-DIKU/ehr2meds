@@ -478,7 +478,7 @@ collapse_table:
       function: or_columns
     components:
       - polyhydramnios_MFR3
-      - polyhydramnios_MFR2
+      # - polyhydramnios_MFR2
 
   - name: current_preclampsia
     combine:
