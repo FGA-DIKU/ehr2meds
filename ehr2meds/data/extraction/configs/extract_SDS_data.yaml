@@ -603,6 +603,7 @@ data_extraction:
 
   labor_induction_MFR2: 
     key_columns: [mfr_id]
+    combine: merge
     sources:
       - source_file: igangsaettelse.csv
         map_columns:
