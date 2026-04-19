@@ -340,33 +340,43 @@ linked_tables:
   - name: labor_induction_HSP_MFR3
     source_file: labor_induction_HSP_MFR3.csv
     match_on: [baby_cpr]
-    function: extract_column
+    function: bool_in_time_window
     args:
-      target_col: [code]
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
   - name: labor_induction_Ballon_MFR3
     source_file: labor_induction_Ballon_MFR3.csv
     match_on: [baby_cpr]
-    function: extract_column
+    function: bool_in_time_window
     args:
-      target_col: [code]
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
   - name: labor_induction_Medicinsk_MFR3
     source_file: labor_induction_Medicinsk_MFR3.csv
     match_on: [baby_cpr]
-    function: extract_column
+    function: bool_in_time_window
     args:
-      target_col: [code]
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
   - name: labor_induction_MFR2
     source_file: labor_induction_MFR2.csv
     match_on: [baby_cpr]
-    function: extract_column
+    function: bool_in_time_window
     args:
-      target_col: [code]
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
   - name: labor_induction_MFR2_main
     source_file: labor_induction_MFR2_main.csv
     match_on: [baby_cpr]
-    function: extract_column
+    function: bool_in_time_window
     args:
-      target_col: [code]
+      min_date: pregnancy_start
+      max_date: pregnancy_end
+      timestamp: date
 
   - name: current_cesarean_section_MFR2_main
     source_file: cesarean_section_MFR2_main.csv
