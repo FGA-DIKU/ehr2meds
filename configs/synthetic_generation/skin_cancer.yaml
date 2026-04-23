@@ -1,0 +1,124 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+paths:
+  output: ${oc.env:EHR2MEDS_DATA}/raw/skin_cancer
+
+data:
+  nmsc: 
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05 
+          forced_idx: [5, 10] 
+    columns:
+      PNR:
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      BehandlingsDato:
+        type: rand_date 
+        args:
+          format: "%d%b%Y"
+      KliniskVurderingTumorType: 
+        type: choice 
+        args:
+          options: ["basal_cell_carcinoma", "squamous_cell_carcinoma", "merkel_cell_carcinoma"] 
+      HistologiskVurderingTumorType:
+        type: choice 
+        args:
+          options: ["basal_cell_carcinoma", "squamous_cell_carcinoma", "merkel_cell_carcinoma"] 
+      GruppeId:
+        type: rand_string
+        args:
+          min_length: 72
+          max_length: 72
+          include_digits: True
+ 
+  pato:  
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    columns:
+      pnr:
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999
+      C_SNOMEDKODE: 
+        type: rand_string
+        args:
+          min_length: 6
+          max_length: 6
+          include_digits: True
+      D_REKVDATO: 
+        type: rand_date 
+        args:
+          format: "%d%m%Y"
+
+  mohs:
+    N: 20
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    columns:
+      pnr:
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999
+      biopsy_date:
+        type: rand_date 
+        args:
+          format: "%Y-%m-%d"
+      sex:
+        type: rand_int 
+        args:
+          min_val: 0  
+          max_val: 1 
+      skin_type:
+        type: choice
+        args:
+          options: [1, 2, 3, 4, 5, 6, 999]
+
+  bef:
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    N: 20
+    columns:
+      PNR:
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999  
+      OPR_LAND:
+        type: rand_int  
+        args:
+          min_val: 10000  
+          max_val: 99999 
+      MOR_ID:
+        type: person_id
+        args: 
+          min: 100000000000  
+          max: 999999999999 
+      FOED_DAG:
+        type: rand_date 
+        args:
+          format: "%d/%m/%Y"

@@ -3,56 +3,74 @@
 
 ## Overview
 
-EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and converts them to MEDS (Medical Event Data Set) to be compatible with [CORE-BEHRT](https://github.com/FGA-DIKU/EHR).
+EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and converts them to MEDS (Medical Event Data Set).
+
+0. **Prerequities**
+   You need to install the correct packages using
+   ```bash
+   pip install -e .
+   ```
 
 1. **Raw → PREMEDS Conversion:**  
    Converts raw EHR data into a preliminary format called preMEDS.  
-   You need to run [main_azure.py](./ehr2meds/PREMEDS/main_azure.py) to run the PREMEDS conversion.
-   For instructions on how to run on azure, see the [Azure README](./ehr2meds/PREMEDS/azure/README.md).
-   Example:
+   Run 
 
    ```bash
-   python -m ehr2meds.PREMEDS.azure premeds <compute> -c <config_path>
+   python ehr2meds/convert_raw_to_premeds.py --config-name <config_path>
    ```
 
    example:
 
    ```bash
-   python -m ehr2meds.PREMEDS.azure premeds CPU-20-LP -c ehr2meds/example_configs/premeds/minimal.yaml
+   python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP     
    ```
 
-   Example configuration files can be found in the [PREMEDS/configs](./ehr2meds/PREMEDS/configs).
+   Example configuration files can be found in the [configs/preMEDS](./ehr2meds/configs/preMEDS).
+   
+   The main functionalities of this is to 
+   * Map subject ID hashes to integer values to ensure compatibility with MEDS
+   * (optional) rename the raw column names to streamline the data input
+   * Fill missing values from different data sources
+   * Align timestamp inputs to one type
+   * Connect visit ids etc with subject ids for the register data
 
 2. **PREMEDS → MEDS Conversion:**  
    Transforms preMEDS data into a finalized MEDS cohort format.  
-   You need to run [run.py](./ehr2meds/MEDS/MEDS_transform/run.py) to run the MEDS conversion.
-   For instructions ons how to run on azure, see the [MEDS Transform README](./ehr2meds/MEDS/MEDS_transform/README.md).
+   You need to run [convert_premeds_to_meds.sh](./ehr2meds/convert_premeds_to_meds.sh) to run the MEDS conversion.
 
    ```bash
-   python -m ehr2meds.MEDS.MEDS_transform.run --config <config_path> --compute <compute> --experiment <experiment_name>
+      bash ehr2meds/MEDS/MEDS_transform/run.sh \
+      <PREMEDS_DIR> \
+      <PIPELINE_CONFIG_FP> \
+      <EVENT_CONFIG_FP> \
+      <MEDS_OUTPUT_DIR> \
+      [do_unzip=true|do_unzip=false]
    ```
-
    Example:
 
    ```bash
-   python -m ehr2meds.MEDS.MEDS_transform.run --config ehr2meds/example_configs/meds/run.yaml --compute CPU-20-LP --experiment MEDS
+      source .env && bash ehr2meds/convert_premeds_to_meds.sh \
+      ${EHR2MEDS_DATA}/preMEDS/fetal_data/SP \
+      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
+      ${EHR2MEDS_CONFIGS}/MEDS/default_event.yaml \
+      ${EHR2MEDS_DATA}/MEDS/SP
    ```
 
-   Example configuration files can be found in the [MEDS/MEDS_transform/configs](./ehr2meds/MEDS/MEDS_transform/configs).
+   Example configuration files can be found in the [configs/MEDS](./ehr2meds/configs/MEDS).
 
 3. **Normalization:**  
    (Optional) Normalizes lab test data before MEDS conversion.  
-   You need to run [main_normalise.py](./ehr2meds/PREMEDS/main_normalise.py) to run the normalization.
+   You need to run [normalize_premeds.py](./ehr2meds/normalize_premeds.py) to run the normalization.
    Example:
 
    ```bash
-   python -m ehr2meds.PREMEDS.azure normalise <compute> -c <config_path>
+   python ehr2meds/normalize_premeds.py --config-name <config_path> 
    ```
 
    Example:
 
    ```bash
-   python -m ehr2meds.PREMEDS.azure normalise CPU-20-LP -c ehr2meds/example_configs/premeds/normalise.yaml
+   python ehr2meds/normalize_premeds.py --config-name preMEDS/normalise     
    ```
 
-   Example configuration files can be found in the [PREMEDS/configs](./ehr2meds/PREMEDS/configs).
+   Example configuration files can be found in the [configs/preMEDS](./ehr2meds/configs/preMEDS).

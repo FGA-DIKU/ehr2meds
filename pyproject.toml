@@ -8,36 +8,58 @@ dynamic = ["version"]
 description = "A preprocessing pipeline for electronic health records."
 authors = [
     { name = "Kiril Klein", email = "kikl@di.ku.dk" },
-    { name = "Mikkel Odgaard"},
-    { name = "Maria Montgomery"}
+    { name = "Mikkel Odgaard" },
+    { name = "Maria Montgomery" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
     "pandas",
     "numpy",
     "pyarrow",
     "tqdm",
-    "azureml-core",
-    "pyarrow",
-    "fastparquet"
+    "fastparquet",
+    "meds==0.3.3",
+    "meds-transforms==0.1.1",
+    "meds_reader",
+    "torch",
+    "ruff==0.15.1",
+    "python-dotenv==0.9.9",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "unittests",
-    "black",
-    "flake8",
-    # Add other development dependencies here
-]
-meds = [
-    "MEDS-transforms>=0.0.7",
+    "pytest",
 ]
 
 [tool.setuptools_scm]
+
 [tool.setuptools.packages.find]
 where = ["."]
+
+
+[tool.ruff]
+line-length = 127
+
+
+[tool.ruff.lint]
+# "E": style/error codes (PEP 8–type errors, e.g. if x == None).
+# "F": Pyflakes-style errors (unused variables, undefined names, etc.).
+# "I": import-related issues (import order, duplicates, etc.).
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+no-sections = true
+combine-as-imports = true
+
+[tool.ruff.format]
+# quote-style = "double": Ruff prefers " over ' when it reformats strings, as long as it’s safe.
+# indent-style = "space": indentation uses spaces, not tabs.
+quote-style = "double"
+indent-style = "space"
+
