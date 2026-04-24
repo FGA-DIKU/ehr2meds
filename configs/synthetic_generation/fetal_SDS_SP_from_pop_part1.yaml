@@ -32,7 +32,6 @@ linked_data:
   # MFR2_main
     N: ${N}
     columns:
-
       ALDER_MODER:
         type: rand_int
         args:
@@ -62,18 +61,11 @@ linked_data:
         args:
           min_val: 40
           max_val: 120
-
       PARITET:
         type: choice
         args:
           options: [1, 2, 3, 4]
-      FOEDSELSLOEBENUMMER:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
+
       FOEDSELSDATO:
         type: rand_date
       GESTATIONSALDER_DAGE:
@@ -113,6 +105,11 @@ linked_data:
         file: population
         linked_on: [CPR_MOR]
         rename_to: [CPR_MODER]
+      FOEDSELSLOEBENUMMER:
+        type: choice
+        file: population
+        linked_on: [CPR_BARN]
+        rename_to: [FOEDSELSLOEBENUMMER]
 
   nyfoedte:
   #MFR3
@@ -224,3 +221,8 @@ linked_data:
         file: population
         linked_on: [CPR_MOR]
         rename_to: [CPRnummer_Mor]
+      DW_EK_Foedsel:
+        type: choice
+        file: population
+        linked_on: [CPR_BARN]
+        rename_to: [DW_EK_Foedsel]
