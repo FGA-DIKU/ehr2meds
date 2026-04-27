@@ -9,10 +9,10 @@ paths:
 N: 1000
 
 data: 
-  population:
+  Population:
     N: 1500
     columns:
-      CPR_BARN:
+      BABY_CPR:
         type: person_id
         corruptions:
           - type: truncation
