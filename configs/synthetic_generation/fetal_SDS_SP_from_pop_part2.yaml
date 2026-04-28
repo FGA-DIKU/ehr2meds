@@ -607,3 +607,25 @@ linked_data: # Data that needs to be linked to the data above
         type: choice
         args:
           options: ["Unspecified", "Nordeuropa", "Asien", "Mellemøsten"]
+
+  Mor - CPMI - Patientinfo:
+    N: ${N}
+    linked_columns:
+      CPR:
+        type: choice
+        file: population
+        linked_on: [CPR_MOR]
+        rename_to: [MOR_CPR]
+    columns:
+      Fødselsdato:
+        type: rand_datetime
+        args:
+          start: 1977
+      Gender:
+        type: choice
+        args:
+          options: ["M", "K"]
+      Etnicitet:
+        type: choice
+        args:
+          options: ["Unspecified", "Nordeuropa", "Asien", "Mellemøsten"]

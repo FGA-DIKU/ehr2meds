@@ -26,6 +26,20 @@ data:
             args:
               max_length: 10
               probability: 0.05
+      Fødselstidspunkt:
+        type: rand_datetime
+        args:
+          start: 2000
+      BABY_Fødsel_ID:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 100000
+      MOR_Fødsel_ID:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 100000
 
 linked_data:
   mfr:
