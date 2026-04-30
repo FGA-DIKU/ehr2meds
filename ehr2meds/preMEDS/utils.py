@@ -246,7 +246,9 @@ def normalize_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Normalize column values by casting to int then str, getting rid of leading zeros."""
     for col in concept_config.get("normalize_columns", []):
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64").astype(str)
+            df[col] = (
+                pd.to_numeric(df[col], errors="coerce").astype("Int64").astype(str)
+            )
             df[col] = df[col].replace("<NA>", None)
     return df
 
@@ -259,6 +261,7 @@ def replace_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
                 df[col] = df[col].str.replace(old, new, regex=False)
     return df
 
+
 def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Append suffix to column values that don't already contain it."""
     for col, cfg in concept_config.get("pad_values", {}).items():
@@ -268,6 +271,7 @@ def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
             mask = ~df[col].astype(str).str.contains(contains, regex=False, na=False)
             df.loc[mask, col] = df.loc[mask, col].astype(str) + suffix
     return df
+
 
 def apply_melt_step(df, cfg):
     # Example df
