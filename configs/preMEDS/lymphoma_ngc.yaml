@@ -32,21 +32,6 @@ align_timestamps: # removes information that is not in the global format
   names: [timestamp]
   format: "%Y-%m-%d %H:%M:%S"
 
-# concepts:
-  # SDS_laboratorieproevesvar:
-  #     filename: SDS_laboratorieproevesvar.parquet
-  #     rename_columns:
-  #       analysiscode: code
-  #       samplevalue: numeric_value
-  #       patientid: subject_id
-  #     combine_datetime:
-  #       timestamp:
-  #         date_col: samplingdate
-  #         time_col: samplingtime
-  #         drop_original: true
-  #     code_prefix: "L/"
-  #     numeric_columns: [numeric_value]
-
 register_concepts:
   SDS_dimpatologiskdiagnose:
       filename: SDS_dimpatologiskdiagnose.parquet
@@ -63,13 +48,13 @@ register_concepts:
         - source_column: contact_id
           via_file: SDS_fctrekvisition.parquet
           join_on: dw_ek_rekvisition
-          target_column: datotid_modtagelse # NOTE: This should probably be a complete timestamp, which it is not. 
+          target_column: datotid_modtagelse 
           rename_to: timestamp
           drop_source: false
         - source_column: contact_id
           via_file: SDS_fctrekvisition.parquet
           join_on: dw_ek_rekvisition
-          target_column: dato_modtagelse # NOTE: This should probably be a complete timestamp, which it is not. 
+          target_column: dato_modtagelse 
           rename_to: timestamp_fallback
           drop_source: true
       pad_values:
@@ -96,7 +81,7 @@ register_concepts:
       - source_column: contact_id
         via_file: SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: dato_slut      # interesting that this is dato_slut? Is that a feature or a bug?
+        target_column: dato_slut      
         rename_to: timestamp
         drop_source: true
     unroll_columns:
@@ -144,7 +129,6 @@ register_concepts:
       hovedspeciale_ans: clinical_specialty
       region_ans: region_code
       dw_ek_kontakt: contact_id
-      dw_ek_forloeb: course_id # new addition 
     combine_datetime:
       timestamp:
         date_col: date_start
@@ -163,12 +147,8 @@ register_concepts:
         prefix: "RC_REG/"
     code_prefix: "RC/"
 
-  ## NOTE: adding administration data, which is equivalent to previous contacts
-  # Currently just using the same prefix.
-
-
   SDS_t_adm:
-    filename: SDS_t_adm.parquet               # data/registers/SDS_t_adm.parquet
+    filename: SDS_t_adm.parquet               
     normalize_columns:
       - c_spec
       - c_indm
@@ -236,14 +216,14 @@ register_concepts:
       v_indminut: v_indminut
       c_adiag: code
       c_kontaars: contact_reason
-      c_pattype: patient_type # NOTE: should be mapped to contatct type
-      c_indm: priority # NOTE: needs mapping to work
+      c_pattype: patient_type 
+      c_indm: priority # NOTE: mapped to priority
       c_spec: clinical_specialty
       c_sgh: hospital_code
       k_recnum: contact_id
     mappings:
-    - source_column: hospital_code    # whatever c_shak is renamed to
-      via_file: shak_to_region.parquet
+    - source_column: hospital_code   
+      via_file: shak_to_region.parquet # using resources
       join_on: kode
       target_column: region
       rename_to: region_code
@@ -253,7 +233,6 @@ register_concepts:
         date_col: date_start
         hour_col: v_indtime
         minute_col: v_indminut
-        # time_col: time_start
         drop_original: true
     unroll_columns:
       - column: contact_reason
@@ -269,13 +248,12 @@ register_concepts:
     code_prefix: "RC_ADM/"
 
   SDS_t_sksopr:
-    filename: SDS_t_sksopr.parquet      # data/registers/procedurer_kirurgi.parquet
+    filename: SDS_t_sksopr.parquet   
     rename_columns:
       c_opr: code
       d_odto: date_start
       v_otime: v_otime
       v_ominut: v_ominut
-      # v_estimated_time: time_start
       v_recnum: contact_id
     combine_datetime_parts:
       timestamp:
@@ -293,7 +271,7 @@ register_concepts:
         drop_source: true
 
   SDS_t_sksube:
-    filename:   SDS_t_sksube.parquet        # data/registers/procedurer_andre.parquet
+    filename:   SDS_t_sksube.parquet   
     rename_columns:
       c_opr: code
       c_oprart: procedure_type
@@ -317,10 +295,10 @@ register_concepts:
         drop_source: true
     fillna:
       procedure_type:
-        value: "P" # LPR convention; no code is primary procedure 
+        value: "P" 
 
   SDS_ekokur:
-    filename: SDS_ekokur.parquet                  # data/registers/epikur.parquet
+    filename: SDS_ekokur.parquet                  
     rename_columns:
       patientid: subject_id
       vnr: vnr_code
@@ -328,7 +306,7 @@ register_concepts:
     mappings:
       - source_column: vnr_code
         how: left
-        via_file: laegemiddeloplysninger.parquet   # data/registers/laegemiddeloplysninger.parquet
+        via_file: laegemiddeloplysninger.parquet   
         join_on: vnr
         target_column: pname
         rename_to: code
@@ -336,7 +314,7 @@ register_concepts:
     code_prefix: "RM/"
 
   SDS_procedurer_kirurgi:
-    filename: SDS_procedurer_kirurgi.parquet      # data/registers/procedurer_kirurgi.parquet
+    filename: SDS_procedurer_kirurgi.parquet      
     rename_columns:
       procedurekode: code
       dato_start: date_start
@@ -357,7 +335,7 @@ register_concepts:
         drop_source: true
 
   SDS_procedurer_andre:
-    filename: SDS_procedurer_andre.parquet        # data/registers/procedurer_andre.parquet
+    filename: SDS_procedurer_andre.parquet        
     rename_columns:
       procedurekode: code
       proceduretype: procedure_type
