@@ -166,8 +166,7 @@ def map_pids_to_ints(
 ) -> pd.DataFrame:
     """Map PIDs to integers."""
     # Convert to object dtype to allow integer assignment after mapping
-    # (can't assign integers to string dtype column?)
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(object)
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(str)
     # Map to integers and convert to int
     df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
     df = df.dropna(subset=[SUBJECT_ID])
