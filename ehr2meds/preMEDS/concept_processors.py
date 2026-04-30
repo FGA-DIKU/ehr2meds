@@ -17,7 +17,7 @@ from ehr2meds.preMEDS.utils import (
     pad_values
 )
 from typing import Dict, Optional
-
+from pathlib import Path
 
 class SPConceptProcessor:
     @staticmethod
@@ -126,6 +126,18 @@ class RegisterConceptProcessor:
             rename_to=SUBJECT_ID,
             drop_source=True,
         )
+    
+    @staticmethod
+    def _get_mapping_table(data_handler, mapping):
+        "Find path and relevant columns in either registry or the resources folder."
+        filename = mapping["via_file"]
+        cols = [mapping["join_on"], mapping["target_column"]]
+        
+        register_path = Path(data_handler.data_loader.path) / filename
+        if not register_path.exists():
+            filename = str(Path(__file__).parent.parent / "resources" / filename)
+        
+        return data_handler.load_pandas(filename, cols=cols)
 
     @staticmethod
     def _apply_mappings(
@@ -133,10 +145,7 @@ class RegisterConceptProcessor:
     ) -> pd.DataFrame:
         if concept_config.get("mappings"):
             for mapping in concept_config.mappings:
-                map_table = data_handler.load_pandas(
-                    mapping["via_file"],
-                    cols=[mapping["join_on"], mapping["target_column"]],
-                )
+                map_table = RegisterConceptProcessor._get_mapping_table(data_handler, mapping)
                 df = apply_mapping(
                     df,
                     map_table,
