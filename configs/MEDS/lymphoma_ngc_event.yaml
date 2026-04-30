@@ -1,0 +1,116 @@
+subject_id_col: subject_id
+
+# Patient demographics
+subject:
+  subject_id_col: subject_id
+  dob:
+    code:
+      - DOB
+    time: col(birthdate)
+    time_format: "%Y-%m-%d"
+  dod:
+    code:
+      - DOD
+    time: col(deathdate)
+    time_format: "%Y-%m-%d"
+  gender:
+    code:
+      - GENDER
+      - col(gender)
+    time: null
+
+# Pathology 
+SDS_dimpatologiskdiagnose:
+  SDS_dimpatologiskdiagnose:
+    code:
+      - "PAT/"
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%dT%H:%M:%S"
+
+# LPR3 diagnoses
+SDS_diagnoser:
+  SDS_diagnoser:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# LPR diagnoses 
+SDS_t_diag:
+  SDS_t_diag:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# LPR3 contacts 
+SDS_kontakter:
+  SDS_kontakter:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# LPR admissions 
+SDS_t_adm:
+  SDS_t_adm:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# LPR surgical procedures 
+SDS_t_sksopr:
+  SDS_t_sksopr:
+    code:
+      - "RPS/"
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# LPR other procedures 
+SDS_t_sksube:
+  SDS_t_sksube:
+    code:
+      - "RPO/"
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# LPR3 surgical procedures 
+SDS_procedurer_kirurgi:
+  SDS_procedurer_kirurgi:
+    code:
+      - "RPS/"
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# LPR3 other procedures
+SDS_procedurer_andre:
+  SDS_procedurer_andre:
+    code:
+      - "RPO/"
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# Medication 
+SDS_ekokur:
+  SDS_ekokur:
+    code:
+      - "RM/"
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# NOTE: numeric_value is normalized before this step
+SDS_laboratorieproevesvar:
+  SDS_laboratorieproevesvar:
+    code:
+      - "L/"
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+    numeric_value: col(numeric_value)

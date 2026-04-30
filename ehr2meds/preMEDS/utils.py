@@ -39,10 +39,14 @@ def check_columns(df: pd.DataFrame, columns_map: dict):
     missing_columns = set(columns_map.keys()) - set(df.columns)
     if missing_columns:
         available_columns = pd.DataFrame({"Available Columns": sorted(df.columns)})
-        requested_columns = pd.DataFrame({"Requested Columns": sorted(columns_map.keys())})
+        requested_columns = pd.DataFrame(
+            {"Requested Columns": sorted(columns_map.keys())}
+        )
         error_msg = f"\nMissing columns: {sorted(missing_columns)}\n\n"
         error_msg += "Columns comparison:\n"
-        error_msg += f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
+        error_msg += (
+            f"{pd.concat([available_columns, requested_columns], axis=1).to_string()}"
+        )
         raise ValueError(error_msg)
 
 
@@ -157,11 +161,12 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
     return df
 
 
-def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
+def map_pids_to_ints(
+    df: pd.DataFrame, subject_id_mapping: Dict[str, int]
+) -> pd.DataFrame:
     """Map PIDs to integers."""
     # Convert to object dtype to allow integer assignment after mapping
-    # (can't assign integers to string dtype column?)
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(object)
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(str)
     # Map to integers and convert to int
     df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
     df = df.dropna(subset=[SUBJECT_ID])
@@ -219,11 +224,52 @@ def unroll_columns(df: pd.DataFrame, concept_config: dict) -> List[pd.DataFrame]
     return processed_dfs
 
 
-def convert_timestamp_columns(df: pd.DataFrame, names: List[str], format: str) -> pd.DataFrame:
+def convert_timestamp_columns(
+    df: pd.DataFrame, names: List[str], format: str
+) -> pd.DataFrame:
     """Convert timestamps to global format."""
     for name in names:
         if name in df.columns:
             df[name] = pd.to_datetime(df[name]).dt.strftime(format)
+    return df
+
+
+def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Map column values using inline config mapping. Unmapped values become NaN."""
+    for col, mapping in concept_config.get("value_map", {}).items():
+        if col in df.columns:
+            df[col] = df[col].map(mapping)
+    return df
+
+
+def normalize_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Normalize column values by casting to int then str, getting rid of leading zeros."""
+    for col in concept_config.get("normalize_columns", []):
+        if col in df.columns:
+            df[col] = (
+                pd.to_numeric(df[col], errors="coerce").astype("Int64").astype(str)
+            )
+            df[col] = df[col].replace("<NA>", None)
+    return df
+
+
+def replace_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Apply string replacement to specified column."""
+    for col, replacements in concept_config.get("replace_values", {}).items():
+        if col in df.columns:
+            for old, new in replacements.items():
+                df[col] = df[col].str.replace(old, new, regex=False)
+    return df
+
+
+def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Append suffix to column values that don't already contain it."""
+    for col, cfg in concept_config.get("pad_values", {}).items():
+        if col in df.columns:
+            suffix = cfg["suffix"]
+            contains = cfg.get("unless_contains", suffix)
+            mask = ~df[col].astype(str).str.contains(contains, regex=False, na=False)
+            df.loc[mask, col] = df.loc[mask, col].astype(str) + suffix
     return df
 
 
@@ -234,10 +280,14 @@ def apply_melt_step(df, cfg):
     prefix_col = cfg.get("prefix_col")
     prefix_map = cfg.get("prefix_map")
     id_cols = [c for c in df.columns if c not in value_cols]
-    df_melted = df.melt(id_vars=id_cols, value_vars=value_cols, var_name="source", value_name=target_col)
+    df_melted = df.melt(
+        id_vars=id_cols, value_vars=value_cols, var_name="source", value_name=target_col
+    )
 
     # Add prefix
-    df_melted[prefix_col] = df_melted["source"].map(prefix_map) + df_melted[prefix_col].astype(str)
+    df_melted[prefix_col] = df_melted["source"].map(prefix_map) + df_melted[
+        prefix_col
+    ].astype(str)
 
     # # Drop columns
     cols_to_keep = list(set([prefix_col, target_col] + id_cols))
