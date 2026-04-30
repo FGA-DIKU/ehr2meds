@@ -160,3 +160,25 @@ class RegisterConceptProcessor:
                     if date_time_cols.get("drop_original", True):
                         df = df.drop(columns=[date_col, time_col])
         return df
+
+
+    @staticmethod
+    def _combine_datetime_from_parts(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+        """Combine date and time columns into datetime columns."""
+        if "combine_datetime_parts" in concept_config:
+            for target_col, date_time_cols in concept_config["combine_datetime_parts"].items():
+                date_col = date_time_cols.get("date_col")
+                hour_col = date_time_cols.get("hour_col")
+                minute_col = date_time_cols.get("minute_col")
+
+                if date_col in df.columns:
+                    dt_str = df[date_col].dt.strftime("%Y-%m-%d") if pd.api.types.is_datetime64_any_dtype(df[date_col]) else df[date_col].astype(str)
+                    # dt_str = df[date_col].astype(str)
+                    hour = pd.to_numeric(df[hour_col], errors="coerce").fillna(0).astype(int).astype(str).str.zfill(2)
+                    minute = pd.to_numeric(df[minute_col], errors="coerce").fillna(0).astype(int).astype(str).str.zfill(2)
+                    dt_str = dt_str + " " + hour + ":" + minute + ":00"
+                    df[target_col] = pd.to_datetime(dt_str, errors = "coerce")
+                    # Drop original columns if requested
+                    if date_time_cols.get("drop_original", True):
+                        df = df.drop(columns=[date_col, hour_col, minute_col])
+        return df
