@@ -243,6 +243,24 @@ def normalize_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     return df
 
 
+def replace_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Apply string replacement to specified column."""
+    for col, replacements in concept_config.get("replace_values", {}).items():
+        if col in df.columns:
+            for old, new in replacements.items():
+                df[col] = df[col].str.replace(old, new, regex=False)
+    return df
+
+def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Append suffix to column values that don't already contain it."""
+    for col, cfg in concept_config.get("pad_values", {}).items():
+        if col in df.columns:
+            suffix = cfg["suffix"]
+            contains = cfg.get("unless_contains", suffix)
+            mask = ~df[col].astype(str).str.contains(contains, regex=False, na=False)
+            df.loc[mask, col] = df.loc[mask, col].astype(str) + suffix
+    return df
+
 def apply_melt_step(df, cfg):
     # Example df
     value_cols = cfg.get("source_cols")
