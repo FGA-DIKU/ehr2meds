@@ -226,6 +226,23 @@ def convert_timestamp_columns(df: pd.DataFrame, names: List[str], format: str) -
     return df
 
 
+def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Map column values using inline config mapping. Unmapped values become NaN."""
+    for col, mapping in concept_config.get("value_map", {}).items():
+        if col in df.columns:
+            df[col] = df[col].map(mapping)
+    return df
+
+
+def normalize_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    """Normalize column values by casting to int then str, getting rid of leading zeros."""
+    for col in concept_config.get("normalize_columns", []):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64").astype(str)
+            df[col] = df[col].replace("<NA>", None)
+    return df
+
+
 def apply_melt_step(df, cfg):
     # Example df
     value_cols = cfg.get("source_cols")
