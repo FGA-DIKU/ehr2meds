@@ -14,10 +14,11 @@ from ehr2meds.preMEDS.utils import (
     normalize_columns,
     apply_value_map,
     replace_values,
-    pad_values
+    pad_values,
 )
 from typing import Dict, Optional
 from pathlib import Path
+
 
 class SPConceptProcessor:
     @staticmethod
@@ -91,7 +92,9 @@ class RegisterConceptProcessor:
 
         df = convert_numeric_columns(df, concept_config)
 
-        df = RegisterConceptProcessor._apply_sp_pid_link(df, register_sp_link, join_link_col, target_link_col)
+        df = RegisterConceptProcessor._apply_sp_pid_link(
+            df, register_sp_link, join_link_col, target_link_col
+        )
 
         df = map_pids_to_ints(df, subject_id_mapping)
 
@@ -124,24 +127,28 @@ class RegisterConceptProcessor:
             rename_to=SUBJECT_ID,
             drop_source=True,
         )
-    
+
     @staticmethod
     def _get_mapping_table(data_handler, mapping):
         "Find path and relevant columns in either registry or the resources folder."
         filename = mapping["via_file"]
         cols = [mapping["join_on"], mapping["target_column"]]
-        
+
         register_path = Path(data_handler.data_loader.path) / filename
         if not register_path.exists():
             filename = str(Path(__file__).parent.parent / "resources" / filename)
-        
+
         return data_handler.load_pandas(filename, cols=cols)
 
     @staticmethod
-    def _apply_mappings(df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler") -> pd.DataFrame:
+    def _apply_mappings(
+        df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler"
+    ) -> pd.DataFrame:
         if concept_config.get("mappings"):
             for mapping in concept_config.mappings:
-                map_table = RegisterConceptProcessor._get_mapping_table(data_handler, mapping)
+                map_table = RegisterConceptProcessor._get_mapping_table(
+                    data_handler, mapping
+                )
                 df = apply_mapping(
                     df,
                     map_table,
@@ -163,10 +170,14 @@ class RegisterConceptProcessor:
         return df
 
     @staticmethod
-    def _combine_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    def _combine_datetime_columns(
+        df: pd.DataFrame, concept_config: dict
+    ) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
         if "combine_datetime" in concept_config:
-            for target_col, date_time_cols in concept_config["combine_datetime"].items():
+            for target_col, date_time_cols in concept_config[
+                "combine_datetime"
+            ].items():
                 date_col = date_time_cols.get("date_col")
                 time_col = date_time_cols.get("time_col")
                 if date_col in df.columns and time_col in df.columns:
@@ -179,23 +190,42 @@ class RegisterConceptProcessor:
                         df = df.drop(columns=[date_col, time_col])
         return df
 
-
     @staticmethod
-    def _combine_datetime_from_parts(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    def _combine_datetime_from_parts(
+        df: pd.DataFrame, concept_config: dict
+    ) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
         if "combine_datetime_parts" in concept_config:
-            for target_col, date_time_cols in concept_config["combine_datetime_parts"].items():
+            for target_col, date_time_cols in concept_config[
+                "combine_datetime_parts"
+            ].items():
                 date_col = date_time_cols.get("date_col")
                 hour_col = date_time_cols.get("hour_col")
                 minute_col = date_time_cols.get("minute_col")
 
                 if date_col in df.columns:
-                    dt_str = df[date_col].dt.strftime("%Y-%m-%d") if pd.api.types.is_datetime64_any_dtype(df[date_col]) else df[date_col].astype(str)
+                    dt_str = (
+                        df[date_col].dt.strftime("%Y-%m-%d")
+                        if pd.api.types.is_datetime64_any_dtype(df[date_col])
+                        else df[date_col].astype(str)
+                    )
                     # dt_str = df[date_col].astype(str)
-                    hour = pd.to_numeric(df[hour_col], errors="coerce").fillna(0).astype(int).astype(str).str.zfill(2)
-                    minute = pd.to_numeric(df[minute_col], errors="coerce").fillna(0).astype(int).astype(str).str.zfill(2)
+                    hour = (
+                        pd.to_numeric(df[hour_col], errors="coerce")
+                        .fillna(0)
+                        .astype(int)
+                        .astype(str)
+                        .str.zfill(2)
+                    )
+                    minute = (
+                        pd.to_numeric(df[minute_col], errors="coerce")
+                        .fillna(0)
+                        .astype(int)
+                        .astype(str)
+                        .str.zfill(2)
+                    )
                     dt_str = dt_str + " " + hour + ":" + minute + ":00"
-                    df[target_col] = pd.to_datetime(dt_str, errors = "coerce")
+                    df[target_col] = pd.to_datetime(dt_str, errors="coerce")
                     # Drop original columns if requested
                     if date_time_cols.get("drop_original", True):
                         df = df.drop(columns=[date_col, hour_col, minute_col])
