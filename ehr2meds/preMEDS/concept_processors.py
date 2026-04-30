@@ -11,6 +11,10 @@ from ehr2meds.preMEDS.utils import (
     melt_table,
     select_and_rename_columns,
     unroll_columns,
+    normalize_columns,
+    apply_value_map,
+    replace_values,
+    pad_values
 )
 from typing import Dict, Optional
 
@@ -53,6 +57,7 @@ class RegisterConceptProcessor:
         register_sp_link: pd.DataFrame,
         join_link_col: str,
         target_link_col: str,
+        time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the register concepts.
         1. Select and rename columns
@@ -69,6 +74,9 @@ class RegisterConceptProcessor:
         df = RegisterConceptProcessor._apply_mappings(df, concept_config, data_handler)
         df = fill_missing_values(df, concept_config.get("fillna", {}))
         df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
+
+        if time_stamp_dict:
+            df = convert_timestamp_columns(df, **time_stamp_dict)
 
         df = RegisterConceptProcessor._unroll_columns(df, concept_config)
 
