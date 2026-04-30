@@ -60,20 +60,29 @@ class RegisterConceptProcessor:
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the register concepts.
-        1. Select and rename columns
-        2. apply columns map
-        3. fill missing values
-        4. combine datetime columns
-        5. unroll columns (process codes)
-        6. convert numeric columns
-        7. apply pid linking
-        8. apply pid integer mapping
-        9. clean data
+        1. Replace values
+        2. Normalize columns
+        3. Apply value mappings
+        4. Select and rename columns
+        5. apply columns map
+        6. Pad values
+        7. fill missing values
+        8. combine datetime columns
+        9. unroll columns (process codes)
+        10. convert numeric columns
+        11. apply pid linking
+        12. apply pid integer mapping
+        13. clean data
         """
+        df = replace_values(df, concept_config)
+        df = normalize_columns(df, concept_config)
+        df = apply_value_map(df, concept_config)
         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
         df = RegisterConceptProcessor._apply_mappings(df, concept_config, data_handler)
+        df = pad_values(df, concept_config)
         df = fill_missing_values(df, concept_config.get("fillna", {}))
         df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
+        df = RegisterConceptProcessor._combine_datetime_from_parts(df, concept_config)
 
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
