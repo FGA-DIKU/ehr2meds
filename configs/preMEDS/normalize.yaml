@@ -11,8 +11,8 @@ test: false
 env: local
 run_name: normalise_labs
 paths:
-  input: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP/labtest.csv
-  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP
+  input: ../data/preMEDS/fetal_data/SP/dmpl/labtest.csv
+  output: ../data/preMEDS/fetal_data/SP/dmpl/
 
 file_name: labtest_norm_min_max.csv
   
