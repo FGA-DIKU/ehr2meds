@@ -5,84 +5,73 @@ defaults:
 
 test: false # Just for testing, use false for full conversion
 
-chunksize: 10_000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+chunksize: 100_000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
 
 align_timestamps: # removes information that is not in the global format
   names: [timestamp]
   format: "%Y-%m-%d %H:%M:%S"
 
 paths:
-  concepts: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SP  
-  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP
+  concepts: ${oc.env:EHR2MEDS_DATA}/SP/tables
+  output: ../data/preMEDS/fetal_data/SP/dmpl
 
 write_file_type: csv 
 
 concepts:
-  diagnosis:
-    filename: diagnosis.csv
-    rename_columns:
-      Diagnosekode: code
-      Redigeringsdato: timestamp
-      CPR: subject_id
-    file_info:
-      sep: "\t"
-      encoding: "iso8859-1"
-
-  procedure:
-    filename: procedure.csv
-    rename_columns:
-      Procedurekode: code
-      Redigeringsdato: timestamp
-      CPR: subject_id
-
   admissions:
-    filename: admissions.csv
+    filename: Mor - CPMI - ADT hændelser.csv
     rename_columns:
+      MOR_CPR: subject_id
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
-      Afsnit: code
-      CPR: subject_id
+      Afsnit: section
+      ADT_haendelse: type
     melt_table:
       - target_name: timestamp
         source_cols: [timestamp_in, timestamp_out]
         prefix_col: code
         prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
 
-
-  # admissions:
-  #   filename: admissions.csv
-  #   rename_columns:
-  #     Flyt_ind: timestamp_in
-  #     Flyt_ud: timestamp_out
-  #     Afsnit: section
-  #     ADT_haendelse: type
-  #     CPR: subject_id
-  #   melt_table:
-  #     - target_name: code
-  #       source_cols: [type, section]
-  #       prefix_col: code
-  #       prefix_map: {type: TYPE/, section: SECTION/}
-  #     - target_name: timestamp
-  #       source_cols: [timestamp_in, timestamp_out]
-  #       prefix_col: code
-  #       prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
-
-  labtest:
-    filename: labtest.asc
+  diagnosis:
+    filename: Mor - CPMI - Diagnoseliste.csv
     rename_columns:
-      BestOrd: code
-      Bestillingsdato: timestamp
-      CPR: subject_id
-      Resultatværdi: numeric_value
-    file_info:
-      sep: "|"
-      encoding: "latin1"
+      Diagnosekode: code
+      Diagnose: fill_code
+      Redigeringsdato: timestamp
+      MOR_CPR: subject_id
 
+  procedure:
+    filename: Mor - CPMI - Procedurer.csv
+    rename_columns:
+      ProcedureCode: code
+      ServiceDate: timestamp
+      MOR_CPR: subject_id
 
+  medication:
+      filename: Mor - CPMI - Medicin.csv
+      rename_columns:
+        ATC: code
+        Administrationstidspunkt: timestamp
+        Bestillingsdato: fill_timestamp
+        MOR_CPR: subject_id
+      fillna:
+        timestamp:
+          column: fill_timestamp
+
+  # TODO Add lab values
+  labtest:
+      filename: Mor - CPMI - Prøvesvar.csv
+      rename_columns:
+        BestOrd: code
+        Prøvetagningstidspunkt: timestamp
+        Resultatværdi: numeric_value
+        MOR_CPR: subject_id
+
+# TODO Add smoking status
 patients_info:
-  filename: patient_info.csv
+  filename: Mor - CPMI - Patientinfo.csv
   rename_columns:
-    CPR: subject_id
-    Birthdate: birthdate
-    Deathdate: deathdate
-    Gender: gender
+    MOR_CPR: subject_id
+    Fødselsdato: birthdate
+    Dødsdato: deathdate
+    Køn: gender
