@@ -1,6 +1,11 @@
 hydra:
   verbose: false
   output_subdir: hydra
+  # Keep the original working directory; otherwise relative paths in job configs
+  # (e.g. paths.output: ../data/...) resolve from ${hydra.run.dir}/.../logs/... and
+  # look like they live "under logs".
+  job:
+    chdir: false
   run:
     dir: ${oc.env:EHR2MEDS_DATA}/logs/${hydra:job.config_name}
 
