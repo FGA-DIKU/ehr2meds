@@ -209,7 +209,7 @@ class RegisterConceptProcessor:
                         if pd.api.types.is_datetime64_any_dtype(df[date_col])
                         else df[date_col].astype(str)
                     )
-                    # dt_str = df[date_col].astype(str)
+
                     hour = (
                         pd.to_numeric(df[hour_col], errors="coerce")
                         .fillna(0)
