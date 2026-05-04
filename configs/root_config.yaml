@@ -7,10 +7,11 @@ hydra:
   job:
     chdir: false
   # Do not write under ${EHR2MEDS_DATA}/logs (often missing or permission-restricted).
-  # Hydra still needs a writable run dir for its snapshot; keep it under the launch cwd.
+  # Hydra still needs a writable run dir for its snapshot. Use a path relative to the
+  # process launch directory (``hydra.runtime.cwd`` is not available in this file).
   run:
-    dir: ${hydra.runtime.cwd}/outputs/hydra/${hydra:job.config_name}
+    dir: outputs/hydra/${hydra:job.config_name}
 
 logging:
   level: INFO
-  path: ${hydra.runtime.cwd}/outputs/logs/${hydra:job.config_name}
+  path: outputs/logs/${hydra:job.config_name}
