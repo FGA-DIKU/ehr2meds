@@ -17,9 +17,35 @@ def main(test_pts: str | Path, train_pts: str | Path, mapping_file: str | Path, 
 
     # Use the inverted mapping direction.
     forward = {v: k for k, v in mapping_dict.items()}
+    # Print a small example to confirm direction/format.
+    example_items = list(forward.items())[:5]
+    print(f"Loaded mapping (after inversion). Example {len(example_items)} items:")
+    for k, v in example_items:
+        print(f"  {k!r} -> {v!r}")
 
-    test_ids = [forward[i] for i in test_ids]
-    train_ids = [forward[i] for i in train_ids]
+    def _map_and_skip(ids: list) -> tuple[list, list]:
+        kept: list = []
+        skipped: list = []
+        for i in ids:
+            if i in forward:
+                kept.append(forward[i])
+            else:
+                skipped.append(i)
+        return kept, skipped
+
+    test_ids, skipped_test = _map_and_skip(test_ids)
+    train_ids, skipped_train = _map_and_skip(train_ids)
+
+    if skipped_test or skipped_train:
+        print(
+            "Skipped unmapped patients:"
+            f" test={len(skipped_test)}, train={len(skipped_train)}"
+        )
+        if skipped_test:
+            print("  examples (test):", [repr(x) for x in skipped_test[:5]])
+        if skipped_train:
+            print("  examples (train):", [repr(x) for x in skipped_train[:5]])
+
     output.write_text(json.dumps({"test": test_ids, "train": train_ids}, indent=4))
 
 
