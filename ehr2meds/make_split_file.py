@@ -12,10 +12,14 @@ def main(test_pts: str | Path, train_pts: str | Path, mapping_file: str | Path, 
 
     test_ids = json.loads(test_pts.read_text())
     train_ids = json.loads(train_pts.read_text())
-    mapping_dict = pickle.loads(mapping_file.read_bytes())
+    with mapping_file.open("rb") as f:
+        mapping_dict = pickle.load(f)
 
-    test_ids = [mapping_dict[id] for id in test_ids]
-    train_ids = [mapping_dict[id] for id in train_ids]
+    # Use the inverted mapping direction.
+    forward = {v: k for k, v in mapping_dict.items()}
+
+    test_ids = [forward[i] for i in test_ids]
+    train_ids = [forward[i] for i in train_ids]
     output.write_text(json.dumps({"test": test_ids, "train": train_ids}, indent=4))
 
 
