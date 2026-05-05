@@ -12,6 +12,20 @@ def main(test_pts: str | Path, train_pts: str | Path, mapping_file: str | Path, 
 
     test_ids = json.loads(test_pts.read_text())
     train_ids = json.loads(train_pts.read_text())
+
+    def _normalize_id(x):
+        # Some JSONs store IDs as strings that *include* quotes, e.g. "'abc'".
+        # Strip one layer of matching quotes repeatedly.
+        if not isinstance(x, str):
+            return x
+        s = x.strip()
+        for _ in range(2):
+            if len(s) >= 2 and ((s[0] == s[-1]) and s[0] in ("'", '"')):
+                s = s[1:-1].strip()
+        return s
+
+    test_ids = [_normalize_id(x) for x in test_ids]
+    train_ids = [_normalize_id(x) for x in train_ids]
     with mapping_file.open("rb") as f:
         mapping_dict = pickle.load(f)
 
@@ -22,6 +36,11 @@ def main(test_pts: str | Path, train_pts: str | Path, mapping_file: str | Path, 
     print(f"Loaded mapping (after inversion). Example {len(example_items)} items:")
     for k, v in example_items:
         print(f"  {k!r} -> {v!r}")
+
+    if test_ids:
+        print("Example normalized test IDs:", [repr(x) for x in test_ids[:5]])
+    if train_ids:
+        print("Example normalized train IDs:", [repr(x) for x in train_ids[:5]])
 
     def _map_and_skip(ids: list) -> tuple[list, list]:
         kept: list = []
