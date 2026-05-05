@@ -33,18 +33,20 @@ def main(test_pts: str | Path, train_pts: str | Path, mapping_file: str | Path, 
                 skipped.append(i)
         return kept, skipped
 
+    n_test_in = len(test_ids)
+    n_train_in = len(train_ids)
     test_ids, skipped_test = _map_and_skip(test_ids)
     train_ids, skipped_train = _map_and_skip(train_ids)
 
-    if skipped_test or skipped_train:
-        print(
-            "Skipped unmapped patients:"
-            f" test={len(skipped_test)}, train={len(skipped_train)}"
-        )
-        if skipped_test:
-            print("  examples (test):", [repr(x) for x in skipped_test[:5]])
-        if skipped_train:
-            print("  examples (train):", [repr(x) for x in skipped_train[:5]])
+    print(
+        "Mapping results:"
+        f" test_in={n_test_in}, test_mapped={len(test_ids)}, test_skipped={len(skipped_test)};"
+        f" train_in={n_train_in}, train_mapped={len(train_ids)}, train_skipped={len(skipped_train)}"
+    )
+    if skipped_test:
+        print("  examples (test skipped):", [repr(x) for x in skipped_test[:5]])
+    if skipped_train:
+        print("  examples (train skipped):", [repr(x) for x in skipped_train[:5]])
 
     output.write_text(json.dumps({"test": test_ids, "train": train_ids}, indent=4))
 
