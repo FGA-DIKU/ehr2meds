@@ -30,15 +30,13 @@ def main(
         for r in population.select(["BABY_CPR", "MOR_CPR"]).to_dicts()
     }
 
-    mapping_dict = {v: k for k, v in mapping_dict.items()} # Invert the mapping dict
-
     def _map_and_skip(ids: list) -> tuple[list, list]:
         kept: list = []
         skipped: list = []
         for i in ids:
             p_id = child_to_parent_mapping.get(i, None)
             if p_id is not None and p_id in mapping_dict:
-                kept.append(mapping_dict[i])
+                kept.append(mapping_dict[p_id])
             else:
                 skipped.append(i)
         return kept, skipped
