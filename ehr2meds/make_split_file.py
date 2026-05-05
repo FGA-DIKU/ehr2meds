@@ -4,7 +4,13 @@ import argparse
 from pathlib import Path
 
 
-def main(test_pts: str | Path, train_pts: str | Path, mapping_file: str | Path, output: str | Path) -> None:
+def main(
+    test_pts: str | Path,
+    train_pts: str | Path,
+    mapping_file: str | Path,
+    output: str | Path,
+    invert_mapping: bool = False,
+) -> None:
     test_pts = Path(test_pts)
     train_pts = Path(train_pts)
     mapping_file = Path(mapping_file)
@@ -45,11 +51,14 @@ def main(test_pts: str | Path, train_pts: str | Path, mapping_file: str | Path, 
     with mapping_file.open("rb") as f:
         mapping_dict = pickle.load(f)
 
-    # Use the inverted mapping direction.
-    forward = {v: k for k, v in mapping_dict.items()}
+    forward = {v: k for k, v in mapping_dict.items()} if invert_mapping else mapping_dict
+
     # Print a small example to confirm direction/format.
     example_items = list(forward.items())[:5]
-    print(f"Loaded mapping (after inversion). Example {len(example_items)} items:")
+    print(
+        f"Loaded mapping ({'inverted' if invert_mapping else 'as-is'}). "
+        f"Example {len(example_items)} items:"
+    )
     for k, v in example_items:
         print(f"  {k!r} -> {v!r}")
 
@@ -110,10 +119,16 @@ if __name__ == "__main__":
         default="split_file.json",
         help="Output JSON path (default: split_file.json).",
     )
+    parser.add_argument(
+        "--invert-mapping",
+        action="store_true",
+        help="Invert the mapping dict before applying it (use only if your JSON contains values, not keys).",
+    )
     args = parser.parse_args()
     main(
         test_pts=args.test_pts,
         train_pts=args.train_pts,
         mapping_file=args.mapping_file,
         output=args.output,
+        invert_mapping=args.invert_mapping,
     )
