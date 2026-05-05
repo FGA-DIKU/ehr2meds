@@ -6,12 +6,12 @@ subject:
     code: 
       - DOB
     time: col(birthdate)
-    time_format: "%Y-%m-%d"
+    time_format: "%Y-%m-%d %H:%M:%S"
   dod:
     code: 
       - DOD
     time: col(deathdate)
-    time_format: "%Y-%m-%d"
+    time_format: "%Y-%m-%d %H:%M:%S"
   gender:
     code:
       - "GENDER"
