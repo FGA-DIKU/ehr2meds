@@ -14,14 +14,30 @@ def main(test_pts: str | Path, train_pts: str | Path, mapping_file: str | Path, 
     train_ids = json.loads(train_pts.read_text())
 
     def _normalize_id(x):
-        # Some JSONs store IDs as strings that *include* quotes, e.g. "'abc'".
-        # Strip one layer of matching quotes repeatedly.
+        """
+        Some JSONs store IDs as strings that *include* extra quoting, e.g. \"'abc'\".
+        Normalize by repeatedly unwrapping quoted string literals.
+        """
         if not isinstance(x, str):
             return x
+
+        import ast
+
         s = x.strip()
-        for _ in range(2):
-            if len(s) >= 2 and ((s[0] == s[-1]) and s[0] in ("'", '"')):
-                s = s[1:-1].strip()
+        # Normalize curly quotes just in case.
+        s = s.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'")
+
+        for _ in range(3):
+            if len(s) >= 2 and s[0] in ("'", '"') and s[-1] == s[0]:
+                # Try Python-literal unquoting first (handles escapes).
+                try:
+                    unwrapped = ast.literal_eval(s)
+                except Exception:
+                    unwrapped = s[1:-1]
+                if isinstance(unwrapped, str):
+                    s = unwrapped.strip()
+                    continue
+            break
         return s
 
     test_ids = [_normalize_id(x) for x in test_ids]
