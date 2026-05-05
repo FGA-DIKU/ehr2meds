@@ -99,6 +99,7 @@ if __name__ == "__main__":
         test_pts=args.test_pts,
         train_pts=args.train_pts,
         mapping_file=args.mapping_file,
+        population_file=args.population_file,
         output=args.output,
         invert_mapping=args.invert_mapping,
     )
