@@ -16,63 +16,24 @@ def main(
     mapping_file = Path(mapping_file)
     output = Path(output)
 
-    test_ids = json.loads(test_pts.read_text())
-    train_ids = json.loads(train_pts.read_text())
 
-    def _normalize_id(x):
-        """
-        Some JSONs store IDs as strings that *include* extra quoting, e.g. \"'abc'\".
-        Normalize by repeatedly unwrapping quoted string literals.
-        """
-        if not isinstance(x, str):
-            return x
 
-        import ast
-
-        s = x.strip()
-        # Normalize curly quotes just in case.
-        s = s.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'")
-
-        for _ in range(3):
-            if len(s) >= 2 and s[0] in ("'", '"') and s[-1] == s[0]:
-                # Try Python-literal unquoting first (handles escapes).
-                try:
-                    unwrapped = ast.literal_eval(s)
-                except Exception:
-                    unwrapped = s[1:-1]
-                if isinstance(unwrapped, str):
-                    s = unwrapped.strip()
-                    continue
-            break
-        return s
-
-    test_ids = [_normalize_id(x) for x in test_ids]
-    train_ids = [_normalize_id(x) for x in train_ids]
-    with mapping_file.open("rb") as f:
+    with open(test_pts, "r") as f:
+        test_ids = json.load(f)
+    with open(train_pts, "r") as f:
+        train_ids = json.load(f)
+    with open(mapping_file, "rb") as f:
         mapping_dict = pickle.load(f)
 
-    forward = {v: k for k, v in mapping_dict.items()} if invert_mapping else mapping_dict
-
-    # Print a small example to confirm direction/format.
-    example_items = list(forward.items())[:5]
-    print(
-        f"Loaded mapping ({'inverted' if invert_mapping else 'as-is'}). "
-        f"Example {len(example_items)} items:"
-    )
-    for k, v in example_items:
-        print(f"  {k!r} -> {v!r}")
-
-    if test_ids:
-        print("Example normalized test IDs:", [repr(x) for x in test_ids[:5]])
-    if train_ids:
-        print("Example normalized train IDs:", [repr(x) for x in train_ids[:5]])
+    if invert_mapping:
+        mapping_dict = {v: k for k, v in mapping_dict.items()}
 
     def _map_and_skip(ids: list) -> tuple[list, list]:
         kept: list = []
         skipped: list = []
         for i in ids:
-            if i in forward:
-                kept.append(forward[i])
+            if i in mapping_dict:
+                kept.append(mapping_dict[i])
             else:
                 skipped.append(i)
         return kept, skipped
