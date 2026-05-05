@@ -30,6 +30,8 @@ def main(
         for r in population.select(["BABY_CPR", "MOR_CPR"]).to_dicts()
     }
 
+    mapping_dict = {v: k for k, v in mapping_dict.items()} # Invert the mapping dict
+
     def _map_and_skip(ids: list) -> tuple[list, list]:
         kept: list = []
         skipped: list = []
