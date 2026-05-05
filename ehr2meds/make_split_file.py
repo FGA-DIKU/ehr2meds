@@ -56,7 +56,7 @@ def main(
     if skipped_train:
         print("  examples (train skipped):", [repr(x) for x in skipped_train[:5]])
 
-    output.write_text(json.dumps({"test": test_ids, "train": train_ids}, indent=4))
+    output.write_text(json.dumps({"test": test_ids, "train": train_ids, "held_out": [], "tuning": []}, indent=4))
 
 
 if __name__ == "__main__":
