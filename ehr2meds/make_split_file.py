@@ -25,7 +25,10 @@ def main(
     with open(mapping_file, "rb") as f:
         mapping_dict = pickle.load(f)
     population = pl.read_csv(population_file)
-    child_to_parent_mapping = population.select(pl.col("BABY_CPR"), pl.col("MOR_CPR")).to_dicts()
+    child_to_parent_mapping = {
+        r["BABY_CPR"]: r["MOR_CPR"]
+        for r in population.select(["BABY_CPR", "MOR_CPR"]).to_dicts()
+    }
 
     def _map_and_skip(ids: list) -> tuple[list, list]:
         kept: list = []
