@@ -8,8 +8,8 @@ def main(
     test_pts: str | Path,
     train_pts: str | Path,
     mapping_file: str | Path,
+    population_file: str | Path,
     output: str | Path,
-    invert_mapping: bool = False,
 ) -> None:
     test_pts = Path(test_pts)
     train_pts = Path(train_pts)
@@ -26,10 +26,6 @@ def main(
         mapping_dict = pickle.load(f)
     population = pl.read_csv(population_file)
     child_to_parent_mapping = population.select(pl.col("CPR_BARN"), pl.col("CPR_MOR")).to_dicts()
-
-    
-    if invert_mapping:
-        mapping_dict = {v: k for k, v in mapping_dict.items()}
 
     def _map_and_skip(ids: list) -> tuple[list, list]:
         kept: list = []
@@ -89,11 +85,7 @@ if __name__ == "__main__":
         default="split_file.json",
         help="Output JSON path (default: split_file.json).",
     )
-    parser.add_argument(
-        "--invert-mapping",
-        action="store_true",
-        help="Invert the mapping dict before applying it (use only if your JSON contains values, not keys).",
-    )
+
     args = parser.parse_args()
     main(
         test_pts=args.test_pts,
@@ -101,5 +93,4 @@ if __name__ == "__main__":
         mapping_file=args.mapping_file,
         population_file=args.population_file,
         output=args.output,
-        invert_mapping=args.invert_mapping,
     )
