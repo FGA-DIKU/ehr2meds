@@ -12,7 +12,7 @@ align_timestamps: # removes information that is not in the global format
   format: "%Y-%m-%d %H:%M:%S"
 
 paths:
-  concepts: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SP  
+  concepts: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population  
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP
 
 write_file_type: csv 
