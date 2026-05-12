@@ -356,6 +356,22 @@ register_concepts:
         rename_to: subject_id
         drop_source: true
 
+  SDS_indberetningmedpris:
+    filename: SDS_indberetningmedpris.parquet
+    rename_columns:
+      c_atc: code
+      c_patienttype: patient_type #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
+      d_ord_start: samplingdate
+      v_adm_dosis: dosage # not used
+      v_styrke_num: strength # not used
+      patientid: subject_id
+    unroll_columns:
+    - column: code
+      prefix: "RMA/"
+    - column: patient_type
+      prefix: "RMA_PAT_TYPE/"
+    code_prefix: "RMA/"
+
   SDS_laboratorieproevesvar:
     filename: SDS_laboratorieproevesvar.parquet
     rename_columns:

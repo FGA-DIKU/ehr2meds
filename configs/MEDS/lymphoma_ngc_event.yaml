@@ -96,7 +96,7 @@ SDS_procedurer_andre:
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-# Medication 
+# Medication (NOTE; can be safely replaced with epikur)
 SDS_ekokur:
   SDS_ekokur:
     code:
@@ -105,7 +105,15 @@ SDS_ekokur:
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
-# NOTE: numeric_value is normalized before this step
+# Administered medication 
+SDS_indberetningmedpris:
+  SDS_indberetningmedpris:
+    code:
+      - col(code)
+    time: col(timestamp)
+    time_format: "%Y-%m-%d %H:%M:%S"
+
+# NOTE: numeric_value is NOT normalized here - needs to adhere to splits to not have information leakage
 SDS_laboratorieproevesvar:
   SDS_laboratorieproevesvar:
     code:
