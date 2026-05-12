@@ -297,7 +297,7 @@ linked_data: # Data that needs to be linked to the data above
       CPR:
         type: choice
         file: population
-        linked_on: [CPR_BARN]
+        linked_on: [BABY_CPR]
     columns:
       BIRTHDATE:
         type: rand_datetime
@@ -316,7 +316,7 @@ linked_data: # Data that needs to be linked to the data above
       CPR:
         type: choice
         file: population
-        linked_on: [CPR_BARN]
+        linked_on: [BABY_CPR]
     columns:
       BIRTHDATE:
         type: rand_datetime
@@ -512,7 +512,7 @@ linked_data: # Data that needs to be linked to the data above
       CPR:
         type: choice
         file: population
-        linked_on: [CPR_BARN]
+        linked_on: [BABY_CPR]
         rename_to: [CPR]
 
     columns:

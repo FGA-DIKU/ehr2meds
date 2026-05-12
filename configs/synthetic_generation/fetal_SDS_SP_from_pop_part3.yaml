@@ -8,6 +8,30 @@ paths:
 
 N: 1000 
 linked_data:
+  admissions:
+    N: ${N}
+    columns:
+      Flyt_ind:
+        type: rand_date
+      Flyt_ud:
+        type: greater_than_date
+        match:
+          min_date: Flyt_ind
+      ADT_haendelse:
+        type: choice
+        args:
+          options: ["Indlæggelse", "Flyt_ind", "Tilbage fra orlov"]
+      Afsnit:
+        type: choice
+        args:
+          options: ["HGH, AKUTKLINIK GE-GAMMEL", "NOH COAC0821, ØJENAFD. AMBULATORIEAFSNIT", 
+                    "NEURO", "CARDIO", "NEFRO"]
+    linked_columns:
+      CPR:
+        type: choice
+        file: patient_info
+        linked_on: [CPR]
+  
   diagnosis:
     N: ${N}
     columns:
@@ -27,21 +51,6 @@ linked_data:
       args:
         sep: "\t"
         encoding: "iso8859-1"
-
-  procedure:
-    N: ${N}
-    columns:
-      Procedurekode:
-        type: medical_code
-        args:
-          prefix: "P"
-      Redigeringsdato:
-        type: rand_datetime
-    linked_columns:
-      CPR:
-        type: choice
-        file: patient_info
-        linked_on: [CPR]
 
   labtest:
     N: ${N}
@@ -91,6 +100,66 @@ linked_data:
         sep: "|"
         encoding: "latin1"
 
+
+  Mor - CPMI - Diagnoseliste:
+    N: ${N}
+    columns:
+      Diagnosekode:
+        type: choice
+        args:
+          options: ["DS931H","DO837", "DO847", "DO837"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Noteret_dato:
+        type: rand_datetimeseconds
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: population
+        linked_on: [MOR_CPR]
+
+  Mor - CPMI - Procedurer:
+    N: ${N}
+    columns:
+      ProcedureCode:
+        type: choice
+        args:
+          options: ["KMCA00", "KMCA96", "KMCA10C", "KMCA30", "BRFAO", "BABZ00", "KMAC00", "KMAC96A", "BKHD2", "BKHD20"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      ServiceDatetime:
+        type: rand_datetimeseconds
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: population
+        linked_on: [MOR_CPR]
+
+  Mor - Fødselsresume - DEL 1:
+    N: ${N}
+    columns:
+      Måde:
+        type: choice
+        args:
+          options: ["Vaginal, igangsat", "Vaginal, igangsat (Udgået)", "Biokemisk", "Medicinsk behandling", "Elektivt sectio"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: population
+        linked_on: [MOR_CPR]
+      BABY_Fødsel_ID:
+        type: choice
+        file: population
+        linked_on: [BABY_Fødsel_ID]
+    
   notes:
     N: ${N}
     columns:
@@ -124,25 +193,15 @@ linked_data:
         file: patient_info
         linked_on: [CPR]
 
-
-  admissions:
+  procedure:
     N: ${N}
     columns:
-      Flyt_ind:
-        type: rand_date
-      Flyt_ud:
-        type: greater_than_date
-        match:
-          min_date: Flyt_ind
-      ADT_haendelse:
-        type: choice
+      Procedurekode:
+        type: medical_code
         args:
-          options: ["Indlæggelse", "Flyt_ind", "Tilbage fra orlov"]
-      Afsnit:
-        type: choice
-        args:
-          options: ["HGH, AKUTKLINIK GE-GAMMEL", "NOH COAC0821, ØJENAFD. AMBULATORIEAFSNIT", 
-                    "NEURO", "CARDIO", "NEFRO"]
+          prefix: "P"
+      Redigeringsdato:
+        type: rand_datetime
     linked_columns:
       CPR:
         type: choice
