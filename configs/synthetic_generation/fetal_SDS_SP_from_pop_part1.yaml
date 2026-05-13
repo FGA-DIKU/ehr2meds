@@ -54,6 +54,10 @@ linked_data:
     columns:
       Gestationsalder:
         type: gestationsalder_with_fraction
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05        
   mfr:
   # MFR2_main
     N: ${N}
