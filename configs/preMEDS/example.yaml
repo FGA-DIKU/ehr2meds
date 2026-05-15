@@ -1,0 +1,20 @@
+patients_info:
+  filename: CPMI_PatientInfo.parquet
+  rename_columns:
+    patientid: subject_id
+
+  joins:
+    - via_file: table_1.parquet
+      source_column: subject_id
+      join_on: patientid
+      columns:
+        Fødselsdato: birthdate
+        Køn: gender
+      how: left # default
+
+    - via_file: table_2.parquet
+      source_column: subject_id
+      join_on: patientid
+      columns:
+        Dødsdato: deathdate
+      how: left

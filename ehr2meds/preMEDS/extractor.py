@@ -96,8 +96,12 @@ class PREMEDSExtractor:
         df = select_and_rename_columns(df, self.cfg.patients_info.get("rename_columns", {}))
         logger.info(f"Number of patients after selecting columns: {len(df)}")
 
+        # Allow joining patients_info table with cols from additional tables
+        df = self._join_patients_info(df)
+        logger.info(f"Number of patients after joining additional info: {len(df)}")
+
         df, hash_to_int_map = factorize_subject_id(df)
-        # Save the mapping for reference.
+        # Save the mapping for reference
         with open(f"{self.cfg.paths.output}/hash_to_integer_map.pkl", "wb") as f:
             pickle.dump(hash_to_int_map, f)
 
@@ -161,6 +165,37 @@ class PREMEDSExtractor:
 
             self._safe_save(self.register_data_handler, processed_chunk, concept_type, first_chunk)
             first_chunk = False
+    
+    def _join_patients_info(self, df: pd.DataFrame) -> pd.DataFrame:
+        for join_cfg in self.cfg.patients_info.get("joins", []):
+            join_col = join_cfg["join_on"]
+            source_col = join_cfg["source_column"]
+            columns_map = join_cfg["columns"]
+            how = join_cfg.get("how", "left")
+
+            cols_to_load = [join_col] + list(columns_map.keys())
+
+            right_df = self.data_handler.load_pandas(
+                join_cfg["via_file"],
+                cols=cols_to_load,
+                **join_cfg.get("file_info", {}),
+            )
+
+            right_df = right_df.rename(columns=columns_map)
+
+            df = df.merge(
+                right_df,
+                left_on=source_col,
+                right_on=join_col,
+                how=how,
+            )
+
+            if join_col != source_col:
+                df = df.drop(columns=[join_col])
+
+        return df
+
+
 
     def _process_concept_chunks(
         self,
