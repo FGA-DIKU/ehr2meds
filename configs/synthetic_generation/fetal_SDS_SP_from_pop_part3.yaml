@@ -150,6 +150,14 @@ linked_data:
           - type: insert_missing
             args:
               probability: 0.05
+      Foster nr.:
+        type: choice
+        args:
+          options: ["Foster 1", "Foster 2", "Foster 3", "Foster 4"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.25
     linked_columns:
       MOR_CPR:
         type: choice
@@ -181,6 +189,15 @@ linked_data:
         type: rand_date
         args:
           start: 2010
+      Para:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 20
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.15
     linked_columns:
       MOR_CPR:
         type: choice
