@@ -361,7 +361,7 @@ register_concepts:
     rename_columns:
       c_atc: code
       c_patienttype: patient_type #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
-      d_ord_start: samplingdate
+      d_ord_start: timestamp
       v_adm_dosis: dosage # not used
       v_styrke_num: strength # not used
       patientid: subject_id
