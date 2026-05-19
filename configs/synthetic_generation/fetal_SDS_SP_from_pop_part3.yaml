@@ -107,7 +107,7 @@ linked_data:
       Diagnosekode:
         type: choice
         args:
-          options: ["DS931H","DO837", "DO847", "DO837"]
+          options: ["DS931H","DO837", "DO847"]
         corruptions:
           - type: insert_missing
             args:
@@ -159,7 +159,7 @@ linked_data:
         type: choice
         file: population
         linked_on: [BABY_Fødsel_ID]
-        
+
   Mor - Obstetrisk Historik DEL 1:
     N: ${N}
     columns:
