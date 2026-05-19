@@ -96,7 +96,7 @@ def greater_than_datetime(min_date, end=2020):
 # Specialized functions for SP
 def gestationsalder_with_fraction():
     weeks = random.randint(0, 42)
-    days = random.randint(0, 8)
+    days = random.randint(0, 7)
     if days == 7:
         GA = f"{weeks}"
     else:
