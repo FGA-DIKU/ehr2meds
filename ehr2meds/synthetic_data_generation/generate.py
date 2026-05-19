@@ -54,9 +54,7 @@ def rand_datetimeseconds(start=1970, end=2020):
     delta = datetime(end, 12, 31) - datetime(start, 1, 1)
     random_seconds = random.randint(0, int(delta.total_seconds()))
     random_microseconds = random.randint(0, 999_999)
-    dt = datetime(start, 1, 1) + timedelta(
-        seconds=random_seconds, microseconds=random_microseconds
-    )
+    dt = datetime(start, 1, 1) + timedelta(seconds=random_seconds, microseconds=random_microseconds)
     return dt.strftime(fmt)
 
 
@@ -76,11 +74,7 @@ def rand_string(min_length=10, max_length=100, include_digits=True):
             )
         )
     else:
-        return "".join(
-            random.choices(
-                string.ascii_letters, k=random.randint(min_length, max_length)
-            )
-        )
+        return "".join(random.choices(string.ascii_letters, k=random.randint(min_length, max_length)))
 
 
 def choice(options):
@@ -97,6 +91,17 @@ def greater_than_datetime(min_date, end=2020):
     delta = datetime(end, 12, 31) - min_date
     random_seconds = random.randint(0, int(delta.total_seconds()))
     return min_date + timedelta(seconds=random_seconds)
+
+
+# Specialized functions for SP
+def gestationsalder_with_fraction():
+    weeks = random.randint(0, 42)
+    days = random.randint(0, 7)
+    if days == 7:
+        GA = f"{weeks}"
+    else:
+        GA = f"{weeks} {days}/7"
+    return GA
 
 
 # Specialized functions for DST dataset
