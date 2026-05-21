@@ -12,10 +12,10 @@ hydra:
     dir: ./outputs/hydra/fetal_ngc
   output_subdir: hydra
 
-test: false # Just for testing, use false for full conversion
+test: true # Just for testing, use false for full conversion
 env: local
 run_name: preMEDS_fetal_SDS
-chunksize: 1000000000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+chunksize: 10000 #00000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
 
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
@@ -108,64 +108,64 @@ register_concepts:
       - column: diagnosetype
         prefix: "RD_TYPE/"
 
-  # SDS_t_diag:
-  #   filename: t_diag.csv               
-  #   rename_columns:
-  #     C_DIAG: c_diag
-  #     C_TILDIAG: c_tildiag
-  #     C_DIAGTYPE: c_diagtype
-  #     V_RECNUM: contact_id
-  #   code_prefix: "RD/"
-  #   mappings:
-  #     - source_column: contact_id
-  #       via_file: t_adm.csv
-  #       join_on: K_RECNUM
-  #       target_column: V_CPR
-  #       rename_to: subject_id
-  #     - source_column: contact_id
-  #       via_file: t_adm.csv
-  #       join_on: K_RECNUM
-  #       target_column: D_UDDTO 
-  #       rename_to: timestamp
-  #       drop_source: true
-  #   unroll_columns:
-  #     - column: c_diagtype
-  #       prefix: "RD_TYPE/"
-  #     - column: c_tildiag #NOTE: treated as also being a diagnosis to merge better with LPR3
-  #       prefix: "RD/"
-  #     - column: c_diag
-  #       prefix: "RD/"
+  SDS_t_diag:
+    filename: t_diag.csv               
+    rename_columns:
+      C_DIAG: c_diag
+      C_TILDIAG: c_tildiag
+      C_DIAGTYPE: c_diagtype
+      V_RECNUM: contact_id
+    code_prefix: "RD/"
+    mappings:
+      - source_column: contact_id
+        via_file: t_adm.csv
+        join_on: K_RECNUM
+        target_column: V_CPR
+        rename_to: subject_id
+      - source_column: contact_id
+        via_file: t_adm.csv
+        join_on: K_RECNUM
+        target_column: D_UDDTO 
+        rename_to: timestamp
+        drop_source: true
+    unroll_columns:
+      - column: c_diagtype
+        prefix: "RD_TYPE/"
+      - column: c_tildiag #NOTE: treated as also being a diagnosis to merge better with LPR3
+        prefix: "RD/"
+      - column: c_diag
+        prefix: "RD/"
 
-  # SDS_kontakter:
-  #   filename: kontakter_all.csv               
-  #   rename_columns:
-  #     cpr: subject_id
-  #     dato_start: date_start
-  #     tidspunkt_start: time_start
-  #     aktionsdiagnose: code
-  #     kontaktaarsag: contact_reason
-  #     prioritet: priority
-  #     kontakttype: contact_type
-  #     hovedspeciale_ans: clinical_specialty
-  #     region_ans: region_code
-  #     dw_ek_kontakt: contact_id
-  #   combine_datetime:
-  #     timestamp:
-  #       date_col: date_start
-  #       time_col: time_start
-  #       drop_original: true
-  #   unroll_columns:
-  #     - column: contact_reason
-  #       prefix: "RC_REASON/"
-  #     - column: priority
-  #       prefix: "RC_PRIO/"
-  #     - column: contact_type
-  #       prefix: "RC_TYPE/"
-  #     - column: clinical_specialty
-  #       prefix: "RC_SPEC/"
-  #     - column: region_code
-  #       prefix: "RC_REG/"
-  #   code_prefix: "RC/"
+  SDS_kontakter:
+    filename: kontakter_all.csv               
+    rename_columns:
+      cpr: subject_id
+      dato_start: date_start
+      tidspunkt_start: time_start
+      aktionsdiagnose: code
+      kontaktaarsag: contact_reason
+      prioritet: priority
+      kontakttype: contact_type
+      hovedspeciale_ans: clinical_specialty
+      region_ans: region_code
+      dw_ek_kontakt: contact_id
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+    unroll_columns:
+      - column: contact_reason
+        prefix: "RC_REASON/"
+      - column: priority
+        prefix: "RC_PRIO/"
+      - column: contact_type
+        prefix: "RC_TYPE/"
+      - column: clinical_specialty
+        prefix: "RC_SPEC/"
+      - column: region_code
+        prefix: "RC_REG/"
+    code_prefix: "RC/"
 
   SDS_t_adm:
     filename: t_adm.csv               
@@ -200,130 +200,130 @@ register_concepts:
         prefix: "RC_SGH/"
     code_prefix: "RC_ADM/"
 
-  # SDS_t_sksopr:
-  #   filename: t_sksopr.csv   
-  #   rename_columns:
-  #     C_OPR: code
-  #     D_ODTO: date_start
-  #     V_OTIME: v_otime
-  #     V_OMINUT: v_ominut
-  #     V_RECNUM: contact_id
-  #   combine_datetime_parts:
-  #     timestamp:
-  #       date_col: date_start
-  #       hour_col: v_otime
-  #       minute_col: v_ominut
-  #       drop_original: true
-  #   code_prefix: "RPS/"
-  #   mappings:
-  #     - source_column: contact_id
-  #       via_file: t_adm.csv
-  #       join_on: K_RECNUM
-  #       target_column: V_CPR
-  #       rename_to: subject_id
-  #       drop_source: true
+  SDS_t_sksopr:
+    filename: t_sksopr.csv   
+    rename_columns:
+      C_OPR: code
+      D_ODTO: date_start
+      V_OTIME: v_otime
+      V_OMINUT: v_ominut
+      V_RECNUM: contact_id
+    combine_datetime_parts:
+      timestamp:
+        date_col: date_start
+        hour_col: v_otime
+        minute_col: v_ominut
+        drop_original: true
+    code_prefix: "RPS/"
+    mappings:
+      - source_column: contact_id
+        via_file: t_adm.csv
+        join_on: K_RECNUM
+        target_column: V_CPR
+        rename_to: subject_id
+        drop_source: true
 
-  # SDS_t_sksube:
-  #   filename: t_sksube.csv   
-  #   rename_columns:
-  #     C_OPR: code
-  #     C_OPRART: procedure_type
-  #     D_ODTO: date_start
-  #     V_OTIME: v_otime
-  #     V_OMINUT: v_ominut
-  #     V_RECNUM: contact_id
-  #   combine_datetime_parts:
-  #     timestamp:
-  #       date_col: date_start
-  #       hour_col: v_otime
-  #       minute_col: v_ominut
-  #       drop_original: true
-  #   code_prefix: "RPO/"
-  #   mappings:
-  #     - source_column: contact_id
-  #       via_file: t_adm.csv
-  #       join_on: K_RECNUM
-  #       target_column: V_CPR
-  #       rename_to: subject_id
-  #       drop_source: true
-  #   fillna:
-  #     procedure_type:
-  #       value: "P" 
+  SDS_t_sksube:
+    filename: t_sksube.csv   
+    rename_columns:
+      C_OPR: code
+      C_OPRART: procedure_type
+      D_ODTO: date_start
+      V_OTIME: v_otime
+      V_OMINUT: v_ominut
+      V_RECNUM: contact_id
+    combine_datetime_parts:
+      timestamp:
+        date_col: date_start
+        hour_col: v_otime
+        minute_col: v_ominut
+        drop_original: true
+    code_prefix: "RPO/"
+    mappings:
+      - source_column: contact_id
+        via_file: t_adm.csv
+        join_on: K_RECNUM
+        target_column: V_CPR
+        rename_to: subject_id
+        drop_source: true
+    fillna:
+      procedure_type:
+        value: "P" 
 
-  # SDS_ekokur:
-  #   filename: ekokur_all.csv                  
-  #   rename_columns:
-  #     cpr: subject_id
-  #     vnr: vnr_code
-  #     eksd: timestamp
-  #   mappings:
-  #     - source_column: vnr_code
-  #       how: left
-  #       via_file: laegemiddeloplysninger.csv   
-  #       join_on: vnr
-  #       target_column: pname
-  #       rename_to: code
-  #       drop_source: false
-  #   code_prefix: "RM/"
+  SDS_ekokur:
+    filename: ekokur_all.csv                  
+    rename_columns:
+      cpr: subject_id
+      vnr: vnr_code
+      eksd: timestamp
+    mappings:
+      - source_column: vnr_code
+        how: left
+        via_file: laegemiddeloplysninger.csv   
+        join_on: vnr
+        target_column: pname
+        rename_to: code
+        drop_source: false
+    code_prefix: "RM/"
 
-  # SDS_procedurer_kirurgi:
-  #   filename: procedurer_kirurgi.csv      
-  #   rename_columns:
-  #     procedurekode: code
-  #     dato_start: date_start
-  #     tidspunkt_start: time_start
-  #     dw_ek_kontakt: contact_id
-  #   combine_datetime:
-  #     timestamp:
-  #       date_col: date_start
-  #       time_col: time_start
-  #       drop_original: true
-  #   code_prefix: "RPS/"
-  #   mappings:
-  #     - source_column: contact_id
-  #       via_file: kontakter_all.csv
-  #       join_on: dw_ek_kontakt
-  #       target_column: cpr
-  #       rename_to: subject_id
-  #       drop_source: true
+  SDS_procedurer_kirurgi:
+    filename: procedurer_kirurgi.csv      
+    rename_columns:
+      procedurekode: code
+      dato_start: date_start
+      tidspunkt_start: time_start
+      dw_ek_kontakt: contact_id
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+    code_prefix: "RPS/"
+    mappings:
+      - source_column: contact_id
+        via_file: kontakter_all.csv
+        join_on: dw_ek_kontakt
+        target_column: cpr
+        rename_to: subject_id
+        drop_source: true
 
-  # SDS_procedurer_andre:
-  #   filename: procedurer_andre.csv        
-  #   rename_columns:
-  #     procedurekode: code
-  #     proceduretype: procedure_type
-  #     dato_start: date_start
-  #     tidspunkt_start: time_start
-  #     dw_ek_kontakt: contact_id
-  #   combine_datetime:
-  #     timestamp:
-  #       date_col: date_start
-  #       time_col: time_start
-  #       drop_original: true
-  #   code_prefix: "RPO/"
-  #   mappings:
-  #     - source_column: contact_id
-  #       via_file: kontakter_all.csv
-  #       join_on: dw_ek_kontakt
-  #       target_column: cpr
-  #       rename_to: subject_id
-  #       drop_source: true
+  SDS_procedurer_andre:
+    filename: procedurer_andre.csv        
+    rename_columns:
+      procedurekode: code
+      proceduretype: procedure_type
+      dato_start: date_start
+      tidspunkt_start: time_start
+      dw_ek_kontakt: contact_id
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
+    code_prefix: "RPO/"
+    mappings:
+      - source_column: contact_id
+        via_file: kontakter_all.csv
+        join_on: dw_ek_kontakt
+        target_column: cpr
+        rename_to: subject_id
+        drop_source: true
 
-  # SDS_laboratorieproevesvar:
-  #   filename: lab_dm_forsker_all.csv
-  #   rename_columns:
-  #     ANALYSISCODE: code
-  #     VALUE: numeric_value
-  #     SAMPLINGDATE: samplingdate
-  #     SAMPLINGTIME: samplingtime
-  #     PATIENT_CPR: subject_id
-  #   combine_datetime:
-  #     timestamp:
-  #       date_col: samplingdate
-  #       time_col: samplingtime
-  #       drop_original: true
-  #   code_prefix: "L/"
-  #   numeric_columns: [numeric_value]
+  SDS_laboratorieproevesvar:
+    filename: lab_dm_forsker_all.csv
+    rename_columns:
+      ANALYSISCODE: code
+      VALUE: numeric_value
+      SAMPLINGDATE: samplingdate
+      SAMPLINGTIME: samplingtime
+      PATIENT_CPR: subject_id
+    combine_datetime:
+      timestamp:
+        date_col: samplingdate
+        time_col: samplingtime
+        drop_original: true
+    code_prefix: "L/"
+    numeric_columns: [numeric_value]
 
 
 # TODO Add smoking status
