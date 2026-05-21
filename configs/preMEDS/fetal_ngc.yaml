@@ -1,0 +1,400 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+
+test: false # Just for testing, use false for full conversion
+env: local
+run_name: preMEDS_fetal_SDS
+chunksize: 1000000000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+
+paths:
+  output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
+
+  concepts: ${oc.env:EHR2MEDS_DATA}/SP/tables      
+  register_concepts: ${oc.env:EHR2MEDS_DATA}/SDS/registers_pseudonymized   
+  file_type: parquet                  
+
+write_file_type: csv 
+
+align_timestamps: # removes information that is not in the global format
+  names: [timestamp]
+  format: "%Y-%m-%d %H:%M:%S"
+
+concepts:
+  admissions:
+    filename: Mor - CPMI - ADT hændelser.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      Flyt_ind: timestamp_in
+      Flyt_ud: timestamp_out
+      Afsnit: code
+    melt_table:
+      - target_name: timestamp
+        source_cols: [timestamp_in, timestamp_out]
+        prefix_col: code
+        prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
+    code_prefix: "ADM/"
+
+  diagnosis:
+    filename: Mor - CPMI - Diagnoseliste.csv
+    rename_columns:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Redigeringsdato: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "D/"
+
+  procedure:
+    filename: Mor - CPMI - Procedurer.csv
+    rename_columns:
+      ProcedureCode: code
+      ServiceDate: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "P/"
+
+  medication:
+    filename: Mor - CPMI - Medicin.csv
+    rename_columns:
+      ATC: code
+      Administrationstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      MOR_CPR: subject_id
+    code_prefix: "M/"
+    fillna:
+      timestamp:
+        column: fill_timestamp
+
+  # TODO Add lab values
+  labtest:
+    filename: Mor - CPMI - Prøvesvar.csv
+    rename_columns:
+      BestOrd: code
+      Prøvetagningstidspunkt: timestamp
+      Resultatværdi: numeric_value
+      MOR_CPR: subject_id
+    code_prefix: "LAB/"
+
+register_concepts:
+  SDS_diagnoser:
+    filename: diagnoser.csv               
+    rename_columns:
+      DiagnoseKode: code
+      DiagnoseType: diagnosetype
+      dw_ek_kontakt: contact_id
+    code_prefix: "RD/"
+    mappings:
+      - source_column: contact_id
+        via_file: kontakter_all.csv           
+        join_on: dw_ek_kontakt
+        target_column: cpr
+        rename_to: subject_id
+      - source_column: contact_id
+        via_file: kontakter_all.csv
+        join_on: dw_ek_kontakt
+        target_column: dato_slut      
+        rename_to: timestamp
+        drop_source: true
+    unroll_columns:
+      - column: diagnosetype
+        prefix: "RD_TYPE/"
+
+  # SDS_t_diag:
+  #   filename: t_diag.parquet               
+  #   rename_columns:
+  #     C_DIAG: c_diag
+  #     C_TILDIAG: c_tildiag
+  #     C_DIAGTYPE: c_diagtype
+  #     V_RECNUM: contact_id
+  #   code_prefix: "RD/"
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: t_adm.parquet
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #     - source_column: contact_id
+  #       via_file: t_adm.parquet
+  #       join_on: K_RECNUM
+  #       target_column: D_UDDTO 
+  #       rename_to: timestamp
+  #       drop_source: true
+  #   unroll_columns:
+  #     - column: c_diagtype
+  #       prefix: "RD_TYPE/"
+  #     - column: c_tildiag #NOTE: treated as also being a diagnosis to merge better with LPR3
+  #       prefix: "RD/"
+  #     - column: c_diag
+  #       prefix: "RD/"
+
+  # SDS_kontakter:
+  #   filename: kontakter_all.csv               
+  #   rename_columns:
+  #     cpr: subject_id
+  #     dato_start: date_start
+  #     tidspunkt_start: time_start
+  #     aktionsdiagnose: code
+  #     kontaktaarsag: contact_reason
+  #     prioritet: priority
+  #     kontakttype: contact_type
+  #     hovedspeciale_ans: clinical_specialty
+  #     region_ans: region_code
+  #     dw_ek_kontakt: contact_id
+  #   combine_datetime:
+  #     timestamp:
+  #       date_col: date_start
+  #       time_col: time_start
+  #       drop_original: true
+  #   unroll_columns:
+  #     - column: contact_reason
+  #       prefix: "RC_REASON/"
+  #     - column: priority
+  #       prefix: "RC_PRIO/"
+  #     - column: contact_type
+  #       prefix: "RC_TYPE/"
+  #     - column: clinical_specialty
+  #       prefix: "RC_SPEC/"
+  #     - column: region_code
+  #       prefix: "RC_REG/"
+  #   code_prefix: "RC/"
+
+  # SDS_t_adm:
+  #   filename: t_adm.parquet               
+  #   normalize_columns:
+  #     - C_SPEC
+  #     - C_INDM
+  #     - C_KONTAARS
+  #   value_map:
+  #     C_SPEC:
+  #       "01": "intern medicin"
+  #       "02": "geriatri"
+  #       "04": "hæmatologi"
+  #       "05": "infektionsmedicin"
+  #       "06": "kardiologi"
+  #       "07": "medicinsk allergologi"
+  #       "08": "endokrinologi"
+  #       "09": "medicinsk gastroenterologi"
+  #       "10": "lungesygdomme"
+  #       "11": "nefrologi"
+  #       "12": "reumatologi"
+  #       "15": "akutmedicin"
+  #       "18": "dermato-venerologi"
+  #       "20": "neurologi"
+  #       "22": "klinisk onkologi"
+  #       "30": "kirurgi"
+  #       "31": "karkirurgi"
+  #       "32": "kirurgisk gastroenterologi"
+  #       "33": "plastikkirurgi"
+  #       "34": "thoraxkirurgi"
+  #       "35": "urologi"
+  #       "38": "gynækologi og obstetrik"
+  #       "40": "neurokirurgi"
+  #       "42": "ortopædisk kirurgi"
+  #       "44": "oftalmologi"
+  #       "46": "oto-rhino-laryngologi"
+  #       "48": "tand-, mund- og kæbekirurgi"
+  #       "50": "psykiatri"
+  #       "52": "børne- og ungdomspsykiatri"
+  #       "60": "klinisk biokemi"
+  #       "61": "klinisk fysiologi og nuklearmedicin"
+  #       "62": "klinisk immunologi"
+  #       "63": "klinisk mikrobiologi"
+  #       "64": "klinisk neurofysiologi"
+  #       "66": "radiologi"
+  #       "67": "klinisk farmakologi"
+  #       "68": "klinisk genetik"
+  #       "80": "pædiatri"
+  #       "84": "anæstesiologi"
+  #       "86": "arbejdsmedicin"
+  #       "90": "almen medicin"
+  #       "91": "samfundsmedicin"
+  #     C_INDM: # map emergency vs planned visits to LPR3
+  #       "1": "ATA1"
+  #       "2": "ATA3"
+  #     C_KONTAARS:
+  #       "1": "ALCC01"
+  #       "2": "ALCC02"
+  #       "3": "ALCC03"
+  #       "4": "ALCC04"
+  #       "6": "ALCC90"
+  #       "7": "ALCC90"
+  #       "8": "ALCC90"
+  #       "9": "ALCC90"
+  #   rename_columns:
+  #     V_CPR: subject_id
+  #     D_INDDTO: date_start
+  #     V_INDTIME: v_indtime
+  #     V_INDMINUT: v_indminut
+  #     C_ADIAG: code
+  #     C_KONTAARS: contact_reason
+  #     C_PATTYPE: patient_type 
+  #     C_INDM: priority # NOTE: mapped to priority
+  #     C_SPEC: clinical_specialty
+  #     C_SGH: hospital_code
+  #     K_RECNUM: contact_id
+  #   # mappings:
+  #   # - source_column: hospital_code   
+  #   #   via_file: shak_to_region.parquet # using resources
+  #   #   join_on: kode
+  #   #   target_column: region
+  #   #   rename_to: region_code
+  #   #   drop_source: true
+  #   combine_datetime_parts:
+  #     timestamp:
+  #       date_col: date_start
+  #       hour_col: v_indtime
+  #       minute_col: v_indminut
+  #       drop_original: true
+  #   unroll_columns:
+  #     - column: contact_reason
+  #       prefix: "RC_REASON/"
+  #     - column: patient_type
+  #       prefix: "RC_ADM_TYPE/"
+  #     - column: priority
+  #       prefix: "RC_PRIO/"
+  #     - column: clinical_specialty
+  #       prefix: "RC_SPEC/"
+  #     - column: hospital_code
+  #       prefix: "RC_SGH/"
+  #   code_prefix: "RC_ADM/"
+
+  # SDS_t_sksopr:
+  #   filename: t_sksopr.parquet   
+  #   rename_columns:
+  #     c_opr: code
+  #     D_ODTO: date_start
+  #     V_OTIME: v_otime
+  #     V_OMINUT: v_ominut
+  #     V_RECNUM: contact_id
+  #   combine_datetime_parts:
+  #     timestamp:
+  #       date_col: date_start
+  #       hour_col: v_otime
+  #       minute_col: v_ominut
+  #       drop_original: true
+  #   code_prefix: "RPS/"
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: t_adm.parquet
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #       drop_source: true
+
+  # SDS_t_sksube:
+  #   filename: t_sksube.parquet   
+  #   rename_columns:
+  #     C_OPR: code
+  #     C_OPRART: procedure_type
+  #     D_ODTO: date_start
+  #     V_OTIME: v_otime
+  #     V_OMINUT: v_ominut
+  #     V_RECNUM: contact_id
+  #   combine_datetime_parts:
+  #     timestamp:
+  #       date_col: date_start
+  #       hour_col: v_otime
+  #       minute_col: v_ominut
+  #       drop_original: true
+  #   code_prefix: "RPO/"
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: t_adm.parquet
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #       drop_source: true
+  #   fillna:
+  #     procedure_type:
+  #       value: "P" 
+
+  # SDS_ekokur:
+  #   filename: ekokur_all.parquet                  
+  #   rename_columns:
+  #     cpr: subject_id
+  #     vnr: vnr_code
+  #     eksd: timestamp
+  #   mappings:
+  #     - source_column: vnr_code
+  #       how: left
+  #       via_file: laegemiddeloplysninger.parquet   
+  #       join_on: vnr
+  #       target_column: pname
+  #       rename_to: code
+  #       drop_source: false
+  #   code_prefix: "RM/"
+
+  # SDS_procedurer_kirurgi:
+  #   filename: procedurer_kirurgi.parquet      
+  #   rename_columns:
+  #     procedurekode: code
+  #     dato_start: date_start
+  #     tidspunkt_start: time_start
+  #     dw_ek_kontakt: contact_id
+  #   combine_datetime:
+  #     timestamp:
+  #       date_col: date_start
+  #       time_col: time_start
+  #       drop_original: true
+  #   code_prefix: "RPS/"
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: kontakter_all.parquet
+  #       join_on: dw_ek_kontakt
+  #       target_column: cpr
+  #       rename_to: subject_id
+  #       drop_source: true
+
+  # SDS_procedurer_andre:
+  #   filename: procedurer_andre.parquet        
+  #   rename_columns:
+  #     procedurekode: code
+  #     proceduretype: procedure_type
+  #     dato_start: date_start
+  #     tidspunkt_start: time_start
+  #     dw_ek_kontakt: contact_id
+  #   combine_datetime:
+  #     timestamp:
+  #       date_col: date_start
+  #       time_col: time_start
+  #       drop_original: true
+  #   code_prefix: "RPO/"
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: kontakter_all.parquet
+  #       join_on: dw_ek_kontakt
+  #       target_column: cpr
+  #       rename_to: subject_id
+  #       drop_source: true
+
+  # SDS_laboratorieproevesvar:
+  #   filename: lab_dm_forsker_all.parquet
+  #   rename_columns:
+  #     ANALYSISCODE: code
+  #     VALUE: numeric_value
+  #     SAMPLINGDATE: samplingdate
+  #     SAMPLINGTIME: samplingtime
+  #     PATIENT_CPR: subject_id
+  #   combine_datetime:
+  #     timestamp:
+  #       date_col: samplingdate
+  #       time_col: samplingtime
+  #       drop_original: true
+  #   code_prefix: "L/"
+  #   numeric_columns: [numeric_value]
+
+
+# TODO Add smoking status
+# Todo support multiple patient_infos
+patients_info:
+  filename: Mor - CPMI - Patientinfo.csv
+  rename_columns:
+    MOR_CPR: subject_id
+    Fødselsdato: birthdate
+    Dødsdato: deathdate
+    Køn: gender
