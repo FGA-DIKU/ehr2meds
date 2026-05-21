@@ -15,10 +15,15 @@ chunksize: 1000000000 # Just for testing, use around 250_000_000 for full conver
 
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
+  pid_link: ../data/mapping/mapping.parquet
 
   concepts: ${oc.env:EHR2MEDS_DATA}/SP/tables      
   register_concepts: ${oc.env:EHR2MEDS_DATA}/SDS/registers_pseudonymized   
-  file_type: parquet                  
+  file_type: csv                  
+
+pid_link:
+  join_col: pseudoid
+  target_col: patientid
 
 write_file_type: csv 
 
