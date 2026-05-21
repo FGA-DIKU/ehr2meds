@@ -257,8 +257,11 @@ def replace_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Apply string replacement to specified column."""
     for col, replacements in concept_config.get("replace_values", {}).items():
         if col in df.columns:
+            str_mask = df[col].apply(lambda v: isinstance(v, str))
             for old, new in replacements.items():
-                df[col] = df[col].str.replace(old, new, regex=False)
+                df.loc[str_mask, col] = df.loc[str_mask, col].str.replace(
+                    old, new, regex=False
+                )
     return df
 
 
