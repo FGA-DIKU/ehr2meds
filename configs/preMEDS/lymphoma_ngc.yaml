@@ -81,19 +81,19 @@ register_concepts:
       - source_column: contact_id
         via_file: SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: dato_start      
-        rename_to: date_start
+        target_column: dato_slut      
+        rename_to: date_end
         drop_source: true
       - source_column: contact_id
         via_file: SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: tidspunkt_start      
-        rename_to: time_start
+        target_column: tidspunkt_slut      
+        rename_to: time_end
         drop_source: true
     combine_datetime:
       timestamp:
-        date_col: date_start
-        time_col: time_start
+        date_col: date_end
+        time_col: time_end
         drop_original: true  
     unroll_columns:
       - column: diagnosetype
@@ -131,8 +131,8 @@ register_concepts:
     filename: SDS_kontakter.parquet               
     rename_columns:
       patientid: subject_id
-      dato_start: date_start
-      tidspunkt_start: time_start
+      dato_slut: date_end
+      tidspunkt_slut: time_end
       aktionsdiagnose: code
       kontaktaarsag: contact_reason
       prioritet: priority
@@ -142,8 +142,8 @@ register_concepts:
       dw_ek_kontakt: contact_id
     combine_datetime:
       timestamp:
-        date_col: date_start
-        time_col: time_start
+        date_col: date_end
+        time_col: time_end
         drop_original: true
     unroll_columns:
       - column: contact_reason
