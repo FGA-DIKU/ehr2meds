@@ -271,7 +271,9 @@ def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
         if col in df.columns:
             suffix = cfg["suffix"]
             contains = cfg.get("unless_contains", suffix)
-            mask = ~df[col].astype(str).str.contains(contains, regex=False, na=False)
+            mask = df[col].notna() & ~df[col].astype(str).str.contains(
+                contains, regex=False, na=False
+            )
             df.loc[mask, col] = df.loc[mask, col].astype(str) + suffix
     return df
 
