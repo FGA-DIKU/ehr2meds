@@ -55,9 +55,6 @@ class RegisterConceptProcessor:
         concept_config: dict,
         subject_id_mapping: Dict[str, int],
         data_handler: "DataHandler",
-        register_sp_link: pd.DataFrame,
-        join_link_col: str,
-        target_link_col: str,
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the register concepts.
@@ -71,9 +68,8 @@ class RegisterConceptProcessor:
         8. combine datetime columns
         9. unroll columns (process codes)
         10. convert numeric columns
-        11. apply pid linking
-        12. apply pid integer mapping
-        13. clean data
+        11. apply pid integer mapping
+        12. clean data
         """
         df = replace_values(df, concept_config)
         df = normalize_columns(df, concept_config)
@@ -92,41 +88,17 @@ class RegisterConceptProcessor:
 
         df = convert_numeric_columns(df, concept_config)
 
-        df = RegisterConceptProcessor._apply_sp_pid_link(
-            df, register_sp_link, join_link_col, target_link_col
-        )
+        if SUBJECT_ID not in df.columns:
+            raise ValueError(
+                f"{SUBJECT_ID} column not found after processing: {list(df.columns)}. "
+                "Set subject_id via rename_columns or mappings."
+            )
 
         df = map_pids_to_ints(df, subject_id_mapping)
 
         df = clean_data(df)
 
         return df
-
-    def _apply_sp_pid_link(
-        df: pd.DataFrame,
-        register_sp_link: pd.DataFrame,
-        join_link_col: str,
-        target_link_col: str,
-    ) -> pd.DataFrame:
-        """
-        Apply SP PID link.
-        We can expect the subject_id is present in df at the end of processing.
-        The column names in the link file will be provided via config.
-        There will be a join column and a target column and we can essentially reuse our apply_mapping function,
-        just accessing args differently.
-        """
-        if SUBJECT_ID not in df.columns:
-            raise ValueError(f"SUBJECT_ID column not found in df: {df.columns}")
-        return apply_mapping(
-            df,
-            register_sp_link,
-            join_col=join_link_col,
-            source_col=SUBJECT_ID,
-            target_col=target_link_col,
-            how="inner",
-            rename_to=SUBJECT_ID,
-            drop_source=True,
-        )
 
     @staticmethod
     def _get_mapping_table(data_handler, mapping):
