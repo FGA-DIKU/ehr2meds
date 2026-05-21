@@ -83,7 +83,6 @@ register_concepts:
         join_on: dw_ek_kontakt
         target_column: dato_slut      
         rename_to: date_end
-        drop_source: true
       - source_column: contact_id
         via_file: SDS_kontakter.parquet
         join_on: dw_ek_kontakt
