@@ -168,9 +168,11 @@ def map_pids_to_ints(
     # Convert to object dtype to allow integer assignment after mapping
     df[SUBJECT_ID] = df[SUBJECT_ID].astype(str)
     # Map to integers and convert to int
-    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
+    mapped = df[SUBJECT_ID].map(subject_id_mapping)
+    # df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
     df = df.dropna(subset=[SUBJECT_ID])
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+    #df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+    df[SUBJECT_ID] = mapped.loc[df.index].astype("int64")
     return df
 
 
