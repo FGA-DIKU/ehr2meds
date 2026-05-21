@@ -169,66 +169,6 @@ register_concepts:
 
   SDS_t_adm:
     filename: t_adm.csv               
-    normalize_columns:
-      - C_SPEC
-      - C_INDM
-      - C_KONTAARS
-    value_map:
-      C_SPEC:
-        "01": "intern medicin"
-        "02": "geriatri"
-        "04": "hæmatologi"
-        "05": "infektionsmedicin"
-        "06": "kardiologi"
-        "07": "medicinsk allergologi"
-        "08": "endokrinologi"
-        "09": "medicinsk gastroenterologi"
-        "10": "lungesygdomme"
-        "11": "nefrologi"
-        "12": "reumatologi"
-        "15": "akutmedicin"
-        "18": "dermato-venerologi"
-        "20": "neurologi"
-        "22": "klinisk onkologi"
-        "30": "kirurgi"
-        "31": "karkirurgi"
-        "32": "kirurgisk gastroenterologi"
-        "33": "plastikkirurgi"
-        "34": "thoraxkirurgi"
-        "35": "urologi"
-        "38": "gynækologi og obstetrik"
-        "40": "neurokirurgi"
-        "42": "ortopædisk kirurgi"
-        "44": "oftalmologi"
-        "46": "oto-rhino-laryngologi"
-        "48": "tand-, mund- og kæbekirurgi"
-        "50": "psykiatri"
-        "52": "børne- og ungdomspsykiatri"
-        "60": "klinisk biokemi"
-        "61": "klinisk fysiologi og nuklearmedicin"
-        "62": "klinisk immunologi"
-        "63": "klinisk mikrobiologi"
-        "64": "klinisk neurofysiologi"
-        "66": "radiologi"
-        "67": "klinisk farmakologi"
-        "68": "klinisk genetik"
-        "80": "pædiatri"
-        "84": "anæstesiologi"
-        "86": "arbejdsmedicin"
-        "90": "almen medicin"
-        "91": "samfundsmedicin"
-      C_INDM: # map emergency vs planned visits to LPR3
-        "1": "ATA1"
-        "2": "ATA3"
-      C_KONTAARS:
-        "1": "ALCC01"
-        "2": "ALCC02"
-        "3": "ALCC03"
-        "4": "ALCC04"
-        "6": "ALCC90"
-        "7": "ALCC90"
-        "8": "ALCC90"
-        "9": "ALCC90"
     rename_columns:
       V_CPR: subject_id
       D_INDDTO: date_start
@@ -241,13 +181,6 @@ register_concepts:
       C_SPEC: clinical_specialty
       C_SGH: hospital_code
       K_RECNUM: contact_id
-    # mappings:
-    # - source_column: hospital_code   
-    #   via_file: shak_to_region.csv # using resources
-    #   join_on: kode
-    #   target_column: region
-    #   rename_to: region_code
-    #   drop_source: true
     combine_datetime_parts:
       timestamp:
         date_col: date_start
