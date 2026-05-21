@@ -270,7 +270,7 @@ register_concepts:
   SDS_t_sksopr:
     filename: t_sksopr.csv   
     rename_columns:
-      c_opr: code
+      C_OPR: code
       D_ODTO: date_start
       V_OTIME: v_otime
       V_OMINUT: v_ominut
