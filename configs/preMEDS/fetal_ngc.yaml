@@ -7,6 +7,10 @@ logging:
   level: INFO
   path: ./outputs/logs
 
+hydra:
+  run:
+    dir: ./outputs/hydra/fetal_ngc
+  output_subdir: hydra
 
 test: false # Just for testing, use false for full conversion
 env: local

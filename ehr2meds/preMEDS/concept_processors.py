@@ -92,9 +92,9 @@ class RegisterConceptProcessor:
 
         df = convert_numeric_columns(df, concept_config)
 
-        # df = RegisterConceptProcessor._apply_sp_pid_link(
-        #     df, register_sp_link, join_link_col, target_link_col
-        # )
+        df = RegisterConceptProcessor._apply_sp_pid_link(
+            df, register_sp_link, join_link_col, target_link_col
+        )
 
         df = map_pids_to_ints(df, subject_id_mapping)
 
