@@ -19,7 +19,7 @@ chunksize: 1000000000 # Just for testing, use around 250_000_000 for full conver
 
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
-  pid_link: ../data/mapping/mapping.parquet
+  pid_link: ../data/mapping/mapping.csv
 
   concepts: ${oc.env:EHR2MEDS_DATA}/SP/tables      
   register_concepts: ${oc.env:EHR2MEDS_DATA}/SDS/registers_pseudonymized   
@@ -114,7 +114,7 @@ register_concepts:
         prefix: "RD_TYPE/"
 
   SDS_t_diag:
-    filename: t_diag.parquet               
+    filename: t_diag.csv               
     rename_columns:
       C_DIAG: c_diag
       C_TILDIAG: c_tildiag
@@ -123,12 +123,12 @@ register_concepts:
     code_prefix: "RD/"
     mappings:
       - source_column: contact_id
-        via_file: t_adm.parquet
+        via_file: t_adm.csv
         join_on: K_RECNUM
         target_column: V_CPR
         rename_to: subject_id
       - source_column: contact_id
-        via_file: t_adm.parquet
+        via_file: t_adm.csv
         join_on: K_RECNUM
         target_column: D_UDDTO 
         rename_to: timestamp
@@ -173,7 +173,7 @@ register_concepts:
     code_prefix: "RC/"
 
   SDS_t_adm:
-    filename: t_adm.parquet               
+    filename: t_adm.csv               
     normalize_columns:
       - C_SPEC
       - C_INDM
@@ -248,7 +248,7 @@ register_concepts:
       K_RECNUM: contact_id
     # mappings:
     # - source_column: hospital_code   
-    #   via_file: shak_to_region.parquet # using resources
+    #   via_file: shak_to_region.csv # using resources
     #   join_on: kode
     #   target_column: region
     #   rename_to: region_code
@@ -273,7 +273,7 @@ register_concepts:
     code_prefix: "RC_ADM/"
 
   SDS_t_sksopr:
-    filename: t_sksopr.parquet   
+    filename: t_sksopr.csv   
     rename_columns:
       c_opr: code
       D_ODTO: date_start
@@ -289,14 +289,14 @@ register_concepts:
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
-        via_file: t_adm.parquet
+        via_file: t_adm.csv
         join_on: K_RECNUM
         target_column: V_CPR
         rename_to: subject_id
         drop_source: true
 
   SDS_t_sksube:
-    filename: t_sksube.parquet   
+    filename: t_sksube.csv   
     rename_columns:
       C_OPR: code
       C_OPRART: procedure_type
@@ -313,7 +313,7 @@ register_concepts:
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
-        via_file: t_adm.parquet
+        via_file: t_adm.csv
         join_on: K_RECNUM
         target_column: V_CPR
         rename_to: subject_id
@@ -323,7 +323,7 @@ register_concepts:
         value: "P" 
 
   SDS_ekokur:
-    filename: ekokur_all.parquet                  
+    filename: ekokur_all.csv                  
     rename_columns:
       cpr: subject_id
       vnr: vnr_code
@@ -331,7 +331,7 @@ register_concepts:
     mappings:
       - source_column: vnr_code
         how: left
-        via_file: laegemiddeloplysninger.parquet   
+        via_file: laegemiddeloplysninger.csv   
         join_on: vnr
         target_column: pname
         rename_to: code
@@ -339,7 +339,7 @@ register_concepts:
     code_prefix: "RM/"
 
   SDS_procedurer_kirurgi:
-    filename: procedurer_kirurgi.parquet      
+    filename: procedurer_kirurgi.csv      
     rename_columns:
       procedurekode: code
       dato_start: date_start
@@ -353,14 +353,14 @@ register_concepts:
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
-        via_file: kontakter_all.parquet
+        via_file: kontakter_all.csv
         join_on: dw_ek_kontakt
         target_column: cpr
         rename_to: subject_id
         drop_source: true
 
   SDS_procedurer_andre:
-    filename: procedurer_andre.parquet        
+    filename: procedurer_andre.csv        
     rename_columns:
       procedurekode: code
       proceduretype: procedure_type
@@ -375,14 +375,14 @@ register_concepts:
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
-        via_file: kontakter_all.parquet
+        via_file: kontakter_all.csv
         join_on: dw_ek_kontakt
         target_column: cpr
         rename_to: subject_id
         drop_source: true
 
   SDS_laboratorieproevesvar:
-    filename: lab_dm_forsker_all.parquet
+    filename: lab_dm_forsker_all.csv
     rename_columns:
       ANALYSISCODE: code
       VALUE: numeric_value
