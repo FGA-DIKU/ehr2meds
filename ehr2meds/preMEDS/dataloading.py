@@ -43,7 +43,6 @@ class DataLoader(ABC):
         self, filename: str, cols: Optional[List[str]] = None, **kwargs
     ) -> Iterator[pd.DataFrame]:
         file_path = self._get_file_path(filename)
-        print(f"[DEBUG load_chunks] {file_path} cols={cols}", flush=True)
         self._check_file_exists(file_path)
         if file_path.endswith(".parquet"):
             yield from self._load_parquet_chunks(file_path, cols)
@@ -82,15 +81,38 @@ class DataLoader(ABC):
             chunks_read += 1
             yield df
 
+    @staticmethod
+    def _select_chunk_columns(
+        chunk: pd.DataFrame, cols: Optional[List[str]], file_path: str
+    ) -> pd.DataFrame:
+        if not cols:
+            return chunk
+        missing = set(cols) - set(chunk.columns)
+        if missing:
+            raise ValueError(
+                f"Missing columns in {file_path}: {sorted(missing)}\n"
+                f"Available: {sorted(chunk.columns)}"
+            )
+        return chunk[cols]
+
     def _load_csv_chunks(
         self, file_path: str, cols: Optional[List[str]] = None, **kwargs
     ) -> Iterator[pd.DataFrame]:
-        """Load CSV in chunks, using pandas read_csv."""
+        """Load CSV in chunks.
+
+        Columns are selected by name after each chunk is read. Do not pass
+        usecols into read_csv while chunking: the C parser can raise IndexError
+        when some rows have extra/missing commas (ragged lines). Bad lines are
+        skipped via the python engine (override with file_info in config).
+        """
+        read_kwargs = dict(kwargs)
+        read_kwargs.setdefault("engine", "python")
+        read_kwargs.setdefault("on_bad_lines", "warn")
+
         chunk_iter = pd.read_csv(
-            file_path, chunksize=self.chunksize, usecols=cols, **kwargs
+            file_path, chunksize=self.chunksize, **read_kwargs
         )
         for i, chunk in enumerate(chunk_iter):
             if self.test and i >= N_TEST_CHUNKS:
                 break
-            yield chunk
-        return  # Exit if reading was successful
+            yield self._select_chunk_columns(chunk, cols, file_path)

@@ -85,90 +85,93 @@ concepts:
     code_prefix: "LAB/"
 
 register_concepts:
-  SDS_diagnoser:
-    filename: diagnoser.csv               
-    rename_columns:
-      diagnosekode: code
-      diagnosetype: diagnosetype
-      dw_ek_kontakt: contact_id
-    code_prefix: "RD/"
-    mappings:
-      - source_column: contact_id
-        via_file: kontakter_all.csv           
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: kontakter_all.csv
-        join_on: dw_ek_kontakt
-        target_column: dato_slut      
-        rename_to: timestamp
-        drop_source: true
-    unroll_columns:
-      - column: diagnosetype
-        prefix: "RD_TYPE/"
+  # SDS_diagnoser:
+  #   filename: diagnoser.csv               
+  #   rename_columns:
+  #     diagnosekode: code
+  #     diagnosetype: diagnosetype
+  #     dw_ek_kontakt: contact_id
+  #   code_prefix: "RD/"
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: kontakter_all.csv           
+  #       join_on: dw_ek_kontakt
+  #       target_column: cpr
+  #       rename_to: subject_id
+  #     - source_column: contact_id
+  #       via_file: kontakter_all.csv
+  #       join_on: dw_ek_kontakt
+  #       target_column: dato_slut      
+  #       rename_to: timestamp
+  #       drop_source: true
+  #   unroll_columns:
+  #     - column: diagnosetype
+  #       prefix: "RD_TYPE/"
 
-  SDS_t_diag:
-    filename: t_diag.csv               
-    rename_columns:
-      C_DIAG: c_diag
-      C_TILDIAG: c_tildiag
-      C_DIAGTYPE: c_diagtype
-      V_RECNUM: contact_id
-    code_prefix: "RD/"
-    mappings:
-      - source_column: contact_id
-        via_file: t_adm.csv
-        join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: t_adm.csv
-        join_on: K_RECNUM
-        target_column: D_UDDTO 
-        rename_to: timestamp
-        drop_source: true
-    unroll_columns:
-      - column: c_diagtype
-        prefix: "RD_TYPE/"
-      - column: c_tildiag #NOTE: treated as also being a diagnosis to merge better with LPR3
-        prefix: "RD/"
-      - column: c_diag
-        prefix: "RD/"
+  # SDS_t_diag:
+  #   filename: t_diag.csv               
+  #   rename_columns:
+  #     C_DIAG: c_diag
+  #     C_TILDIAG: c_tildiag
+  #     C_DIAGTYPE: c_diagtype
+  #     V_RECNUM: contact_id
+  #   code_prefix: "RD/"
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: t_adm.csv
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #     - source_column: contact_id
+  #       via_file: t_adm.csv
+  #       join_on: K_RECNUM
+  #       target_column: D_UDDTO 
+  #       rename_to: timestamp
+  #       drop_source: true
+  #   unroll_columns:
+  #     - column: c_diagtype
+  #       prefix: "RD_TYPE/"
+  #     - column: c_tildiag #NOTE: treated as also being a diagnosis to merge better with LPR3
+  #       prefix: "RD/"
+  #     - column: c_diag
+  #       prefix: "RD/"
 
-  SDS_kontakter:
-    filename: kontakter_all.csv               
-    rename_columns:
-      cpr: subject_id
-      dato_start: date_start
-      tidspunkt_start: time_start
-      aktionsdiagnose: code
-      kontaktaarsag: contact_reason
-      prioritet: priority
-      kontakttype: contact_type
-      hovedspeciale_ans: clinical_specialty
-      region_ans: region_code
-      dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
-    unroll_columns:
-      - column: contact_reason
-        prefix: "RC_REASON/"
-      - column: priority
-        prefix: "RC_PRIO/"
-      - column: contact_type
-        prefix: "RC_TYPE/"
-      - column: clinical_specialty
-        prefix: "RC_SPEC/"
-      - column: region_code
-        prefix: "RC_REG/"
-    code_prefix: "RC/"
+  # SDS_kontakter:
+  #   filename: kontakter_all.csv               
+  #   rename_columns:
+  #     cpr: subject_id
+  #     dato_start: date_start
+  #     tidspunkt_start: time_start
+  #     aktionsdiagnose: code
+  #     kontaktaarsag: contact_reason
+  #     prioritet: priority
+  #     kontakttype: contact_type
+  #     hovedspeciale_ans: clinical_specialty
+  #     region_ans: region_code
+  #     dw_ek_kontakt: contact_id
+  #   combine_datetime:
+  #     timestamp:
+  #       date_col: date_start
+  #       time_col: time_start
+  #       drop_original: true
+  #   unroll_columns:
+  #     - column: contact_reason
+  #       prefix: "RC_REASON/"
+  #     - column: priority
+  #       prefix: "RC_PRIO/"
+  #     - column: contact_type
+  #       prefix: "RC_TYPE/"
+  #     - column: clinical_specialty
+  #       prefix: "RC_SPEC/"
+  #     - column: region_code
+  #       prefix: "RC_REG/"
+  #   code_prefix: "RC/"
 
   SDS_t_adm:
-    filename: t_adm.csv               
+    filename: t_adm.csv
+    file_info:
+      sep: ","
+      encoding: "latin1"
     rename_columns:
       V_CPR: subject_id
       D_INDDTO: date_start
