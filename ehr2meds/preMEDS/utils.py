@@ -308,3 +308,9 @@ def melt_table(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     for step_cfg in expand_map:
         df = apply_melt_step(df, step_cfg)
     return df
+
+def prefix_codes(df: pd.DataFrame, code_prefix: str = None) -> pd.DataFrame:
+    """Add a prefix to the entries in the code column."""
+    if code_prefix and CODE in df.columns:
+        df[CODE] = code_prefix + df[CODE].astype(str)
+    return df
