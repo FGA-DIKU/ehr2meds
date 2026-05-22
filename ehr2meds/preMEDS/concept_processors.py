@@ -12,6 +12,7 @@ from ehr2meds.preMEDS.utils import (
     unroll_columns,
     normalize_columns,
     apply_value_map,
+    prefix_codes,
     replace_values,
     pad_values,
 )
@@ -40,6 +41,7 @@ class SPConceptProcessor:
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
 
+        df = prefix_codes(df, concept_config.get("code_prefix", None))
         df = convert_numeric_columns(df, concept_config)
         df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
@@ -79,6 +81,7 @@ class RegisterConceptProcessor:
         df = fill_missing_values(df, concept_config.get("fillna", {}))
         df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
         df = RegisterConceptProcessor._combine_datetime_from_parts(df, concept_config)
+        df = prefix_codes(df, concept_config.get("code_prefix", None))
 
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
