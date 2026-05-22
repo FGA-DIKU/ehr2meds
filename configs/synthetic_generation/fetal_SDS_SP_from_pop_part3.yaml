@@ -171,11 +171,6 @@ linked_data:
   Mor - Obstetrisk Historik DEL 1:
     N: ${N}
     columns:
-      Para:
-        type: rand_int
-        args:
-          min_val: 0
-          max_val: 5
       Flerfold: 
         type: rand_int
         args:
@@ -192,8 +187,8 @@ linked_data:
       Para:
         type: rand_int
         args:
-          min_val: 1
-          max_val: 20
+          min_val: 0
+          max_val: 5
         corruptions:
           - type: insert_missing
             args:
@@ -329,3 +324,35 @@ linked_data:
         type: choice
         file: patient_info
         linked_on: [CPR]
+
+  t_adm:
+    N: ${N}
+    linked_columns:
+      K_RECNUM:
+        type: choice
+        file: Population
+        linked_on: [MOR_Fødsel_ID] # Not correct, just to take some ID
+      V_CPR:
+        type: choice
+        file: Population
+        linked_on: [MOR_CPR] 
+
+  t_sksopr:
+    N: ${N}
+    columns:
+      C_OPR:
+        type: choice
+        args:
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KCKD05B"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+      D_ODTO:
+        type: rand_datetime
+    linked_columns:
+      V_RECNUM:
+        type: choice
+        file: Population
+        linked_on: [MOR_Fødsel_ID]
+
