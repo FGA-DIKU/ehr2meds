@@ -12,10 +12,10 @@ hydra:
     dir: ./outputs/hydra/fetal_ngc
   output_subdir: hydra
 
-test: true # Just for testing, use false for full conversion
+test: false # Just for testing, use false for full conversion
 env: local
 run_name: preMEDS_fetal_SDS
-chunksize: 10000 #00000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
+chunksize: 10000000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
 
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/

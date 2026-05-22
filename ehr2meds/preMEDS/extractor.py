@@ -124,6 +124,10 @@ class PREMEDSExtractor:
                     subject_id_mapping,
                 )
             except Exception as e:
+                import traceback
+
+                print(f"[DEBUG] Error processing {concept_type}: {e}", flush=True)
+                traceback.print_exc()
                 logger.warning(f"Error processing {concept_type}: {str(e)}")
 
     def process_register_concept_chunks(
@@ -133,10 +137,19 @@ class PREMEDSExtractor:
         subject_id_mapping: Dict[str, int],
     ) -> None:
         first_chunk = True
-        for chunk in tqdm(
-            self.register_data_handler.load_chunks(concept_config),
-            desc=f"Chunks {concept_type}",
+        filename = concept_config.get("filename", concept_type)
+        print(f"[DEBUG {concept_type}] loading chunks from {filename}", flush=True)
+        for chunk_idx, chunk in enumerate(
+            tqdm(
+                self.register_data_handler.load_chunks(concept_config),
+                desc=f"Chunks {concept_type}",
+            )
         ):
+            print(
+                f"[DEBUG {concept_type}] chunk {chunk_idx} "
+                f"rows={len(chunk)} cols={list(chunk.columns)}",
+                flush=True,
+            )
             processed_chunk = self.register_concept_processor.process(
                 chunk,
                 concept_config,

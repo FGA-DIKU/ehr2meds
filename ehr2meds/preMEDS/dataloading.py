@@ -43,6 +43,7 @@ class DataLoader(ABC):
         self, filename: str, cols: Optional[List[str]] = None, **kwargs
     ) -> Iterator[pd.DataFrame]:
         file_path = self._get_file_path(filename)
+        print(f"[DEBUG load_chunks] {file_path} cols={cols}", flush=True)
         self._check_file_exists(file_path)
         if file_path.endswith(".parquet"):
             yield from self._load_parquet_chunks(file_path, cols)

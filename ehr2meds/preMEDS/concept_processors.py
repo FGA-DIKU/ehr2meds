@@ -71,21 +71,38 @@ class RegisterConceptProcessor:
         11. apply pid integer mapping
         12. clean data
         """
+        label = concept_config.get("filename", "register")
+        print(f"[DEBUG {label}] start rows={len(df)} cols={list(df.columns)}", flush=True)
+
+        print(f"[DEBUG {label}] step 1: replace_values", flush=True)
         df = replace_values(df, concept_config)
+        print(f"[DEBUG {label}] step 2: normalize_columns", flush=True)
         df = normalize_columns(df, concept_config)
+        print(f"[DEBUG {label}] step 3: apply_value_map", flush=True)
         df = apply_value_map(df, concept_config)
+        print(f"[DEBUG {label}] step 4: select_and_rename_columns", flush=True)
         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
+        print(f"[DEBUG {label}] step 5: apply_mappings rows={len(df)} cols={list(df.columns)}", flush=True)
         df = RegisterConceptProcessor._apply_mappings(df, concept_config, data_handler)
+        print(f"[DEBUG {label}] step 6: pad_values", flush=True)
         df = pad_values(df, concept_config)
+        print(f"[DEBUG {label}] step 7: fill_missing_values", flush=True)
         df = fill_missing_values(df, concept_config.get("fillna", {}))
+        print(f"[DEBUG {label}] step 8: combine_datetime_columns", flush=True)
         df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
+        print(f"[DEBUG {label}] step 9: combine_datetime_from_parts cols={list(df.columns)}", flush=True)
         df = RegisterConceptProcessor._combine_datetime_from_parts(df, concept_config)
+        print(f"[DEBUG {label}] after datetime parts cols={list(df.columns)}", flush=True)
 
         if time_stamp_dict:
+            print(f"[DEBUG {label}] step 10: convert_timestamp_columns", flush=True)
             df = convert_timestamp_columns(df, **time_stamp_dict)
 
+        print(f"[DEBUG {label}] step 11: unroll_columns", flush=True)
         df = RegisterConceptProcessor._unroll_columns(df, concept_config)
+        print(f"[DEBUG {label}] after unroll rows={len(df)} cols={list(df.columns)}", flush=True)
 
+        print(f"[DEBUG {label}] step 12: convert_numeric_columns", flush=True)
         df = convert_numeric_columns(df, concept_config)
 
         if SUBJECT_ID not in df.columns:
@@ -94,9 +111,11 @@ class RegisterConceptProcessor:
                 "Set subject_id via rename_columns or mappings."
             )
 
+        print(f"[DEBUG {label}] step 13: map_pids_to_ints", flush=True)
         df = map_pids_to_ints(df, subject_id_mapping)
-
+        print(f"[DEBUG {label}] step 14: clean_data", flush=True)
         df = clean_data(df)
+        print(f"[DEBUG {label}] done rows={len(df)}", flush=True)
 
         return df
 
@@ -175,6 +194,14 @@ class RegisterConceptProcessor:
                 hour_col = date_time_cols.get("hour_col")
                 minute_col = date_time_cols.get("minute_col")
 
+                print(
+                    f"[DEBUG combine_datetime_parts] target={target_col} "
+                    f"date={date_col} hour={hour_col} minute={minute_col} "
+                    f"present={{date: {date_col in df.columns}, "
+                    f"hour: {hour_col in df.columns}, "
+                    f"minute: {minute_col in df.columns}}}",
+                    flush=True,
+                )
                 if date_col in df.columns:
                     dt_str = (
                         df[date_col].dt.strftime("%Y-%m-%d")
