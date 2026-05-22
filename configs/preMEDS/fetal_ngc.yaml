@@ -168,10 +168,7 @@ register_concepts:
   #   code_prefix: "RC/"
 
   SDS_t_adm:
-    filename: t_adm.csv
-    file_info:
-      sep: ","
-      encoding: "latin1"
+    filename: t_adm.csv               
     rename_columns:
       V_CPR: subject_id
       D_INDDTO: date_start

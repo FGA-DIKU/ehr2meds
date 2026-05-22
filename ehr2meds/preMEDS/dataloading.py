@@ -81,38 +81,19 @@ class DataLoader(ABC):
             chunks_read += 1
             yield df
 
-    @staticmethod
-    def _select_chunk_columns(
-        chunk: pd.DataFrame, cols: Optional[List[str]], file_path: str
-    ) -> pd.DataFrame:
-        if not cols:
-            return chunk
-        missing = set(cols) - set(chunk.columns)
-        if missing:
-            raise ValueError(
-                f"Missing columns in {file_path}: {sorted(missing)}\n"
-                f"Available: {sorted(chunk.columns)}"
-            )
-        return chunk[cols]
-
     def _load_csv_chunks(
         self, file_path: str, cols: Optional[List[str]] = None, **kwargs
     ) -> Iterator[pd.DataFrame]:
-        """Load CSV in chunks.
-
-        Columns are selected by name after each chunk is read. Do not pass
-        usecols into read_csv while chunking: the C parser can raise IndexError
-        when some rows have extra/missing commas (ragged lines). Bad lines are
-        skipped via the python engine (override with file_info in config).
-        """
-        read_kwargs = dict(kwargs)
-        read_kwargs.setdefault("engine", "python")
-        read_kwargs.setdefault("on_bad_lines", "warn")
-
+        """Load CSV in chunks, using pandas read_csv."""
+        # Do not pass usecols while chunking: pandas C parser can raise
+        # IndexError in _concatenate_chunks (column index vs header names).
+        # Same columns are selected by name after each chunk instead.
         chunk_iter = pd.read_csv(
-            file_path, chunksize=self.chunksize, **read_kwargs
+            file_path, chunksize=self.chunksize, **kwargs
         )
         for i, chunk in enumerate(chunk_iter):
             if self.test and i >= N_TEST_CHUNKS:
                 break
-            yield self._select_chunk_columns(chunk, cols, file_path)
+            if cols:
+                chunk = chunk[cols]
+            yield chunk
