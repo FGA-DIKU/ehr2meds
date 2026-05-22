@@ -84,6 +84,9 @@ class PREMEDSExtractor:
             self.cfg.patients_info,
             subject_id_mapping=None,
             data_handler=self.data_handler,
+            register_sp_link=None,
+            join_link_col=None,
+            target_link_col=None,
             time_stamp_dict=self.time_stamp_dict,
             is_patients_info_table=True,
         )
