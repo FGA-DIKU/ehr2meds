@@ -57,6 +57,7 @@ class RegisterConceptProcessor:
         subject_id_mapping: Dict[str, int],
         data_handler: "DataHandler",
         time_stamp_dict: Optional[dict] = None,
+        is_patients_info_table: bool = False
     ) -> pd.DataFrame:
         """Process the register concepts.
         1. Replace values

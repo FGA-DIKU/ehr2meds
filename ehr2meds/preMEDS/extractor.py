@@ -6,10 +6,7 @@ from ehr2meds.preMEDS.concept_processors import (
 )
 from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
-from ehr2meds.preMEDS.utils import (
-    factorize_subject_id,
-    select_and_rename_columns,
-)
+from ehr2meds.preMEDS.utils import factorize_subject_id
 from tqdm import tqdm
 from typing import Dict, Optional
 
@@ -75,17 +72,24 @@ class PREMEDSExtractor:
             Dict[str, int]: Mapping from original patient IDs to integer IDs
         """
         logger.info("Load patients info")
+
         df = self.data_handler.load_pandas(
             self.cfg.patients_info.filename,
             cols=list(self.cfg.patients_info.get("rename_columns", {}).keys()),
             **self.cfg.patients_info.get("file_info", {}),
         )
-        # Use columns_map to subset and rename the columns.
-        df = select_and_rename_columns(df, self.cfg.patients_info.get("rename_columns", {}))
-        logger.info(f"Number of patients after selecting columns: {len(df)}")
+
+        df = self.register_concept_processor.process(
+            df,
+            self.cfg.patients_info,
+            subject_id_mapping=None,
+            data_handler=self.data_handler,
+            time_stamp_dict=self.time_stamp_dict,
+            is_patients_info_table=True,
+        )
 
         df, hash_to_int_map = factorize_subject_id(df)
-        # Save the mapping for reference.
+
         with open(f"{self.cfg.paths.output}/hash_to_integer_map.pkl", "wb") as f:
             pickle.dump(hash_to_int_map, f)
 
