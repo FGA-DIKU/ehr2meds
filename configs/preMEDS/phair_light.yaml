@@ -70,17 +70,35 @@ register_concepts:
       c_diagtype: diagnosis_type
       c_tildiag: diagnosis_additional
     code_prefix: "RD/"
-    mappings: 
-    - source_column: record_number
+    mappings:
+    - source_column: record_number # cpr
       via_file: t_adm.parquet
       join_on: k_recnum
       target_column: v_cpr
       rename_to: subject_id
-    - source_column: record_number
+    - source_column: record_number # date
       via_file: t_adm.parquet
       join_on: k_recnum 
-      target_column: v_admdate
+      target_column: t_inddto
       rename_to: date_start
       drop_source: true
+    - source_column: record_number # hour
+      via_file: t_adm.parquet
+      join_on: k_recnum
+      target_column: v_indtime
+      rename_to: hour_start
+      drop_source: true
+    - source_column: record_number # minute
+      via_file: t_adm.parquet
+      join_on: k_recnum 
+      target_column: v_indminut
+      rename_to: minute_start
+      drop_source: true
+    combine_datetime_parts:
+      timestamp:
+        date_col: date_start
+        hour_col: hour_start
+        minute_col: minute_start
+        drop_original: true
     
 
