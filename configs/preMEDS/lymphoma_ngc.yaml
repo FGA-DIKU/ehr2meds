@@ -307,30 +307,13 @@ register_concepts:
       procedure_type:
         value: "P" 
 
-  # NOTE; OLD EKOKUR WITH MERGE ON CODES
   SDS_ekokur:
     filename: SDS_ekokur.parquet                  
     rename_columns:
       patientid: subject_id
-      vnr: vnr_code
+      atc: code
       eksd: timestamp
-    mappings:
-      - source_column: vnr_code
-        how: left
-        via_file: laegemiddeloplysninger.parquet   
-        join_on: vnr
-        target_column: pname
-        rename_to: code
-        drop_source: false
     code_prefix: "RM/"
-
-  # SDS_ekokur:
-  #   filename: SDS_ekokur.parquet                  
-  #   rename_columns:
-  #     patientid: subject_id
-  #     atc: code
-  #     eksd: timestamp
-  #   code_prefix: "RM/"
 
   SDS_procedurer_kirurgi:
     filename: SDS_procedurer_kirurgi.parquet      
