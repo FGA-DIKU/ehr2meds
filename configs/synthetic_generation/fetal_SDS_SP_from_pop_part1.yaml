@@ -7,10 +7,11 @@ paths:
   output: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population
 
 N: 1000
+N_population: 1500
 
 data: 
   Population:
-    N: 1500
+    N: ${N_population}
     columns:
       BABY_CPR:
         type: person_id

@@ -3,38 +3,70 @@ name: 'Pipeline test'
 on:
     workflow_dispatch:
     pull_request:
-
+      branches: [ "fix_tests" ]
+      
 permissions:
   contents: read
   pull-requests: read
 
+env:
+  BONSAI_CONFIG_PATH: "${{ github.workspace }}/configs"
+  BONSAI_MODELS: "${{ github.workspace }}/tests/models"
+  CKPT_PATH: "${{ github.workspace }}/tests/models/pretrain/run_id_000/version_0/best.ckpt"
+  HYDRA_FULL_ERROR: 1
+
 jobs:
-    tests:
+    pipeline_tests:
         runs-on: "ubuntu-latest"
         steps:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Setup dependencies.
-              run: |
-                python -m venv .venv
-                source .venv/bin/activate
-                pip install -r requirements.txt
-                pip install -e .  # Install package in development mode
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.12'
+                cache: 'pip' 
+                cache-dependency-path: 'pyproject.toml'
 
-            - name: Generate example data
+            - name: Install Dependencies
               run: |
-                source .venv/bin/activate
-                mkdir -p tests/example_data
-                python -m tests.generate_example_data.generate_example_data 1000 10 tests/example_data
+                pip install .[dev]
 
-            - name: Extract data
+            - name: create_data
               run: |
-                source .venv/bin/activate
-                python -m ehr2meds.PREMEDS.main_azure --config ehr2meds/PREMEDS/configs/MEDS_local.yaml
+                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1.yaml N=50 N_population=75
 
-            - name: Normalise data
-              run: |
-                source .venv/bin/activate
-                python -m ehr2meds.PREMEDS.main_normalise --config ehr2meds/PREMEDS/configs/normalise.yaml
+            #- name: create_outcome
+            #  run: |
+            #    python bonsai/run/create_outcome.py --config-name examples/example_outcome1 dataset=correlated_MEDS_data
+#
+            #- name: pretrain
+            #  run: |
+            #    python bonsai/run/pretrain.py --config-name examples/example_pretrain dataset=correlated_MEDS_data
+#
+            #- name: finetune 
+            #  run: |
+            #    python bonsai/run/finetune.py --config-name examples/example_finetune dataset=correlated_MEDS_data outcome=examples/example_outcome1 pretrain_path=$CKPT_PATH
+#
+            #- name: train (no pretrain path)
+            #  run: |
+            #    python bonsai/run/train.py --config-name examples/example_finetune dataset=correlated_MEDS_data outcome=examples/example_outcome1
+#
+#
+            #- name: Generate example data
+            #  run: |
+            #    source .venv/bin/activate
+            #    mkdir -p tests/example_data
+            #    python -m tests.generate_example_data.generate_example_data 1000 10 tests/example_data
+#
+            #- name: Extract data
+            #  run: |
+            #    source .venv/bin/activate
+            #    python -m ehr2meds.PREMEDS.main_azure --config ehr2meds/PREMEDS/configs/MEDS_local.yaml
+#
+            #- name: Normalise data
+            #  run: |
+            #    source .venv/bin/activate
+            #    python -m ehr2meds.PREMEDS.main_normalise --config ehr2meds/PREMEDS/configs/normalise.yaml
   

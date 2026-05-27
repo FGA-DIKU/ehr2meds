@@ -1,11 +1,11 @@
 # This workflow will install Python dependencies and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-name: Lint using flake8 
+name: Lint
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "fix_tests" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "fix_tests" ]
 permissions:
   contents: read
 jobs:
@@ -15,12 +15,12 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         cache: 'pip' # caching pip dependencies
     - name: Install dependencies
       run: |
-        pip install flake8>=6.1.0
-    - name: Lint with flake8
+        pip install ruff==0.15.1
+    - name: Lint with ruff
       run: |
         # Check syntax errors
-        flake8 ehr2meds/preMEDS tests --count --select=E9,F63,F7,F82,U100,E711,E712,E713,E714,E721,F401,F402,F405,F811,F821,F822,F823,F831,F841,F901, --show-source --statistics
+        ruff check bonsai tests
