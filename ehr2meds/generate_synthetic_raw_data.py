@@ -18,9 +18,7 @@ def handle_mix_function(call_args, generators_dict):
         if func_cfg["type"] in generators_dict:
             func_cfg["func"] = generators_dict[func_cfg["type"]]
         else:
-            raise ValueError(
-                f"Function {func_cfg['type']} not found in generators_dict"
-            )
+            raise ValueError(f"Function {func_cfg['type']} not found in generators_dict")
     return callable_args
 
 
@@ -32,9 +30,7 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
 
         col_args = col_cfg.get("args", {}).copy()
         if col_cfg["type"] == "mix_function":
-            col_args = handle_mix_function(
-                OmegaConf.to_container(col_args), generators_dict
-            )
+            col_args = handle_mix_function(OmegaConf.to_container(col_args), generators_dict)
 
         # Handle dependencies between columns using the "match" key
         if "match" in col_cfg:
@@ -46,13 +42,9 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
         if "corruptions" in col_cfg:
             for corruption in col_cfg["corruptions"]:
                 if corruption["type"] not in corruptors_dict:
-                    raise ValueError(
-                        f"Unknown corruption function type: {corruption['type']}"
-                    )
+                    raise ValueError(f"Unknown corruption function type: {corruption['type']}")
                 corruption_fn = corruptors_dict[corruption["type"]]
-                value = corruption_fn(
-                    value, row_index=row_index, **corruption.get("args", {})
-                )
+                value = corruption_fn(value, row_index=row_index, **corruption.get("args", {}))
 
         row[column_name] = value
     return row
@@ -69,10 +61,9 @@ def generate_corruptions(info, row, row_index, corruptors_dict):
 
 
 def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
-    for _, col_info in table_cfg["linked_columns"].items():
+    for col_name, col_info in table_cfg["linked_columns"].items():
         linked_file = col_info["file"]
         linked_on = col_info["linked_on"]
-        rename_to = col_info.get("rename_to")
         linked_type = col_info["type"]
 
         # Load the linked DataFrame from CSV file
@@ -83,39 +74,30 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
             )
         linked_df = pd.read_csv(linked_file_path)
 
-        # Check the linked columns exist in linked file
-        missing_linked_cols = [col for col in linked_on if col not in linked_df.columns]
-        if missing_linked_cols:
+        if linked_on not in linked_df.columns:
             raise ValueError(
-                f"Linked columns {missing_linked_cols} not found in linked file '{linked_file}'. "
+                f"Linked columns {linked_on} not found in linked file '{linked_file}'. "
                 f"Available columns: {list(linked_df.columns)}"
             )
 
         # Get columns
         linked_cols = linked_df[linked_on]
-
         if linked_type == "choice":
             selected_idx = random.randint(0, len(linked_cols) - 1)
             selected_row = linked_cols.iloc[[selected_idx]].copy()
         elif linked_type == "choice_unique":
             if unused_idxs is None:
-                unused_idxs = (
-                    linked_df.index.tolist()
-                )  # Initialize with all indices of the linked DataFrame
-                random.shuffle(
-                    unused_idxs
-                )  # Shuffle indices to ensure random selection
+                unused_idxs = linked_df.index.tolist()  # Initialize with all indices of the linked DataFrame
+                random.shuffle(unused_idxs)  # Shuffle indices to ensure random selection
             selected_idx = unused_idxs.pop()
             selected_row = linked_cols.loc[[selected_idx]].copy()
         else:
             raise ValueError(f"Unknown linked type: {linked_type}")
-        # Insert column to row
-        if rename_to:
-            selected_row = selected_row.rename(
-                columns=dict(zip(linked_on, rename_to, strict=True))
-            )
 
-        row.update(selected_row.iloc[0])
+        # Insert column to row
+        # selected_row = selected_row.rename(columns={linked_on: col_name})
+
+        row.update({col_name: selected_row.item()})
 
     return row, unused_idxs
 
@@ -152,9 +134,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
         for i in range(table_cfg["N"]):
             row = {}
             row = generate_rows(table_cfg, row, i, generators_dict, corruptors_dict)
-            row, unused_idxs = generate_linked_columns(
-                table_cfg, row, output_dir, unused_idxs=unused_idxs
-            )
+            row, unused_idxs = generate_linked_columns(table_cfg, row, output_dir, unused_idxs=unused_idxs)
             row = generate_corruptions(table_cfg, row, i, corruptors_dict)
             rows.append(row)
 
@@ -172,16 +152,8 @@ def main(cfg: DictConfig) -> None:
     output_dir = Path(cfg.paths.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    generators_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(generators)
-        if inspect.isfunction(obj)
-    }
-    corruptors_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(corruptors)
-        if inspect.isfunction(obj)
-    }
+    generators_dict = {name: obj for name, obj in inspect.getmembers(generators) if inspect.isfunction(obj)}
+    corruptors_dict = {name: obj for name, obj in inspect.getmembers(corruptors) if inspect.isfunction(obj)}
 
     generate_tables(cfg, output_dir, generators_dict, corruptors_dict)
 

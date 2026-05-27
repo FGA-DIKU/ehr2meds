@@ -47,10 +47,10 @@ linked_data:
   Barn - Fødselsinfo:
     N: ${N}
     linked_columns:
-      CPR:
+      BABY_CPR:
         type: choice
         file: population
-        linked_on: [BABY_CPR]
+        linked_on: BABY_CPR
     columns:
       Gestationsalder:
         type: gestationsalder_with_fraction
@@ -128,18 +128,15 @@ linked_data:
       CPR_BARN:
         type: choice_unique
         file: population
-        linked_on: [BABY_CPR]
-        rename_to: [CPR_BARN]
+        linked_on: BABY_CPR
       CPR_MODER:
         type: choice
         file: population
-        linked_on: [MOR_CPR]
-        rename_to: [CPR_MODER]
+        linked_on: MOR_CPR
       FOEDSELSLOEBENUMMER:
         type: choice
         file: population
-        linked_on: [BABY_CPR]
-        rename_to: [FOEDSELSLOEBENUMMER]
+        linked_on: BABY_CPR
 
   nyfoedte:
   #MFR3
@@ -244,15 +241,12 @@ linked_data:
       CPRnummer_Barn:
         type: choice_unique
         file: population
-        linked_on: [BABY_CPR]
-        rename_to: [CPRnummer_Barn]
+        linked_on: BABY_CPR
       CPRnummer_Mor:
         type: choice
         file: population
-        linked_on: [MOR_CPR]
-        rename_to: [CPRnummer_Mor]
+        linked_on: MOR_CPR
       DW_EK_Foedsel:
         type: choice
         file: population
-        linked_on: [BABY_Fødsel_ID]
-        rename_to: [DW_EK_Foedsel]
+        linked_on: BABY_Fødsel_ID

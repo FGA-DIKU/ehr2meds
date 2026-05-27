@@ -30,7 +30,7 @@ linked_data:
       CPR:
         type: choice
         file: patient_info
-        linked_on: [CPR]
+        linked_on: CPR
   
   diagnosis:
     N: ${N}
@@ -45,7 +45,7 @@ linked_data:
       CPR:
         type: choice
         file: patient_info
-        linked_on: [CPR]
+        linked_on: CPR
     save_info:
       file_type: csv
       args:
@@ -93,7 +93,7 @@ linked_data:
       CPR:
         type: choice
         file: patient_info
-        linked_on: [CPR]
+        linked_on: CPR
     save_info:
       file_type: asc
       args:
@@ -118,7 +118,7 @@ linked_data:
       MOR_CPR:
         type: choice
         file: population
-        linked_on: [MOR_CPR]
+        linked_on: MOR_CPR
 
   Mor - CPMI - Procedurer:
     N: ${N}
@@ -137,7 +137,7 @@ linked_data:
       MOR_CPR:
         type: choice
         file: population
-        linked_on: [MOR_CPR]
+        linked_on: MOR_CPR
 
   Mor - Fødselsresume - DEL 1:
     N: ${N}
@@ -162,11 +162,11 @@ linked_data:
       MOR_CPR:
         type: choice
         file: population
-        linked_on: [MOR_CPR]
+        linked_on: MOR_CPR
       BABY_Fødsel_ID:
         type: choice
         file: population
-        linked_on: [BABY_Fødsel_ID]
+        linked_on: BABY_Fødsel_ID
 
   Mor - Obstetrisk Historik DEL 1:
     N: ${N}
@@ -197,7 +197,7 @@ linked_data:
       MOR_CPR:
         type: choice
         file: Mor - CPMI - Patientinfo
-        linked_on: [MOR_CPR]
+        linked_on: MOR_CPR
 
   Mor - Obstetrisk Historik DEL 2:
     N: ${N}
@@ -216,7 +216,7 @@ linked_data:
       MOR_CPR:
         type: choice
         file: Mor - CPMI - Patientinfo
-        linked_on: [MOR_CPR]
+        linked_on: MOR_CPR
   
   Mor - Patientinfo tillæg til CPMI:
     N: ${N}
@@ -246,7 +246,7 @@ linked_data:
       MOR_CPR:
         type: choice
         file: Mor - CPMI - Patientinfo
-        linked_on: [MOR_CPR]
+        linked_on: MOR_CPR
 
   Mor - Yderligere variable vurderingsskema:
     N: ${N}
@@ -275,7 +275,7 @@ linked_data:
       MOR_CPR:
         type: choice
         file: Mor - CPMI - Patientinfo
-        linked_on: [MOR_CPR]
+        linked_on: MOR_CPR
 
   notes:
     N: ${N}
@@ -308,7 +308,7 @@ linked_data:
       CPR:
         type: choice
         file: patient_info
-        linked_on: [CPR]
+        linked_on: CPR
 
   procedure:
     N: ${N}
@@ -323,19 +323,25 @@ linked_data:
       CPR:
         type: choice
         file: patient_info
-        linked_on: [CPR]
+        linked_on: CPR
 
   t_adm:
     N: ${N}
+    columns:
+      V_ALDER:
+        type: rand_int
+        args:
+          min_val: 18
+          max_val: 60
     linked_columns:
       K_RECNUM:
         type: choice
         file: Population
-        linked_on: [MOR_Fødsel_ID] # Not correct, just to take some ID
+        linked_on: MOR_Fødsel_ID # Not correct, just to take some ID
       V_CPR:
         type: choice
         file: Population
-        linked_on: [MOR_CPR] 
+        linked_on: MOR_CPR 
 
   t_sksopr:
     N: ${N}
@@ -354,5 +360,5 @@ linked_data:
       V_RECNUM:
         type: choice
         file: Population
-        linked_on: [MOR_Fødsel_ID]
+        linked_on: MOR_Fødsel_ID
 
