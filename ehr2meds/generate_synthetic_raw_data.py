@@ -61,10 +61,9 @@ def generate_corruptions(info, row, row_index, corruptors_dict):
 
 
 def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
-    for _, col_info in table_cfg["linked_columns"].items():
+    for col_name, col_info in table_cfg["linked_columns"].items():
         linked_file = col_info["file"]
         linked_on = col_info["linked_on"]
-        rename_to = col_info.get("rename_to")
         linked_type = col_info["type"]
 
         # Load the linked DataFrame from CSV file
@@ -75,17 +74,14 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
             )
         linked_df = pd.read_csv(linked_file_path)
 
-        # Check the linked columns exist in linked file
-        missing_linked_cols = [col for col in linked_on if col not in linked_df.columns]
-        if missing_linked_cols:
+        if linked_on not in linked_df.columns:
             raise ValueError(
-                f"Linked columns {missing_linked_cols} not found in linked file '{linked_file}'. "
+                f"Linked columns {linked_on} not found in linked file '{linked_file}'. "
                 f"Available columns: {list(linked_df.columns)}"
             )
 
         # Get columns
         linked_cols = linked_df[linked_on]
-
         if linked_type == "choice":
             selected_idx = random.randint(0, len(linked_cols) - 1)
             selected_row = linked_cols.iloc[[selected_idx]].copy()
@@ -97,11 +93,8 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
             selected_row = linked_cols.loc[[selected_idx]].copy()
         else:
             raise ValueError(f"Unknown linked type: {linked_type}")
-        # Insert column to row
-        if rename_to:
-            selected_row = selected_row.rename(columns=dict(zip(linked_on, rename_to, strict=True)))
 
-        row.update(selected_row.iloc[0])
+        row.update({col_name: selected_row.item()})
 
     return row, unused_idxs
 

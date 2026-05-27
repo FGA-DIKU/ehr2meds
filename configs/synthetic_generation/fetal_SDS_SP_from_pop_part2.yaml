@@ -297,7 +297,7 @@ linked_data: # Data that needs to be linked to the data above
       CPR:
         type: choice
         file: population
-        linked_on: [BABY_CPR]
+        linked_on: BABY_CPR
     columns:
       BIRTHDATE:
         type: rand_datetime
@@ -316,7 +316,7 @@ linked_data: # Data that needs to be linked to the data above
       CPR:
         type: choice
         file: population
-        linked_on: [BABY_CPR]
+        linked_on: BABY_CPR
     columns:
       BIRTHDATE:
         type: rand_datetime
@@ -352,13 +352,12 @@ linked_data: # Data that needs to be linked to the data above
         type: choice
         args:
           options: ["A", "B", "+"]
-
     linked_columns:
-      contact_id: 
+      contact_id_new: 
         type: choice
         file: kontakter
-        linked_on: [contact_id]
-        rename_to: [contact_id_new]
+        linked_on: contact_id
+        
     
   procedurer_kirurgi:
   #LPR3
@@ -373,11 +372,11 @@ linked_data: # Data that needs to be linked to the data above
         args:
           options: ["P", "+"]
     linked_columns:
-      contact_id: 
+      contact_id_new: 
         type: choice
         file: kontakter
-        linked_on: [contact_id]
-        rename_to: [contact_id_new]
+        linked_on: contact_id
+        
 
   LPR2_procedures:
     N: ${N}
@@ -389,11 +388,11 @@ linked_data: # Data that needs to be linked to the data above
       D_ODTO:
         type: rand_date
     linked_columns:
-      key_id: 
+      V_RECNUM: 
         type: choice
         file: LPR2_ADM
-        linked_on: [K_RECNUM]
-        rename_to: [V_RECNUM]
+        linked_on: K_RECNUM
+        
   
   LPR2_diagnosis:
     N: ${N}
@@ -407,11 +406,11 @@ linked_data: # Data that needs to be linked to the data above
         args:
           options: ["A", "B", "+"]
     linked_columns:
-      key_id: 
+      V_RECNUM: 
         type: choice
         file: LPR2_ADM
-        linked_on: [K_RECNUM]
-        rename_to: [V_RECNUM]
+        linked_on: K_RECNUM
+        
   
   LPR2_hosp_admissions:
     N: ${N}
@@ -419,11 +418,10 @@ linked_data: # Data that needs to be linked to the data above
       D_AMBDTO:
         type: rand_datetime
     linked_columns:
-      key_id: 
+      V_RECNUM: 
         type: choice
         file: LPR2_ADM
-        linked_on: [K_RECNUM]
-        rename_to: [V_RECNUM]
+        linked_on: K_RECNUM
   
   infektioner:
   #MFR2
@@ -438,11 +436,11 @@ linked_data: # Data that needs to be linked to the data above
         args:
           options: ["A", "B", "+"]
     linked_columns:
-      PK_MFR:
+      FK_MFR:
         type: choice
         file: mfr
-        linked_on: [PK_MFR]
-        rename_to: [FK_MFR]
+        linked_on: PK_MFR
+        
 
   graviditetskomplikationer:
     N: ${N}
@@ -463,11 +461,10 @@ linked_data: # Data that needs to be linked to the data above
         args:
           options: ["A", "B", "+"]
     linked_columns:
-      PK_MFR:
+      FK_MFR:
         type: choice
         file: mfr
-        linked_on: [PK_MFR]
-        rename_to: [FK_MFR]
+        linked_on: PK_MFR
 
   blodmaengde:
   #MFR2
@@ -492,11 +489,11 @@ linked_data: # Data that needs to be linked to the data above
               new_value: "."
               probability: 0.8
     linked_columns:
-      PK_MFR:
+      FK_MFR:
         type: choice
         file: mfr
-        linked_on: [PK_MFR]
-        rename_to: [FK_MFR]
+        linked_on: PK_MFR
+
 
   barn_kontakter:
   #MFR3 
@@ -529,7 +526,7 @@ linked_data: # Data that needs to be linked to the data above
       DW_EK_Nyfoedt:
         type: choice_unique
         file: nyfoedte
-        linked_on: [DW_EK_Nyfoedt]
+        linked_on: DW_EK_Nyfoedt
 
   mor_diagnoser:
   #MFR3 
@@ -554,7 +551,7 @@ linked_data: # Data that needs to be linked to the data above
       DW_EK_Foedsel:
         type: choice_unique
         file: nyfoedte
-        linked_on: [DW_EK_Foedsel]
+        linked_on: DW_EK_Foedsel
 
   mor_procedurer:
   #MFR3 
@@ -577,7 +574,7 @@ linked_data: # Data that needs to be linked to the data above
       DW_EK_Foedsel:
         type: choice_unique
         file: nyfoedte
-        linked_on: [DW_EK_Foedsel]
+        linked_on: DW_EK_Foedsel
 
   patient_info:
     N: ${N}
@@ -585,9 +582,7 @@ linked_data: # Data that needs to be linked to the data above
       CPR:
         type: choice
         file: population
-        linked_on: [BABY_CPR]
-        rename_to: [CPR]
-
+        linked_on: BABY_CPR
     columns:
       Birthdate:
         type: rand_date
@@ -611,10 +606,10 @@ linked_data: # Data that needs to be linked to the data above
   Mor - CPMI - Patientinfo:
     N: ${N}
     linked_columns:
-      CPR:
+      MOR_CPR:
         type: choice
         file: population
-        linked_on: [MOR_CPR]
+        linked_on: MOR_CPR
     columns:
       Fødselsdato:
         type: rand_datetime
