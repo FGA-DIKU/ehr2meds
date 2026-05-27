@@ -18,9 +18,7 @@ def handle_mix_function(call_args, generators_dict):
         if func_cfg["type"] in generators_dict:
             func_cfg["func"] = generators_dict[func_cfg["type"]]
         else:
-            raise ValueError(
-                f"Function {func_cfg['type']} not found in generators_dict"
-            )
+            raise ValueError(f"Function {func_cfg['type']} not found in generators_dict")
     return callable_args
 
 
@@ -32,9 +30,7 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
 
         col_args = col_cfg.get("args", {}).copy()
         if col_cfg["type"] == "mix_function":
-            col_args = handle_mix_function(
-                OmegaConf.to_container(col_args), generators_dict
-            )
+            col_args = handle_mix_function(OmegaConf.to_container(col_args), generators_dict)
 
         # Handle dependencies between columns using the "match" key
         if "match" in col_cfg:
@@ -46,13 +42,9 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
         if "corruptions" in col_cfg:
             for corruption in col_cfg["corruptions"]:
                 if corruption["type"] not in corruptors_dict:
-                    raise ValueError(
-                        f"Unknown corruption function type: {corruption['type']}"
-                    )
+                    raise ValueError(f"Unknown corruption function type: {corruption['type']}")
                 corruption_fn = corruptors_dict[corruption["type"]]
-                value = corruption_fn(
-                    value, row_index=row_index, **corruption.get("args", {})
-                )
+                value = corruption_fn(value, row_index=row_index, **corruption.get("args", {}))
 
         row[column_name] = value
     return row
@@ -99,21 +91,15 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
             selected_row = linked_cols.iloc[[selected_idx]].copy()
         elif linked_type == "choice_unique":
             if unused_idxs is None:
-                unused_idxs = (
-                    linked_df.index.tolist()
-                )  # Initialize with all indices of the linked DataFrame
-                random.shuffle(
-                    unused_idxs
-                )  # Shuffle indices to ensure random selection
+                unused_idxs = linked_df.index.tolist()  # Initialize with all indices of the linked DataFrame
+                random.shuffle(unused_idxs)  # Shuffle indices to ensure random selection
             selected_idx = unused_idxs.pop()
             selected_row = linked_cols.loc[[selected_idx]].copy()
         else:
             raise ValueError(f"Unknown linked type: {linked_type}")
         # Insert column to row
         if rename_to:
-            selected_row = selected_row.rename(
-                columns=dict(zip(linked_on, rename_to, strict=True))
-            )
+            selected_row = selected_row.rename(columns=dict(zip(linked_on, rename_to, strict=True)))
 
         row.update(selected_row.iloc[0])
 
@@ -152,9 +138,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
         for i in range(table_cfg["N"]):
             row = {}
             row = generate_rows(table_cfg, row, i, generators_dict, corruptors_dict)
-            row, unused_idxs = generate_linked_columns(
-                table_cfg, row, output_dir, unused_idxs=unused_idxs
-            )
+            row, unused_idxs = generate_linked_columns(table_cfg, row, output_dir, unused_idxs=unused_idxs)
             row = generate_corruptions(table_cfg, row, i, corruptors_dict)
             rows.append(row)
 
@@ -172,16 +156,8 @@ def main(cfg: DictConfig) -> None:
     output_dir = Path(cfg.paths.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    generators_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(generators)
-        if inspect.isfunction(obj)
-    }
-    corruptors_dict = {
-        name: obj
-        for name, obj in inspect.getmembers(corruptors)
-        if inspect.isfunction(obj)
-    }
+    generators_dict = {name: obj for name, obj in inspect.getmembers(generators) if inspect.isfunction(obj)}
+    corruptors_dict = {name: obj for name, obj in inspect.getmembers(corruptors) if inspect.isfunction(obj)}
 
     generate_tables(cfg, output_dir, generators_dict, corruptors_dict)
 
