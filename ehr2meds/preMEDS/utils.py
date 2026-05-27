@@ -164,13 +164,13 @@ def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFr
 def map_pids_to_ints(
     df: pd.DataFrame, subject_id_mapping: Dict[str, int]
 ) -> pd.DataFrame:
-    """Map PIDs to integers."""
-    # Convert to object dtype to allow integer assignment after mapping
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(str)
-    # Map to integers and convert to int
-    df.loc[:, SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
-    df = df.dropna(subset=[SUBJECT_ID])
-    df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+    """Map string patient IDs to integers; keep only IDs that are in the mapping."""
+    df[SUBJECT_ID] = df[SUBJECT_ID].astype(object).astype(str)
+    df = df[df[SUBJECT_ID].isin(subject_id_mapping)].copy()
+    mapped = df[SUBJECT_ID].map(subject_id_mapping)
+    mask = mapped.notna()
+    df = df.loc[mask].copy()
+    df[SUBJECT_ID] = pd.Series(mapped.loc[mask].astype(int).values, dtype="int64", index=df.index)
     return df
 
 
@@ -307,4 +307,10 @@ def melt_table(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
 
     for step_cfg in expand_map:
         df = apply_melt_step(df, step_cfg)
+    return df
+
+def prefix_codes(df: pd.DataFrame, code_prefix: str = None) -> pd.DataFrame:
+    """Add a prefix to the entries in the code column."""
+    if code_prefix and CODE in df.columns:
+        df[CODE] = code_prefix + df[CODE].astype(str)
     return df

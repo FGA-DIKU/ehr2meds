@@ -1,5 +1,4 @@
 import pandas as pd
-from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (
     apply_mapping,
@@ -13,6 +12,7 @@ from ehr2meds.preMEDS.utils import (
     unroll_columns,
     normalize_columns,
     apply_value_map,
+    prefix_codes,
     replace_values,
     pad_values,
 )
@@ -41,6 +41,7 @@ class SPConceptProcessor:
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
 
+        df = prefix_codes(df, concept_config.get("code_prefix", None))
         df = convert_numeric_columns(df, concept_config)
         df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
@@ -55,9 +56,6 @@ class RegisterConceptProcessor:
         concept_config: dict,
         subject_id_mapping: Dict[str, int],
         data_handler: "DataHandler",
-        register_sp_link: pd.DataFrame,
-        join_link_col: str,
-        target_link_col: str,
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the register concepts.
@@ -71,9 +69,8 @@ class RegisterConceptProcessor:
         8. combine datetime columns
         9. unroll columns (process codes)
         10. convert numeric columns
-        11. apply pid linking
-        12. apply pid integer mapping
-        13. clean data
+        11. apply pid integer mapping
+        12. clean data
         """
         df = replace_values(df, concept_config)
         df = normalize_columns(df, concept_config)
@@ -84,6 +81,7 @@ class RegisterConceptProcessor:
         df = fill_missing_values(df, concept_config.get("fillna", {}))
         df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
         df = RegisterConceptProcessor._combine_datetime_from_parts(df, concept_config)
+        df = prefix_codes(df, concept_config.get("code_prefix", None))
 
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
@@ -92,41 +90,11 @@ class RegisterConceptProcessor:
 
         df = convert_numeric_columns(df, concept_config)
 
-        df = RegisterConceptProcessor._apply_sp_pid_link(
-            df, register_sp_link, join_link_col, target_link_col
-        )
-
         df = map_pids_to_ints(df, subject_id_mapping)
 
         df = clean_data(df)
 
         return df
-
-    def _apply_sp_pid_link(
-        df: pd.DataFrame,
-        register_sp_link: pd.DataFrame,
-        join_link_col: str,
-        target_link_col: str,
-    ) -> pd.DataFrame:
-        """
-        Apply SP PID link.
-        We can expect the subject_id is present in df at the end of processing.
-        The column names in the link file will be provided via config.
-        There will be a join column and a target column and we can essentially reuse our apply_mapping function,
-        just accessing args differently.
-        """
-        if SUBJECT_ID not in df.columns:
-            raise ValueError(f"SUBJECT_ID column not found in df: {df.columns}")
-        return apply_mapping(
-            df,
-            register_sp_link,
-            join_col=join_link_col,
-            source_col=SUBJECT_ID,
-            target_col=target_link_col,
-            how="inner",
-            rename_to=SUBJECT_ID,
-            drop_source=True,
-        )
 
     @staticmethod
     def _get_mapping_table(data_handler, mapping):
