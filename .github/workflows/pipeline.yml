@@ -43,36 +43,10 @@ jobs:
               run: |
                 python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP_synth
 
-            #- name: create_outcome
-            #  run: |
-            #    python bonsai/run/create_outcome.py --config-name examples/example_outcome1 dataset=correlated_MEDS_data
-#
-            #- name: pretrain
-            #  run: |
-            #    python bonsai/run/pretrain.py --config-name examples/example_pretrain dataset=correlated_MEDS_data
-#
-            #- name: finetune 
-            #  run: |
-            #    python bonsai/run/finetune.py --config-name examples/example_finetune dataset=correlated_MEDS_data outcome=examples/example_outcome1 pretrain_path=$CKPT_PATH
-#
-            #- name: train (no pretrain path)
-            #  run: |
-            #    python bonsai/run/train.py --config-name examples/example_finetune dataset=correlated_MEDS_data outcome=examples/example_outcome1
-#
-#
-            #- name: Generate example data
-            #  run: |
-            #    source .venv/bin/activate
-            #    mkdir -p tests/example_data
-            #    python -m tests.generate_example_data.generate_example_data 1000 10 tests/example_data
-#
-            #- name: Extract data
-            #  run: |
-            #    source .venv/bin/activate
-            #    python -m ehr2meds.PREMEDS.main_azure --config ehr2meds/PREMEDS/configs/MEDS_local.yaml
-#
-            #- name: Normalise data
-            #  run: |
-            #    source .venv/bin/activate
-            #    python -m ehr2meds.PREMEDS.main_normalise --config ehr2meds/PREMEDS/configs/normalise.yaml
-  
+            - name: Convert preMEDS to MEDS
+              run: |
+                bash ehr2meds/convert_premeds_to_meds.sh \
+                      ${EHR2MEDS_DATA}/preMEDS/fetal_data/SP \
+                      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
+                      ${EHR2MEDS_CONFIGS}/MEDS/default_event.yaml \
+                      ${EHR2MEDS_DATA}/MEDS/SP
