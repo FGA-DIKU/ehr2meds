@@ -50,7 +50,7 @@ linked_data:
     linked_columns:
       BABY_CPR:
         type: choice
-        file: population
+        file: Population
         linked_on: BABY_CPR
     columns:
       Gestationsalder:
@@ -128,15 +128,15 @@ linked_data:
     linked_columns:
       CPR_BARN:
         type: choice_unique
-        file: population
+        file: Population
         linked_on: BABY_CPR
       CPR_MODER:
         type: choice
-        file: population
+        file: Population
         linked_on: MOR_CPR
       FOEDSELSLOEBENUMMER:
         type: choice
-        file: population
+        file: Population
         linked_on: BABY_CPR
 
   nyfoedte:
@@ -241,13 +241,13 @@ linked_data:
     linked_columns:
       CPRnummer_Barn:
         type: choice_unique
-        file: population
+        file: Population
         linked_on: BABY_CPR
       CPRnummer_Mor:
         type: choice
-        file: population
+        file: Population
         linked_on: MOR_CPR
       DW_EK_Foedsel:
         type: choice
-        file: population
+        file: Population
         linked_on: BABY_Fødsel_ID

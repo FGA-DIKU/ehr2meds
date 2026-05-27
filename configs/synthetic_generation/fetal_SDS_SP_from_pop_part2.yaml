@@ -296,7 +296,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       CPR:
         type: choice
-        file: population
+        file: Population
         linked_on: BABY_CPR
     columns:
       BIRTHDATE:
@@ -315,7 +315,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       CPR:
         type: choice
-        file: population
+        file: Population
         linked_on: BABY_CPR
     columns:
       BIRTHDATE:
@@ -581,7 +581,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       CPR:
         type: choice
-        file: population
+        file: Population
         linked_on: BABY_CPR
     columns:
       Birthdate:
@@ -608,7 +608,7 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       MOR_CPR:
         type: choice
-        file: population
+        file: Population
         linked_on: MOR_CPR
     columns:
       Fødselsdato:

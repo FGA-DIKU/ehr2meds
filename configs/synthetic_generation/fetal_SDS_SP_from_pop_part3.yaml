@@ -117,7 +117,7 @@ linked_data:
     linked_columns:
       MOR_CPR:
         type: choice
-        file: population
+        file: Population
         linked_on: MOR_CPR
 
   Mor - CPMI - Procedurer:
@@ -136,7 +136,7 @@ linked_data:
     linked_columns:
       MOR_CPR:
         type: choice
-        file: population
+        file: Population
         linked_on: MOR_CPR
 
   Mor - Fødselsresume - DEL 1:
@@ -161,11 +161,11 @@ linked_data:
     linked_columns:
       MOR_CPR:
         type: choice
-        file: population
+        file: Population
         linked_on: MOR_CPR
       BABY_Fødsel_ID:
         type: choice
-        file: population
+        file: Population
         linked_on: BABY_Fødsel_ID
 
   Mor - Obstetrisk Historik DEL 1:
