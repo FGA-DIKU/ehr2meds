@@ -31,3 +31,9 @@ def insert_nan(value, row_index, probability):
     if random.random() < probability:
         return np.nan
     return value
+
+
+def insert_missing(value, row_index, probability):
+    if random.random() < probability:
+        return None
+    return value

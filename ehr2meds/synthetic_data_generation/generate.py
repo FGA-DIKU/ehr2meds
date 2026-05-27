@@ -93,6 +93,17 @@ def greater_than_datetime(min_date, end=2020):
     return min_date + timedelta(seconds=random_seconds)
 
 
+# Specialized functions for SP
+def gestationsalder_with_fraction():
+    weeks = random.randint(0, 42)
+    days = random.randint(0, 7)
+    if days == 7:
+        GA = f"{weeks}"
+    else:
+        GA = f"{weeks} {days}/7"
+    return GA
+
+
 # Specialized functions for DST dataset
 def honuge(start_year, end_year):
     week = random.randint(1, 52)

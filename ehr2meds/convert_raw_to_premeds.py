@@ -22,7 +22,9 @@ def main(cfg: DictConfig) -> None:
     :param config_path: Full path to the config file
     """
     # Create output directory
-    pathlib.Path(cfg.paths.output).mkdir(parents=True, exist_ok=True)  # changed to output instead of output_dir
+    pathlib.Path(cfg.paths.output).mkdir(
+        parents=True, exist_ok=True
+    )  # changed to output instead of output_dir
 
     # Copy config to output directory
     OmegaConf.save(cfg, join(cfg.paths.output, "config.yaml"))

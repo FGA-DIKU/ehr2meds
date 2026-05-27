@@ -19,15 +19,45 @@ data:
             args:
               max_length: 10
               probability: 0.05
-      CPR_MOR:
+      MOR_CPR:
         type: person_id
         corruptions:
           - type: truncation
             args:
               max_length: 10
               probability: 0.05
-
+      BABY_Fødsel_ID:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      MOR_Fødsel_ID:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
+      Fødselstidspunkt:
+        type: rand_datetimeseconds
+        
 linked_data:
+  Barn - Fødselsinfo:
+    N: ${N}
+    linked_columns:
+      CPR:
+        type: choice
+        file: population
+        linked_on: [BABY_CPR]
+    columns:
+      Gestationsalder:
+        type: gestationsalder_with_fraction
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05        
   mfr:
   # MFR2_main
     N: ${N}
@@ -65,7 +95,6 @@ linked_data:
         type: choice
         args:
           options: [1, 2, 3, 4]
-
       FOEDSELSDATO:
         type: rand_date
       GESTATIONSALDER_DAGE:
@@ -99,16 +128,17 @@ linked_data:
       CPR_BARN:
         type: choice_unique
         file: population
-        linked_on: [CPR_BARN]
+        linked_on: [BABY_CPR]
+        rename_to: [CPR_BARN]
       CPR_MODER:
         type: choice
         file: population
-        linked_on: [CPR_MOR]
+        linked_on: [MOR_CPR]
         rename_to: [CPR_MODER]
       FOEDSELSLOEBENUMMER:
         type: choice
         file: population
-        linked_on: [CPR_BARN]
+        linked_on: [BABY_CPR]
         rename_to: [FOEDSELSLOEBENUMMER]
 
   nyfoedte:
@@ -214,15 +244,15 @@ linked_data:
       CPRnummer_Barn:
         type: choice_unique
         file: population
-        linked_on: [CPR_BARN]
+        linked_on: [BABY_CPR]
         rename_to: [CPRnummer_Barn]
       CPRnummer_Mor:
         type: choice
         file: population
-        linked_on: [CPR_MOR]
+        linked_on: [MOR_CPR]
         rename_to: [CPRnummer_Mor]
       DW_EK_Foedsel:
         type: choice
         file: population
-        linked_on: [CPR_BARN]
+        linked_on: [BABY_Fødsel_ID]
         rename_to: [DW_EK_Foedsel]
