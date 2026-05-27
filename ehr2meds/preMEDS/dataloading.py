@@ -85,11 +85,11 @@ class DataLoader(ABC):
         self, file_path: str, cols: Optional[List[str]] = None, **kwargs
     ) -> Iterator[pd.DataFrame]:
         """Load CSV in chunks, using pandas read_csv."""
-        chunk_iter = pd.read_csv(
-            file_path, chunksize=self.chunksize, usecols=cols, **kwargs
-        )
+        chunk_iter = pd.read_csv(file_path, chunksize=self.chunksize, **kwargs)
         for i, chunk in enumerate(chunk_iter):
             if self.test and i >= N_TEST_CHUNKS:
                 break
+            if cols: 
+                chunk = chunk[cols]
             yield chunk
         return  # Exit if reading was successful
