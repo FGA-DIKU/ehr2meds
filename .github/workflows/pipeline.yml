@@ -11,9 +11,8 @@ permissions:
   pull-requests: read
 
 env:
-  BONSAI_CONFIG_PATH: "${{ github.workspace }}/configs"
-  BONSAI_MODELS: "${{ github.workspace }}/tests/models"
-  CKPT_PATH: "${{ github.workspace }}/tests/models/pretrain/run_id_000/version_0/best.ckpt"
+  EHR2MEDS_CONFIGS: "${{ github.workspace }}/configs"
+  EHR2MEDS_DATA: "${{ github.workspace }}/data"
   HYDRA_FULL_ERROR: 1
 
 jobs:
@@ -37,7 +36,10 @@ jobs:
             - name: create_data
               run: |
                 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1.yaml N=50 N_population=75
+                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2.yaml N=50
+                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3.yaml N=50
 
+            
             #- name: create_outcome
             #  run: |
             #    python bonsai/run/create_outcome.py --config-name examples/example_outcome1 dataset=correlated_MEDS_data
