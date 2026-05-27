@@ -33,13 +33,16 @@ jobs:
               run: |
                 pip install .[dev]
 
-            - name: create_data
+            - name: Create synthetic data
               run: |
                 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1.yaml N=50 N_population=75
                 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2.yaml N=50
                 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3.yaml N=50
 
-            
+            - name: Convert synthetic data to preMEDS
+              run: |
+                python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP_synth
+
             #- name: create_outcome
             #  run: |
             #    python bonsai/run/create_outcome.py --config-name examples/example_outcome1 dataset=correlated_MEDS_data
