@@ -23,4 +23,4 @@ jobs:
     - name: Lint with ruff
       run: |
         # Check syntax errors
-        ruff check bonsai tests
+        ruff check ehr2meds tests

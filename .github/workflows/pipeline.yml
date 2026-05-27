@@ -1,9 +1,10 @@
 name: 'Pipeline test'
 
 on:
-    workflow_dispatch:
-    pull_request:
-      branches: [ "fix_tests" ]
+  push:
+    branches: [ "fix_tests" ]
+  pull_request:
+    branches: [ "fix_tests" ]
       
 permissions:
   contents: read
