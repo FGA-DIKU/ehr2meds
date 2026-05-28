@@ -52,6 +52,69 @@ linked_data:
         sep: "\t"
         encoding: "iso8859-1"
 
+  epikur_1:
+    N: ${N}
+    columns:
+      atc:
+        type: choice
+        args:
+          options: ["G03DA04", "A06AB02", "S01AA01", "B03AA07", "D01AE15"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      eksd:
+        type: rand_date
+        args:
+          start: 2010
+    linked_columns:
+      cpr:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  epikur_2:
+    N: ${N}
+    columns:
+      atc:
+        type: choice
+        args:
+          options: ["G03DA04", "A06AB02", "S01AA01", "B03AA07", "D01AE15"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      eksd:
+        type: rand_date
+        args:
+          start: 2010
+    linked_columns:
+      cpr:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  epikur_3:
+    N: ${N}
+    columns:
+      atc:
+        type: choice
+        args:
+          options: ["G03DA04", "A06AB02", "S01AA01", "B03AA07", "D01AE15"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      eksd:
+        type: rand_date
+        args:
+          start: 2010
+    linked_columns:
+      cpr:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
   labtest:
     N: ${N}
     columns:
@@ -333,6 +396,10 @@ linked_data:
         args:
           min_val: 18
           max_val: 60
+      D_UDDTO:
+        type: rand_datetime
+        args:
+          start: 2010
     linked_columns:
       K_RECNUM:
         type: choice
@@ -342,6 +409,44 @@ linked_data:
         type: choice
         file: Population
         linked_on: MOR_CPR 
+
+  t_afl:
+    N: ${N}
+    columns:
+      C_TILOPR:
+        type: choice
+        args:
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KLDD20", "KMAB03"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+      D_ODTO:
+        type: rand_datetime
+        args:
+          start: 2010
+    linked_columns:
+      V_RECNUM:
+        type: choice
+        file: Population
+        linked_on: MOR_Fødsel_ID 
+
+  t_diag:
+    N: ${N}
+    columns:
+      C_DIAG:
+        type: choice
+        args:
+          options: ["DZ016", "DZ090","DO343C"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      V_RECNUM:
+        type: choice
+        file: Population
+        linked_on: MOR_Fødsel_ID 
 
   t_sksopr:
     N: ${N}
@@ -362,3 +467,24 @@ linked_data:
         file: Population
         linked_on: MOR_Fødsel_ID
 
+  t_sksube:
+      N: ${N}
+      columns:
+        C_TILOPR:
+          type: choice
+          args:
+            options: ["BKHA1"]
+          corruptions:
+            - type: insert_missing
+              args:
+                probability: 0.25
+        D_ODTO:
+          type: rand_datetime
+          args:
+            start: 2010
+      linked_columns:
+        V_RECNUM:
+          type: choice
+          file: Population
+          linked_on: MOR_Fødsel_ID 
+  

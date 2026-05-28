@@ -541,8 +541,12 @@ linked_data: # Data that needs to be linked to the data above
                 prefix: "DD"
             - type: choice
               args:
-                options: ["DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341", "DO3414"]
+                options: ["BKHA1", "DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341", "DO3414"]
           probabilities: [0.7, 0.3]
+      StartDato_Kontakt:
+        type: rand_datetime
+        args:
+          start: 2016
       DiagnoseType:
         type: choice
         args:
