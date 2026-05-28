@@ -2,13 +2,17 @@ import logging
 import pickle
 from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
+<<<<<<< HEAD
 from ehr2meds.preMEDS.processors import Processor
 from ehr2meds.preMEDS.utils import (
     factorize_subject_id,
     select_and_rename_columns,
 )
+=======
+from ehr2meds.preMEDS.utils import select_and_rename_columns
+>>>>>>> dfd908f (Removed mandatory patients_info calls)
 from tqdm import tqdm
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -46,38 +50,30 @@ class PREMEDSExtractor:
         self.processor = Processor()
 
     def __call__(self):
-        subject_id_mapping = self.format_patients_info()
+        subject_id_mapping = self.get_subject_id_mapping()
         self.format_tables(subject_id_mapping)
 
-    def format_patients_info(self) -> Dict[str, int]:
-        """
-        Load and process patient information, creating a mapping of patient IDs.
-
-        Returns:
-            Dict[str, int]: Mapping from original patient IDs to integer IDs
-        """
-        logger.info("Load patients info")
+    def get_subject_id_mapping(self) -> Union[None, Dict[str, int]]:
+        if not self.cfg.get("subject_id_mapping"):
+            return None
+        # Load existing mapping if available
+        logger.info("Loading dataframe for subject ID mapping")
         df = self.data_handler.load_pandas(
-            self.cfg.patients_info.filename,
-            cols=list(self.cfg.patients_info.get("rename_columns", {}).keys()),
-            **self.cfg.patients_info.get("file_info", {}),
-        )
-        # Use columns_map to subset and rename the columns.
-        df = select_and_rename_columns(df, self.cfg.patients_info.get("rename_columns", {}))
-        logger.info(f"Number of patients after selecting columns: {len(df)}")
+            self.cfg.subject_id_mapping,
+            cols=[SUBJECT_ID],
+        ).dropna(subset=[SUBJECT_ID], how="any").drop_duplicates(subset=[SUBJECT_ID])
+        logger.info(f"Number of patients in dataframe: {len(df)}")
 
-        df, hash_to_int_map = factorize_subject_id(df)
+        self.data_handler.save(df, "subject")
+        hash_to_int_map = dict(zip(df[SUBJECT_ID], range(len(df))))
+
         # Save the mapping for reference.
         with open(f"{self.cfg.paths.output}/hash_to_integer_map.pkl", "wb") as f:
             pickle.dump(hash_to_int_map, f)
 
-        df = df.dropna(subset=[SUBJECT_ID], how="any")
-        logger.info(f"Number of patients before saving: {len(df)}")
-        self.data_handler.save(df, "subject")
-
         return hash_to_int_map
 
-    def format_tables(self, subject_id_mapping: Dict[str, int]) -> None:
+    def format_tables(self, subject_id_mapping: Optional[Dict[str, int]]=None) -> None:
         """Process the tables using the data handler"""
         for table_type, table_config in self.cfg.get("tables", {}).items():
             logger.info(f"Processing table: {table_type}")

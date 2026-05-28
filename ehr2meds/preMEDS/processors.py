@@ -24,8 +24,8 @@ class Processor:
     def process(
         df: pd.DataFrame,
         table_config: dict,
-        subject_id_mapping: Dict[str, int],
         data_handler: "DataHandler",
+        subject_id_mapping: Optional[Dict[str, int]]=None,
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the table.
