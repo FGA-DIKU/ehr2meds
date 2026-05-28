@@ -5,7 +5,7 @@ from ehr2meds.preMEDS.constants import (
     SUBJECT_ID,
     TIMESTAMP,
 )
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 
 def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
