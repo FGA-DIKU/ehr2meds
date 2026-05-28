@@ -1,40 +1,51 @@
 name: 'Pipeline test'
 
 on:
-    workflow_dispatch:
-    pull_request:
-
+  push:
+    branches: [ "main" ]
+  pull_request:
+      
 permissions:
   contents: read
   pull-requests: read
 
+env:
+  EHR2MEDS_CONFIGS: "${{ github.workspace }}/configs"
+  EHR2MEDS_DATA: "${{ github.workspace }}/data"
+  HYDRA_FULL_ERROR: 1
+
 jobs:
-    tests:
+    pipeline_tests:
         runs-on: "ubuntu-latest"
         steps:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Setup dependencies.
-              run: |
-                python -m venv .venv
-                source .venv/bin/activate
-                pip install -r requirements.txt
-                pip install -e .  # Install package in development mode
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: '3.12'
+                cache: 'pip' 
+                cache-dependency-path: 'pyproject.toml'
 
-            - name: Generate example data
+            - name: Install Dependencies
               run: |
-                source .venv/bin/activate
-                mkdir -p tests/example_data
-                python -m tests.generate_example_data.generate_example_data 1000 10 tests/example_data
+                pip install .[dev]
 
-            - name: Extract data
+            - name: Create synthetic data
               run: |
-                source .venv/bin/activate
-                python -m ehr2meds.PREMEDS.main_azure --config ehr2meds/PREMEDS/configs/MEDS_local.yaml
+                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1.yaml N=50 N_population=75
+                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2.yaml N=50
+                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3.yaml N=50
 
-            - name: Normalise data
+            - name: Convert synthetic data to preMEDS
               run: |
-                source .venv/bin/activate
-                python -m ehr2meds.PREMEDS.main_normalise --config ehr2meds/PREMEDS/configs/normalise.yaml
-  
+                python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP_synth
+
+            - name: Convert preMEDS to MEDS
+              run: |
+                bash ehr2meds/convert_premeds_to_meds.sh \
+                      ${EHR2MEDS_DATA}/preMEDS/fetal_data/SP \
+                      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
+                      ${EHR2MEDS_CONFIGS}/MEDS/default_event.yaml \
+                      ${EHR2MEDS_DATA}/MEDS/SP

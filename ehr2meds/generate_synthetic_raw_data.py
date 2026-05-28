@@ -94,9 +94,6 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
         else:
             raise ValueError(f"Unknown linked type: {linked_type}")
 
-        # Insert column to row
-        # selected_row = selected_row.rename(columns={linked_on: col_name})
-
         row.update({col_name: selected_row.item()})
 
     return row, unused_idxs
