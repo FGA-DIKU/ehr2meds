@@ -6,7 +6,6 @@ from ehr2meds.preMEDS.concept_processors import (
 )
 from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
-from ehr2meds.preMEDS.utils import select_and_rename_columns
 from tqdm import tqdm
 from typing import Dict, Optional, Union
 
@@ -69,10 +68,14 @@ class PREMEDSExtractor:
             return None
         # Load existing mapping if available
         logger.info("Loading dataframe for subject ID mapping")
-        df = self.data_handler.load_pandas(
-            self.cfg.subject_id_mapping,
-            cols=[SUBJECT_ID],
-        ).dropna(subset=[SUBJECT_ID], how="any").drop_duplicates(subset=[SUBJECT_ID])
+        df = (
+            self.data_handler.load_pandas(
+                self.cfg.subject_id_mapping,
+                cols=[SUBJECT_ID],
+            )
+            .dropna(subset=[SUBJECT_ID], how="any")
+            .drop_duplicates(subset=[SUBJECT_ID])
+        )
         logger.info(f"Number of patients in dataframe: {len(df)}")
 
         self.data_handler.save(df, "subject")
