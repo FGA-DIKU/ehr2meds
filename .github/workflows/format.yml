@@ -3,9 +3,8 @@
 name: Format
 on:
   push:
-    branches: [ "fix_tests" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "fix_tests" ]
 permissions:
   contents: read
 jobs:
