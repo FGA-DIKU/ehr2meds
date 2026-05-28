@@ -73,7 +73,8 @@ class PREMEDSExtractor:
             self.data_handler.load_pandas(
                 self.cfg.subject_id_mapping.filename,
                 cols=[id_col],
-            ).rename(columns={id_col: SUBJECT_ID})
+            )
+            .rename(columns={id_col: SUBJECT_ID})
             .dropna(subset=[SUBJECT_ID], how="any")
             .drop_duplicates(subset=[SUBJECT_ID])
         )
