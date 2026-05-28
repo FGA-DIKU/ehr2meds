@@ -68,17 +68,17 @@ class PREMEDSExtractor:
             return None
         # Load existing mapping if available
         logger.info("Loading dataframe for subject ID mapping")
+        id_col = self.cfg.subject_id_mapping.subject_id_col
         df = (
             self.data_handler.load_pandas(
-                self.cfg.subject_id_mapping,
-                cols=[SUBJECT_ID],
-            )
+                self.cfg.subject_id_mapping.filename,
+                cols=[id_col],
+            ).rename(columns={id_col: SUBJECT_ID})
             .dropna(subset=[SUBJECT_ID], how="any")
             .drop_duplicates(subset=[SUBJECT_ID])
         )
         logger.info(f"Number of patients in dataframe: {len(df)}")
 
-        self.data_handler.save(df, "subject")
         hash_to_int_map = dict(zip(df[SUBJECT_ID], range(len(df))))
 
         # Save the mapping for reference.
