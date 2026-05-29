@@ -106,14 +106,10 @@ class RegisterConceptProcessor:
         return data_handler.load_pandas(filename, cols=cols)
 
     @staticmethod
-    def _apply_mappings(
-        df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler"
-    ) -> pd.DataFrame:
+    def _apply_mappings(df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler") -> pd.DataFrame:
         if concept_config.get("mappings"):
             for mapping in concept_config.mappings:
-                map_table = RegisterConceptProcessor._get_mapping_table(
-                    data_handler, mapping
-                )
+                map_table = RegisterConceptProcessor._get_mapping_table(data_handler, mapping)
                 df = apply_mapping(
                     df,
                     map_table,
@@ -135,14 +131,10 @@ class RegisterConceptProcessor:
         return df
 
     @staticmethod
-    def _combine_datetime_columns(
-        df: pd.DataFrame, concept_config: dict
-    ) -> pd.DataFrame:
+    def _combine_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
         if "combine_datetime" in concept_config:
-            for target_col, date_time_cols in concept_config[
-                "combine_datetime"
-            ].items():
+            for target_col, date_time_cols in concept_config["combine_datetime"].items():
                 date_col = date_time_cols.get("date_col")
                 time_col = date_time_cols.get("time_col")
                 if date_col in df.columns and time_col in df.columns:
@@ -156,14 +148,10 @@ class RegisterConceptProcessor:
         return df
 
     @staticmethod
-    def _combine_datetime_from_parts(
-        df: pd.DataFrame, concept_config: dict
-    ) -> pd.DataFrame:
+    def _combine_datetime_from_parts(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
         if "combine_datetime_parts" in concept_config:
-            for target_col, date_time_cols in concept_config[
-                "combine_datetime_parts"
-            ].items():
+            for target_col, date_time_cols in concept_config["combine_datetime_parts"].items():
                 date_col = date_time_cols.get("date_col")
                 hour_col = date_time_cols.get("hour_col")
                 minute_col = date_time_cols.get("minute_col")
@@ -175,20 +163,8 @@ class RegisterConceptProcessor:
                         else df[date_col].astype(str)
                     )
 
-                    hour = (
-                        pd.to_numeric(df[hour_col], errors="coerce")
-                        .fillna(0)
-                        .astype(int)
-                        .astype(str)
-                        .str.zfill(2)
-                    )
-                    minute = (
-                        pd.to_numeric(df[minute_col], errors="coerce")
-                        .fillna(0)
-                        .astype(int)
-                        .astype(str)
-                        .str.zfill(2)
-                    )
+                    hour = pd.to_numeric(df[hour_col], errors="coerce").fillna(0).astype(int).astype(str).str.zfill(2)
+                    minute = pd.to_numeric(df[minute_col], errors="coerce").fillna(0).astype(int).astype(str).str.zfill(2)
                     dt_str = dt_str + " " + hour + ":" + minute + ":00"
                     df[target_col] = pd.to_datetime(dt_str, errors="coerce")
                     # Drop original columns if requested
