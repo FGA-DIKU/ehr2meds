@@ -1,17 +1,14 @@
 import logging
 import pickle
-from ehr2meds.preMEDS.processors import Processor
 from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
+from ehr2meds.preMEDS.processors import Processor
 from ehr2meds.preMEDS.utils import (
     factorize_subject_id,
     select_and_rename_columns,
 )
 from tqdm import tqdm
-from typing import (
-    Dict,
-    Optional,
-)
+from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
