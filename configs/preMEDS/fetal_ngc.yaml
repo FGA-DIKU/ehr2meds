@@ -27,7 +27,7 @@ align_timestamps: # removes information that is not in the global format
   names: [timestamp]
   format: "%Y-%m-%d %H:%M:%S.%f"
 
-concepts:
+tables:
   admissions:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - ADT hændelser.csv
     rename_columns:

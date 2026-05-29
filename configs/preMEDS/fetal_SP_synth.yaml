@@ -17,7 +17,7 @@ paths:
 
 write_file_type: csv 
 
-concepts:
+tables:
   diagnosis:
     filename: ${paths.tables_dir}/diagnosis.csv
     rename_columns:

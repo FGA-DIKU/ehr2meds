@@ -23,12 +23,12 @@ class Processor:
     @staticmethod
     def process(
         df: pd.DataFrame,
-        concept_config: dict,
+        table_config: dict,
         subject_id_mapping: Dict[str, int],
         data_handler: "DataHandler",
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
-        """Process the register concepts.
+        """Process the table.
         1. Normalize columns
         2. Apply value mappings
         3. Select and rename columns
@@ -41,18 +41,18 @@ class Processor:
         10. apply pid integer mapping
         11. clean data
         """
-        df = normalize_columns(df, concept_config)
-        df = apply_value_map(df, concept_config)
-        df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
-        df = Processor._apply_mappings(df, concept_config, data_handler)
-        df = pad_values(df, concept_config)
-        df = fill_missing_values(df, concept_config.get("fillna", {}))
-        df = melt_table(df, concept_config.get("melt_table", {}))
-        df = Processor._combine_datetime_columns(df, concept_config)
-        df = Processor._combine_datetime_from_parts(df, concept_config)
-        df = prefix_codes(df, concept_config.get("code_prefix", None))
-        df = Processor._unroll_columns(df, concept_config)
-        df = convert_numeric_columns(df, concept_config)
+        df = normalize_columns(df, table_config)
+        df = apply_value_map(df, table_config)
+        df = select_and_rename_columns(df, table_config.get("rename_columns", {}))
+        df = Processor._apply_mappings(df, table_config, data_handler)
+        df = pad_values(df, table_config)
+        df = fill_missing_values(df, table_config.get("fillna", {}))
+        df = melt_table(df, table_config.get("melt_table", {}))
+        df = Processor._combine_datetime_columns(df, table_config)
+        df = Processor._combine_datetime_from_parts(df, table_config)
+        df = prefix_codes(df, table_config.get("code_prefix", None))
+        df = Processor._unroll_columns(df, table_config)
+        df = convert_numeric_columns(df, table_config)
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
         df = map_pids_to_ints(df, subject_id_mapping)
@@ -73,9 +73,9 @@ class Processor:
         return data_handler.load_pandas(filename, cols=cols)
 
     @staticmethod
-    def _apply_mappings(df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler") -> pd.DataFrame:
-        if concept_config.get("mappings"):
-            for mapping in concept_config.mappings:
+    def _apply_mappings(df: pd.DataFrame, table_config: dict, data_handler: "DataHandler") -> pd.DataFrame:
+        if table_config.get("mappings"):
+            for mapping in table_config.mappings:
                 map_table = Processor._get_mapping_table(data_handler, mapping)
                 df = apply_mapping(
                     df,
@@ -90,18 +90,18 @@ class Processor:
         return df
 
     @staticmethod
-    def _unroll_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    def _unroll_columns(df: pd.DataFrame, table_config: dict) -> pd.DataFrame:
         """Unroll columns if needed."""
-        if "unroll_columns" in concept_config:
-            processed_dfs = unroll_columns(df, concept_config)
+        if "unroll_columns" in table_config:
+            processed_dfs = unroll_columns(df, table_config)
             return pd.concat(processed_dfs, ignore_index=True) if processed_dfs else df
         return df
 
     @staticmethod
-    def _combine_datetime_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    def _combine_datetime_columns(df: pd.DataFrame, table_config: dict) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
-        if "combine_datetime" in concept_config:
-            for target_col, date_time_cols in concept_config["combine_datetime"].items():
+        if "combine_datetime" in table_config:
+            for target_col, date_time_cols in table_config["combine_datetime"].items():
                 date_col = date_time_cols.get("date_col")
                 time_col = date_time_cols.get("time_col")
                 if date_col in df.columns and time_col in df.columns:
@@ -115,10 +115,10 @@ class Processor:
         return df
 
     @staticmethod
-    def _combine_datetime_from_parts(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+    def _combine_datetime_from_parts(df: pd.DataFrame, table_config: dict) -> pd.DataFrame:
         """Combine date and time columns into datetime columns."""
-        if "combine_datetime_parts" in concept_config:
-            for target_col, date_time_cols in concept_config["combine_datetime_parts"].items():
+        if "combine_datetime_parts" in table_config:
+            for target_col, date_time_cols in table_config["combine_datetime_parts"].items():
                 date_col = date_time_cols.get("date_col")
                 hour_col = date_time_cols.get("hour_col")
                 minute_col = date_time_cols.get("minute_col")

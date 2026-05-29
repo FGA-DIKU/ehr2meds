@@ -23,7 +23,7 @@ align_timestamps: # removes information that is not in the global format
   names: [timestamp]
   format: "%Y-%m-%d %H:%M:%S"
 
-register_concepts:
+tables:
   SDS_dimpatologiskdiagnose:
       filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
       rename_columns:

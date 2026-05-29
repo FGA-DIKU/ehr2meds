@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 
 class PREMEDSExtractor:
     """
-    Preprocessor for MEDS (Medical Event Data Set) that handles patient data and medical concepts.
+    Preprocessor for MEDS (Medical Event Data Set) that handles patient data and medical tables.
 
     This class processes medical data by:
     1. Building subject ID mappings
-    2. Processing various medical concepts (diagnoses, procedures, etc.)
+    2. Processing various medical tables (diagnoses, procedures, etc.)
     3. Formatting and cleaning the data according to specified configurations
     """
 
@@ -35,7 +35,7 @@ class PREMEDSExtractor:
         else:
             self.time_stamp_dict = None
 
-        # Create data handler for concepts
+        # Create data handler for tables
         self.data_handler = DataHandler(
             output_dir=cfg.paths.output,
             file_type=cfg.write_file_type,
@@ -47,7 +47,7 @@ class PREMEDSExtractor:
 
     def __call__(self):
         subject_id_mapping = self.format_patients_info()
-        self.format_concepts(subject_id_mapping)
+        self.format_tables(subject_id_mapping)
 
     def format_patients_info(self) -> Dict[str, int]:
         """
@@ -77,46 +77,46 @@ class PREMEDSExtractor:
 
         return hash_to_int_map
 
-    def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
-        """Process the concepts using the data handler"""
-        for concept_type, concept_config in self.cfg.get("concepts", {}).items():
-            logger.info(f"Processing concept: {concept_type}")
+    def format_tables(self, subject_id_mapping: Dict[str, int]) -> None:
+        """Process the tables using the data handler"""
+        for table_type, table_config in self.cfg.get("tables", {}).items():
+            logger.info(f"Processing table: {table_type}")
             try:
-                self.process_concept_chunks(
-                    concept_type,
-                    concept_config,
+                self.process_table_chunks(
+                    table_type,
+                    table_config,
                     subject_id_mapping,
                     self.time_stamp_dict,
                 )
             except Exception as e:
-                logger.warning(f"Error processing {concept_type}: {str(e)}")
+                logger.warning(f"Error processing {table_type}: {str(e)}")
 
-    def process_concept_chunks(
+    def process_table_chunks(
         self,
-        concept_type: str,
-        concept_config: dict,
+        table_type: str,
+        table_config: dict,
         subject_id_mapping: Dict[str, int],
         time_stamp_dict: Optional[dict] = None,
     ) -> None:
         first_chunk = True
         for chunk in tqdm(
-            self.data_handler.load_chunks(concept_config),
-            desc=f"Chunks {concept_type}",
+            self.data_handler.load_chunks(table_config),
+            desc=f"Chunks {table_type}",
         ):
             processed_chunk = self.processor.process(
                 chunk,
-                concept_config,
+                table_config,
                 subject_id_mapping,
                 self.data_handler,
                 time_stamp_dict,
             )
 
-            self._safe_save(self.data_handler, processed_chunk, concept_type, first_chunk)
+            self._safe_save(self.data_handler, processed_chunk, table_type, first_chunk)
             first_chunk = False
 
-    def _safe_save(self, data_handler, processed_chunk, concept_type, first_chunk: bool) -> None:
+    def _safe_save(self, data_handler, processed_chunk, table_type, first_chunk: bool) -> None:
         if not processed_chunk.empty:
             mode = "w" if first_chunk else "a"
-            data_handler.save(processed_chunk, concept_type, mode=mode)
+            data_handler.save(processed_chunk, table_type, mode=mode)
         else:
-            logger.warning(f"Empty processed chunk for {concept_type}, skipping save")
+            logger.warning(f"Empty processed chunk for {table_type}, skipping save")
