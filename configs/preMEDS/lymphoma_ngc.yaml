@@ -19,11 +19,6 @@ paths:
 
 write_file_type: parquet 
 
-pid_link: 
-  join_col: pseudoid
-  target_col: patientid
-
-
 align_timestamps: # removes information that is not in the global format
   names: [timestamp]
   format: "%Y-%m-%d %H:%M:%S"

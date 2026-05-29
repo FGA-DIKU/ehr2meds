@@ -9,7 +9,7 @@ chunksize: 10_000 # Just for testing, use around 250_000_000 for full conversion
 
 align_timestamps: # removes information that is not in the global format
   names: [timestamp]
-  format: "%Y-%m-%d %H:%M:%S"
+  format: "%Y-%m-%d %H:%M:%S.f"
 
 paths:
   tables_dir: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population  
