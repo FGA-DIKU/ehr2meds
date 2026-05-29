@@ -86,6 +86,7 @@ class PREMEDSExtractor:
                     concept_type,
                     concept_config,
                     subject_id_mapping,
+                    self.time_stamp_dict,
                 )
             except Exception as e:
                 logger.warning(f"Error processing {concept_type}: {str(e)}")
