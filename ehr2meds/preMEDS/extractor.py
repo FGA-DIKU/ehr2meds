@@ -8,7 +8,10 @@ from ehr2meds.preMEDS.utils import (
     select_and_rename_columns,
 )
 from tqdm import tqdm
-from typing import Dict, Optional
+from typing import (
+    Dict,
+    Optional,
+)
 
 logger = logging.getLogger(__name__)
 
