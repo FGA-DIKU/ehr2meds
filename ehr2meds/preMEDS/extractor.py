@@ -1,8 +1,6 @@
 import logging
 import pickle
-from ehr2meds.preMEDS.processors import (
-    Processor,
-)
+from ehr2meds.preMEDS.processors import Processor
 from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (

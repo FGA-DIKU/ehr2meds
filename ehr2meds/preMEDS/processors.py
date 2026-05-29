@@ -18,6 +18,7 @@ from ehr2meds.preMEDS.utils import (
 from pathlib import Path
 from typing import Dict, Optional
 
+
 class Processor:
     @staticmethod
     def process(
