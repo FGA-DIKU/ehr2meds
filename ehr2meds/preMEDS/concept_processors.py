@@ -14,6 +14,7 @@ from ehr2meds.preMEDS.utils import (
     prefix_codes,
     select_and_rename_columns,
     unroll_columns,
+    validate_subject_id,
 )
 from pathlib import Path
 from typing import Dict, Optional
@@ -24,7 +25,7 @@ class SPConceptProcessor:
     def process(
         df: pd.DataFrame,
         concept_config: dict,
-        subject_id_mapping: Dict[str, int],
+        subject_id_mapping: Optional[Dict[str, int]],
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """
@@ -42,8 +43,10 @@ class SPConceptProcessor:
 
         df = prefix_codes(df, concept_config.get("code_prefix", None))
         df = convert_numeric_columns(df, concept_config)
-        df = map_pids_to_ints(df, subject_id_mapping)
+        if subject_id_mapping is not None:
+            df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
+        validate_subject_id(df)
 
         return df
 
@@ -53,7 +56,7 @@ class RegisterConceptProcessor:
     def process(
         df: pd.DataFrame,
         concept_config: dict,
-        subject_id_mapping: Dict[str, int],
+        subject_id_mapping: Optional[Dict[str, int]],
         data_handler: "DataHandler",
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
@@ -87,9 +90,11 @@ class RegisterConceptProcessor:
 
         df = convert_numeric_columns(df, concept_config)
 
-        df = map_pids_to_ints(df, subject_id_mapping)
+        if subject_id_mapping is not None:
+            df = map_pids_to_ints(df, subject_id_mapping)
 
         df = clean_data(df)
+        validate_subject_id(df)
 
         return df
 

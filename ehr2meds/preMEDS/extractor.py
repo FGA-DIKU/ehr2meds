@@ -6,12 +6,8 @@ from ehr2meds.preMEDS.concept_processors import (
 )
 from ehr2meds.preMEDS.constants import SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
-from ehr2meds.preMEDS.utils import (
-    factorize_subject_id,
-    select_and_rename_columns,
-)
 from tqdm import tqdm
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -62,40 +58,37 @@ class PREMEDSExtractor:
         self.register_concept_processor = RegisterConceptProcessor()
 
     def __call__(self):
-        subject_id_mapping = self.format_patients_info()
+        subject_id_mapping = self.get_subject_id_mapping()
         if self.cfg.get("register_concepts"):
             self.format_register_concepts(subject_id_mapping)
         self.format_concepts(subject_id_mapping)
 
-    def format_patients_info(self) -> Dict[str, int]:
-        """
-        Load and process patient information, creating a mapping of patient IDs.
-
-        Returns:
-            Dict[str, int]: Mapping from original patient IDs to integer IDs
-        """
-        logger.info("Load patients info")
-        df = self.data_handler.load_pandas(
-            self.cfg.patients_info.filename,
-            cols=list(self.cfg.patients_info.get("rename_columns", {}).keys()),
-            **self.cfg.patients_info.get("file_info", {}),
+    def get_subject_id_mapping(self) -> Union[None, Dict[str, int]]:
+        if not self.cfg.get("subject_id_mapping"):
+            return None
+        # Load existing mapping if available
+        logger.info("Loading dataframe for subject ID mapping")
+        id_col = self.cfg.subject_id_mapping.subject_id_col
+        df = (
+            self.data_handler.load_pandas(
+                self.cfg.subject_id_mapping.filename,
+                cols=[id_col],
+            )
+            .rename(columns={id_col: SUBJECT_ID})
+            .dropna(subset=[SUBJECT_ID], how="any")
+            .drop_duplicates(subset=[SUBJECT_ID])
         )
-        # Use columns_map to subset and rename the columns.
-        df = select_and_rename_columns(df, self.cfg.patients_info.get("rename_columns", {}))
-        logger.info(f"Number of patients after selecting columns: {len(df)}")
+        logger.info(f"Number of patients in dataframe: {len(df)}")
 
-        df, hash_to_int_map = factorize_subject_id(df)
+        hash_to_int_map = dict(zip(df[SUBJECT_ID], range(len(df))))
+
         # Save the mapping for reference.
         with open(f"{self.cfg.paths.output}/hash_to_integer_map.pkl", "wb") as f:
             pickle.dump(hash_to_int_map, f)
 
-        df = df.dropna(subset=[SUBJECT_ID], how="any")
-        logger.info(f"Number of patients before saving: {len(df)}")
-        self.data_handler.save(df, "subject")
-
         return hash_to_int_map
 
-    def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
+    def format_concepts(self, subject_id_mapping: Optional[Dict[str, int]]) -> None:
         """Process all medical concepts"""
         for concept_type, concept_config in self.cfg.get("concepts", {}).items():
             try:
@@ -108,7 +101,7 @@ class PREMEDSExtractor:
             except Exception as e:
                 logger.warning(f"Error processing {concept_type}: {str(e)}")
 
-    def format_register_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
+    def format_register_concepts(self, subject_id_mapping: Optional[Dict[str, int]]) -> None:
         """Process the register concepts using the register-specific data handler"""
 
         for concept_type, concept_config in self.cfg.get("register_concepts", {}).items():
@@ -126,7 +119,7 @@ class PREMEDSExtractor:
         self,
         concept_type: str,
         concept_config: dict,
-        subject_id_mapping: Dict[str, int],
+        subject_id_mapping: Optional[Dict[str, int]],
     ) -> None:
         first_chunk = True
         for chunk in tqdm(
@@ -147,7 +140,7 @@ class PREMEDSExtractor:
         self,
         concept_type: str,
         concept_config: dict,
-        subject_id_mapping: Dict[str, int],
+        subject_id_mapping: Optional[Dict[str, int]],
         time_stamp_dict: Optional[dict] = None,
     ) -> None:
         first_chunk = True

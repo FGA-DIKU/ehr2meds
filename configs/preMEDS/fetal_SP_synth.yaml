@@ -15,7 +15,10 @@ paths:
   concepts: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population  
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP
 
-write_file_type: csv 
+write_file_type: csv
+subject_id_mapping:
+  filename: ${paths.concepts}/patient_info.csv
+  subject_id_col: CPR
 
 concepts:
   diagnosis:
@@ -76,10 +79,10 @@ concepts:
     #  encoding: "latin1"
 
 
-patients_info:
-  filename: patient_info.csv
-  rename_columns:
-    CPR: subject_id
-    Birthdate: birthdate
-    Deathdate: deathdate
-    Gender: gender
+  patients_info:
+    filename: patient_info.csv
+    rename_columns:
+      CPR: subject_id
+      Birthdate: birthdate
+      Deathdate: deathdate
+      Gender: gender
