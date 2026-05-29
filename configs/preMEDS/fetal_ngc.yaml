@@ -19,7 +19,7 @@ chunksize: 1000000000
 
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
-  tables_dir: ${oc.env:EHR2MEDS_DATA}/SP/tables      
+  tables_dir: ${oc.env:EHR2MEDS_DATA}/    
 
 write_file_type: csv 
 

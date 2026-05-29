@@ -15,11 +15,7 @@ chunksize: 1000000000
 
 paths:
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/SDS
-  pid_link: data/mapping/mapping.parquet
-
-  concepts: ${oc.env:EHR2MEDS_DATA}/raw/sp         
-  register_concepts: ${oc.env:EHR2MEDS_DATA}/raw/registers   
-  file_type: parquet                  
+  tables_dir: ${oc.env:EHR2MEDS_DATA}/raw/registers   
 
 write_file_type: parquet 
 
@@ -34,25 +30,25 @@ align_timestamps: # removes information that is not in the global format
 
 register_concepts:
   SDS_dimpatologiskdiagnose:
-      filename: SDS_dimpatologiskdiagnose.parquet
+      filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
       rename_columns:
         diagnose_snomed_kode: code
         dw_ek_rekvisition: contact_id
       code_prefix: "PAT/"
       mappings:
         - source_column: contact_id
-          via_file: SDS_fctrekvisition.parquet
+          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
           join_on: dw_ek_rekvisition
           target_column: patientid
           rename_to: subject_id
         - source_column: contact_id
-          via_file: SDS_fctrekvisition.parquet
+          via_file: ${paths.tables_dir}/SDS_fct_rekvisition.parquet
           join_on: dw_ek_rekvisition
           target_column: datotid_modtagelse 
           rename_to: timestamp
           drop_source: false
         - source_column: contact_id
-          via_file: SDS_fctrekvisition.parquet
+          via_file: ${paths.tables_dir}/SDS_fct_rekvisition.parquet
           join_on: dw_ek_rekvisition
           target_column: dato_modtagelse 
           rename_to: timestamp_fallback
@@ -66,7 +62,7 @@ register_concepts:
           column: timestamp_fallback
 
   SDS_diagnoser:
-    filename: SDS_diagnoser.parquet               
+    filename: ${paths.tables_dir}/SDS_diagnoser.parquet               
     rename_columns:
       diagnosekode: code
       diagnosetype: diagnosetype
@@ -74,17 +70,17 @@ register_concepts:
     code_prefix: "RD/"
     mappings:
       - source_column: contact_id
-        via_file: SDS_kontakter.parquet           
+        via_file: ${paths.tables_dir}/SDS_kontakter.parquet           
         join_on: dw_ek_kontakt
         target_column: patientid
         rename_to: subject_id
       - source_column: contact_id
-        via_file: SDS_kontakter.parquet
+        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
         target_column: dato_slut      
         rename_to: date_end
       - source_column: contact_id
-        via_file: SDS_kontakter.parquet
+        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
         target_column: tidspunkt_slut      
         rename_to: time_end
@@ -99,7 +95,7 @@ register_concepts:
         prefix: "RD_TYPE/"
 
   SDS_t_diag:
-    filename: SDS_t_diag.parquet               
+    filename: ${paths.tables_dir}/SDS_t_diag.parquet               
     rename_columns:
       c_diag: c_diag
       c_tildiag: c_tildiag
@@ -108,12 +104,12 @@ register_concepts:
     code_prefix: "RD/"
     mappings:
       - source_column: contact_id
-        via_file: SDS_t_adm.parquet
+        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
         target_column: patientid
         rename_to: subject_id
       - source_column: contact_id
-        via_file: SDS_t_adm.parquet
+        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
         target_column: d_uddto 
         rename_to: timestamp
@@ -127,7 +123,7 @@ register_concepts:
         prefix: "RD/"
 
   SDS_kontakter:
-    filename: SDS_kontakter.parquet               
+    filename: ${paths.tables_dir}/SDS_kontakter.parquet               
     rename_columns:
       patientid: subject_id
       dato_start: date_start
@@ -158,7 +154,7 @@ register_concepts:
     code_prefix: "RC/"
 
   SDS_t_adm:
-    filename: SDS_t_adm.parquet               
+    filename: ${paths.tables_dir}/SDS_t_adm.parquet               
     normalize_columns:
       - c_spec
       - c_indm
@@ -233,7 +229,7 @@ register_concepts:
       k_recnum: contact_id
     mappings:
     - source_column: hospital_code   
-      via_file: shak_to_region.parquet # using resources
+      via_file: ${paths.tables_dir}/shak_to_region.parquet # using resources
       join_on: kode
       target_column: region
       rename_to: region_code
@@ -258,7 +254,7 @@ register_concepts:
     code_prefix: "RC_ADM/"
 
   SDS_t_sksopr:
-    filename: SDS_t_sksopr.parquet   
+    filename: ${paths.tables_dir}/SDS_t_sksopr.parquet   
     rename_columns:
       c_opr: code
       d_odto: date_start
@@ -274,14 +270,14 @@ register_concepts:
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
-        via_file: SDS_t_adm.parquet
+        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
         target_column: patientid
         rename_to: subject_id
         drop_source: true
 
   SDS_t_sksube:
-    filename:   SDS_t_sksube.parquet   
+    filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
     rename_columns:
       c_opr: code
       c_oprart: procedure_type
@@ -298,7 +294,7 @@ register_concepts:
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
-        via_file: SDS_t_adm.parquet
+        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
         target_column: patientid
         rename_to: subject_id
@@ -308,7 +304,7 @@ register_concepts:
         value: "P" 
 
   SDS_ekokur:
-    filename: SDS_ekokur.parquet                  
+    filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
     rename_columns:
       patientid: subject_id
       atc: code
@@ -316,7 +312,7 @@ register_concepts:
     code_prefix: "RM/"
 
   SDS_procedurer_kirurgi:
-    filename: SDS_procedurer_kirurgi.parquet      
+    filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
     rename_columns:
       procedurekode: code
       dato_start: date_start
@@ -330,14 +326,14 @@ register_concepts:
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
-        via_file: SDS_kontakter.parquet
+        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
         target_column: patientid
         rename_to: subject_id
         drop_source: true
 
   SDS_procedurer_andre:
-    filename: SDS_procedurer_andre.parquet        
+    filename: ${paths.tables_dir}/SDS_procedurer_andre.parquet        
     rename_columns:
       procedurekode: code
       proceduretype: procedure_type
@@ -352,14 +348,14 @@ register_concepts:
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
-        via_file: SDS_kontakter.parquet
+        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
         target_column: patientid
         rename_to: subject_id
         drop_source: true
 
   SDS_indberetningmedpris:
-    filename: SDS_indberetningmedpris.parquet
+    filename: ${paths.tables_dir}/SDS_indberetningmedpris.parquet
     rename_columns:
       c_atc: code
       c_patienttype: patient_type #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
@@ -375,7 +371,7 @@ register_concepts:
     code_prefix: "RMA/"
 
   SDS_laboratorieproevesvar:
-    filename: SDS_laboratorieproevesvar.parquet
+    filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
     rename_columns:
       analysiscode: code
       samplevalue: numeric_value
@@ -391,7 +387,7 @@ register_concepts:
     numeric_columns: [numeric_value]
 
 patients_info:
-  filename: CPMI_PatientInfo.parquet
+  filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
   rename_columns:
     patientid: subject_id
     Fødselsdato: birthdate
