@@ -25,7 +25,7 @@ write_file_type: csv
 
 align_timestamps: # removes information that is not in the global format
   names: [timestamp]
-  format: "%Y-%m-%d %H:%M:%S"
+  format: "%Y-%m-%d %H:%M:%S.%f"
 
 concepts:
   admissions:

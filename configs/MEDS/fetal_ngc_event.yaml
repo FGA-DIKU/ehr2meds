@@ -25,35 +25,35 @@ admissions:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 diagnosis:
   diagnosis:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 procedure:
   procedure:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 medication:
   medication:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 labtest:
   labtest:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
     numeric_value: col(numeric_value)
 
 # Register concepts (register_concepts)
@@ -63,7 +63,7 @@ SDS_diagnoser:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR diagnoses (unrolled c_diagtype, c_tildiag, c_diag)
 SDS_t_diag:
@@ -71,7 +71,7 @@ SDS_t_diag:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR3 contacts (unrolled contact metadata)
 SDS_kontakter:
@@ -79,7 +79,7 @@ SDS_kontakter:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR admissions (unrolled admission metadata)
 SDS_t_adm:
@@ -87,7 +87,7 @@ SDS_t_adm:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR surgical procedures
 SDS_t_sksopr:
@@ -95,7 +95,7 @@ SDS_t_sksopr:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR other procedures
 SDS_t_sksube:
@@ -103,7 +103,7 @@ SDS_t_sksube:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR3 surgical procedures
 SDS_procedurer_kirurgi:
@@ -111,7 +111,7 @@ SDS_procedurer_kirurgi:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR3 other procedures
 SDS_procedurer_andre:
@@ -119,7 +119,7 @@ SDS_procedurer_andre:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # Medication
 SDS_ekokur:
@@ -127,7 +127,7 @@ SDS_ekokur:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # NOTE: numeric_value is normalized before this step
 SDS_laboratorieproevesvar:
@@ -135,5 +135,5 @@ SDS_laboratorieproevesvar:
     code:
       - col(code)
     time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    time_format: "%Y-%m-%d %H:%M:%S.%f"
     numeric_value: col(numeric_value)

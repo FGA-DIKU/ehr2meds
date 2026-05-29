@@ -51,10 +51,10 @@ class Processor:
         df = Processor._combine_datetime_columns(df, concept_config)
         df = Processor._combine_datetime_from_parts(df, concept_config)
         df = prefix_codes(df, concept_config.get("code_prefix", None))
-        if time_stamp_dict:
-            df = convert_timestamp_columns(df, **time_stamp_dict)
         df = Processor._unroll_columns(df, concept_config)
         df = convert_numeric_columns(df, concept_config)
+        if time_stamp_dict:
+            df = convert_timestamp_columns(df, **time_stamp_dict)
         df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
 
