@@ -18,36 +18,6 @@ from ehr2meds.preMEDS.utils import (
 from pathlib import Path
 from typing import Dict, Optional
 
-
-# class SPConceptProcessor:
-#     @staticmethod
-#     def process(
-#         df: pd.DataFrame,
-#         concept_config: dict,
-#         subject_id_mapping: Dict[str, int],
-#         time_stamp_dict: Optional[dict] = None,
-#     ) -> pd.DataFrame:
-#         """
-#         Main method for processing a single concept's data
-#         """
-#         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
-#         if concept_config.get("fillna"):
-#             df = fill_missing_values(df, concept_config.fillna)
-
-#         if concept_config.get("melt_table"):
-#             df = melt_table(df, concept_config)
-
-#         if time_stamp_dict:
-#             df = convert_timestamp_columns(df, **time_stamp_dict)
-
-#         df = prefix_codes(df, concept_config.get("code_prefix", None))
-#         df = convert_numeric_columns(df, concept_config)
-#         df = map_pids_to_ints(df, subject_id_mapping)
-#         df = clean_data(df)
-
-#         return df
-
-
 class Processor:
     @staticmethod
     def process(

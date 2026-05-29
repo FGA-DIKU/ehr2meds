@@ -79,19 +79,6 @@ class PREMEDSExtractor:
 
         return hash_to_int_map
 
-    # def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
-    #     """Process all medical concepts"""
-    #     for concept_type, concept_config in self.cfg.get("concepts", {}).items():
-    #         try:
-    #             self._process_concept_chunks(
-    #                 concept_type,
-    #                 concept_config,
-    #                 subject_id_mapping,
-    #                 self.time_stamp_dict,
-    #             )
-    #         except Exception as e:
-    #             logger.warning(f"Error processing {concept_type}: {str(e)}")
-
     def format_concepts(self, subject_id_mapping: Dict[str, int]) -> None:
         """Process the concepts using the data handler"""
         for concept_type, concept_config in self.cfg.get("concepts", {}).items():
@@ -127,22 +114,6 @@ class PREMEDSExtractor:
 
             self._safe_save(self.data_handler, processed_chunk, concept_type, first_chunk)
             first_chunk = False
-
-    # def _process_concept_chunks(
-    #     self,
-    #     concept_type: str,
-    #     concept_config: dict,
-    #     subject_id_mapping: Dict[str, int],
-    #     time_stamp_dict: Optional[dict] = None,
-    # ) -> None:
-    #     first_chunk = True
-    #     for chunk in tqdm(
-    #         self.data_handler.load_chunks(concept_config),
-    #         desc=f"Chunks {concept_type}",
-    #     ):
-    #         processed_chunk = self.concept_processor.process(chunk, concept_config, subject_id_mapping, time_stamp_dict)
-    #         self._safe_save(self.data_handler, processed_chunk, concept_type, first_chunk)
-    #         first_chunk = False
 
     def _safe_save(self, data_handler, processed_chunk, concept_type, first_chunk: bool) -> None:
         if not processed_chunk.empty:

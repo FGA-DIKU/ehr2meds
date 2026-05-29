@@ -45,16 +45,16 @@ concepts:
         prefix_col: code
         prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
 
-  # labtest:
-  #   filename: ${paths.tables_dir}/labtest.asc
-  #   rename_columns:
-  #     BestOrd: code
-  #     Bestillingsdato: timestamp
-  #     CPR: subject_id
-  #     Resultatværdi: numeric_value
-  #   file_info:
-  #     sep: "|"
-  #     encoding: "latin1"
+  labtest:
+    filename: ${paths.tables_dir}/labtest.asc
+    rename_columns:
+      BestOrd: code
+      Bestillingsdato: timestamp
+      CPR: subject_id
+      Resultatværdi: numeric_value
+    # file_info:
+    #   sep: "|"
+    #   encoding: "latin1"
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/diagnoser.csv               
