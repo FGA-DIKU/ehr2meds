@@ -12,7 +12,6 @@ from ehr2meds.preMEDS.utils import (
     normalize_columns,
     pad_values,
     prefix_codes,
-    replace_values,
     select_and_rename_columns,
     unroll_columns,
 )
@@ -59,20 +58,18 @@ class RegisterConceptProcessor:
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the register concepts.
-        1. Replace values
-        2. Normalize columns
-        3. Apply value mappings
-        4. Select and rename columns
-        5. apply columns map
-        6. Pad values
-        7. fill missing values
-        8. combine datetime columns
-        9. unroll columns (process codes)
-        10. convert numeric columns
-        11. apply pid integer mapping
-        12. clean data
+        1. Normalize columns
+        2. Apply value mappings
+        3. Select and rename columns
+        4. apply columns map
+        5. Pad values
+        6. fill missing values
+        7. combine datetime columns
+        8. unroll columns (process codes)
+        9. convert numeric columns
+        10. apply pid integer mapping
+        11. clean data
         """
-        df = replace_values(df, concept_config)
         df = normalize_columns(df, concept_config)
         df = apply_value_map(df, concept_config)
         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
