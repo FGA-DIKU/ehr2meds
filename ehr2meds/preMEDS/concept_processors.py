@@ -15,6 +15,7 @@ from ehr2meds.preMEDS.utils import (
     replace_values,
     select_and_rename_columns,
     unroll_columns,
+    validate_subject_id,
 )
 from pathlib import Path
 from typing import Dict, Optional
@@ -46,6 +47,7 @@ class SPConceptProcessor:
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
+        validate_subject_id(df)
 
         return df
 
@@ -95,6 +97,7 @@ class RegisterConceptProcessor:
             df = map_pids_to_ints(df, subject_id_mapping)
 
         df = clean_data(df)
+        validate_subject_id(df)
 
         return df
 

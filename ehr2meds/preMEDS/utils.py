@@ -261,3 +261,14 @@ def prefix_codes(df: pd.DataFrame, code_prefix: str = None) -> pd.DataFrame:
     if code_prefix and CODE in df.columns:
         df[CODE] = code_prefix + df[CODE].astype(str)
     return df
+
+
+def validate_subject_id(df: pd.DataFrame) -> None:
+    """Checks that the subject_id column exists and is an integer"""
+    if SUBJECT_ID not in df.columns:
+        raise ValueError(f"Missing required column: {SUBJECT_ID}")
+    if not pd.api.types.is_integer_dtype(df[SUBJECT_ID]):
+        raise ValueError(
+            f"{SUBJECT_ID} column must be of integer type\n\
+                Hint: Use the subject_id_mapping configuration to map string IDs to integers."
+        )
