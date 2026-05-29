@@ -272,11 +272,9 @@ def apply_melt_step(df, cfg):
     return df_melted
 
 
-def melt_table(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-    expand_map = concept_config.get("melt_table")
+def melt_table(df: pd.DataFrame, expand_map: dict) -> pd.DataFrame:
     if not expand_map:
         return df
-
     for step_cfg in expand_map:
         df = apply_melt_step(df, step_cfg)
     return df

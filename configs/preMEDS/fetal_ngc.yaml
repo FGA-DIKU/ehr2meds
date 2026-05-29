@@ -19,10 +19,8 @@ chunksize: 1000000000
 
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
-
-  concepts: ${oc.env:EHR2MEDS_DATA}/SP/tables      
+  tables_dir: ${oc.env:EHR2MEDS_DATA}/SP/tables      
   register_concepts: ${oc.env:EHR2MEDS_DATA}/SDS/registers_pseudonymized   
-  file_type: csv                  
 
 write_file_type: csv 
 
@@ -32,7 +30,7 @@ align_timestamps: # removes information that is not in the global format
 
 concepts:
   admissions:
-    filename: Mor - CPMI - ADT hændelser.csv
+    filename: ${tables_dir}/SP/tables/Mor - CPMI - ADT hændelser.csv
     rename_columns:
       MOR_CPR: subject_id
       Flyt_ind: timestamp_in
@@ -46,7 +44,7 @@ concepts:
     code_prefix: "ADM/"
 
   diagnosis:
-    filename: Mor - CPMI - Diagnoseliste.csv
+    filename: ${tables_dir}/SP/tables/Mor - CPMI - Diagnoseliste.csv
     rename_columns:
       Diagnosekode: code
       Diagnose: fill_code
@@ -55,7 +53,7 @@ concepts:
     code_prefix: "D/"
 
   procedure:
-    filename: Mor - CPMI - Procedurer.csv
+    filename: ${tables_dir}/SP/tables/Mor - CPMI - Procedurer.csv
     rename_columns:
       ProcedureCode: code
       ServiceDate: timestamp
@@ -63,7 +61,7 @@ concepts:
     code_prefix: "P/"
 
   medication:
-    filename: Mor - CPMI - Medicin.csv
+    filename: ${tables_dir}/SP/tables/Mor - CPMI - Medicin.csv
     rename_columns:
       ATC: code
       Administrationstidspunkt: timestamp
@@ -76,7 +74,7 @@ concepts:
 
   # TODO Add lab values
   labtest:
-    filename: Mor - CPMI - Prøvesvar.csv
+    filename: ${tables_dir}/SP/tables/Mor - CPMI - Prøvesvar.csv
     rename_columns:
       BestOrd: code
       Prøvetagningstidspunkt: timestamp
@@ -84,9 +82,8 @@ concepts:
       MOR_CPR: subject_id
     code_prefix: "LAB/"
 
-register_concepts:
   SDS_diagnoser:
-    filename: diagnoser.csv               
+    filename: ${tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
     rename_columns:
       diagnosekode: code
       diagnosetype: diagnosetype
@@ -94,12 +91,12 @@ register_concepts:
     code_prefix: "RD/"
     mappings:
       - source_column: contact_id
-        via_file: kontakter_all.csv           
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv           
         join_on: dw_ek_kontakt
         target_column: cpr
         rename_to: subject_id
       - source_column: contact_id
-        via_file: kontakter_all.csv
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
         join_on: dw_ek_kontakt
         target_column: dato_slut      
         rename_to: timestamp
@@ -109,7 +106,7 @@ register_concepts:
         prefix: "RD_TYPE/"
 
   SDS_t_diag:
-    filename: t_diag.csv               
+    filename: ${tables_dir}/SDS/registers_pseudonymized/t_diag.csv               
     rename_columns:
       C_DIAG: c_diag
       C_TILDIAG: c_tildiag
@@ -118,12 +115,12 @@ register_concepts:
     code_prefix: "RD/"
     mappings:
       - source_column: contact_id
-        via_file: t_adm.csv
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/t_adm.csv
         join_on: K_RECNUM
         target_column: V_CPR
         rename_to: subject_id
       - source_column: contact_id
-        via_file: t_adm.csv
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/t_adm.csv
         join_on: K_RECNUM
         target_column: D_UDDTO 
         rename_to: timestamp
@@ -137,7 +134,7 @@ register_concepts:
         prefix: "RD/"
 
   SDS_kontakter:
-    filename: kontakter_all.csv               
+    filename: ${tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
     rename_columns:
       cpr: subject_id
       dato_start: date_start
@@ -168,7 +165,7 @@ register_concepts:
     code_prefix: "RC/"
 
   SDS_t_adm:
-    filename: t_adm.csv               
+    filename: ${tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
     rename_columns:
       V_CPR: subject_id
       D_INDDTO: date_start
@@ -201,7 +198,7 @@ register_concepts:
     code_prefix: "RC_ADM/"
 
   SDS_t_sksopr:
-    filename: t_sksopr.csv   
+    filename: ${tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
     rename_columns:
       C_OPR: code
       D_ODTO: date_start
@@ -217,14 +214,14 @@ register_concepts:
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
-        via_file: t_adm.csv
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/t_adm.csv
         join_on: K_RECNUM
         target_column: V_CPR
         rename_to: subject_id
         drop_source: true
 
   SDS_t_sksube:
-    filename: t_sksube.csv   
+    filename: ${tables_dir}/SDS/registers_pseudonymized/t_sksube.csv   
     rename_columns:
       C_OPR: code
       C_OPRART: procedure_type
@@ -241,7 +238,7 @@ register_concepts:
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
-        via_file: t_adm.csv
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/t_adm.csv
         join_on: K_RECNUM
         target_column: V_CPR
         rename_to: subject_id
@@ -251,7 +248,7 @@ register_concepts:
         value: "P" 
 
   SDS_ekokur:
-    filename: ekokur_all.csv                  
+    filename: ${tables_dir}/SDS/registers_pseudonymized/ekokur_all.csv                  
     rename_columns:
       cpr: subject_id
       vnr: vnr_code
@@ -259,7 +256,7 @@ register_concepts:
     mappings:
       - source_column: vnr_code
         how: left
-        via_file: laegemiddeloplysninger.csv   
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/laegemiddeloplysninger.csv   
         join_on: vnr
         target_column: pname
         rename_to: code
@@ -267,7 +264,7 @@ register_concepts:
     code_prefix: "RM/"
 
   SDS_procedurer_kirurgi:
-    filename: procedurer_kirurgi.csv      
+    filename: ${tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
     rename_columns:
       procedurekode: code
       dato_start: date_start
@@ -281,14 +278,14 @@ register_concepts:
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
-        via_file: kontakter_all.csv
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
         join_on: dw_ek_kontakt
         target_column: cpr
         rename_to: subject_id
         drop_source: true
 
   SDS_procedurer_andre:
-    filename: procedurer_andre.csv        
+    filename: ${tables_dir}/SDS/registers_pseudonymized/procedurer_andre.csv        
     rename_columns:
       procedurekode: code
       proceduretype: procedure_type
@@ -303,14 +300,14 @@ register_concepts:
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
-        via_file: kontakter_all.csv
+        via_file: ${tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
         join_on: dw_ek_kontakt
         target_column: cpr
         rename_to: subject_id
         drop_source: true
 
   SDS_laboratorieproevesvar:
-    filename: lab_dm_forsker_all.csv
+    filename: ${tables_dir}/SDS/registers_pseudonymized/lab_dm_forsker_all.csv
     rename_columns:
       ANALYSISCODE: code
       VALUE: numeric_value
@@ -329,7 +326,7 @@ register_concepts:
 # TODO Add smoking status
 # Todo support multiple patient_infos
 patients_info:
-  filename: Mor - CPMI - Patientinfo.csv
+  filename: ${tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv
   rename_columns:
     MOR_CPR: subject_id
     Fødselsdato: birthdate

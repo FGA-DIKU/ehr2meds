@@ -13,11 +13,9 @@ N_TEST_CHUNKS = 2
 class DataLoader(ABC):
     def __init__(
         self,
-        path: str,
         chunksize: Optional[int] = None,
         test: bool = False,
     ):
-        self.path = path
         self.chunksize = chunksize
         self.test = test
 
@@ -46,7 +44,7 @@ class DataLoader(ABC):
             raise ValueError(f"Unsupported file type: {file_path}")
 
     def _get_file_path(self, filename: str) -> str:
-        return join(self.path, filename)
+        return join(filename)
 
     @staticmethod
     def _check_file_exists(file_path: str):

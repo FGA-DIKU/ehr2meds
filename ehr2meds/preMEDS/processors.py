@@ -19,36 +19,36 @@ from pathlib import Path
 from typing import Dict, Optional
 
 
-class SPConceptProcessor:
-    @staticmethod
-    def process(
-        df: pd.DataFrame,
-        concept_config: dict,
-        subject_id_mapping: Dict[str, int],
-        time_stamp_dict: Optional[dict] = None,
-    ) -> pd.DataFrame:
-        """
-        Main method for processing a single concept's data
-        """
-        df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
-        if concept_config.get("fillna"):
-            df = fill_missing_values(df, concept_config.fillna)
+# class SPConceptProcessor:
+#     @staticmethod
+#     def process(
+#         df: pd.DataFrame,
+#         concept_config: dict,
+#         subject_id_mapping: Dict[str, int],
+#         time_stamp_dict: Optional[dict] = None,
+#     ) -> pd.DataFrame:
+#         """
+#         Main method for processing a single concept's data
+#         """
+#         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
+#         if concept_config.get("fillna"):
+#             df = fill_missing_values(df, concept_config.fillna)
 
-        if concept_config.get("melt_table"):
-            df = melt_table(df, concept_config)
+#         if concept_config.get("melt_table"):
+#             df = melt_table(df, concept_config)
 
-        if time_stamp_dict:
-            df = convert_timestamp_columns(df, **time_stamp_dict)
+#         if time_stamp_dict:
+#             df = convert_timestamp_columns(df, **time_stamp_dict)
 
-        df = prefix_codes(df, concept_config.get("code_prefix", None))
-        df = convert_numeric_columns(df, concept_config)
-        df = map_pids_to_ints(df, subject_id_mapping)
-        df = clean_data(df)
+#         df = prefix_codes(df, concept_config.get("code_prefix", None))
+#         df = convert_numeric_columns(df, concept_config)
+#         df = map_pids_to_ints(df, subject_id_mapping)
+#         df = clean_data(df)
 
-        return df
+#         return df
 
 
-class RegisterConceptProcessor:
+class Processor:
     @staticmethod
     def process(
         df: pd.DataFrame,
@@ -73,22 +73,18 @@ class RegisterConceptProcessor:
         df = normalize_columns(df, concept_config)
         df = apply_value_map(df, concept_config)
         df = select_and_rename_columns(df, concept_config.get("rename_columns", {}))
-        df = RegisterConceptProcessor._apply_mappings(df, concept_config, data_handler)
+        df = Processor._apply_mappings(df, concept_config, data_handler)
         df = pad_values(df, concept_config)
         df = fill_missing_values(df, concept_config.get("fillna", {}))
-        df = RegisterConceptProcessor._combine_datetime_columns(df, concept_config)
-        df = RegisterConceptProcessor._combine_datetime_from_parts(df, concept_config)
+        df = melt_table(df, concept_config.get("melt_table", {}))
+        df = Processor._combine_datetime_columns(df, concept_config)
+        df = Processor._combine_datetime_from_parts(df, concept_config)
         df = prefix_codes(df, concept_config.get("code_prefix", None))
-
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
-
-        df = RegisterConceptProcessor._unroll_columns(df, concept_config)
-
+        df = Processor._unroll_columns(df, concept_config)
         df = convert_numeric_columns(df, concept_config)
-
         df = map_pids_to_ints(df, subject_id_mapping)
-
         df = clean_data(df)
 
         return df
@@ -99,7 +95,7 @@ class RegisterConceptProcessor:
         filename = mapping["via_file"]
         cols = [mapping["join_on"], mapping["target_column"]]
 
-        register_path = Path(data_handler.data_loader.path) / filename
+        register_path = Path(filename)
         if not register_path.exists():
             filename = str(Path(__file__).parent.parent / "resources" / filename)
 
@@ -109,7 +105,7 @@ class RegisterConceptProcessor:
     def _apply_mappings(df: pd.DataFrame, concept_config: dict, data_handler: "DataHandler") -> pd.DataFrame:
         if concept_config.get("mappings"):
             for mapping in concept_config.mappings:
-                map_table = RegisterConceptProcessor._get_mapping_table(data_handler, mapping)
+                map_table = Processor._get_mapping_table(data_handler, mapping)
                 df = apply_mapping(
                     df,
                     map_table,
