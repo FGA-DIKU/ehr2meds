@@ -37,13 +37,13 @@ tables:
           target_column: patientid
           rename_to: subject_id
         - source_column: contact_id
-          via_file: ${paths.tables_dir}/SDS_fct_rekvisition.parquet
+          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
           join_on: dw_ek_rekvisition
           target_column: datotid_modtagelse 
           rename_to: timestamp
           drop_source: false
         - source_column: contact_id
-          via_file: ${paths.tables_dir}/SDS_fct_rekvisition.parquet
+          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
           join_on: dw_ek_rekvisition
           target_column: dato_modtagelse 
           rename_to: timestamp_fallback
