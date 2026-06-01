@@ -44,80 +44,32 @@ register_concepts:
       c_atc: code
     code_prefix: "AM/" # administered medication
 
-
-
-
-
-  diagnoser: 
-    filename: diagnoser.parquet # LPR3 (kontakter.parquet)
-    rename_columns:
-      dw_ek_kontakt: contact_id
-      diagnosekode: code
-      diagnosetype: diagnosis_type
-    code_prefix: "RD/"
-    mappings:
-    - source_column: contact_id
-      via_file: kontakter.parquet
-      join_on: dw_ek_kontakt
-      target_column: cpr
-      rename_to: subject_id
-    - source_column: contact_id
-      via_file: kontakter.parquet
-      join_on: dw_ek_kontakt
-      target_column: dato_start
-      rename_to: date_start
-      drop_source: true
-    - source_column: contact_id
-      via_file: kontakter.parquet
-      join_on: dw_ek_kontakt
-      target_column: tidspunkt_start
-      rename_to: time_start
-      drop_source: true
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
-    unroll_columns: 
-    - column: diagnosetype 
-      prefix: "RD_TYPE/"
-
-
-  t_adm:
-
-  kontakter: 
-
-
   t_diag:
-    filename: t_diag.parquet # LPR (t_adm.parquet)              
+    filename: t_diag.parquet # LPR1+2             
     rename_columns:
       v_recnum: record_number
       c_diag: code
-      c_diagtype: diagnosis_type
-      c_tildiag: diagnosis_additional
-    code_prefix: "RD/"
+    code_prefix: "DIAG/"
     mappings:
-    - source_column: record_number # cpr
+    - source_column: record_number
       via_file: t_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
+      target_column: v_cpr # cpr
       rename_to: subject_id
-    - source_column: record_number # date
+    - source_column: record_number 
       via_file: t_adm.parquet
       join_on: k_recnum 
-      target_column: t_inddto
+      target_column: t_inddto # date
       rename_to: date_start
-      drop_source: true
-    - source_column: record_number # hour
+    - source_column: record_number 
       via_file: t_adm.parquet
       join_on: k_recnum
-      target_column: v_indtime
+      target_column: v_indtime # hour
       rename_to: hour_start
-      drop_source: true
-    - source_column: record_number # minute
+    - source_column: record_number 
       via_file: t_adm.parquet
       join_on: k_recnum 
-      target_column: v_indminut
+      target_column: v_indminut # minute
       rename_to: minute_start
       drop_source: true
     combine_datetime_parts:
@@ -127,4 +79,31 @@ register_concepts:
         minute_col: minute_start
         drop_original: true
     
-
+  diagnoser: 
+    filename: diagnoser.parquet # LPR3
+    rename_columns:
+      dw_ek_kontakt: contact_id
+      diagnosekode: code
+    code_prefix: "DIAG/"
+    mappings:
+    - source_column: contact_id
+      via_file: kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: cpr # cpr
+      rename_to: subject_id
+    - source_column: contact_id
+      via_file: kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: dato_start # date
+      rename_to: date_start
+    - source_column: contact_id
+      via_file: kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: tidspunkt_start # time
+      rename_to: time_start
+      drop_source: true
+    combine_datetime:
+      timestamp:
+        date_col: date_start
+        time_col: time_start
+        drop_original: true
