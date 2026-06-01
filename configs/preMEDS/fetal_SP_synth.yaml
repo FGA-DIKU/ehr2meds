@@ -9,31 +9,31 @@ chunksize: 10_000 # Just for testing, use around 250_000_000 for full conversion
 
 align_timestamps: # removes information that is not in the global format
   names: [timestamp]
-  format: "%Y-%m-%d %H:%M:%S"
+  format: "%Y-%m-%d %H:%M:%S.%f"
 
 paths:
-  concepts: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population  
+  tables_dir: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population  
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP
 
 write_file_type: csv 
 
-concepts:
+tables:
   diagnosis:
-    filename: diagnosis.csv
+    filename: ${paths.tables_dir}/diagnosis.csv
     rename_columns:
       Diagnosekode: code
       Redigeringsdato: timestamp
       CPR: subject_id
 
   procedure:
-    filename: procedure.csv
+    filename: ${paths.tables_dir}/procedure.csv
     rename_columns:
       Procedurekode: code
       Redigeringsdato: timestamp
       CPR: subject_id
 
   admissions:
-    filename: admissions.csv
+    filename: ${paths.tables_dir}/admissions.csv
     rename_columns:
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
@@ -45,39 +45,42 @@ concepts:
         prefix_col: code
         prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
 
-
-  # admissions:
-  #   filename: admissions.csv
-  #   rename_columns:
-  #     Flyt_ind: timestamp_in
-  #     Flyt_ud: timestamp_out
-  #     Afsnit: section
-  #     ADT_haendelse: type
-  #     CPR: subject_id
-  #   melt_table:
-  #     - target_name: code
-  #       source_cols: [type, section]
-  #       prefix_col: code
-  #       prefix_map: {type: TYPE/, section: SECTION/}
-  #     - target_name: timestamp
-  #       source_cols: [timestamp_in, timestamp_out]
-  #       prefix_col: code
-  #       prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
-
   labtest:
-    filename: labtest.asc
+    filename: ${paths.tables_dir}/labtest.asc
     rename_columns:
       BestOrd: code
       Bestillingsdato: timestamp
       CPR: subject_id
       Resultatværdi: numeric_value
-    #file_info:
-    #  sep: "|"
-    #  encoding: "latin1"
+    # file_info:
+    #   sep: "|"
+    #   encoding: "latin1"
 
+  SDS_diagnoser:
+    filename: ${paths.tables_dir}/diagnoser.csv               
+    rename_columns:
+      diagnosekode: code
+      diagnose_type: diagnosetype
+      contact_id_new: contact_id
+    code_prefix: "RD/"
+    mappings:
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.csv           
+        join_on: contact_id
+        target_column: person_id
+        rename_to: subject_id
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.csv
+        join_on: contact_id
+        target_column: dato_slut      
+        rename_to: timestamp
+        drop_source: true
+    unroll_columns:
+      - column: diagnosetype
+        prefix: "RD_TYPE/"
 
 patients_info:
-  filename: patient_info.csv
+  filename: ${paths.tables_dir}/patient_info.csv
   rename_columns:
     CPR: subject_id
     Birthdate: birthdate

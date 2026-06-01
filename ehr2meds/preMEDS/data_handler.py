@@ -27,7 +27,6 @@ class DataHandler:
         self,
         output_dir: str,
         file_type: str,
-        path: str,
         chunksize: Optional[int] = None,
         test: Optional[bool] = False,
         test_rows: Optional[int] = 1_000_000,
@@ -36,7 +35,7 @@ class DataHandler:
         self.file_type = file_type
 
         # Initialize the appropriate data loader
-        self.data_loader = DataLoader(path, chunksize, test)
+        self.data_loader = DataLoader(chunksize, test)
 
     def load_pandas(self, filename: str, cols: Optional[list[str]] = None, **kwargs) -> pd.DataFrame:
         return self.data_loader.load_dataframe(filename=filename, cols=cols, **kwargs)
