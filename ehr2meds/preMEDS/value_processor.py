@@ -49,6 +49,7 @@ class ValueProcessor:
             )
         logger.info("Distribution data loaded")
         self.process_distribution_data(dist)
+        logger.info("Processing data")
         self.process_data()
 
     def process_data(self):
@@ -56,6 +57,7 @@ class ValueProcessor:
         output_path = Path(self.output_path)
         base_path = input_root / "data"
         for file_path in sorted(base_path.glob("*/*.parquet")):
+            logger.info(f"Processing {file_path}")
             for chunk in tqdm(
                 self.data_loader.load_chunks(filename=str(file_path)),
                 desc=f"Processing {file_path}",
@@ -116,7 +118,6 @@ class ValueProcessor:
                 ):
                     if self.numeric_value not in chunk.columns or CODE not in chunk.columns:
                         raise ValueError(f"Missing required columns. Available columns: {chunk.columns}")
-                    logger.info(f"Loaded {self.cfg.data.chunksize * counter}")
                     chunk[self.numeric_value] = pd.to_numeric(chunk[self.numeric_value], errors="coerce")
                     chunk = chunk.dropna(subset=[self.numeric_value])
                     grouped = chunk.groupby(CODE)[self.numeric_value].apply(list).to_dict()
