@@ -1,0 +1,27 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+test: false
+env: local
+run_name: normalise_labs
+paths:
+  input: ${oc.env:EHR2MEDS_DATA}/MEDS/SP/
+  output: ${oc.env:EHR2MEDS_DATA}/MEDS/SP/processed_data
+
+file_name: labtest
+  
+data:
+  chunksize: 30000000
+  numeric_value: numeric_value
+  normalize: 
+    norm_type: min_max
+    build_distribution_on: ["train", "tuning"]
+    dist_path: # Add optional path to distribution data
+  aggregate: 
+    agg_type: first  # pandas agg function or 'list': numeric_value becomes a list of all values in the group

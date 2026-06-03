@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 import pandas as pd
-from ehr2meds.preMEDS.constants import CODE
+from ehr2meds.preMEDS.constants import CODE, SUBJECT_ID, TIMESTAMP
 from ehr2meds.preMEDS.dataloading import DataLoader
 from tqdm import tqdm
 from typing import Dict, List
@@ -10,48 +10,62 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-class Normalizer:
+class ValueProcessor:
     def __init__(self, cfg) -> None:
-        self.cfg = cfg
         self.test = cfg.test
         logger.info(f"test {self.test}")
-        self.normalization_type = cfg.data["norm_type"]
         self.data_loader = DataLoader(
-            chunksize=self.cfg.data.chunksize,
+            chunksize=cfg.data.chunksize,
             test=self.test,
         )
-        # Initialize distribution data placeholders
-        self.min_max_vals = None
         self.numeric_value = cfg.data["numeric_value"]
+        self.input_path = cfg.paths.input
+        self.output_path = cfg.paths.output
+        self.file_name = cfg.file_name
+
+        self.normalization_type = None
+        self.norm_params: Dict[str, dict] = {}
+        if cfg.data.get("normalize"):
+            self.normalization_type = cfg.data.normalize.norm_type
+            self.build_distribution_on = cfg.data.normalize.build_distribution_on
+            self.dist_path = cfg.data.normalize.dist_path
+
+        self.aggregation_type = None
+        self.agg_params: Dict[str, dict] = {}
+        if cfg.data.get("aggregate"):
+            self.aggregation_type = cfg.data.aggregate.agg_type
 
     def __call__(self):
-        print("Getting lab distribution")
-        if self.cfg.data.get("dist_path", None):
-            dist = pd.read_csv(self.cfg.data.dist_path)
+        logger.info("Getting lab distribution")
+        if self.dist_path:
+            dist = pd.read_csv(self.dist_path)
         else:
             dist = self.get_lab_values(
-                filename=self.cfg.file_name, 
-                input_path=self.cfg.paths.input,
-                numeric_value=self.cfg.data.numeric_value,
-                build_distribution_on=self.cfg.data.build_distribution_on,
-                norm_type=self.cfg.data.norm_type,
+                filename=self.file_name, 
+                input_path=self.input_path,
+                numeric_value=self.numeric_value,
+                build_distribution_on=self.build_distribution_on,
+                norm_type=self.normalization_type,
             )
-        print("Distribution data loaded")
+        logger.info("Distribution data loaded")
         self.process_distribution_data(dist)
-        print("Normalizing data")
-        self.normalize_data()
+        self.process_data()
 
-    def normalize_data(self):
-        input_root = Path(self.cfg.paths.input)
-        output_path = Path(self.cfg.paths.output)
+    def process_data(self):
+        input_root = Path(self.input_path)
+        output_path = Path(self.output_path)
         base_path = input_root / "data"
         for file_path in sorted(base_path.glob("*/*.parquet")):
             for chunk in tqdm(
                 self.data_loader.load_chunks(filename=str(file_path)),
                 desc=f"Processing {file_path}",
             ):
-                chunk = self.normalize_chunk(chunk)
+                if self.normalization_type:
+                    chunk = self.normalize_chunk(chunk)
+                if self.aggregation_type:
+                    chunk = self.aggregate_chunk(chunk)
                 rel_path = file_path.relative_to(base_path)
+                print(chunk.head())
                 self.save_chunk(chunk, rel_path, output_path)
 
 
@@ -64,7 +78,7 @@ class Normalizer:
 
     def process_minmax_distribution(self, dist: Dict[str, List[float]]) -> None:
         """Process distribution data for min-max normalization."""
-        self.min_max_vals = {
+        self.norm_params["min_max"] = {
             concept: (
                 (np.percentile(dist[concept], 0.01 * 100) if len(dist[concept]) > 1 else dist[concept][0]),
                 (np.percentile(dist[concept], 0.99 * 100) if len(dist[concept]) > 1 else dist[concept][0]),
@@ -118,16 +132,62 @@ class Normalizer:
 
     def normalize_chunk(self, chunk: pd.DataFrame) -> pd.DataFrame:
         nums = pd.to_numeric(chunk[self.numeric_value], errors="coerce")
-        if self.normalization_type == "Min_max":
+        if self.normalization_type == "min_max":
             return self.min_max_normalize(chunk, nums)
         raise ValueError(f"Invalid normalization type: {self.normalization_type}")
+    
+    def aggregate_chunk(self, chunk: pd.DataFrame) -> pd.DataFrame:
+        """Aggregate rows with the same subject_id, code, and timestamp."""
+        nan_rows = chunk[chunk[[TIMESTAMP]].isna().any(axis=1)]
+        
+        non_nan_rows = chunk.dropna(subset=[TIMESTAMP]).copy()
+
+        if non_nan_rows.empty:
+            out = chunk
+        else:
+            non_nan_rows[TIMESTAMP] = pd.to_datetime(
+                non_nan_rows[TIMESTAMP], errors="coerce"
+            )
+            invalid_ts = non_nan_rows[TIMESTAMP].isna()
+            if invalid_ts.any():
+                nan_rows = pd.concat(
+                    [nan_rows, non_nan_rows[invalid_ts]], ignore_index=True
+                )
+                non_nan_rows = non_nan_rows[~invalid_ts]
+
+            if non_nan_rows.empty:
+                out = nan_rows if not nan_rows.empty else chunk
+            else:
+                group_cols = [SUBJECT_ID, TIMESTAMP, CODE]
+                grouped = non_nan_rows.groupby(group_cols, dropna=False)
+                if self.aggregation_type == "list":
+                    aggregated_df = grouped.first().reset_index()
+                    aggregated_df[self.numeric_value] = grouped[
+                        self.numeric_value
+                    ].apply(list).tolist()
+                else:
+                    aggregated_df = grouped.agg(self.aggregation_type).reset_index()
+                    aggregated_df[self.numeric_value] = [
+                        [v] for v in aggregated_df[self.numeric_value]
+                    ]
+
+                parts = [aggregated_df]
+                if not nan_rows.empty:
+                    parts.append(nan_rows)
+                out = pd.concat(parts, ignore_index=True)
+
+        out = out.copy()
+        out[self.numeric_value] = [
+            v if isinstance(v, list) else [v] for v in out[self.numeric_value]
+        ]
+        return out
 
     def min_max_normalize(
         self, chunk: pd.DataFrame, nums: pd.Series
     ) -> pd.DataFrame:
-        """Min-max scale numeric values for codes present in min_max_vals."""
+        """Min-max scale numeric values for codes present in norm_params['min_max']."""
         codes = chunk[CODE]
-        for code, (min_val, max_val) in self.min_max_vals.items():
+        for code, (min_val, max_val) in self.norm_params["min_max"].items():
             mask = nums.notna() & (codes == code)
             if not mask.any() or max_val == min_val:
                 continue

@@ -3,7 +3,7 @@ import pathlib
 from dotenv import load_dotenv
 from ehr2meds.paths import get_config_path
 from ehr2meds.preMEDS.logging import setup_logging
-from ehr2meds.preMEDS.normalizer import Normalizer
+from ehr2meds.preMEDS.value_processor import ValueProcessor
 from omegaconf import DictConfig, OmegaConf
 from os.path import join
 
@@ -17,7 +17,7 @@ load_dotenv()
 )
 def main(cfg: DictConfig) -> None:
     """
-    Run normalization on preMEDS data with the given config file.
+    Run normalization on MEDS data with the given config file.
 
     :param config_path: Full path to the config file
     """
@@ -32,11 +32,11 @@ def main(cfg: DictConfig) -> None:
     setup_logging(
         log_dir=cfg["logging"]["path"],
         log_level=cfg["logging"]["level"],
-        name="preMEDS.log",
+        name="normalize_meds.log",
     )
 
-    normalizer = Normalizer(cfg)
-    normalizer()
+    value_processor = ValueProcessor(cfg)
+    value_processor()
     return cfg
 
 
