@@ -61,7 +61,8 @@ class PREMEDSExtractor:
             .drop_duplicates(subset=[SUBJECT_ID])
         )
         logger.info(f"Number of patients in dataframe: {len(df)}")
-
+        if df[SUBJECT_ID].dtype != object:
+            df[SUBJECT_ID] = df[SUBJECT_ID].astype(str)
         hash_to_int_map = dict(zip(df[SUBJECT_ID], range(len(df))))
 
         # Save the mapping for reference.
