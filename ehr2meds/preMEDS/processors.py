@@ -26,7 +26,7 @@ class Processor:
         df: pd.DataFrame,
         table_config: dict,
         data_handler: "DataHandler",
-        subject_id_mapping: Optional[Dict[str, int]]=None,
+        subject_id_mapping: Optional[Dict[str, int]] = None,
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the table.
@@ -41,6 +41,7 @@ class Processor:
         9. convert numeric columns
         10. apply pid integer mapping
         11. clean data
+        12. validate subject_id column
         """
         df = normalize_columns(df, table_config)
         df = apply_value_map(df, table_config)
@@ -56,7 +57,8 @@ class Processor:
         df = convert_numeric_columns(df, table_config)
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
-        df = map_pids_to_ints(df, subject_id_mapping)
+        if subject_id_mapping:
+            df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
         validate_subject_id(df)
 

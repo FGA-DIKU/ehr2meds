@@ -70,7 +70,7 @@ class PREMEDSExtractor:
 
         return hash_to_int_map
 
-    def format_tables(self, subject_id_mapping: Optional[Dict[str, int]]=None) -> None:
+    def format_tables(self, subject_id_mapping: Optional[Dict[str, int]] = None) -> None:
         """Process the tables using the data handler"""
         for table_type, table_config in self.cfg.get("tables", {}).items():
             logger.info(f"Processing table: {table_type}")
