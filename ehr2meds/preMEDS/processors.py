@@ -57,7 +57,7 @@ class Processor:
         df = convert_numeric_columns(df, table_config)
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
-        if subject_id_mapping:
+        if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
         validate_subject_id(df)

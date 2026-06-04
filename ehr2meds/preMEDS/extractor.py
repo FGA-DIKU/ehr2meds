@@ -88,7 +88,7 @@ class PREMEDSExtractor:
         self,
         table_type: str,
         table_config: dict,
-        subject_id_mapping: Dict[str, int],
+        subject_id_mapping: Optional[Dict[str, int]] = None,
         time_stamp_dict: Optional[dict] = None,
     ) -> None:
         first_chunk = True
@@ -99,8 +99,8 @@ class PREMEDSExtractor:
             processed_chunk = self.processor.process(
                 chunk,
                 table_config,
-                subject_id_mapping,
                 self.data_handler,
+                subject_id_mapping,
                 time_stamp_dict,
             )
 
