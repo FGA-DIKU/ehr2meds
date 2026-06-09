@@ -128,7 +128,7 @@ def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd
     df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
     if df[SUBJECT_ID].isna().any():
         missing_ids = df[SUBJECT_ID][df[SUBJECT_ID].isna()].unique()
-        raise UserWarning(f"Found subject IDs in the data that are not in the mapping: {len(missing_ids)} unique missing IDs. Examples: {missing_ids[:10]}")
+        print(f"Found {len(missing_ids)} subject IDs in the data that are not in the mapping. These IDs will be dropped")
     df = df.dropna(subset=[SUBJECT_ID], how="any")
     df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
     return df

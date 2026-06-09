@@ -1,6 +1,4 @@
 import logging
-import pickle
-import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.processors import Processor
 from tqdm import tqdm
@@ -54,7 +52,7 @@ class PREMEDSExtractor:
         map_col = self.cfg.subject_id_mapping.mapping_id_col
         df = (
             self.data_handler.load_pandas(
-                self.cfg.subject_id_mapping.filename,
+                self.cfg.subject_id_mapping.file,
                 cols=[id_col] + ([map_col] if map_col else []),
             )
             .dropna(subset=[id_col], how="any")
