@@ -51,7 +51,7 @@ class PREMEDSExtractor:
         id_col = self.cfg.subject_id_mapping.subject_id_col
         map_col = self.cfg.subject_id_mapping.mapping_id_col
         df = (
-            self.data_handler.load_pandas(
+            self.data_handler.load(
                 self.cfg.subject_id_mapping.file,
                 cols=[id_col] + ([map_col] if map_col else []),
             )

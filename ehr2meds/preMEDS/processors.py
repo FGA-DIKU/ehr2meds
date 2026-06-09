@@ -74,7 +74,7 @@ class Processor:
         if not register_path.exists():
             filename = str(Path(__file__).parent.parent / "resources" / filename)
 
-        return data_handler.load_pandas(filename, cols=cols)
+        return data_handler.load(filename, cols=cols)
 
     @staticmethod
     def _apply_mappings(df: pd.DataFrame, table_config: dict, data_handler: "DataHandler") -> pd.DataFrame:

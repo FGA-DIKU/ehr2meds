@@ -37,7 +37,7 @@ class DataHandler:
         # Initialize the appropriate data loader
         self.data_loader = DataLoader(chunksize, test)
 
-    def load_pandas(self, filename: str, cols: Optional[list[str]] = None, **kwargs) -> pd.DataFrame:
+    def load(self, filename: str, cols: Optional[list[str]] = None, **kwargs) -> pd.DataFrame:
         return self.data_loader.load_dataframe(filename=filename, cols=cols, **kwargs)
 
     def load_chunks(self, cfg: dict) -> Iterator[pd.DataFrame]:
