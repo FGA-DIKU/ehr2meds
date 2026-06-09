@@ -17,8 +17,9 @@ paths:
 
 write_file_type: csv
 subject_id_mapping:
-  filename: ${paths.tables_dir}/patient_info.csv
-  subject_id_col: CPR
+  file: ${paths.tables_dir}/patient_info.csv # Table to derive mapping from (can be None)
+  subject_id_col: CPR # Column to use as the subject_id mapping
+  mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
   diagnosis:

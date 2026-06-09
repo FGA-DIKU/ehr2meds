@@ -1,6 +1,6 @@
 import logging
 import pickle
-from ehr2meds.preMEDS.constants import SUBJECT_ID
+import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.processors import Processor
 from tqdm import tqdm
@@ -51,25 +51,32 @@ class PREMEDSExtractor:
         # Load existing mapping if available
         logger.info("Loading dataframe for subject ID mapping")
         id_col = self.cfg.subject_id_mapping.subject_id_col
+        map_col = self.cfg.subject_id_mapping.mapping_id_col
         df = (
             self.data_handler.load_pandas(
                 self.cfg.subject_id_mapping.filename,
-                cols=[id_col],
+                cols=[id_col] + ([map_col] if map_col else []),
             )
-            .rename(columns={id_col: SUBJECT_ID})
-            .dropna(subset=[SUBJECT_ID], how="any")
-            .drop_duplicates(subset=[SUBJECT_ID])
+            .dropna(subset=[id_col], how="any")
+            .drop_duplicates(subset=[id_col])
         )
         logger.info(f"Number of patients in dataframe: {len(df)}")
-        if df[SUBJECT_ID].dtype != object:
-            df[SUBJECT_ID] = df[SUBJECT_ID].astype(str)
-        hash_to_int_map = dict(zip(df[SUBJECT_ID], range(len(df))))
+        if df[id_col].dtype != object:
+            df[id_col] = df[id_col].astype(str)
+
+        # Always sort by the ID column for consistent mapping
+        df = df.sort_values(by=id_col).reset_index(drop=True)
+
+        # If no mapping column is provided, create a int-based mapping
+        if not map_col:
+            df["mapping"] = df.index
+            map_col = "mapping"
+        subject_id_mapping = dict(zip(df[id_col], df[map_col]))
 
         # Save the mapping for reference.
-        with open(f"{self.cfg.paths.output}/hash_to_integer_map.pkl", "wb") as f:
-            pickle.dump(hash_to_int_map, f)
+        df.to_csv(f"{self.cfg.paths.output}/subject_id_mapping.csv", index=False)
 
-        return hash_to_int_map
+        return subject_id_mapping
 
     def format_tables(self, subject_id_mapping: Optional[Dict[str, int]] = None) -> None:
         """Process the tables using the data handler"""
