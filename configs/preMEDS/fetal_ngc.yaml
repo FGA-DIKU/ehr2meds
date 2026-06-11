@@ -85,6 +85,23 @@ tables:
       Resultatværdi: numeric_value
       MOR_CPR: subject_id
     code_prefix: "LAB/"
+  
+  smoking_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - Rygning.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      Rygestatus: code
+      "Kontakt dato": timestamp
+    code_prefix: "SMOKE/"
+  
+  alcohol_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - Alkohol.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      "Antal ugentlige genstande": code
+      "Kontakt dato": timestamp
+    code_prefix: "ALCOHOL/"
+
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
