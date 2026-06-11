@@ -15,7 +15,11 @@ paths:
   tables_dir: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population  
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_data/SP
 
-write_file_type: csv 
+write_file_type: csv
+subject_id_mapping:
+  file: ${paths.tables_dir}/patient_info.csv # Table to derive mapping from (can be None)
+  subject_id_col: CPR # Column to use as the subject_id mapping
+  mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
   diagnosis:
@@ -79,10 +83,10 @@ tables:
       - column: diagnosetype
         prefix: "RD_TYPE/"
 
-patients_info:
-  filename: ${paths.tables_dir}/patient_info.csv
-  rename_columns:
-    CPR: subject_id
-    Birthdate: birthdate
-    Deathdate: deathdate
-    Gender: gender
+  patients_info:
+    filename: ${paths.tables_dir}/patient_info.csv
+    rename_columns:
+      CPR: subject_id
+      Birthdate: birthdate
+      Deathdate: deathdate
+      Gender: gender

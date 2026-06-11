@@ -14,6 +14,7 @@ from ehr2meds.preMEDS.utils import (
     prefix_codes,
     select_and_rename_columns,
     unroll_columns,
+    validate_subject_id,
 )
 from pathlib import Path
 from typing import Dict, Optional
@@ -24,8 +25,8 @@ class Processor:
     def process(
         df: pd.DataFrame,
         table_config: dict,
-        subject_id_mapping: Dict[str, int],
         data_handler: "DataHandler",
+        subject_id_mapping: Optional[Dict[str, int]] = None,
         time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the table.
@@ -40,6 +41,7 @@ class Processor:
         9. convert numeric columns
         10. apply pid integer mapping
         11. clean data
+        12. validate subject_id column
         """
         df = normalize_columns(df, table_config)
         df = apply_value_map(df, table_config)
@@ -55,8 +57,10 @@ class Processor:
         df = convert_numeric_columns(df, table_config)
         if time_stamp_dict:
             df = convert_timestamp_columns(df, **time_stamp_dict)
-        df = map_pids_to_ints(df, subject_id_mapping)
+        if subject_id_mapping is not None:
+            df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
+        validate_subject_id(df)
 
         return df
 
@@ -70,7 +74,7 @@ class Processor:
         if not register_path.exists():
             filename = str(Path(__file__).parent.parent / "resources" / filename)
 
-        return data_handler.load_pandas(filename, cols=cols)
+        return data_handler.load(filename, cols=cols)
 
     @staticmethod
     def _apply_mappings(df: pd.DataFrame, table_config: dict, data_handler: "DataHandler") -> pd.DataFrame:

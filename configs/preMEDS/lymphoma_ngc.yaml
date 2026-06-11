@@ -23,6 +23,11 @@ align_timestamps: # removes information that is not in the global format
   names: [timestamp]
   format: "%Y-%m-%d %H:%M:%S"
 
+subject_id_mapping:
+  file: ${paths.tables_dir}/CPMI_PatientInfo.parquet # Table to derive mapping from (can be None)
+  subject_id_col: patientid # Column to use as the subject_id mapping
+  mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
+
 tables:
   SDS_dimpatologiskdiagnose:
       filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
@@ -381,11 +386,11 @@ tables:
     code_prefix: "L/"
     numeric_columns: [numeric_value]
 
-patients_info:
-  filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
-  rename_columns:
-    patientid: subject_id
-    Fødselsdato: birthdate
-    Dødsdato: deathdate
-    Køn: gender
-  file_type: parquet
+  patients_info:
+    filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
+    rename_columns:
+      patientid: subject_id
+      Fødselsdato: birthdate
+      Dødsdato: deathdate
+      Køn: gender
+    file_type: parquet

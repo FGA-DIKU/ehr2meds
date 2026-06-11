@@ -27,6 +27,11 @@ align_timestamps: # removes information that is not in the global format
   names: [timestamp]
   format: "%Y-%m-%d %H:%M:%S.%f"
 
+subject_id_mapping:
+  file: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv # Table to derive mapping from (can be None)
+  subject_id_col: MOR_CPR # Column to use as the subject_id mapping
+  mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
+
 tables:
   admissions:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - ADT hændelser.csv
@@ -322,12 +327,12 @@ tables:
     numeric_columns: [numeric_value]
 
 
-# TODO Add smoking status
-# Todo support multiple patient_infos
-patients_info:
-  filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv
-  rename_columns:
-    MOR_CPR: subject_id
-    Fødselsdato: birthdate
-    Dødsdato: deathdate
-    Køn: gender
+  # TODO Add smoking status
+  # Todo support multiple patient_infos
+  patients_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      Fødselsdato: birthdate
+      Dødsdato: deathdate
+      Køn: gender
