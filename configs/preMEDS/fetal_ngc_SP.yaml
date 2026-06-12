@@ -1,0 +1,111 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+hydra:
+  run:
+    dir: ./outputs/hydra/fetal_ngc
+  output_subdir: hydra
+
+test: false
+env: local
+run_name: preMEDS_SP_and_SDS
+chunksize: 1000000000
+
+paths:
+  output: ../data/preMEDS/fetal_data/SP/dmpl_plus/
+  tables_dir: ${oc.env:EHR2MEDS_DATA}/    
+
+write_file_type: csv 
+
+align_timestamps: # removes information that is not in the global format
+  names: [timestamp]
+  format: "%Y-%m-%d %H:%M:%S.%f"
+
+subject_id_mapping:
+  file: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv # Table to derive mapping from (can be None)
+  subject_id_col: MOR_CPR # Column to use as the subject_id mapping
+  mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
+
+tables:
+  admissions:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - ADT hændelser.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      Flyt_ind: timestamp_in
+      Flyt_ud: timestamp_out
+      Afsnit: code
+    melt_table:
+      - target_name: timestamp
+        source_cols: [timestamp_in, timestamp_out]
+        prefix_col: code
+        prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
+    code_prefix: "ADM/"
+
+  diagnosis:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Diagnoseliste.csv
+    rename_columns:
+      Diagnosekode: code
+      Diagnose: fill_code
+      Redigeringsdato: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "D/"
+
+  procedure:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Procedurer.csv
+    rename_columns:
+      ProcedureCode: code
+      ServiceDate: timestamp
+      MOR_CPR: subject_id
+    code_prefix: "P/"
+
+  medication:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Medicin.csv
+    rename_columns:
+      ATC: code
+      Administrationstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      MOR_CPR: subject_id
+    code_prefix: "M/"
+    fillna:
+      timestamp:
+        column: fill_timestamp
+
+  # TODO Add lab values
+  labtest:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Prøvesvar.csv
+    rename_columns:
+      BestOrd: code
+      Prøvetagningstidspunkt: timestamp
+      Resultatværdi: numeric_value
+      MOR_CPR: subject_id
+    code_prefix: "LAB/"
+  
+  smoking_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - Rygning.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      Rygestatus: code
+      "Kontakt dato": timestamp
+    code_prefix: "SMOKE/"
+  
+  alcohol_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - Alkohol.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      "Antal ugentlige genstande": code
+      "Kontakt dato": timestamp
+    code_prefix: "ALCOHOL/"
+
+  patients_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv
+    rename_columns:
+      MOR_CPR: subject_id
+      Fødselsdato: birthdate
+      Dødsdato: deathdate
+      Køn: gender
