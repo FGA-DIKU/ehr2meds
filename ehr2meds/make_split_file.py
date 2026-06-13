@@ -28,8 +28,8 @@ def main(
     }
     population = pl.read_csv(population_file)
     child_to_parent_mapping = {
-        r["BABY_CPR"]: r["MOR_CPR"]
-        for r in population.select(["BABY_CPR", "MOR_CPR"]).to_dicts()
+        r["b_cpr"]: r["m_cpr"]
+        for r in population.select(["b_cpr", "m_cpr"]).to_dicts()
     }
 
     def _map_and_skip(ids: list) -> tuple[list, list]:
