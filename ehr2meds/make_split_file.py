@@ -1,5 +1,4 @@
 import json
-import pickle
 import argparse
 from pathlib import Path
 import polars as pl
@@ -22,8 +21,11 @@ def main(
         test_ids = json.load(f)
     with open(train_pts, "r") as f:
         train_ids = json.load(f)
-    with open(mapping_file, "rb") as f:
-        mapping_dict = pickle.load(f)
+    mapping = pl.read_csv(mapping_file)
+    mapping_dict = {
+        r["m_cpr"]: r["mapping"]
+        for r in mapping.select(["m_cpr", "mapping"]).to_dicts()
+    }
     population = pl.read_csv(population_file)
     child_to_parent_mapping = {
         r["BABY_CPR"]: r["MOR_CPR"]
@@ -77,11 +79,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mapping-file",
         required=True,
-        help="Path to pickle file containing mapping dict (old_id -> new_id).",
+        help="Path to CSV with columns m_cpr and mapping (old_id -> new_id).",
     )
     parser.add_argument(
         "--population-file",
-        default="population.json",
+        default="population.csv",
         help="Path to csv file containing population",
     )
     parser.add_argument(
