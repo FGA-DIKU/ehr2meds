@@ -26,6 +26,8 @@ class PREMEDSExtractor:
                 "names": cfg.align_timestamps.names,
                 "format": cfg.align_timestamps.format,
             }
+            if cfg.align_timestamps.get("null_values"):
+                self.time_stamp_dict["null_values"] = cfg.align_timestamps.null_values
         else:
             self.time_stamp_dict = None
 

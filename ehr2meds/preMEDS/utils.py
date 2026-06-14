@@ -5,7 +5,7 @@ from ehr2meds.preMEDS.constants import (
     SUBJECT_ID,
     TIMESTAMP,
 )
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
@@ -184,11 +184,22 @@ def unroll_columns(df: pd.DataFrame, concept_config: dict) -> List[pd.DataFrame]
     return processed_dfs
 
 
-def convert_timestamp_columns(df: pd.DataFrame, names: List[str], format: str) -> pd.DataFrame:
-    """Convert timestamps to global format."""
+def convert_timestamp_columns(
+    df: pd.DataFrame,
+    names: List[str],
+    format: str,
+    null_values: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """Convert timestamps to global format. Invalid values become NaN."""
+    if null_values:
+        for name in names:
+            if name in df.columns:
+                df[name] = df[name].replace(null_values, pd.NA)
+
     for name in names:
         if name in df.columns:
-            df[name] = pd.to_datetime(df[name]).dt.strftime(format)
+            parsed = pd.to_datetime(df[name], errors="coerce")
+            df[name] = parsed.map(lambda ts: ts.strftime(format) if pd.notna(ts) else pd.NA)
     return df
 
 
