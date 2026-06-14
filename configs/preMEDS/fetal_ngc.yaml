@@ -98,7 +98,7 @@ tables:
     filename: ${paths.tables_dir}/SP/tables/Mor - Alkohol.csv
     rename_columns:
       MOR_CPR: subject_id
-      "Antal ugentlige genstande": code
+      "Alkohol - Antal ugentlige genstande": code
       "Kontakt dato": timestamp
     code_prefix: "ALCOHOL/"
 
