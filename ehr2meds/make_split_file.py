@@ -32,27 +32,67 @@ def main(
         for r in population.select(["b_cpr", "m_cpr"]).to_dicts()
     }
 
-    def _map_and_skip(ids: list) -> tuple[list, list]:
-        kept: list = []
+    def _map_and_skip(ids: list) -> tuple[list, list, list]:
+        kept_mapped: list = []
+        kept_b_cprs: list = []
         skipped: list = []
-        for i in ids:
-            p_id = child_to_parent_mapping.get(i, None)
+        for b_cpr in ids:
+            p_id = child_to_parent_mapping.get(b_cpr)
             if p_id is not None and p_id in mapping_dict:
-                kept.append(mapping_dict[p_id])
+                kept_mapped.append(mapping_dict[p_id])
+                kept_b_cprs.append(b_cpr)
             else:
-                skipped.append(i)
-        return kept, skipped
+                skipped.append(b_cpr)
+        return kept_mapped, kept_b_cprs, skipped
+
+    def _check_b_cpr_overlap(splits: dict[str, list]) -> None:
+        seen: dict[str, str] = {}
+        overlaps: list[tuple[str, str, str]] = []
+        for split_name, b_cprs in splits.items():
+            for b_cpr in b_cprs:
+                if b_cpr in seen:
+                    overlaps.append((b_cpr, seen[b_cpr], split_name))
+                else:
+                    seen[b_cpr] = split_name
+        if overlaps:
+            examples = ", ".join(
+                f"{b_cpr!r} in {a} and {b}" for b_cpr, a, b in overlaps[:5]
+            )
+            raise ValueError(
+                f"Overlapping b_cprs across splits ({len(overlaps)} total). "
+                f"Examples: {examples}"
+            )
 
     n_test_in = len(test_ids)
     n_train_in = len(train_ids)
-    test_ids, skipped_test = _map_and_skip(test_ids)
-    train_ids, skipped_train = _map_and_skip(train_ids)
-    train_ids, val_ids = train_ids[:int(len(train_ids) * 0.8)], train_ids[int(len(train_ids) * 0.8):]
+
+    input_overlap = set(test_ids) & set(train_ids)
+    if input_overlap:
+        examples = [repr(x) for x in list(input_overlap)[:5]]
+        raise ValueError(
+            f"test-pts and train-pts share {len(input_overlap)} b_cpr(s). "
+            f"Examples: {examples}"
+        )
+
+    test_ids, test_b_cprs, skipped_test = _map_and_skip(test_ids)
+    mapped_train, train_b_cprs, skipped_train = _map_and_skip(train_ids)
+
+    # test: all mapped IDs from --test-pts; train/val: 80/20 split of --train-pts only
+    split_at = int(len(mapped_train) * 0.8)
+    train_ids = mapped_train[:split_at]
+    val_ids = mapped_train[split_at:]
+    train_b_cprs = train_b_cprs[:split_at]
+    val_b_cprs = train_b_cprs[split_at:]
+
+    _check_b_cpr_overlap(
+        {"test": test_b_cprs, "train": train_b_cprs, "val": val_b_cprs}
+    )
 
     print(
         "Mapping results:"
         f" test_in={n_test_in}, test_mapped={len(test_ids)}, test_skipped={len(skipped_test)};"
-        f" train_in={n_train_in}, train_mapped={len(train_ids)}, train_skipped={len(skipped_train)}"
+        f" train_in={n_train_in}, train_mapped={len(mapped_train)}, train_skipped={len(skipped_train)};"
+        f" train_split={len(train_ids)}, val_split={len(val_ids)}"
     )
     if skipped_test:
         print("  examples (test skipped):", [repr(x) for x in skipped_test[:5]])
@@ -64,17 +104,20 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Create a split file (train/test) after applying an ID mapping."
+        description=(
+            "Create a split file after applying an ID mapping. "
+            "test comes from --test-pts; train and val are an 80/20 split of --train-pts."
+        )
     )
     parser.add_argument(
         "--test-pts",
         required=True,
-        help="Path to JSON list of test subject IDs (pre-mapping).",
+        help="Path to JSON list of test b_cprs (mapped in full; not split further).",
     )
     parser.add_argument(
         "--train-pts",
         required=True,
-        help="Path to JSON list of train subject IDs (pre-mapping).",
+        help="Path to JSON list of train b_cprs (mapped, then split 80/20 into train and val).",
     )
     parser.add_argument(
         "--mapping-file",
