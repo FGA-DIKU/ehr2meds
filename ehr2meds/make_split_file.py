@@ -45,6 +45,30 @@ def main(
                 skipped.append(b_cpr)
         return kept_mapped, kept_b_cprs, skipped
 
+    def _unique_preserve_order(ids: list) -> list:
+        seen: set = set()
+        out: list = []
+        for x in ids:
+            if x not in seen:
+                seen.add(x)
+                out.append(x)
+        return out
+
+    def _split_train_val_by_subject(
+        mapped: list, b_cprs: list, frac: float = 0.8
+    ) -> tuple[list, list, list, list]:
+        """80/20 split on unique mapped subject_ids (no mother in both train and val)."""
+        subject_order = _unique_preserve_order(mapped)
+        split_at = int(len(subject_order) * frac)
+        train_subjects = set(subject_order[:split_at])
+        val_subjects = set(subject_order[split_at:])
+
+        train_ids = subject_order[:split_at]
+        val_ids = subject_order[split_at:]
+        train_b = [b for b, m in zip(b_cprs, mapped) if m in train_subjects]
+        val_b = [b for b, m in zip(b_cprs, mapped) if m in val_subjects]
+        return train_ids, val_ids, train_b, val_b
+
     def _check_b_cpr_overlap(splits: dict[str, list]) -> None:
         seen: dict[str, str] = {}
         overlaps: list[tuple[str, str, str]] = []
@@ -63,6 +87,24 @@ def main(
                 f"Examples: {examples}"
             )
 
+    def _check_mapped_overlap(splits: dict[str, list]) -> None:
+        seen: dict[int, str] = {}
+        overlaps: list[tuple[int, str, str]] = []
+        for split_name, mapped_ids in splits.items():
+            for mid in mapped_ids:
+                if mid in seen:
+                    overlaps.append((mid, seen[mid], split_name))
+                else:
+                    seen[mid] = split_name
+        if overlaps:
+            examples = ", ".join(
+                f"{mid} in {a} and {b}" for mid, a, b in overlaps[:5]
+            )
+            raise ValueError(
+                f"Overlapping mapped subject IDs across splits ({len(overlaps)} total). "
+                f"Examples: {examples}"
+            )
+
     n_test_in = len(test_ids)
     n_train_in = len(train_ids)
 
@@ -75,23 +117,27 @@ def main(
         )
 
     test_ids, test_b_cprs, skipped_test = _map_and_skip(test_ids)
+    test_ids = _unique_preserve_order(test_ids)
     mapped_train, train_b_cprs, skipped_train = _map_and_skip(train_ids)
 
-    # test: all mapped IDs from --test-pts; train/val: 80/20 split of --train-pts only
-    split_at = int(len(mapped_train) * 0.8)
-    train_ids = mapped_train[:split_at]
-    val_ids = mapped_train[split_at:]
-    train_b_cprs = train_b_cprs[:split_at]
-    val_b_cprs = train_b_cprs[split_at:]
+    # test: all mapped IDs from --test-pts; train/val: 80/20 on unique mothers
+    train_ids, val_ids, train_b_cprs, val_b_cprs = _split_train_val_by_subject(
+        mapped_train, train_b_cprs
+    )
 
     _check_b_cpr_overlap(
         {"test": test_b_cprs, "train": train_b_cprs, "val": val_b_cprs}
+    )
+    _check_mapped_overlap(
+        {"test": test_ids, "train": train_ids, "val": val_ids}
     )
 
     print(
         "Mapping results:"
         f" test_in={n_test_in}, test_mapped={len(test_ids)}, test_skipped={len(skipped_test)};"
-        f" train_in={n_train_in}, train_mapped={len(mapped_train)}, train_skipped={len(skipped_train)};"
+        f" train_in={n_train_in}, train_b_cprs_mapped={len(mapped_train)},"
+        f" train_subjects={len(_unique_preserve_order(mapped_train))},"
+        f" train_skipped={len(skipped_train)};"
         f" train_split={len(train_ids)}, val_split={len(val_ids)}"
     )
     if skipped_test:
