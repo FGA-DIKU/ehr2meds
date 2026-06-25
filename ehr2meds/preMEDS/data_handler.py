@@ -45,7 +45,6 @@ class DataHandler:
         return self.data_loader.load_chunks(
             filename=cfg[FILENAME],
             cols=cols if len(cols) > 0 else None,
-            **cfg.get("file_info", {}),
         )
 
     def save(self, df: pd.DataFrame, filename: str, mode: str = "w") -> None:

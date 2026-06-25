@@ -52,9 +52,6 @@ tables:
       Bestillingsdato: timestamp
       CPR: subject_id
       Resultatværdi: numeric_value
-    # file_info:
-    #   sep: "|"
-    #   encoding: "latin1"
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/diagnoser.csv               
