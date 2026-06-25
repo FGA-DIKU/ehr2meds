@@ -27,7 +27,6 @@ class Processor:
         table_config: dict,
         data_handler: "DataHandler",
         subject_id_mapping: Optional[Dict[str, int]] = None,
-        time_stamp_dict: Optional[dict] = None,
     ) -> pd.DataFrame:
         """Process the table.
         1. Normalize columns
@@ -55,8 +54,6 @@ class Processor:
         df = prefix_codes(df, table_config.get("code_prefix", None))
         df = Processor._unroll_columns(df, table_config)
         df = convert_numeric_columns(df, table_config)
-        if time_stamp_dict:
-            df = convert_timestamp_columns(df, **time_stamp_dict)
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)

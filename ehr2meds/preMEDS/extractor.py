@@ -21,13 +21,6 @@ class PREMEDSExtractor:
         self.cfg = cfg
         logger.info(f"test {cfg.test}")
         self.chunksize = cfg.get("chunksize", 500_000)
-        if cfg.get("align_timestamps"):
-            self.time_stamp_dict = {
-                "names": cfg.align_timestamps.names,
-                "format": cfg.align_timestamps.format,
-            }
-        else:
-            self.time_stamp_dict = None
 
         # Create data handler for tables
         self.data_handler = DataHandler(
@@ -85,7 +78,6 @@ class PREMEDSExtractor:
                     table_type,
                     table_config,
                     subject_id_mapping,
-                    self.time_stamp_dict,
                 )
             except Exception as e:
                 logger.warning(f"Error processing {table_type}: {str(e)}")
@@ -95,7 +87,6 @@ class PREMEDSExtractor:
         table_type: str,
         table_config: dict,
         subject_id_mapping: Optional[Dict[str, int]] = None,
-        time_stamp_dict: Optional[dict] = None,
     ) -> None:
         first_chunk = True
         for chunk in tqdm(
@@ -107,7 +98,6 @@ class PREMEDSExtractor:
                 table_config,
                 self.data_handler,
                 subject_id_mapping,
-                time_stamp_dict,
             )
 
             self._safe_save(self.data_handler, processed_chunk, table_type, first_chunk)

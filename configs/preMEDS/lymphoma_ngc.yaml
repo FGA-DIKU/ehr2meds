@@ -19,10 +19,6 @@ paths:
 
 write_file_type: parquet 
 
-align_timestamps: # removes information that is not in the global format
-  names: [timestamp]
-  format: "%Y-%m-%d %H:%M:%S"
-
 subject_id_mapping:
   file: ${paths.tables_dir}/CPMI_PatientInfo.parquet # Table to derive mapping from (can be None)
   subject_id_col: patientid # Column to use as the subject_id mapping
