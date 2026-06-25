@@ -1,7 +1,3 @@
-# defaults:
-  # - _extract
-  # - _self_
-
 description: |-
   This pipeline extracts the preMEDS dataset in longitudinal, sparse form from an input dataset meeting
   select criteria and converts them to the flattened MEDS format. You can control the key arguments to this
