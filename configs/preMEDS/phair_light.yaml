@@ -7,7 +7,6 @@ logging:
   level: INFO
   path: ./outputs/logs
 
-
 test: false
 env: local
 run_name: preMEDS_phair_light
@@ -15,21 +14,22 @@ chunksize: 10_000_000
 
 paths:
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/PHAIR_light
-
-  concepts: ${oc.env:EHR2MEDS_DATA}/raw/sp         
-  register_concepts: ${oc.env:EHR2MEDS_DATA}/raw/registers   
+  tables_dir: /storage/archive/UCPH/PHAIR/dhr/tables/parquet
   file_type: parquet                  
 
 write_file_type: parquet 
-
 
 align_timestamps: # removes information that is not in the global format
   names: [timestamp]
   format: "%Y-%m-%d %H:%M:%S"
 
-register_concepts:
+subject_id_mapping:
+  filename:
+  subject_id_col:
+
+tables:
   epikur:
-    filename: epikur.parquet
+    filename: ${paths.tables_dir}/epikur.parquet
     rename_columns:
       cpr: subject_id
       eksd: timestamp
@@ -37,7 +37,7 @@ register_concepts:
     code_prefix: "PM/" # prescription medication
 
   indberetningmedpris:
-    filename: indberetningmedpris.parquet
+    filename: ${paths.tables_dir}/indberetningmedpris.parquet
     rename_columns:
       v_cpr: subject_id
       d_ord_start: timestamp
@@ -45,29 +45,29 @@ register_concepts:
     code_prefix: "AM/" # administered medication
 
   t_diag:
-    filename: t_diag.parquet # LPR1+2             
+    filename: ${paths.tables_dir}/t_diag.parquet # LPR1+2             
     rename_columns:
       v_recnum: record_number
       c_diag: code
     code_prefix: "DIAG/"
     mappings:
     - source_column: record_number
-      via_file: t_adm.parquet
+      via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
       target_column: v_cpr # cpr
       rename_to: subject_id
     - source_column: record_number 
-      via_file: t_adm.parquet
+      via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum 
-      target_column: t_inddto # date
+      target_column: d_inddto # date
       rename_to: date_start
     - source_column: record_number 
-      via_file: t_adm.parquet
+      via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
       target_column: v_indtime # hour
       rename_to: hour_start
     - source_column: record_number 
-      via_file: t_adm.parquet
+      via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum 
       target_column: v_indminut # minute
       rename_to: minute_start
@@ -80,24 +80,24 @@ register_concepts:
         drop_original: true
     
   diagnoser: 
-    filename: diagnoser.parquet # LPR3
+    filename: ${paths.tables_dir}/diagnoser.parquet # LPR3
     rename_columns:
       dw_ek_kontakt: contact_id
       diagnosekode: code
     code_prefix: "DIAG/"
     mappings:
     - source_column: contact_id
-      via_file: kontakter.parquet
+      via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
       target_column: cpr # cpr
       rename_to: subject_id
     - source_column: contact_id
-      via_file: kontakter.parquet
+      via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
       target_column: dato_start # date
       rename_to: date_start
     - source_column: contact_id
-      via_file: kontakter.parquet
+      via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
       target_column: tidspunkt_start # time
       rename_to: time_start
@@ -107,3 +107,9 @@ register_concepts:
         date_col: date_start
         time_col: time_start
         drop_original: true
+  
+  central_patient:
+    filename: ${paths.tables_dir}/t_person.parquet
+    rename_columns:
+      v_pnr: subject_id
+      d_foddato: birthdate
