@@ -140,7 +140,7 @@ export PIPELINE_CONFIG_FP
 echo "Running extraction pipeline."
 # Execute the PREMEDS transform runner with the pipeline configuration.
 # Any additional arguments are forwarded.
-MEDS_transform-runner "pipeline_config_fp=${PIPELINE_CONFIG_FP}" "$@"
+MEDS_transform-pipeline "${PIPELINE_CONFIG_FP}" "$@"
 
 echo "Starting cleanup..."
 # Example cleanup: List any empty files or directories.
