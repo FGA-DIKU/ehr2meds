@@ -29,7 +29,6 @@ class Processor:
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> pd.DataFrame:
         """Process the table.
-        1. Normalize columns
         2. Apply value mappings
         3. Select and rename columns
         4. apply columns map
@@ -42,7 +41,6 @@ class Processor:
         11. clean data
         12. validate subject_id column
         """
-        df = normalize_columns(df, table_config)
         df = apply_value_map(df, table_config)
         df = select_and_rename_columns(df, table_config.get("rename_columns", {}))
         df = Processor._apply_mappings(df, table_config, data_handler)

@@ -151,10 +151,6 @@ tables:
 
   SDS_t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
-    normalize_columns:
-      - c_spec
-      - c_indm
-      - c_kontaars
     value_map:
       c_spec:
         "01": "intern medicin"

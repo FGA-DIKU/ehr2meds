@@ -200,14 +200,6 @@ def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     return df
 
 
-def normalize_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-    """Normalize column values by casting to int then str, getting rid of leading zeros."""
-    for col in concept_config.get("normalize_columns", []):
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64").astype(str)
-            df[col] = df[col].replace("<NA>", None)
-    return df
-
 
 def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Append suffix to column values that don't already contain it."""
