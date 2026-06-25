@@ -5,11 +5,9 @@ from ehr2meds.preMEDS.utils import (
     apply_value_map,
     clean_data,
     convert_numeric_columns,
-    convert_timestamp_columns,
     fill_missing_values,
     map_pids_to_ints,
     melt_table,
-    normalize_columns,
     pad_values,
     prefix_codes,
     select_and_rename_columns,
@@ -29,8 +27,8 @@ class Processor:
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> pd.DataFrame:
         """Process the table.
-        2. Apply value mappings
-        3. Select and rename columns
+        2. Select and rename columns
+        3. Apply value mappings
         4. apply columns map
         5. Pad values
         6. fill missing values
