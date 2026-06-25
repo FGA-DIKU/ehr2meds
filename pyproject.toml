@@ -23,19 +23,16 @@ classifiers = [
 ]
 
 dependencies = [
-    "pandas",
-    "numpy",
-    "pyarrow",
-    "tqdm",
-    "fastparquet",
+    "pandas>=3.0.3",
+    "numpy>=2.5.0",
+    "pyarrow>=24.0.0",
+    "tqdm>=4.68.3",
     "meds-transforms==0.6.7",
     #"meds==0.4.1", # Installed via. meds-transforms
     "meds-extract==0.6.1",
-    "torch",
     "python-dotenv>=1.0.0",
     "hydra-core>=1.3.2",
     "omegaconf>=2.3.0",
-    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
