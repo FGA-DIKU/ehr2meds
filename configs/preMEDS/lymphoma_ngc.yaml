@@ -8,7 +8,6 @@ logging:
   path: ./outputs/logs
 
 
-test: false
 env: local
 run_name: preMEDS_registers_only
 chunksize: 1000000000

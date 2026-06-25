@@ -19,22 +19,18 @@ class PREMEDSExtractor:
 
     def __init__(self, cfg):
         self.cfg = cfg
-        logger.info(f"test {cfg.test}")
-        self.chunksize = cfg.get("chunksize", 500_000)
 
         # Create data handler for tables
         self.data_handler = DataHandler(
             output_dir=cfg.paths.output,
             file_type=cfg.write_file_type,
-            chunksize=self.chunksize,
-            test_rows=cfg.get("test_rows", 1_000_000),
-            test=cfg.test,
+            chunksize=cfg.get("chunksize"),
         )
         self.processor = Processor()
 
     def __call__(self):
         subject_id_mapping = self.get_subject_id_mapping()
-        self.format_tables(subject_id_mapping)
+        self.process_tables(subject_id_mapping)
 
     def get_subject_id_mapping(self) -> Union[None, Dict[str, int]]:
         if not self.cfg.get("subject_id_mapping"):
@@ -43,11 +39,9 @@ class PREMEDSExtractor:
         logger.info("Loading dataframe for subject ID mapping")
         id_col = self.cfg.subject_id_mapping.subject_id_col
         map_col = self.cfg.subject_id_mapping.mapping_id_col
+        cols = {id_col: None} | ({map_col: None} if map_col is not None else {})
         df = (
-            self.data_handler.load(
-                self.cfg.subject_id_mapping.file,
-                cols=[id_col] + ([map_col] if map_col else []),
-            )
+            self.data_handler.load(self.cfg.subject_id_mapping.file, cols=cols)
             .dropna(subset=[id_col], how="any")
             .drop_duplicates(subset=[id_col])
         )
@@ -69,29 +63,24 @@ class PREMEDSExtractor:
 
         return subject_id_mapping
 
-    def format_tables(self, subject_id_mapping: Optional[Dict[str, int]] = None) -> None:
-        """Process the tables using the data handler"""
-        for table_type, table_config in self.cfg.get("tables", {}).items():
-            logger.info(f"Processing table: {table_type}")
+    def process_tables(self, subject_id_mapping: Optional[Dict[str, int]] = None) -> None:
+        """Processes each table in the tables config"""
+        for table_name, table_config in self.cfg["tables"].items():
+            logger.info(f"Processing table: {table_name}")
             try:
-                self.process_table_chunks(
-                    table_type,
-                    table_config,
-                    subject_id_mapping,
-                )
+                self.process_table_chunks(table_name, table_config, subject_id_mapping)
             except Exception as e:
-                logger.warning(f"Error processing {table_type}: {str(e)}")
+                logger.error(f"Error processing {table_name}: {str(e)}")
 
     def process_table_chunks(
         self,
-        table_type: str,
+        table_name: str,
         table_config: dict,
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> None:
-        first_chunk = True
         for chunk in tqdm(
-            self.data_handler.load_chunks(table_config),
-            desc=f"Chunks {table_type}",
+            self.data_handler.load_chunks(table_name, cols=table_config["columns"]),
+            desc=f"Chunks {table_name}",
         ):
             processed_chunk = self.processor.process(
                 chunk,
@@ -100,12 +89,4 @@ class PREMEDSExtractor:
                 subject_id_mapping,
             )
 
-            self._safe_save(self.data_handler, processed_chunk, table_type, first_chunk)
-            first_chunk = False
-
-    def _safe_save(self, data_handler, processed_chunk, table_type, first_chunk: bool) -> None:
-        if not processed_chunk.empty:
-            mode = "w" if first_chunk else "a"
-            data_handler.save(processed_chunk, table_type, mode=mode)
-        else:
-            logger.warning(f"Empty processed chunk for {table_type}, skipping save")
+            self.data_handler.save(processed_chunk, table_name)

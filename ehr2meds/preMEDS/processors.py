@@ -61,7 +61,7 @@ class Processor:
     def _get_mapping_table(data_handler, mapping):
         "Find path and relevant columns in either registry or the resources folder."
         filename = mapping["via_file"]
-        cols = [mapping["join_on"], mapping["target_column"]]
+        cols = {mapping["join_on"]: None, mapping["target_column"]: None}
 
         register_path = Path(filename)
         if not register_path.exists():

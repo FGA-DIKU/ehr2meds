@@ -3,7 +3,6 @@ defaults:
   - ../root_config@
   - _self_
 
-test: false # Just for testing, use false for full conversion
 
 chunksize: 10_000 # Just for testing, use around 250_000_000 for full conversion with CPU-20-LP
 

@@ -200,7 +200,6 @@ def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     return df
 
 
-
 def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Append suffix to column values that don't already contain it."""
     for col, cfg in concept_config.get("pad_values", {}).items():

@@ -12,7 +12,6 @@ hydra:
     dir: ./outputs/hydra/fetal_ngc
   output_subdir: hydra
 
-test: false
 env: local
 run_name: preMEDS_SP_and_SDS
 chunksize: 1000000000
