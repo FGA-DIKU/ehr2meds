@@ -41,8 +41,8 @@ class Processor:
         11. clean data
         12. validate subject_id column
         """
+        df = select_and_rename_columns(df, table_config["columns"])
         df = apply_value_map(df, table_config)
-        df = select_and_rename_columns(df, table_config.get("rename_columns", {}))
         df = Processor._apply_mappings(df, table_config, data_handler)
         df = pad_values(df, table_config)
         df = fill_missing_values(df, table_config.get("fillna", {}))

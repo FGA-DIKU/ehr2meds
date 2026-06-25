@@ -20,45 +20,45 @@ subject_id_mapping:
 tables:
   diagnosis:
     filename: ${paths.tables_dir}/diagnosis.csv
-    rename_columns:
-      Diagnosekode: code
-      Redigeringsdato: timestamp
+    columns:
       CPR: subject_id
+      Redigeringsdato: timestamp
+      Diagnosekode:
 
   procedure:
     filename: ${paths.tables_dir}/procedure.csv
-    rename_columns:
-      Procedurekode: code
-      Redigeringsdato: timestamp
+    columns:
       CPR: subject_id
+      Redigeringsdato: timestamp
+      Procedurekode:
 
   admissions:
     filename: ${paths.tables_dir}/admissions.csv
-    rename_columns:
+    columns:
+      CPR: subject_id
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
-      Afsnit: code
-      CPR: subject_id
+      Afsnit:
     melt_table:
       - target_name: timestamp
         source_cols: [timestamp_in, timestamp_out]
-        prefix_col: code
+        prefix_col: Afsnit
         prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
 
   labtest:
     filename: ${paths.tables_dir}/labtest.asc
-    rename_columns:
-      BestOrd: code
-      Bestillingsdato: timestamp
+    columns:
       CPR: subject_id
+      Bestillingsdato: timestamp
+      BestOrd:
       Resultatværdi: numeric_value
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/diagnoser.csv               
-    rename_columns:
-      diagnosekode: code
-      diagnose_type: diagnosetype
+    columns:
       contact_id_new: contact_id
+      diagnosekode:
+      diagnose_type:
     code_prefix: "RD/"
     mappings:
       - source_column: contact_id
@@ -73,13 +73,13 @@ tables:
         rename_to: timestamp
         drop_source: true
     unroll_columns:
-      - column: diagnosetype
+      - column: diagnose_type
         prefix: "RD_TYPE/"
 
   patients_info:
     filename: ${paths.tables_dir}/patient_info.csv
-    rename_columns:
+    columns:
       CPR: subject_id
-      Birthdate: birthdate
-      Deathdate: deathdate
-      Gender: gender
+      Birthdate:
+      Deathdate:
+      Gender:
