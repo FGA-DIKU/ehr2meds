@@ -23,8 +23,7 @@ subject:
 SDS_dimpatologiskdiagnose:
   SDS_dimpatologiskdiagnose:
     code: f"PAT//{$code}"
-    time: col(timestamp)
-    time_format: "%Y-%m-%dT%H:%M:%S"
+    time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', $timestamp_fallback as '%Y-%m-%dT%H:%M:%S')
 
 # LPR3 diagnoses
 SDS_diagnoser:

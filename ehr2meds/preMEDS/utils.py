@@ -16,24 +16,6 @@ def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFra
     return df
 
 
-def fill_missing_values(df: pd.DataFrame, fillna_cfg: dict) -> pd.DataFrame:
-    """
-    Fill missing values using specified columns and regex patterns.
-    Drop the columns used to fill missing values.
-    """
-    for target_col, fill_config in fillna_cfg.items():
-        fill_col = fill_config.get("column")
-        if fill_col and fill_col in df.columns:
-            fillna_regex = fill_config.get("regex")
-            if fillna_regex:
-                fill_vals = df[fill_col].str.extract(fillna_regex, expand=False)
-            else:
-                fill_vals = df[fill_col]
-            df[target_col] = df[target_col].fillna(fill_vals)
-            df = df.drop(columns=[fill_col])
-    return df
-
-
 def check_columns(df: pd.DataFrame, columns_map: dict):
     """Check if all columns in columns_map are present in df."""
     missing_columns = set(columns_map.keys()) - set(df.columns)

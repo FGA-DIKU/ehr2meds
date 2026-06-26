@@ -47,9 +47,6 @@ tables:
           target_column: dato_modtagelse 
           rename_to: timestamp_fallback
           drop_source: true
-      fillna:
-        timestamp:
-          column: timestamp_fallback
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS_diagnoser.parquet               
@@ -251,9 +248,6 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
-    fillna:
-      procedure_type:
-        value: "P" 
 
   SDS_ekokur:
     filename: ${paths.tables_dir}/SDS_ekokur.parquet                  

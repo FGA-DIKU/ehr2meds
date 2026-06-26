@@ -63,9 +63,6 @@ tables:
       Administrationstidspunkt: timestamp
       Bestillingsdato: fill_timestamp
       MOR_CPR: subject_id
-    fillna:
-      timestamp:
-        column: fill_timestamp
 
   # TODO Add lab values
   labtest:
@@ -208,9 +205,6 @@ tables:
         target_column: V_CPR
         rename_to: subject_id
         drop_source: true
-    fillna:
-      procedure_type:
-        value: "P" 
 
   SDS_ekokur:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/ekokur_all.csv                  

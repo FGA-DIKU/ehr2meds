@@ -41,8 +41,7 @@ procedure:
 medication:
   medication:
     code: f"M//{$code}"
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S.%f"
+    time: coalesce($timestamp as '%Y-%m-%d %H:%M:%S.%f', $fill_timestamp as '%Y-%m-%d %H:%M:%S.%f')
 
 labtest:
   labtest:

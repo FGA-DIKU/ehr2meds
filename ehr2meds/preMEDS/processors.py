@@ -40,7 +40,6 @@ class Processor:
         df = select_and_rename_columns(df, table_config["columns"])
         df = apply_value_map(df, table_config)
         df = Processor._apply_mappings(df, table_config, data_handler)
-        df = fill_missing_values(df, table_config.get("fillna", {}))
         df = melt_table(df, table_config.get("melt_table", {}))
         df = Processor._unroll_columns(df, table_config)
         df = convert_numeric_columns(df, table_config)
