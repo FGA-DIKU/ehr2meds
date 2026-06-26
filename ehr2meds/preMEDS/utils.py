@@ -184,14 +184,6 @@ def unroll_columns(df: pd.DataFrame, concept_config: dict) -> List[pd.DataFrame]
     return processed_dfs
 
 
-def convert_timestamp_columns(df: pd.DataFrame, names: List[str], format: str) -> pd.DataFrame:
-    """Convert timestamps to global format."""
-    for name in names:
-        if name in df.columns:
-            df[name] = pd.to_datetime(df[name]).dt.strftime(format)
-    return df
-
-
 def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Map column values using inline config mapping. Unmapped values become NaN."""
     for col, mapping in concept_config.get("value_map", {}).items():
