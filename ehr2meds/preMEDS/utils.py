@@ -217,14 +217,6 @@ def melt_table(df: pd.DataFrame, expand_map: dict) -> pd.DataFrame:
         df = apply_melt_step(df, step_cfg)
     return df
 
-
-def prefix_codes(df: pd.DataFrame, code_prefix: str = None) -> pd.DataFrame:
-    """Add a prefix to the entries in the code column."""
-    if code_prefix and CODE in df.columns:
-        df[CODE] = code_prefix + df[CODE].astype(str)
-    return df
-
-
 def validate_subject_id(df: pd.DataFrame) -> None:
     """Checks that the subject_id column exists and is an integer"""
     if SUBJECT_ID not in df.columns:

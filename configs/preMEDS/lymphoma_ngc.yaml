@@ -29,7 +29,6 @@ tables:
       rename_columns:
         diagnose_snomed_kode: code
         dw_ek_rekvisition: contact_id
-      code_prefix: "PAT/"
       mappings:
         - source_column: contact_id
           via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
@@ -58,7 +57,6 @@ tables:
       diagnosekode: code
       diagnosetype: diagnosetype
       dw_ek_kontakt: contact_id
-    code_prefix: "RD/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet           
@@ -87,7 +85,6 @@ tables:
       c_tildiag: c_tildiag
       c_diagtype: c_diagtype
       v_recnum: contact_id
-    code_prefix: "RD/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -132,7 +129,6 @@ tables:
         prefix: "RC_SPEC/"
       - column: region_code
         prefix: "RC_REG/"
-    code_prefix: "RC/"
 
   SDS_t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
@@ -222,7 +218,6 @@ tables:
         prefix: "RC_SPEC/"
       - column: region_code
         prefix: "RC_REG/"
-    code_prefix: "RC_ADM/"
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS_t_sksopr.parquet   
@@ -232,7 +227,6 @@ tables:
       v_otime: v_otime
       v_ominut: v_ominut
       v_recnum: contact_id
-    code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -250,7 +244,6 @@ tables:
       v_otime: v_otime
       v_ominut: v_ominut
       v_recnum: contact_id
-    code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -268,7 +261,6 @@ tables:
       patientid: subject_id
       atc: code
       eksd: timestamp
-    code_prefix: "RM/"
 
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
@@ -277,7 +269,6 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
-    code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -294,7 +285,6 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
-    code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -317,7 +307,6 @@ tables:
       prefix: "RMA/"
     - column: patient_type
       prefix: "RMA_PAT_TYPE/"
-    code_prefix: "RMA/"
 
   SDS_laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
@@ -327,7 +316,6 @@ tables:
       samplingdate: samplingdate
       samplingtime: samplingtime
       patientid: subject_id
-    code_prefix: "L/"
     numeric_columns: [numeric_value]
 
   patients_info:

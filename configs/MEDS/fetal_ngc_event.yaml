@@ -22,36 +22,31 @@ subject:
 # SP concepts (concepts)
 admissions:
   admissions:
-    code:
-      - col(code)
+    code: f"ADM//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 diagnosis:
   diagnosis:
-    code:
-      - col(code)
+    code: f"D//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 procedure:
   procedure:
-    code:
-      - col(code)
+    code: f"P//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 medication:
   medication:
-    code:
-      - col(code)
+    code: f"M//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 labtest:
   labtest:
-    code:
-      - col(code)
+    code: f"LAB//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S.%f"
     numeric_value: col(numeric_value)
@@ -60,66 +55,63 @@ labtest:
 # LPR3 diagnoses (unrolled diagnosetype → RD_TYPE/…)
 SDS_diagnoser:
   SDS_diagnoser:
-    code:
-      - col(code)
+    code: f"RD//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR diagnoses (unrolled c_diagtype, c_tildiag, c_diag)
 SDS_t_diag:
   SDS_t_diag:
-    code:
-      - col(code)
+    code: f"RD//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # LPR3 contacts (unrolled contact metadata)
 SDS_kontakter:
   SDS_kontakter:
-    code: $code
+    code: f"RC//{$code}"
     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
 # LPR admissions (unrolled admission metadata)
 SDS_t_adm:
   SDS_t_adm:
-    code: $code
+    code: f"RC_ADM//{$code}"
     time: set_time($date_start as '%Y-%m-%d', $v_indtime as '%H', $v_indminut as '%M')
 
 # LPR surgical procedures
 SDS_t_sksopr:
   SDS_t_sksopr:
-    code: $code
+    code: f"RPS//{$code}"
     time: set_time($date_start as '%Y-%m-%d', $v_otime as '%H', $v_ominut as '%M')
 
 # LPR other procedures
 SDS_t_sksube:
   SDS_t_sksube:
-    code: $code
+    code: f"RPO//{$code}"
     time: set_time($date_start as '%Y-%m-%d', $v_otime as '%H', $v_ominut as '%M')
 
 # LPR3 surgical procedures
 SDS_procedurer_kirurgi:
   SDS_procedurer_kirurgi:
-    code: $code
+    code: f"RPS//{$code}"
     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
 # LPR3 other procedures
 SDS_procedurer_andre:
   SDS_procedurer_andre:
-    code: $code
+    code: f"RPO//{$code}"
     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
 # Medication
 SDS_ekokur:
   SDS_ekokur:
-    code:
-      - col(code)
+    code: f"RM//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S.%f"
 
 # NOTE: numeric_value is normalized before this step
 SDS_laboratorieproevesvar:
   SDS_laboratorieproevesvar:
-    code: $code
+    code: f"L//{$code}"
     time: set_time($samplingdate as '%Y-%m-%d', $samplingtime as '%H:%M:%S')
     numeric_value: $numeric_value

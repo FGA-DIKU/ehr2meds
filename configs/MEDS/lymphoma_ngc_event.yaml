@@ -22,36 +22,33 @@ subject:
 # Pathology 
 SDS_dimpatologiskdiagnose:
   SDS_dimpatologiskdiagnose:
-    code:
-      - "PAT/"
-      - col(code)
+    code: f"PAT//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%dT%H:%M:%S"
 
 # LPR3 diagnoses
 SDS_diagnoser:
   SDS_diagnoser:
-    code: $code
+    code: f"RD//{$code}"
     time: set_time($date_end as '%Y-%m-%d', $time_end as '%H:%M:%S')
 
 # LPR diagnoses 
 SDS_t_diag:
   SDS_t_diag:
-    code:
-      - col(code)
+    code: f"RD//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
 # LPR3 contacts 
 SDS_kontakter:
   SDS_kontakter:
-    code: $code
+    code: f"RC//{$code}"
     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
 # LPR admissions 
 SDS_t_adm:
   SDS_t_adm:
-    code: $code
+    code: f"RC_ADM//{$code}"
     time: set_time($date_start as '%Y-%m-%d', $v_indtime as '%H', $v_indminut as '%M')
 
 # LPR surgical procedures 
@@ -81,17 +78,14 @@ SDS_procedurer_andre:
 # Medication (NOTE; can be safely replaced with epikur)
 SDS_ekokur:
   SDS_ekokur:
-    code:
-      - "RM/"
-      - col(code)
+    code: f"RM//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 
 # Administered medication 
 SDS_indberetningmedpris:
   SDS_indberetningmedpris:
-    code:
-      - col(code)
+    code: f"RMA//{$code}"
     time: col(timestamp)
     time_format: "%Y-%m-%d %H:%M:%S"
 

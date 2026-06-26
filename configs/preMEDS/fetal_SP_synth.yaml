@@ -58,7 +58,6 @@ tables:
       contact_id_new: contact_id
       diagnosekode:
       diagnose_type:
-    code_prefix: "RD/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.csv           

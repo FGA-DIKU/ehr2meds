@@ -40,7 +40,6 @@ tables:
         source_cols: [timestamp_in, timestamp_out]
         prefix_col: code
         prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
-    code_prefix: "ADM/"
 
   diagnosis:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Diagnoseliste.csv
@@ -49,7 +48,6 @@ tables:
       Diagnose: fill_code
       Redigeringsdato: timestamp
       MOR_CPR: subject_id
-    code_prefix: "D/"
 
   procedure:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Procedurer.csv
@@ -57,7 +55,6 @@ tables:
       ProcedureCode: code
       ServiceDate: timestamp
       MOR_CPR: subject_id
-    code_prefix: "P/"
 
   medication:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Medicin.csv
@@ -66,7 +63,6 @@ tables:
       Administrationstidspunkt: timestamp
       Bestillingsdato: fill_timestamp
       MOR_CPR: subject_id
-    code_prefix: "M/"
     fillna:
       timestamp:
         column: fill_timestamp
@@ -79,7 +75,6 @@ tables:
       Prøvetagningstidspunkt: timestamp
       Resultatværdi: numeric_value
       MOR_CPR: subject_id
-    code_prefix: "LAB/"
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
@@ -87,7 +82,6 @@ tables:
       diagnosekode: code
       diagnosetype: diagnosetype
       dw_ek_kontakt: contact_id
-    code_prefix: "RD/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv           
@@ -111,7 +105,6 @@ tables:
       C_TILDIAG: c_tildiag
       C_DIAGTYPE: c_diagtype
       V_RECNUM: contact_id
-    code_prefix: "RD/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
@@ -156,7 +149,6 @@ tables:
         prefix: "RC_SPEC/"
       - column: region_code
         prefix: "RC_REG/"
-    code_prefix: "RC/"
 
   SDS_t_adm:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
@@ -183,7 +175,6 @@ tables:
         prefix: "RC_SPEC/"
       - column: hospital_code
         prefix: "RC_SGH/"
-    code_prefix: "RC_ADM/"
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
@@ -193,7 +184,6 @@ tables:
       V_OTIME: v_otime
       V_OMINUT: v_ominut
       V_RECNUM: contact_id
-    code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
@@ -211,7 +201,6 @@ tables:
       V_OTIME: v_otime
       V_OMINUT: v_ominut
       V_RECNUM: contact_id
-    code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
@@ -237,7 +226,6 @@ tables:
         target_column: pname
         rename_to: code
         drop_source: false
-    code_prefix: "RM/"
 
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
@@ -246,7 +234,6 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
-    code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
@@ -263,7 +250,6 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
-    code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
@@ -280,7 +266,6 @@ tables:
       SAMPLINGDATE: samplingdate
       SAMPLINGTIME: samplingtime
       PATIENT_CPR: subject_id
-    code_prefix: "L/"
     numeric_columns: [numeric_value]
 
 

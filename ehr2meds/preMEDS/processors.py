@@ -8,7 +8,6 @@ from ehr2meds.preMEDS.utils import (
     fill_missing_values,
     map_pids_to_ints,
     melt_table,
-    prefix_codes,
     select_and_rename_columns,
     unroll_columns,
     validate_subject_id,
@@ -43,7 +42,6 @@ class Processor:
         df = Processor._apply_mappings(df, table_config, data_handler)
         df = fill_missing_values(df, table_config.get("fillna", {}))
         df = melt_table(df, table_config.get("melt_table", {}))
-        df = prefix_codes(df, table_config.get("code_prefix", None))
         df = Processor._unroll_columns(df, table_config)
         df = convert_numeric_columns(df, table_config)
         if subject_id_mapping is not None:
