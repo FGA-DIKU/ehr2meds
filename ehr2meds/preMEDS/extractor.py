@@ -79,7 +79,7 @@ class PREMEDSExtractor:
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> None:
         for chunk in tqdm(
-            self.data_handler.load_chunks(table_name, cols=table_config["columns"]),
+            self.data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
             desc=f"Chunks {table_name}",
         ):
             processed_chunk = self.processor.process(

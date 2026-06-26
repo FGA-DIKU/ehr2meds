@@ -30,7 +30,7 @@ labtest:
 admissions:
   IN:
     code: f"IN//{$Afsnit}"
-    time: $timestamp_in as "%Y-%m-%d %H:%M:%S%.f"
+    time: $timestamp_in as "%Y-%m-%d"
   OUT:
     code: f"OUT//{$Afsnit}"
-    time: $timestamp_out as "%Y-%m-%d %H:%M:%S%.f"
+    time: $timestamp_out as "%Y-%m-%d"

@@ -25,7 +25,8 @@ class DataHandler:
         self.output_dir = output_dir
         self.file_type = file_type
         if chunksize is None:
-            self.chunksize = 500_000
+            chunksize = 500_000
+        self.chunksize = chunksize
 
     def load(self, filename: str, cols: Mapping[str, Optional[str]]) -> pd.DataFrame:
         rename = {k: v for k, v in cols.items() if v is not None}
