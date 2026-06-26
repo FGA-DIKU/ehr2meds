@@ -5,10 +5,8 @@ from ehr2meds.preMEDS.utils import (
     apply_value_map,
     clean_data,
     convert_numeric_columns,
-    fill_missing_values,
     map_pids_to_ints,
     melt_table,
-    select_and_rename_columns,
     unroll_columns,
     validate_subject_id,
 )
@@ -37,7 +35,6 @@ class Processor:
         11. clean data
         12. validate subject_id column
         """
-        df = select_and_rename_columns(df, table_config["columns"])
         df = apply_value_map(df, table_config)
         df = Processor._apply_mappings(df, table_config, data_handler)
         df = melt_table(df, table_config.get("melt_table", {}))

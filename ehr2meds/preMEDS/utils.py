@@ -8,14 +8,6 @@ from ehr2meds.preMEDS.constants import (
 from typing import Dict, List
 
 
-def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
-    """Select and rename columns based on columns_map."""
-    check_columns(df, columns_map)
-    df = df[list(columns_map.keys())]
-    df = df.rename(columns=columns_map)
-    return df
-
-
 def check_columns(df: pd.DataFrame, columns_map: dict):
     """Check if all columns in columns_map are present in df."""
     missing_columns = set(columns_map.keys()) - set(df.columns)
