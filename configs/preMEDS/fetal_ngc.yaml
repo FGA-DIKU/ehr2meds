@@ -228,7 +228,6 @@ tables:
       SAMPLINGDATE: samplingdate
       SAMPLINGTIME: samplingtime
       PATIENT_CPR: subject_id
-    numeric_columns: [numeric_value]
 
 
   # TODO Add smoking status

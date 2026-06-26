@@ -4,7 +4,6 @@ from ehr2meds.preMEDS.utils import (
     apply_mapping,
     apply_value_map,
     clean_data,
-    convert_numeric_columns,
     map_pids_to_ints,
     melt_table,
     validate_subject_id,
@@ -37,7 +36,6 @@ class Processor:
         df = apply_value_map(df, table_config)
         df = Processor._apply_mappings(df, table_config, data_handler)
         df = melt_table(df, table_config.get("melt_table", {}))
-        df = convert_numeric_columns(df, table_config)
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)

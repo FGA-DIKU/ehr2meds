@@ -86,15 +86,6 @@ def apply_mapping(
     return df
 
 
-def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-    """Convert specified columns to numeric type."""
-    numeric_cols = concept_config.get("numeric_columns", [])
-    for col in numeric_cols:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-    return df
-
-
 def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
     """Map string patient IDs to integers; keep only IDs that are in the mapping."""
     df[SUBJECT_ID] = df[SUBJECT_ID].astype(object).astype(str)

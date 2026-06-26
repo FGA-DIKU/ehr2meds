@@ -273,7 +273,6 @@ tables:
       samplingdate: samplingdate
       samplingtime: samplingtime
       patientid: subject_id
-    numeric_columns: [numeric_value]
 
   patients_info:
     filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
