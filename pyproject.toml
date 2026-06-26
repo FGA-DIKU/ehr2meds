@@ -4,12 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ehr2meds"
-dynamic = ["version"]
+version= "1.1.0"
 description = "A preprocessing pipeline for electronic health records."
 authors = [
-    { name = "Kiril Klein", email = "kikl@di.ku.dk" },
-    { name = "Mikkel Odgaard" },
-    { name = "Maria Montgomery" }
+    { name = "Sebastian Llambias", email = "snl@di.ku.dk" },
+    { name = "Mikkel Odgaard"},
+    { name = "Maria Montgomery" },
+    { name = "Mikkel Werling"},
+    { name = "Katja Jagd"},
 ]
 # Project is intended to run on Python 3.12 only.
 requires-python = ">=3.12"
@@ -21,19 +23,14 @@ classifiers = [
 ]
 
 dependencies = [
-    "pandas",
-    "numpy",
-    "pyarrow",
-    "tqdm",
-    "fastparquet",
-    "meds==0.3.3",
-    "meds-transforms==0.1.1",
-    "meds_reader",
-    "torch",
+    "pandas>=3.0.3",
+    "numpy>=2.5.0",
+    "pyarrow>=24.0.0",
+    "tqdm>=4.68.3",
+    "meds-extract==0.6.1", # uses meds==0.4.1 and meds-transforms==0.6.7
     "python-dotenv>=1.0.0",
     "hydra-core>=1.3.2",
     "omegaconf>=2.3.0",
-    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
