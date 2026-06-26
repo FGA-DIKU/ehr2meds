@@ -48,10 +48,6 @@ tables:
           target_column: dato_modtagelse 
           rename_to: timestamp_fallback
           drop_source: true
-      pad_values:
-        timestamp_fallback:
-          suffix: "T00:00:00"
-          unless_contains: ":"
       fillna:
         timestamp:
           column: timestamp_fallback

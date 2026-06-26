@@ -200,17 +200,6 @@ def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     return df
 
 
-def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-    """Append suffix to column values that don't already contain it."""
-    for col, cfg in concept_config.get("pad_values", {}).items():
-        if col in df.columns:
-            suffix = cfg["suffix"]
-            contains = cfg.get("unless_contains", suffix)
-            mask = df[col].notna() & ~df[col].astype(str).str.contains(contains, regex=False, na=False)
-            df.loc[mask, col] = df.loc[mask, col].astype(str) + suffix
-    return df
-
-
 def apply_melt_step(df, cfg):
     # Example df
     value_cols = cfg.get("source_cols")
