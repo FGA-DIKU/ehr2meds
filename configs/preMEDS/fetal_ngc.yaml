@@ -145,11 +145,6 @@ tables:
       hovedspeciale_ans: clinical_specialty
       region_ans: region_code
       dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
     unroll_columns:
       - column: contact_reason
         prefix: "RC_REASON/"
@@ -177,12 +172,6 @@ tables:
       C_SPEC: clinical_specialty
       C_SGH: hospital_code
       K_RECNUM: contact_id
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_indtime
-        minute_col: v_indminut
-        drop_original: true
     unroll_columns:
       - column: contact_reason
         prefix: "RC_REASON/"
@@ -204,12 +193,6 @@ tables:
       V_OTIME: v_otime
       V_OMINUT: v_ominut
       V_RECNUM: contact_id
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_otime
-        minute_col: v_ominut
-        drop_original: true
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
@@ -228,12 +211,6 @@ tables:
       V_OTIME: v_otime
       V_OMINUT: v_ominut
       V_RECNUM: contact_id
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_otime
-        minute_col: v_ominut
-        drop_original: true
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
@@ -269,11 +246,6 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
@@ -291,11 +263,6 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
@@ -313,11 +280,6 @@ tables:
       SAMPLINGDATE: samplingdate
       SAMPLINGTIME: samplingtime
       PATIENT_CPR: subject_id
-    combine_datetime:
-      timestamp:
-        date_col: samplingdate
-        time_col: samplingtime
-        drop_original: true
     code_prefix: "L/"
     numeric_columns: [numeric_value]
 

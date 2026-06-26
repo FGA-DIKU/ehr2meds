@@ -76,11 +76,6 @@ tables:
         target_column: tidspunkt_slut      
         rename_to: time_end
         drop_source: true
-    combine_datetime:
-      timestamp:
-        date_col: date_end
-        time_col: time_end
-        drop_original: true  
     unroll_columns:
       - column: diagnosetype
         prefix: "RD_TYPE/"
@@ -126,11 +121,6 @@ tables:
       hovedspeciale_ans: clinical_specialty
       region_ans: region_code
       dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
     unroll_columns:
       - column: contact_reason
         prefix: "RC_REASON/"
@@ -221,12 +211,6 @@ tables:
       target_column: region
       rename_to: region_code
       drop_source: true
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_indtime
-        minute_col: v_indminut
-        drop_original: true
     unroll_columns:
       - column: contact_reason
         prefix: "RC_REASON/"
@@ -248,12 +232,6 @@ tables:
       v_otime: v_otime
       v_ominut: v_ominut
       v_recnum: contact_id
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_otime
-        minute_col: v_ominut
-        drop_original: true
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
@@ -272,12 +250,6 @@ tables:
       v_otime: v_otime
       v_ominut: v_ominut
       v_recnum: contact_id
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_otime
-        minute_col: v_ominut
-        drop_original: true
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
@@ -305,11 +277,6 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
     code_prefix: "RPS/"
     mappings:
       - source_column: contact_id
@@ -327,11 +294,6 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
     code_prefix: "RPO/"
     mappings:
       - source_column: contact_id
@@ -365,11 +327,6 @@ tables:
       samplingdate: samplingdate
       samplingtime: samplingtime
       patientid: subject_id
-    combine_datetime:
-      timestamp:
-        date_col: samplingdate
-        time_col: samplingtime
-        drop_original: true
     code_prefix: "L/"
     numeric_columns: [numeric_value]
 

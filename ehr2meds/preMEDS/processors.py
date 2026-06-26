@@ -43,8 +43,6 @@ class Processor:
         df = Processor._apply_mappings(df, table_config, data_handler)
         df = fill_missing_values(df, table_config.get("fillna", {}))
         df = melt_table(df, table_config.get("melt_table", {}))
-        df = Processor._combine_datetime_columns(df, table_config)
-        df = Processor._combine_datetime_from_parts(df, table_config)
         df = prefix_codes(df, table_config.get("code_prefix", None))
         df = Processor._unroll_columns(df, table_config)
         df = convert_numeric_columns(df, table_config)
@@ -90,46 +88,4 @@ class Processor:
         if "unroll_columns" in table_config:
             processed_dfs = unroll_columns(df, table_config)
             return pd.concat(processed_dfs, ignore_index=True) if processed_dfs else df
-        return df
-
-    @staticmethod
-    def _combine_datetime_columns(df: pd.DataFrame, table_config: dict) -> pd.DataFrame:
-        """Combine date and time columns into datetime columns."""
-        if "combine_datetime" in table_config:
-            for target_col, date_time_cols in table_config["combine_datetime"].items():
-                date_col = date_time_cols.get("date_col")
-                time_col = date_time_cols.get("time_col")
-                if date_col in df.columns and time_col in df.columns:
-                    df[target_col] = pd.to_datetime(
-                        df[date_col].astype(str) + " " + df[time_col].astype(str),
-                        errors="coerce",
-                    )
-                    # Drop original columns if requested
-                    if date_time_cols.get("drop_original", True):
-                        df = df.drop(columns=[date_col, time_col])
-        return df
-
-    @staticmethod
-    def _combine_datetime_from_parts(df: pd.DataFrame, table_config: dict) -> pd.DataFrame:
-        """Combine date and time columns into datetime columns."""
-        if "combine_datetime_parts" in table_config:
-            for target_col, date_time_cols in table_config["combine_datetime_parts"].items():
-                date_col = date_time_cols.get("date_col")
-                hour_col = date_time_cols.get("hour_col")
-                minute_col = date_time_cols.get("minute_col")
-
-                if date_col in df.columns:
-                    dt_str = (
-                        df[date_col].dt.strftime("%Y-%m-%d")
-                        if pd.api.types.is_datetime64_any_dtype(df[date_col])
-                        else df[date_col].astype(str)
-                    )
-
-                    hour = pd.to_numeric(df[hour_col], errors="coerce").fillna(0).astype(int).astype(str).str.zfill(2)
-                    minute = pd.to_numeric(df[minute_col], errors="coerce").fillna(0).astype(int).astype(str).str.zfill(2)
-                    dt_str = dt_str + " " + hour + ":" + minute + ":00"
-                    df[target_col] = pd.to_datetime(dt_str, errors="coerce")
-                    # Drop original columns if requested
-                    if date_time_cols.get("drop_original", True):
-                        df = df.drop(columns=[date_col, hour_col, minute_col])
         return df

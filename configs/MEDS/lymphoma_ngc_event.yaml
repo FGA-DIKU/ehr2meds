@@ -31,10 +31,8 @@ SDS_dimpatologiskdiagnose:
 # LPR3 diagnoses
 SDS_diagnoser:
   SDS_diagnoser:
-    code:
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    code: $code
+    time: set_time($date_end as '%Y-%m-%d', $time_end as '%H:%M:%S')
 
 # LPR diagnoses 
 SDS_t_diag:
@@ -47,54 +45,38 @@ SDS_t_diag:
 # LPR3 contacts 
 SDS_kontakter:
   SDS_kontakter:
-    code:
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    code: $code
+    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
 # LPR admissions 
 SDS_t_adm:
   SDS_t_adm:
-    code:
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    code: $code
+    time: set_time($date_start as '%Y-%m-%d', $v_indtime as '%H', $v_indminut as '%M')
 
 # LPR surgical procedures 
 SDS_t_sksopr:
   SDS_t_sksopr:
-    code:
-      - "RPS/"
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    code: f"RPS//{$code}"
+    time: set_time($date_start as '%Y-%m-%d', $v_otime as '%H', $v_ominut as '%M')
 
 # LPR other procedures 
 SDS_t_sksube:
   SDS_t_sksube:
-    code:
-      - "RPO/"
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    code: f"RPO//{$code}"
+    time: set_time($date_start as '%Y-%m-%d', $v_otime as '%H', $v_ominut as '%M')
 
 # LPR3 surgical procedures 
 SDS_procedurer_kirurgi:
   SDS_procedurer_kirurgi:
-    code:
-      - "RPS/"
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    code: f"RPS//{$code}"
+    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
 # LPR3 other procedures
 SDS_procedurer_andre:
   SDS_procedurer_andre:
-    code:
-      - "RPO/"
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    code: f"RPO//{$code}"
+    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
 # Medication (NOTE; can be safely replaced with epikur)
 SDS_ekokur:
@@ -116,9 +98,6 @@ SDS_indberetningmedpris:
 # NOTE: numeric_value is NOT normalized here - needs to adhere to splits to not have information leakage
 SDS_laboratorieproevesvar:
   SDS_laboratorieproevesvar:
-    code:
-      - "L/"
-      - col(code)
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S"
+    code: f"L//{$code}"
+    time: set_time($samplingdate as '%Y-%m-%d', $samplingtime as '%H:%M:%S')
     numeric_value: col(numeric_value)
