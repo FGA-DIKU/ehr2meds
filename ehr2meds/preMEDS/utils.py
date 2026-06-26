@@ -1,11 +1,9 @@
 import pandas as pd
 from ehr2meds.preMEDS.constants import (
-    CODE,
     MANDATORY_COLUMNS,
     SUBJECT_ID,
-    TIMESTAMP,
 )
-from typing import Dict, List
+from typing import Dict
 
 
 def check_columns(df: pd.DataFrame, columns_map: dict):
@@ -118,31 +116,6 @@ def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
             df[col] = df[col].map(mapping)
     return df
 
-
-def apply_melt_step(df, cfg):
-    # Example df
-    value_cols = cfg.get("source_cols")
-    target_col = cfg.get("target_name")
-    prefix_col = cfg.get("prefix_col")
-    prefix_map = cfg.get("prefix_map")
-    id_cols = [c for c in df.columns if c not in value_cols]
-    df_melted = df.melt(id_vars=id_cols, value_vars=value_cols, var_name="source", value_name=target_col)
-
-    # Add prefix
-    df_melted[prefix_col] = df_melted["source"].map(prefix_map) + df_melted[prefix_col].astype(str)
-
-    # # Drop columns
-    cols_to_keep = list(set([prefix_col, target_col] + id_cols))
-    df_melted = df_melted[cols_to_keep]
-    return df_melted
-
-
-def melt_table(df: pd.DataFrame, expand_map: dict) -> pd.DataFrame:
-    if not expand_map:
-        return df
-    for step_cfg in expand_map:
-        df = apply_melt_step(df, step_cfg)
-    return df
 
 def validate_subject_id(df: pd.DataFrame) -> None:
     """Checks that the subject_id column exists and is an integer"""

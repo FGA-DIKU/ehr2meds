@@ -38,11 +38,6 @@ tables:
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
       Afsnit:
-    melt_table:
-      - target_name: timestamp
-        source_cols: [timestamp_in, timestamp_out]
-        prefix_col: Afsnit
-        prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
 
   labtest:
     filename: ${paths.tables_dir}/labtest.asc

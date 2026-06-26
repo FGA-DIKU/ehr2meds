@@ -21,10 +21,13 @@ subject:
 
 # SP concepts (concepts)
 admissions:
-  admissions:
-    code: f"ADM//{$code}"
-    time: col(timestamp)
-    time_format: "%Y-%m-%d %H:%M:%S.%f"
+  IN:
+    code: f"IN//{$Afsnit}"
+    time: $timestamp_in as "%Y-%m-%d %H:%M:%S%.f"
+  OUT:
+    code: f"OUT//{$Afsnit}"
+    time: $timestamp_out as "%Y-%m-%d %H:%M:%S%.f"
+    
 
 diagnosis:
   diagnosis:

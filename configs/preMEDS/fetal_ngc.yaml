@@ -34,12 +34,7 @@ tables:
       MOR_CPR: subject_id
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
-      Afsnit: code
-    melt_table:
-      - target_name: timestamp
-        source_cols: [timestamp_in, timestamp_out]
-        prefix_col: code
-        prefix_map: {timestamp_in: IN/, timestamp_out: OUT/}
+      Afsnit: 
 
   diagnosis:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Diagnoseliste.csv

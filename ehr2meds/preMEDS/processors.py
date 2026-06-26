@@ -5,7 +5,6 @@ from ehr2meds.preMEDS.utils import (
     apply_value_map,
     clean_data,
     map_pids_to_ints,
-    melt_table,
     validate_subject_id,
 )
 from pathlib import Path
@@ -21,7 +20,6 @@ class Processor:
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> pd.DataFrame:
         """Process the table.
-        2. Select and rename columns
         3. Apply value mappings
         4. apply columns map
         5. Pad values
@@ -35,7 +33,6 @@ class Processor:
         """
         df = apply_value_map(df, table_config)
         df = Processor._apply_mappings(df, table_config, data_handler)
-        df = melt_table(df, table_config.get("melt_table", {}))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
@@ -56,7 +53,7 @@ class Processor:
         return data_handler.load(filename, cols=cols)
 
     @staticmethod
-    def _apply_mappings(df: pd.DataFrame, table_config: dict, data_handler: "DataHandler") -> pd.DataFrame:
+    def _apply_mappings(df: pd.DataFrame, table_config: dict, data_handler: DataHandler) -> pd.DataFrame:
         if table_config.get("mappings"):
             for mapping in table_config.mappings:
                 map_table = Processor._get_mapping_table(data_handler, mapping)

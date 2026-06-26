@@ -28,6 +28,9 @@ labtest:
     lab_value: $numeric_value
 
 admissions:
-  admissions:
-    code: f"A//{$Afsnit}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S%.f"
+  IN:
+    code: f"IN//{$Afsnit}"
+    time: $timestamp_in as "%Y-%m-%d %H:%M:%S%.f"
+  OUT:
+    code: f"OUT//{$Afsnit}"
+    time: $timestamp_out as "%Y-%m-%d %H:%M:%S%.f"
