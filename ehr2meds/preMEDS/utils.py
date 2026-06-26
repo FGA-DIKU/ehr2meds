@@ -120,44 +120,6 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def unroll_columns(df: pd.DataFrame, concept_config: dict) -> List[pd.DataFrame]:
-    """
-    Unroll specified columns into separate dataframes with code format.
-
-    Returns a list of dataframes, each representing an unrolled column.
-    """
-    processed_dfs = []
-
-    # Required columns to keep in each unrolled dataframe
-    required_cols = [SUBJECT_ID]
-    if TIMESTAMP in df.columns:
-        required_cols.append(TIMESTAMP)
-
-    # Keep only the columns that exist in the dataframe
-    required_cols = [col for col in required_cols if col in df.columns]
-
-    # For each column to unroll, create a separate df with it as CODE
-    for col_info in concept_config["unroll_columns"]:
-        col_name = col_info.get("column")
-        if col_name in df.columns:
-            # Create a copy with just the required columns and the unroll column
-            unroll_df = df[required_cols + [col_name]].copy()
-
-            # Apply prefix if specified
-            prefix = col_info.get("prefix", "")
-
-            # Rename to CODE
-            unroll_df = unroll_df.rename(columns={col_name: CODE})
-
-            # Add prefix to codes
-            if prefix:
-                unroll_df[CODE] = prefix + unroll_df[CODE].astype(str)
-
-            processed_dfs.append(unroll_df)
-
-    return processed_dfs
-
-
 def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
     """Map column values using inline config mapping. Unmapped values become NaN."""
     for col, mapping in concept_config.get("value_map", {}).items():

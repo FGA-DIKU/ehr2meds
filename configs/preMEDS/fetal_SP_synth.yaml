@@ -70,9 +70,6 @@ tables:
         target_column: dato_slut      
         rename_to: timestamp
         drop_source: true
-    unroll_columns:
-      - column: diagnose_type
-        prefix: "RD_TYPE/"
 
   patients_info:
     filename: ${paths.tables_dir}/patient_info.csv

@@ -7,7 +7,6 @@ from ehr2meds.preMEDS.utils import (
     convert_numeric_columns,
     map_pids_to_ints,
     melt_table,
-    unroll_columns,
     validate_subject_id,
 )
 from pathlib import Path
@@ -38,7 +37,6 @@ class Processor:
         df = apply_value_map(df, table_config)
         df = Processor._apply_mappings(df, table_config, data_handler)
         df = melt_table(df, table_config.get("melt_table", {}))
-        df = Processor._unroll_columns(df, table_config)
         df = convert_numeric_columns(df, table_config)
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
@@ -74,12 +72,4 @@ class Processor:
                     how=mapping.get("how", "inner"),
                     drop_source=mapping.get("drop_source", False),
                 )
-        return df
-
-    @staticmethod
-    def _unroll_columns(df: pd.DataFrame, table_config: dict) -> pd.DataFrame:
-        """Unroll columns if needed."""
-        if "unroll_columns" in table_config:
-            processed_dfs = unroll_columns(df, table_config)
-            return pd.concat(processed_dfs, ignore_index=True) if processed_dfs else df
         return df

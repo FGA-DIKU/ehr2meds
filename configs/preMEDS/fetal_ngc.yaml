@@ -91,9 +91,6 @@ tables:
         target_column: dato_slut      
         rename_to: timestamp
         drop_source: true
-    unroll_columns:
-      - column: diagnosetype
-        prefix: "RD_TYPE/"
 
   SDS_t_diag:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_diag.csv               
@@ -114,13 +111,6 @@ tables:
         target_column: D_UDDTO 
         rename_to: timestamp
         drop_source: true
-    unroll_columns:
-      - column: c_diagtype
-        prefix: "RD_TYPE/"
-      - column: c_tildiag #NOTE: treated as also being a diagnosis to merge better with LPR3
-        prefix: "RD/"
-      - column: c_diag
-        prefix: "RD/"
 
   SDS_kontakter:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
@@ -135,17 +125,6 @@ tables:
       hovedspeciale_ans: clinical_specialty
       region_ans: region_code
       dw_ek_kontakt: contact_id
-    unroll_columns:
-      - column: contact_reason
-        prefix: "RC_REASON/"
-      - column: priority
-        prefix: "RC_PRIO/"
-      - column: contact_type
-        prefix: "RC_TYPE/"
-      - column: clinical_specialty
-        prefix: "RC_SPEC/"
-      - column: region_code
-        prefix: "RC_REG/"
 
   SDS_t_adm:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
@@ -161,17 +140,6 @@ tables:
       C_SPEC: clinical_specialty
       C_SGH: hospital_code
       K_RECNUM: contact_id
-    unroll_columns:
-      - column: contact_reason
-        prefix: "RC_REASON/"
-      - column: patient_type
-        prefix: "RC_ADM_TYPE/"
-      - column: priority
-        prefix: "RC_PRIO/"
-      - column: clinical_specialty
-        prefix: "RC_SPEC/"
-      - column: hospital_code
-        prefix: "RC_SGH/"
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
