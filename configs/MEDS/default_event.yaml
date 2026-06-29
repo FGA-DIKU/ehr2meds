@@ -8,7 +8,7 @@ patients_info:
     code: "DOD"
     time: $Deathdate as "%Y-%m-%d"
   gender:
-    code: f"GENDER//{$gender}"
+    code: f"GENDER//{$Gender}"
     time: null
     
 diagnosis:

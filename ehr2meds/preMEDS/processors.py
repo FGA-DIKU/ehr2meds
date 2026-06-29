@@ -8,7 +8,7 @@ from ehr2meds.preMEDS.utils import (
     validate_subject_id,
 )
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
 
 class Processor:
