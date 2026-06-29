@@ -8,7 +8,7 @@ from ehr2meds.preMEDS.utils import (
     validate_subject_id,
 )
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 
 class Processor:
@@ -16,18 +16,18 @@ class Processor:
     def process(
         df: pd.DataFrame,
         table_config: dict,
-        data_handler: "DataHandler",
+        data_handler: DataHandler,
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> pd.DataFrame:
         """Process the table.
-        1. Apply value mappings
-        2. apply columns map
-        3. OPTIONAL: apply pid integer mapping
+        1. OPTIONAL: Apply value mappings
+        2. OPTIONAL: Apply columns map
+        3. OPTIONAL: Apply pid integer mapping
         4. clean data
         5. validate subject_id column
         """
-        df = apply_value_map(df, table_config)
-        df = Processor._apply_mappings(df, table_config, data_handler)
+        df = apply_value_map(df, table_config.get("value_map", {}))
+        df = Processor._apply_mappings(df, table_config.get("mappings", []), data_handler)
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)
@@ -36,30 +36,29 @@ class Processor:
         return df
 
     @staticmethod
-    def _get_mapping_table(data_handler, mapping):
+    def _apply_mappings(df: pd.DataFrame, mapping_cfg: List[dict], data_handler: DataHandler) -> pd.DataFrame:
+        for mapping in mapping_cfg:
+            map_table = Processor._get_mapping_table(data_handler, mapping)
+            df = apply_mapping(
+                df,
+                map_table,
+                join_col=mapping["join_on"],
+                source_col=mapping["source_column"],
+                target_col=mapping["target_column"],
+                rename_to=mapping["rename_to"],
+                how=mapping.get("how", "inner"),
+                drop_source=mapping.get("drop_source", False),
+            )
+        return df
+
+    @staticmethod
+    def _get_mapping_table(data_handler, mapping: dict):
         "Find path and relevant columns in either registry or the resources folder."
         filename = mapping["via_file"]
         cols = {mapping["join_on"]: None, mapping["target_column"]: None}
 
         register_path = Path(filename)
         if not register_path.exists():
-            filename = str(Path(__file__).parent.parent / "resources" / filename)
+            filename = str(Path(__file__).parent.parent / "resources" / filename)  # TODO: Seems very hacky
 
         return data_handler.load(filename, cols=cols)
-
-    @staticmethod
-    def _apply_mappings(df: pd.DataFrame, table_config: dict, data_handler: DataHandler) -> pd.DataFrame:
-        if table_config.get("mappings"):
-            for mapping in table_config.mappings:
-                map_table = Processor._get_mapping_table(data_handler, mapping)
-                df = apply_mapping(
-                    df,
-                    map_table,
-                    join_col=mapping["join_on"],
-                    source_col=mapping["source_column"],
-                    target_col=mapping["target_column"],
-                    rename_to=mapping["rename_to"],
-                    how=mapping.get("how", "inner"),
-                    drop_source=mapping.get("drop_source", False),
-                )
-        return df

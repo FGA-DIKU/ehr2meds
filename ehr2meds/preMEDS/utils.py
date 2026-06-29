@@ -109,11 +109,10 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
     """Map column values using inline config mapping. Unmapped values become NaN."""
-    for col, mapping in concept_config.get("value_map", {}).items():
-        if col in df.columns:
-            df[col] = df[col].map(mapping)
+    for col, mapping in value_map_cfg.items():
+        df[col] = df[col].map(mapping)
     return df
 
 
