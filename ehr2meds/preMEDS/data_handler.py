@@ -20,12 +20,10 @@ class DataHandler:
         self,
         output_dir: Optional[str] = None,
         write_file_type: str = "parquet",
-        chunksize: Optional[int] = None,
+        chunksize: int = 1_000_000,
     ):
         self.output_dir = output_dir
         self.write_file_type = write_file_type
-        if chunksize is None:
-            chunksize = 500_000
         self.chunksize = chunksize
 
     def load(self, filename: str, cols: Mapping[str, Optional[str]]) -> pd.DataFrame:

@@ -24,7 +24,7 @@ class PREMEDSExtractor:
         self.data_handler = DataHandler(
             output_dir=cfg.paths.output,
             write_file_type=cfg.write_file_type,
-            chunksize=cfg.get("chunksize"),
+            chunksize=cfg.chunksize,
         )
         self.processor = Processor()
 
