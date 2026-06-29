@@ -12,18 +12,18 @@ class DataHandler:
 
     Args:
         output_dir: Directory path for output files
-        file_type: Type of files to handle (e.g. 'csv', 'parquet')
+        write_file_type: Type of files to write (e.g. 'csv', 'parquet')
         chunksize: Optional size of chunks for processing large files
     """
 
     def __init__(
         self,
         output_dir: Optional[str] = None,
-        file_type: str = "parquet",
+        write_file_type: str = "parquet",
         chunksize: Optional[int] = None,
     ):
         self.output_dir = output_dir
-        self.file_type = file_type
+        self.write_file_type = write_file_type
         if chunksize is None:
             chunksize = 500_000
         self.chunksize = chunksize
@@ -68,9 +68,9 @@ class DataHandler:
         os.makedirs(self.output_dir, exist_ok=True)
 
         # Decide on filetype
-        path = os.path.join(self.output_dir, f"{filename}.{self.file_type}")
+        path = os.path.join(self.output_dir, f"{filename}.{self.write_file_type}")
 
-        if self.file_type == "parquet":
+        if self.write_file_type == "parquet":
             if not os.path.exists(path):
                 df.to_parquet(path, index=False)
             else:
@@ -78,11 +78,11 @@ class DataHandler:
                 existing_df = pd.read_parquet(path)
                 combined_df = pd.concat([existing_df, df], ignore_index=True)
                 combined_df.to_parquet(path, index=False)
-        elif self.file_type == "csv":
+        elif self.write_file_type == "csv":
             if not os.path.exists(path):
                 df.to_csv(path, index=False, mode="w")
             else:
                 # append without header
                 df.to_csv(path, index=False, mode="a", header=False)
         else:
-            raise ValueError(f"Filetype {self.file_type} not implemented.")
+            raise ValueError(f"Filetype {self.write_file_type} not implemented.")

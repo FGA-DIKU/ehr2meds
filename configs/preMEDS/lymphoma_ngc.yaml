@@ -24,11 +24,19 @@ subject_id_mapping:
   mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
+  patients_info:
+    filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
+    columns:
+      patientid: subject_id
+      Fødselsdato: birthdate
+      Dødsdato: deathdate
+      Køn: gender
+  
   SDS_dimpatologiskdiagnose:
       filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
-      rename_columns:
-        diagnose_snomed_kode: code
+      columns:
         dw_ek_rekvisition: contact_id
+        diagnose_snomed_kode:
       mappings:
         - source_column: contact_id
           via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
@@ -50,10 +58,10 @@ tables:
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS_diagnoser.parquet               
-    rename_columns:
-      diagnosekode: code
-      diagnosetype: diagnosetype
+    columns:
       dw_ek_kontakt: contact_id
+      diagnosekode:
+      diagnosetype: 
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet           
@@ -74,11 +82,11 @@ tables:
 
   SDS_t_diag:
     filename: ${paths.tables_dir}/SDS_t_diag.parquet               
-    rename_columns:
-      c_diag: c_diag
-      c_tildiag: c_tildiag
-      c_diagtype: c_diagtype
+    columns:
       v_recnum: contact_id
+      c_diag: 
+      c_tildiag: 
+      c_diagtype: 
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -94,20 +102,32 @@ tables:
 
   SDS_kontakter:
     filename: ${paths.tables_dir}/SDS_kontakter.parquet               
-    rename_columns:
+    columns:
       patientid: subject_id
       dato_start: date_start
       tidspunkt_start: time_start
-      aktionsdiagnose: code
-      kontaktaarsag: contact_reason
-      prioritet: priority
-      kontakttype: contact_type
-      hovedspeciale_ans: clinical_specialty
-      region_ans: region_code
+      aktionsdiagnose:
+      kontaktaarsag: 
+      prioritet: 
+      kontakttype: 
+      hovedspeciale_ans: 
+      region_ans: 
       dw_ek_kontakt: contact_id
 
   SDS_t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
+    columns:
+      patientid: subject_id
+      d_inddto: date_start
+      v_indtime: 
+      v_indminut: 
+      c_adiag:
+      c_kontaars: 
+      c_pattype:  
+      c_indm: priority # NOTE: mapped to priority
+      c_spec: 
+      c_sgh: 
+      k_recnum: contact_id
     value_map:
       c_spec:
         "01": "intern medicin"
@@ -164,34 +184,22 @@ tables:
         "7": "ALCC90"
         "8": "ALCC90"
         "9": "ALCC90"
-    rename_columns:
-      patientid: subject_id
-      d_inddto: date_start
-      v_indtime: v_indtime
-      v_indminut: v_indminut
-      c_adiag: code
-      c_kontaars: contact_reason
-      c_pattype: patient_type 
-      c_indm: priority # NOTE: mapped to priority
-      c_spec: clinical_specialty
-      c_sgh: hospital_code
-      k_recnum: contact_id
     mappings:
     - source_column: hospital_code   
       via_file: ${paths.tables_dir}/shak_to_region.parquet # using resources
       join_on: kode
       target_column: region
-      rename_to: region_code
+      rename_to: c_sgh
       drop_source: true
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS_t_sksopr.parquet   
-    rename_columns:
-      c_opr: code
-      d_odto: date_start
-      v_otime: v_otime
-      v_ominut: v_ominut
+    columns:
       v_recnum: contact_id
+      d_odto: date_start
+      v_otime: 
+      v_ominut: 
+      c_opr:
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -202,13 +210,13 @@ tables:
 
   SDS_t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
-    rename_columns:
-      c_opr: code
-      c_oprart: procedure_type
-      d_odto: date_start
-      v_otime: v_otime
-      v_ominut: v_ominut
+    columns:
       v_recnum: contact_id
+      d_odto: date_start
+      v_otime: 
+      v_ominut: 
+      c_opr:
+      c_oprart:  # TODO: Currently not in use
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -217,20 +225,13 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_ekokur:
-    filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
-    rename_columns:
-      patientid: subject_id
-      atc: code
-      eksd: timestamp
-
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
-    rename_columns:
-      procedurekode: code
+    columns:
+      dw_ek_kontakt: contact_id
       dato_start: date_start
       tidspunkt_start: time_start
-      dw_ek_kontakt: contact_id
+      procedurekode:
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -241,12 +242,12 @@ tables:
 
   SDS_procedurer_andre:
     filename: ${paths.tables_dir}/SDS_procedurer_andre.parquet        
-    rename_columns:
-      procedurekode: code
-      proceduretype: procedure_type
+    columns:
+      dw_ek_kontakt: contact_id
       dato_start: date_start
       tidspunkt_start: time_start
-      dw_ek_kontakt: contact_id
+      procedurekode:
+      proceduretype: # TODO: Currently not in use
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -255,30 +256,28 @@ tables:
         rename_to: subject_id
         drop_source: true
 
+  SDS_ekokur:
+    filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
+    columns:
+      patientid: subject_id
+      eksd: timestamp
+      atc:
+
   SDS_indberetningmedpris:
     filename: ${paths.tables_dir}/SDS_indberetningmedpris.parquet
-    rename_columns:
-      c_atc: code
-      c_patienttype: patient_type #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
-      d_ord_start: timestamp
-      v_adm_dosis: dosage # not used
-      v_styrke_num: strength # not used
+    columns:
       patientid: subject_id
+      d_ord_start: timestamp
+      c_atc:
+      c_patienttype:  #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
+      v_adm_dosis: dosage # TODO: Currently not in use
+      v_styrke_num: strength # TODO: Currently not in use
 
   SDS_laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
-    rename_columns:
-      analysiscode: code
-      samplevalue: numeric_value
-      samplingdate: samplingdate
-      samplingtime: samplingtime
+    columns:
       patientid: subject_id
-
-  patients_info:
-    filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
-    rename_columns:
-      patientid: subject_id
-      Fødselsdato: birthdate
-      Dødsdato: deathdate
-      Køn: gender
-    file_type: parquet
+      samplingdate: 
+      samplingtime: 
+      analysiscode:
+      samplevalue: 

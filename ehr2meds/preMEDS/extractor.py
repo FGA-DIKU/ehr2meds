@@ -23,7 +23,7 @@ class PREMEDSExtractor:
         # Create data handler for tables
         self.data_handler = DataHandler(
             output_dir=cfg.paths.output,
-            file_type=cfg.write_file_type,
+            write_file_type=cfg.write_file_type,
             chunksize=cfg.get("chunksize"),
         )
         self.processor = Processor()

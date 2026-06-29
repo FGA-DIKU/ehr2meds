@@ -20,16 +20,11 @@ class Processor:
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> pd.DataFrame:
         """Process the table.
-        3. Apply value mappings
-        4. apply columns map
-        5. Pad values
-        6. fill missing values
-        7. combine datetime columns
-        8. unroll columns (process codes)
-        9. convert numeric columns
-        10. apply pid integer mapping
-        11. clean data
-        12. validate subject_id column
+        1. Apply value mappings
+        2. apply columns map
+        3. OPTIONAL: apply pid integer mapping
+        4. clean data
+        5. validate subject_id column
         """
         df = apply_value_map(df, table_config)
         df = Processor._apply_mappings(df, table_config, data_handler)
