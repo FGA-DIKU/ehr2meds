@@ -12,123 +12,123 @@ patients_info:
     code: f"GENDER//{$gender}"
     time: null
 
-# # SP concepts (concepts)
-# admissions:
-#   in:
-#     code: f"IN//{$Afsnit}"
-#     time: $Flyt_ind as "%Y-%m-%d %H:%M:%S%.f"
-#   out:
-#     code: f"OUT//{$Afsnit}"
-#     time: $Flyt_ud as "%Y-%m-%d %H:%M:%S%.f"
+# SP concepts (concepts)
+admissions:
+  in:
+    code: f"IN//{$Afsnit}"
+    time: $Flyt_ind as "%Y-%m-%d %H:%M:%S%.f"
+  out:
+    code: f"OUT//{$Afsnit}"
+    time: $Flyt_ud as "%Y-%m-%d %H:%M:%S%.f"
     
-# diagnosis:
-#   diagnosis:
-#     code: f"D//{$Diagnosekode}"
-#     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+diagnosis:
+  diagnosis:
+    code: f"D//{$Diagnosekode}"
+    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
 
-# procedure:
-#   procedure:
-#     code: f"P//{$ProcedureCode}"
-#     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+procedure:
+  procedure:
+    code: f"P//{$ProcedureCode}"
+    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
 
-# medication:
-#   medication:
-#     code: f"M//{$ATC}"
-#     time: coalesce($timestamp as '%Y-%m-%d %H:%M:%S.%f', $fill_timestamp as '%Y-%m-%d %H:%M:%S.%f')
+medication:
+  medication:
+    code: f"M//{$ATC}"
+    time: coalesce($timestamp as '%Y-%m-%d %H:%M:%S.%f', $fill_timestamp as '%Y-%m-%d %H:%M:%S.%f')
 
-# labtest:
-#   labtest:
-#     code: f"LAB//{$BestOrd}"
-#     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
-#     lab_result: $lab_result
+labtest:
+  labtest:
+    code: f"LAB//{$BestOrd}"
+    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    lab_result: $lab_result
 
-# # Register concepts (register_concepts)
-# # LPR3 diagnoses
-# SDS_diagnoser:
-#   diagnosekode:
-#     code: f"RD//{$diagnosekode}"
-#     time: $dato_slut as "%Y-%m-%d"
-#   diagnose_type:
-#     code: f"RD_TYPE//{$diagnosetype}"
-#     time: $dato_slut as "%Y-%m-%d"
+# Register concepts (register_concepts)
+# LPR3 diagnoses
+SDS_diagnoser:
+  diagnosekode:
+    code: f"RD//{$diagnosekode}"
+    time: $dato_slut as "%Y-%m-%d"
+  diagnose_type:
+    code: f"RD_TYPE//{$diagnosetype}"
+    time: $dato_slut as "%Y-%m-%d"
 
-# # LPR diagnoses
-# SDS_t_diag:
-#   diag:
-#     code: f"RD//{$C_DIAG}"
-#     time: $D_UDDTO as "%Y-%m-%d"
-#   diag_type:
-#     code: f"RD_TYPE//{$C_DIAGTYPE}"
-#     time: $D_UDDTO as "%Y-%m-%d"
-#   tildiag:
-#     code: f"RD//{$C_TILDIAG}"
-#     time: $D_UDDTO as "%Y-%m-%d"
+# LPR diagnoses
+SDS_t_diag:
+  diag:
+    code: f"RD//{$C_DIAG}"
+    time: $D_UDDTO as "%Y-%m-%d"
+  diag_type:
+    code: f"RD_TYPE//{$C_DIAGTYPE}"
+    time: $D_UDDTO as "%Y-%m-%d"
+  tildiag:
+    code: f"RD//{$C_TILDIAG}"
+    time: $D_UDDTO as "%Y-%m-%d"
 
-# # LPR3 contacts
-# SDS_kontakter:
-#   aktionsdiagnose:
-#     code: f"RC//{$aktionsdiagnose}"
-#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
-#   contact_reason:
-#     code: f"RC_REASON//{$kontaktaarsag}"
-#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
-#   prioritet:
-#     code: f"RC_PRIO//{$prioritet}"
-#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
-#   kontakttype:
-#     code: f"RC_TYPE//{$kontakttype}"
-#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
-#   clinical_specialty:
-#     code: f"RC_SPEC//{$hovedspeciale_ans}"
-#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
-#   region_code:
-#     code: f"RC_REG//{$region_ans}"
-#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+# LPR3 contacts
+SDS_kontakter:
+  aktionsdiagnose:
+    code: f"RC//{$aktionsdiagnose}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+  contact_reason:
+    code: f"RC_REASON//{$kontaktaarsag}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+  prioritet:
+    code: f"RC_PRIO//{$prioritet}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+  kontakttype:
+    code: f"RC_TYPE//{$kontakttype}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+  clinical_specialty:
+    code: f"RC_SPEC//{$hovedspeciale_ans}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+  region_code:
+    code: f"RC_REG//{$region_ans}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
 
-# # LPR admissions
-# SDS_t_adm:
-#   SDS_t_adm:
-#     code: f"RC_ADM//{$C_ADIAG}"
-#     time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
-#   contact_reason:
-#     code: f"RC_REASON//{$C_KONTAARS}"
-#     time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
-#   patient_type:
-#     code: f"RC_ADM_TYPE//{$C_PATTYPE}"
-#     time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
-#   priority:
-#     code: f"RC_PRIO//{$priority}"
-#     time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
-#   clinical_specialty:
-#     code: f"RC_SPEC//{$C_SPEC}"
-#     time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
-#   hospital_code:
-#     code: f"RC_SGH//{$C_SGH}"
-#     time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
+# LPR admissions
+SDS_t_adm:
+  SDS_t_adm:
+    code: f"RC_ADM//{$C_ADIAG}"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
+  contact_reason:
+    code: f"RC_REASON//{$C_KONTAARS}"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
+  patient_type:
+    code: f"RC_ADM_TYPE//{$C_PATTYPE}"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
+  priority:
+    code: f"RC_PRIO//{$priority}"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
+  clinical_specialty:
+    code: f"RC_SPEC//{$C_SPEC}"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
+  hospital_code:
+    code: f"RC_SGH//{$C_SGH}"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
 
-# # LPR surgical procedures
-# SDS_t_sksopr:
-#   procedure:
-#     code: f"RPS//{$C_OPR}"
-#     time: set_time($D_ODTO as '%Y-%m-%d', f"{$V_OTIME}:{$V_OMINUT}" as '%H:%M')
+# LPR surgical procedures
+SDS_t_sksopr:
+  procedure:
+    code: f"RPS//{$C_OPR}"
+    time: set_time($D_ODTO as '%Y-%m-%d', f"{$V_OTIME}:{$V_OMINUT}" as '%H:%M')
 
-# # LPR other procedures
-# SDS_t_sksube:
-#   procedure:
-#     code: f"RPO//{$C_OPR}"
-#     time: set_time($D_ODTO as '%Y-%m-%d', f"{$V_OTIME}:{$V_OMINUT}" as '%H:%M')
+# LPR other procedures
+SDS_t_sksube:
+  procedure:
+    code: f"RPO//{$C_OPR}"
+    time: set_time($D_ODTO as '%Y-%m-%d', f"{$V_OTIME}:{$V_OMINUT}" as '%H:%M')
 
-# # LPR3 surgical procedures
-# SDS_procedurer_kirurgi:
-#   procedure:
-#     code: f"RPS//{$procedurekode}"
-#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+# LPR3 surgical procedures
+SDS_procedurer_kirurgi:
+  procedure:
+    code: f"RPS//{$procedurekode}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
 
-# # LPR3 other procedures
-# SDS_procedurer_andre:
-#   SDS_procedurer_andre:
-#     code: f"RPO//{$procedurekode}"
-#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+# LPR3 other procedures
+SDS_procedurer_andre:
+  SDS_procedurer_andre:
+    code: f"RPO//{$procedurekode}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
 
 # Medication
 SDS_ekokur:
