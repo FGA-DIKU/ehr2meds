@@ -122,13 +122,13 @@ SDS_t_sksube:
 SDS_procedurer_kirurgi:
   procedure:
     code: f"RPS//{$procedurekode}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
 
 # LPR3 other procedures
 SDS_procedurer_andre:
   SDS_procedurer_andre:
     code: f"RPO//{$procedurekode}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
 
 # # Medication
 # SDS_ekokur:
