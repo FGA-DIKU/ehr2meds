@@ -68,22 +68,22 @@ patients_info:
 SDS_kontakter:
   aktionsdiagnose:
     code: f"RC//{$aktionsdiagnose}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%Y-%m-%d %H:%M:%S.%f')
   contact_reason:
     code: f"RC_REASON//{$kontaktaarsag}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%Y-%m-%d %H:%M:%S.%f')
   prioritet:
     code: f"RC_PRIO//{$prioritet}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
-  contact_type:
-    code: f"RC_TYPE//{$contact_type}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%Y-%m-%d %H:%M:%S.%f')
+  kontakttype:
+    code: f"RC_TYPE//{$kontakttype}"
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%Y-%m-%d %H:%M:%S.%f')
   clinical_specialty:
     code: f"RC_SPEC//{$hovedspeciale_ans}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%Y-%m-%d %H:%M:%S.%f')
   region_code:
     code: f"RC_REG//{$region_ans}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
+    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%Y-%m-%d %H:%M:%S.%f')
 
 # LPR admissions
 SDS_t_adm:
