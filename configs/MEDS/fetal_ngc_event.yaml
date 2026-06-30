@@ -141,4 +141,4 @@ SDS_laboratorieproevesvar:
   SDS_laboratorieproevesvar:
     code: f"L//{$ANALYSISCODE}"
     time: set_time($SAMPLINGDATE as '%Y-%m-%d', $SAMPLINGTIME as '%H:%M:%S.%f')
-    numeric_value: $VALUE
+    lab_result: $VALUE
