@@ -42,6 +42,16 @@ labtest:
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
     lab_result: $lab_result
 
+smoking_info:
+  smoking_info:
+    code: f"SMOKE//{$Rygestatus}"
+    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+
+alcohol_info:
+  alcohol_info:
+    code: f"ALCOHOL//{$weekly_drinks}"
+    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+
 # Register concepts (register_concepts)
 # LPR3 diagnoses
 SDS_diagnoser:

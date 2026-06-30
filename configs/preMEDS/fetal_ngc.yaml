@@ -17,7 +17,7 @@ run_name: preMEDS_SP_and_SDS
 chunksize: 10000000
 
 paths:
-  output: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/test_preMEDS/fetal_data/SDS_SP/dmpl_test/
+  output: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/preMEDS/fetal_data/SDS_SP/dmpl/
   tables_dir: ${oc.env:EHR2MEDS_DATA}/    
 
 write_file_type: csv 
@@ -30,7 +30,6 @@ subject_id_mapping:
   mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
-  # TODO Add smoking status
   patients_info:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv
     columns:
@@ -78,6 +77,20 @@ tables:
       Prøvetagningstidspunkt: timestamp
       BestOrd:
       Resultatværdi: lab_result
+
+  smoking_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - Rygning.csv
+    columns:
+      MOR_CPR: subject_id
+      Rygestatus: 
+      "Kontakt dato": timestamp
+
+  alcohol_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - Alkohol.csv
+    columns:
+      MOR_CPR: subject_id
+      "Alkohol - Antal ugentlige genstande": weekly_drinks
+      "Kontakt dato": timestamp
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
