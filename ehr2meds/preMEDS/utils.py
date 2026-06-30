@@ -61,6 +61,7 @@ def apply_mapping(
         map_table[join_col] = map_table[join_col].astype(str)
 
     # Perform the mapping
+    n_before = len(df)
     df = pd.merge(
         df,
         map_table[[join_col, target_col]],  # Only select needed columns
@@ -68,6 +69,8 @@ def apply_mapping(
         right_on=join_col,
         how=how,
     )
+    if how == "inner" and len(df) < n_before:
+        print(f"Dropped {n_before - len(df)} rows from inner join on {source_col}")
 
     # Clean up intermediate columns
     if join_col != source_col:  # Avoid dropping if they're the same
@@ -101,10 +104,16 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """Clean the data."""
     # Clean data
     if all(col in df.columns for col in MANDATORY_COLUMNS):
+        n_before = len(df)
         df = df.dropna(subset=MANDATORY_COLUMNS, how="any")
+        if len(df) < n_before:
+            print(f"Dropped {n_before - len(df)} rows with missing mandatory columns {MANDATORY_COLUMNS}")
 
     # Remove duplicates
+    n_before = len(df)
     df = df.drop_duplicates()
+    if len(df) < n_before:
+        print(f"Dropped {n_before - len(df)} duplicate rows")
 
     return df
 
