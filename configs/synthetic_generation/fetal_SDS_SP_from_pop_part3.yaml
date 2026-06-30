@@ -400,6 +400,11 @@ linked_data:
         type: rand_datetime
         args:
           start: 2010
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "."
+              probability: 0.05
     linked_columns:
       K_RECNUM:
         type: choice

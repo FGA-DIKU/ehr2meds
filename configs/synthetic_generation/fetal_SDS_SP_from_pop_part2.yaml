@@ -223,6 +223,11 @@ data: # Mangler DAR
         type: rand_date
       tidspunkt_start:
         type: rand_time
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "."
+              probability: 0.05
       dato_slut:
         type: greater_than_date
         match:
