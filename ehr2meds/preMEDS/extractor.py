@@ -71,6 +71,7 @@ class PREMEDSExtractor:
                 self.process_table_chunks(table_name, table_config, subject_id_mapping)
             except Exception as e:
                 logger.error(f"Error processing {table_name}: {str(e)}")
+                raise
 
     def process_table_chunks(
         self,
