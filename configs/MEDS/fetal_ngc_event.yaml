@@ -40,7 +40,7 @@ labtest:
   labtest:
     code: f"LAB//{$BestOrd}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
-    numeric_value: $Resultatværdi
+    numeric_value: $numeric_value
 
 # Register concepts (register_concepts)
 # LPR3 diagnoses

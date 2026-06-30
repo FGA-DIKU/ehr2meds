@@ -77,7 +77,7 @@ tables:
       MOR_CPR: subject_id
       Prøvetagningstidspunkt: timestamp
       BestOrd:
-      Resultatværdi: 
+      Resultatværdi: numeric_value
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
