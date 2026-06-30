@@ -106,39 +106,39 @@ patients_info:
 #     code: f"RC_SGH//{$C_SGH}"
 #     time: set_time($D_UDDTO as '%Y-%m-%d', $V_UDTIME as '%H')
 
-# LPR surgical procedures
-SDS_t_sksopr:
-  procedure:
-    code: f"RPS//{$C_OPR}"
-    time: set_time($D_ODTO as '%Y-%m-%d', f"{$V_OTIME}:{$V_OMINUT}" as '%H:%M')
+# # LPR surgical procedures
+# SDS_t_sksopr:
+#   procedure:
+#     code: f"RPS//{$C_OPR}"
+#     time: set_time($D_ODTO as '%Y-%m-%d', f"{$V_OTIME}:{$V_OMINUT}" as '%H:%M')
 
-# LPR other procedures
-SDS_t_sksube:
-  procedure:
-    code: f"RPO//{$C_OPR}"
-    time: set_time($D_ODTO as '%Y-%m-%d', f"{$V_OTIME}:{$V_OMINUT}" as '%H:%M')
+# # LPR other procedures
+# SDS_t_sksube:
+#   procedure:
+#     code: f"RPO//{$C_OPR}"
+#     time: set_time($D_ODTO as '%Y-%m-%d', f"{$V_OTIME}:{$V_OMINUT}" as '%H:%M')
 
-# LPR3 surgical procedures
-SDS_procedurer_kirurgi:
-  procedure:
-    code: f"RPS//{$procedurekode}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+# # LPR3 surgical procedures
+# SDS_procedurer_kirurgi:
+#   procedure:
+#     code: f"RPS//{$procedurekode}"
+#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
 
-# LPR3 other procedures
-SDS_procedurer_andre:
-  SDS_procedurer_andre:
-    code: f"RPO//{$procedurekode}"
-    time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
+# # LPR3 other procedures
+# SDS_procedurer_andre:
+#   SDS_procedurer_andre:
+#     code: f"RPO//{$procedurekode}"
+#     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
 
-# # Medication
-# SDS_ekokur:
-#   SDS_ekokur:
-#     code: f"RM//{$code}"
-#     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+# Medication
+SDS_ekokur:
+  SDS_ekokur:
+    code: f"RM//{$code}"
+    time: $timestamp as "%Y-%m-%d"
 
-# # NOTE: numeric_value is normalized before this step
-# SDS_laboratorieproevesvar:
-#   SDS_laboratorieproevesvar:
-#     code: f"L//{$ANALYSISCODE}"
-#     time: set_time($SAMPLINGDATE as '%Y-%m-%d', $SAMPLINGTIME as '%H:%M:%S')
-#     numeric_value: $VALUE
+# NOTE: numeric_value is normalized before this step
+SDS_laboratorieproevesvar:
+  SDS_laboratorieproevesvar:
+    code: f"L//{$ANALYSISCODE}"
+    time: set_time($SAMPLINGDATE as '%Y-%m-%d', $SAMPLINGTIME as '%H:%M:%S')
+    numeric_value: $VALUE

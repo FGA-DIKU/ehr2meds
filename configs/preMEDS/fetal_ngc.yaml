@@ -151,100 +151,100 @@ tables:
   #     D_UDDTO:
   #       ".": null
 
-  SDS_t_sksopr:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
-    columns:
-      V_RECNUM: contact_id
-      D_ODTO: 
-      V_OTIME: 
-      V_OMINUT: 
-      C_OPR:
-    value_map: 
-      V_OTIME:
-        ".": null
-      V_OMINUT:
-        ".": null
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
-        join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
-        drop_source: true
-
-  SDS_t_sksube:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksube.csv   
-    columns:
-      V_RECNUM: contact_id
-      D_ODTO: 
-      V_OTIME: 
-      V_OMINUT: 
-      C_OPR:
-      C_OPRART: procedure_type # TODO: Currently not in use
-    value_map: 
-      V_OTIME:
-        ".": null
-      V_OMINUT:
-        ".": null
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
-        join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
-        drop_source: true
-
-  SDS_procedurer_kirurgi:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
-    columns:
-      dw_ek_kontakt: contact_id
-      dato_start: 
-      tidspunkt_start: 
-      procedurekode:
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-        drop_source: true
-
-  SDS_procedurer_andre:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_andre.csv        
-    columns:
-      dw_ek_kontakt: contact_id
-      dato_start: 
-      tidspunkt_start: 
-      procedurekode:
-      proceduretype: # TODO: Currently not in use
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-        drop_source: true
-
-  # SDS_ekokur:
-  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/ekokur_all.csv                  
+  # SDS_t_sksopr:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
   #   columns:
-  #     cpr: subject_id
-  #     vnr: vnr_code
-  #     eksd: timestamp
+  #     V_RECNUM: contact_id
+  #     D_ODTO: 
+  #     V_OTIME: 
+  #     V_OMINUT: 
+  #     C_OPR:
+  #   value_map: 
+  #     V_OTIME:
+  #       ".": null
+  #     V_OMINUT:
+  #       ".": null
   #   mappings:
-  #     - source_column: vnr_code
-  #       how: left
-  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/laegemiddeloplysninger.csv   
-  #       join_on: vnr
-  #       target_column: pname
-  #       rename_to: code
-  #       drop_source: false
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #       drop_source: true
 
-  # SDS_laboratorieproevesvar:
-  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/lab_dm_forsker_all.csv
+  # SDS_t_sksube:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksube.csv   
   #   columns:
-  #     PATIENT_CPR: subject_id
-  #     SAMPLINGDATE: 
-  #     SAMPLINGTIME: 
-  #     ANALYSISCODE:
-  #     VALUE: 
+  #     V_RECNUM: contact_id
+  #     D_ODTO: 
+  #     V_OTIME: 
+  #     V_OMINUT: 
+  #     C_OPR:
+  #     C_OPRART: procedure_type # TODO: Currently not in use
+  #   value_map: 
+  #     V_OTIME:
+  #       ".": null
+  #     V_OMINUT:
+  #       ".": null
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #       drop_source: true
+
+  # SDS_procedurer_kirurgi:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
+  #   columns:
+  #     dw_ek_kontakt: contact_id
+  #     dato_start: 
+  #     tidspunkt_start: 
+  #     procedurekode:
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
+  #       join_on: dw_ek_kontakt
+  #       target_column: cpr
+  #       rename_to: subject_id
+  #       drop_source: true
+
+  # SDS_procedurer_andre:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_andre.csv        
+  #   columns:
+  #     dw_ek_kontakt: contact_id
+  #     dato_start: 
+  #     tidspunkt_start: 
+  #     procedurekode:
+  #     proceduretype: # TODO: Currently not in use
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
+  #       join_on: dw_ek_kontakt
+  #       target_column: cpr
+  #       rename_to: subject_id
+  #       drop_source: true
+
+  SDS_ekokur:
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/ekokur_all.csv                  
+    columns:
+      cpr: subject_id
+      vnr: vnr_code
+      eksd: timestamp
+    mappings:
+      - source_column: vnr_code
+        how: left
+        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/laegemiddeloplysninger.csv   
+        join_on: vnr
+        target_column: pname
+        rename_to: code
+        drop_source: false
+
+  SDS_laboratorieproevesvar:
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/lab_dm_forsker_all.csv
+    columns:
+      PATIENT_CPR: subject_id
+      SAMPLINGDATE: 
+      SAMPLINGTIME: 
+      ANALYSISCODE:
+      VALUE: 
