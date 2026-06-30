@@ -145,6 +145,11 @@ tables:
       C_SPEC: 
       C_SGH: 
       K_RECNUM: contact_id
+    value_map: 
+      V_UDTIME:
+        ".": null
+      D_UDDTO:
+        ".": null
 
   # SDS_t_sksopr:
   #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
