@@ -47,98 +47,98 @@ labtest:
 SDS_diagnoser:
   diagnosekode:
     code: f"RD//{$diagnosekode}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    time: $dato_slut as "%Y-%m-%d"
   diagnose_type:
     code: f"RD_TYPE//{$diagnosetype}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    time: $dato_slut as "%Y-%m-%d"
 
 # LPR diagnoses
 SDS_t_diag:
   diag:
     code: f"RD//{$C_DIAG}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    time: $D_UDDTO as "%Y-%m-%d"
   diag_type:
     code: f"RD_TYPE//{$C_DIAGTYPE}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    time: $D_UDDTO as "%Y-%m-%d"
   tildiag:
     code: f"RD//{$C_TILDIAG}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    time: $D_UDDTO as "%Y-%m-%d"
 
-# LPR3 contacts
-SDS_kontakter:
-  aktionsdiagnose:
-    code: f"RC//{$aktionsdiagnose}"
-    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
-  contact_reason:
-    code: f"RC_REASON//{$kontaktaarsag}"
-    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
-  priority:
-    code: f"RC_PRIO//{$priority}"
-    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
-  contact_type:
-    code: f"RC_TYPE//{$contact_type}"
-    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
-  clinical_specialty:
-    code: f"RC_SPEC//{$hovedspeciale_ans}"
-    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
-  region_code:
-    code: f"RC_REG//{$region_ans}"
-    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
+# # LPR3 contacts
+# SDS_kontakter:
+#   aktionsdiagnose:
+#     code: f"RC//{$aktionsdiagnose}"
+#     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
+#   contact_reason:
+#     code: f"RC_REASON//{$kontaktaarsag}"
+#     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
+#   priority:
+#     code: f"RC_PRIO//{$priority}"
+#     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
+#   contact_type:
+#     code: f"RC_TYPE//{$contact_type}"
+#     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
+#   clinical_specialty:
+#     code: f"RC_SPEC//{$hovedspeciale_ans}"
+#     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
+#   region_code:
+#     code: f"RC_REG//{$region_ans}"
+#     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
-# LPR admissions
-SDS_t_adm:
-  SDS_t_adm:
-    code: f"RC_ADM//{$C_ADIAG}"
-    time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
-  contact_reason:
-    code: f"RC_REASON//{$C_KONTAARS}"
-    time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
-  patient_type:
-    code: f"RC_ADM_TYPE//{$C_PATTYPE}"
-    time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
-  priority:
-    code: f"RC_PRIO//{$priority}"
-    time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
-  clinical_specialty:
-    code: f"RC_SPEC//{$C_SPEC}"
-    time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
-  hospital_code:
-    code: f"RC_SGH//{$C_SGH}"
-    time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
+# # LPR admissions
+# SDS_t_adm:
+#   SDS_t_adm:
+#     code: f"RC_ADM//{$C_ADIAG}"
+#     time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
+#   contact_reason:
+#     code: f"RC_REASON//{$C_KONTAARS}"
+#     time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
+#   patient_type:
+#     code: f"RC_ADM_TYPE//{$C_PATTYPE}"
+#     time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
+#   priority:
+#     code: f"RC_PRIO//{$priority}"
+#     time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
+#   clinical_specialty:
+#     code: f"RC_SPEC//{$C_SPEC}"
+#     time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
+#   hospital_code:
+#     code: f"RC_SGH//{$C_SGH}"
+#     time: set_time($date_start as '%Y-%m-%d', $V_INDTIME as '%H', $V_INDMINUT as '%M')
 
-# LPR surgical procedures
-SDS_t_sksopr:
-  procedure:
-    code: f"RPS//{$C_OPR}"
-    time: set_time($date_start as '%Y-%m-%d', $V_OTIME as '%H', $V_OMINUT as '%M')
+# # LPR surgical procedures
+# SDS_t_sksopr:
+#   procedure:
+#     code: f"RPS//{$C_OPR}"
+#     time: set_time($date_start as '%Y-%m-%d', $V_OTIME as '%H', $V_OMINUT as '%M')
 
-# LPR other procedures
-SDS_t_sksube:
-  procedure:
-    code: f"RPO//{$C_OPR}"
-    time: set_time($date_start as '%Y-%m-%d', $V_OTIME as '%H', $V_OMINUT as '%M')
+# # LPR other procedures
+# SDS_t_sksube:
+#   procedure:
+#     code: f"RPO//{$C_OPR}"
+#     time: set_time($date_start as '%Y-%m-%d', $V_OTIME as '%H', $V_OMINUT as '%M')
 
-# LPR3 surgical procedures
-SDS_procedurer_kirurgi:
-  procedure:
-    code: f"RPS//{$procedurekode}"
-    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
+# # LPR3 surgical procedures
+# SDS_procedurer_kirurgi:
+#   procedure:
+#     code: f"RPS//{$procedurekode}"
+#     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
-# LPR3 other procedures
-SDS_procedurer_andre:
-  SDS_procedurer_andre:
-    code: f"RPO//{$procedurekode}"
-    time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
+# # LPR3 other procedures
+# SDS_procedurer_andre:
+#   SDS_procedurer_andre:
+#     code: f"RPO//{$procedurekode}"
+#     time: set_time($date_start as '%Y-%m-%d', $time_start as '%H:%M:%S')
 
-# Medication
-SDS_ekokur:
-  SDS_ekokur:
-    code: f"RM//{$code}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+# # Medication
+# SDS_ekokur:
+#   SDS_ekokur:
+#     code: f"RM//{$code}"
+#     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
 
-# NOTE: numeric_value is normalized before this step
-SDS_laboratorieproevesvar:
-  SDS_laboratorieproevesvar:
-    code: f"L//{$ANALYSISCODE}"
-    time: set_time($SAMPLINGDATE as '%Y-%m-%d', $SAMPLINGTIME as '%H:%M:%S')
-    numeric_value: $VALUE
+# # NOTE: numeric_value is normalized before this step
+# SDS_laboratorieproevesvar:
+#   SDS_laboratorieproevesvar:
+#     code: f"L//{$ANALYSISCODE}"
+#     time: set_time($SAMPLINGDATE as '%Y-%m-%d', $SAMPLINGTIME as '%H:%M:%S')
+#     numeric_value: $VALUE

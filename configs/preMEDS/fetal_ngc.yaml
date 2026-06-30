@@ -14,13 +14,15 @@ hydra:
 
 env: local
 run_name: preMEDS_SP_and_SDS
-chunksize: 1000000000
+chunksize: 10000
 
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
   tables_dir: ${oc.env:EHR2MEDS_DATA}/    
 
 write_file_type: csv 
+
+test: true
 
 subject_id_mapping:
   file: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv # Table to derive mapping from (can be None)
@@ -93,7 +95,6 @@ tables:
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
         join_on: dw_ek_kontakt
         target_column: dato_slut      
-        rename_to: timestamp
         drop_source: true
 
   SDS_t_diag:
@@ -113,122 +114,121 @@ tables:
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
         join_on: K_RECNUM
         target_column: D_UDDTO 
-        rename_to: timestamp
         drop_source: true
 
-  SDS_kontakter:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
-    columns:
-      cpr: subject_id
-      dato_start: date_start
-      tidspunkt_start: time_start
-      aktionsdiagnose:
-      kontaktaarsag: 
-      prioritet: 
-      kontakttype: 
-      hovedspeciale_ans: 
-      region_ans: 
-      dw_ek_kontakt: contact_id
+  # SDS_kontakter:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
+  #   columns:
+  #     cpr: subject_id
+  #     dato_start: date_start
+  #     tidspunkt_start: time_start
+  #     aktionsdiagnose:
+  #     kontaktaarsag: 
+  #     prioritet: 
+  #     kontakttype: 
+  #     hovedspeciale_ans: 
+  #     region_ans: 
+  #     dw_ek_kontakt: contact_id
 
-  SDS_t_adm:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
-    columns:
-      V_CPR: subject_id
-      D_INDDTO: date_start
-      V_INDTIME: 
-      V_INDMINUT: 
-      C_ADIAG:
-      C_KONTAARS: 
-      C_PATTYPE:  
-      C_INDM: priority # NOTE: mapped to priority
-      C_SPEC: 
-      C_SGH: 
-      K_RECNUM: contact_id
+  # SDS_t_adm:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
+  #   columns:
+  #     V_CPR: subject_id
+  #     D_UDDTO: 
+  #     V_TIME: 
+  #     V_INDMINUT: 
+  #     C_ADIAG:
+  #     C_KONTAARS: 
+  #     C_PATTYPE:  
+  #     C_INDM: priority # NOTE: mapped to priority
+  #     C_SPEC: 
+  #     C_SGH: 
+  #     K_RECNUM: contact_id
 
-  SDS_t_sksopr:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
-    columns:
-      V_RECNUM: contact_id
-      D_ODTO: date_start
-      V_OTIME: 
-      V_OMINUT: 
-      C_OPR:
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
-        join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
-        drop_source: true
+  # SDS_t_sksopr:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
+  #   columns:
+  #     V_RECNUM: contact_id
+  #     D_ODTO: date_start
+  #     V_OTIME: 
+  #     V_OMINUT: 
+  #     C_OPR:
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #       drop_source: true
 
-  SDS_t_sksube:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksube.csv   
-    columns:
-      V_RECNUM: contact_id
-      D_ODTO: date_start
-      V_OTIME: 
-      V_OMINUT: 
-      C_OPR:
-      C_OPRART: procedure_type # TODO: Currently not in use
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
-        join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
-        drop_source: true
+  # SDS_t_sksube:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksube.csv   
+  #   columns:
+  #     V_RECNUM: contact_id
+  #     D_ODTO: date_start
+  #     V_OTIME: 
+  #     V_OMINUT: 
+  #     C_OPR:
+  #     C_OPRART: procedure_type # TODO: Currently not in use
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #       drop_source: true
 
-  SDS_procedurer_kirurgi:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
-    columns:
-      dw_ek_kontakt: contact_id
-      dato_start: date_start
-      tidspunkt_start: time_start
-      procedurekode:
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-        drop_source: true
+  # SDS_procedurer_kirurgi:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
+  #   columns:
+  #     dw_ek_kontakt: contact_id
+  #     dato_start: date_start
+  #     tidspunkt_start: time_start
+  #     procedurekode:
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
+  #       join_on: dw_ek_kontakt
+  #       target_column: cpr
+  #       rename_to: subject_id
+  #       drop_source: true
 
-  SDS_procedurer_andre:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_andre.csv        
-    columns:
-      dw_ek_kontakt: contact_id
-      dato_start: date_start
-      tidspunkt_start: time_start
-      procedurekode:
-      proceduretype: # TODO: Currently not in use
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-        drop_source: true
+  # SDS_procedurer_andre:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_andre.csv        
+  #   columns:
+  #     dw_ek_kontakt: contact_id
+  #     dato_start: date_start
+  #     tidspunkt_start: time_start
+  #     procedurekode:
+  #     proceduretype: # TODO: Currently not in use
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
+  #       join_on: dw_ek_kontakt
+  #       target_column: cpr
+  #       rename_to: subject_id
+  #       drop_source: true
 
-  SDS_ekokur:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/ekokur_all.csv                  
-    columns:
-      cpr: subject_id
-      vnr: vnr_code
-      eksd: timestamp
-    mappings:
-      - source_column: vnr_code
-        how: left
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/laegemiddeloplysninger.csv   
-        join_on: vnr
-        target_column: pname
-        rename_to: code
-        drop_source: false
+  # SDS_ekokur:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/ekokur_all.csv                  
+  #   columns:
+  #     cpr: subject_id
+  #     vnr: vnr_code
+  #     eksd: timestamp
+  #   mappings:
+  #     - source_column: vnr_code
+  #       how: left
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/laegemiddeloplysninger.csv   
+  #       join_on: vnr
+  #       target_column: pname
+  #       rename_to: code
+  #       drop_source: false
 
-  SDS_laboratorieproevesvar:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/lab_dm_forsker_all.csv
-    columns:
-      PATIENT_CPR: subject_id
-      SAMPLINGDATE: 
-      SAMPLINGTIME: 
-      ANALYSISCODE:
-      VALUE: 
+  # SDS_laboratorieproevesvar:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/lab_dm_forsker_all.csv
+  #   columns:
+  #     PATIENT_CPR: subject_id
+  #     SAMPLINGDATE: 
+  #     SAMPLINGTIME: 
+  #     ANALYSISCODE:
+  #     VALUE: 
