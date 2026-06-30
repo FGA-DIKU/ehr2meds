@@ -137,8 +137,7 @@ tables:
     columns:
       V_CPR: subject_id
       D_UDDTO: 
-      V_TIME: 
-      V_INDMINUT: 
+      V_UDTIME: 
       C_ADIAG:
       C_KONTAARS: 
       C_PATTYPE:  
