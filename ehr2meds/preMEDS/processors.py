@@ -55,7 +55,7 @@ class Processor:
     def _get_mapping_table(data_handler, mapping: dict):
         "Find path and relevant columns in either registry or the resources folder."
         filename = mapping["via_file"]
-        cols = {mapping["join_on"]: None, mapping["target_column"]: None}
+        cols = dict.fromkeys([mapping["join_on"], mapping["target_column"]])
 
         register_path = Path(filename)
         if not register_path.exists():
