@@ -72,8 +72,8 @@ SDS_kontakter:
   contact_reason:
     code: f"RC_REASON//{$kontaktaarsag}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
-  priority:
-    code: f"RC_PRIO//{$priority}"
+  prioritet:
+    code: f"RC_PRIO//{$prioritet}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S')
   contact_type:
     code: f"RC_TYPE//{$contact_type}"
