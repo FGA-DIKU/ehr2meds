@@ -17,7 +17,7 @@ run_name: preMEDS_SP_and_SDS
 chunksize: 10000
 
 paths:
-  output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
+  output: ../data/test_preMEDS/fetal_data/SDS_SP/dmpl_test/
   tables_dir: ${oc.env:EHR2MEDS_DATA}/    
 
 write_file_type: csv 
@@ -25,8 +25,8 @@ write_file_type: csv
 test: true
 
 subject_id_mapping:
-  file: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv # Table to derive mapping from (can be None)
-  subject_id_col: MOR_CPR # Column to use as the subject_id mapping
+  file: ../data/full_population.csv # Table to derive mapping from (can be None)
+  subject_id_col: m_cpr # Column to use as the subject_id mapping
   mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
