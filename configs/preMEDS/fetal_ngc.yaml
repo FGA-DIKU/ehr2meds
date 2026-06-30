@@ -14,7 +14,7 @@ hydra:
 
 env: local
 run_name: preMEDS_SP_and_SDS
-chunksize: 10000
+chunksize: 10000000
 
 paths:
   output: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/test_preMEDS/fetal_data/SDS_SP/dmpl_test/
@@ -22,7 +22,7 @@ paths:
 
 write_file_type: csv 
 
-test: true
+test: false
 
 subject_id_mapping:
   file: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_population.csv # Table to derive mapping from (can be None)
