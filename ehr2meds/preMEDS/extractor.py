@@ -90,3 +90,6 @@ class PREMEDSExtractor:
             )
 
             self.data_handler.save(processed_chunk, table_name)
+
+            if self.cfg.get("test"):
+                break
