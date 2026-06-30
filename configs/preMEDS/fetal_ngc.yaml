@@ -95,6 +95,7 @@ tables:
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
         join_on: dw_ek_kontakt
         target_column: dato_slut      
+        rename_to: 
         drop_source: true
 
   SDS_t_diag:
@@ -114,6 +115,7 @@ tables:
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
         join_on: K_RECNUM
         target_column: D_UDDTO 
+        rename_to: 
         drop_source: true
 
   # SDS_kontakter:
