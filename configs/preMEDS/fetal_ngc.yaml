@@ -98,6 +98,9 @@ tables:
       dw_ek_kontakt: contact_id
       diagnosekode:
       diagnosetype: 
+    value_map: 
+      dato_slut:
+        ".": null
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv           
@@ -118,6 +121,9 @@ tables:
       C_DIAG: 
       C_TILDIAG: 
       C_DIAGTYPE: 
+    value_map: 
+      D_UDDTO:
+        ".": null
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
