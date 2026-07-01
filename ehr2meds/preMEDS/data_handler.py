@@ -31,7 +31,8 @@ class DataHandler:
         if filename.endswith(".parquet"):
             return pd.read_parquet(filename, columns=list(cols)).rename(columns=rename)
         elif filename.endswith((".csv", ".asc")):
-            return pd.read_csv(filename, usecols=list(cols)).rename(columns=rename)
+            df = pd.read_csv(filename)
+            return df[list(cols)].rename(columns=rename)
         else:
             raise ValueError(f"Unsupported file type: {filename}")
 
@@ -42,8 +43,8 @@ class DataHandler:
             for batch in pf.iter_batches(columns=list(cols), batch_size=self.chunksize):
                 yield batch.to_pandas().rename(columns=rename)
         elif filename.endswith((".csv", ".asc")):
-            for chunk in pd.read_csv(filename, usecols=list(cols), chunksize=self.chunksize):
-                yield chunk.rename(columns=rename)
+            for chunk in pd.read_csv(filename, chunksize=self.chunksize):
+                yield chunk[list(cols)].rename(columns=rename)
         else:
             raise ValueError(f"Unsupported file type: {filename}")
 

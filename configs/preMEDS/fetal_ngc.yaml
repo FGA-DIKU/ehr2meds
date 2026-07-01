@@ -38,112 +38,112 @@ tables:
       Dødsdato: deathdate
       Køn: gender
 
-  admissions:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - ADT hændelser.csv
-    columns:
-      MOR_CPR: subject_id
-      Flyt_ind: 
-      Flyt_ud: 
-      Afsnit: 
+  # admissions:
+  #   filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - ADT hændelser.csv
+  #   columns:
+  #     MOR_CPR: subject_id
+  #     Flyt_ind: 
+  #     Flyt_ud: 
+  #     Afsnit: 
 
-  diagnosis:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Diagnoseliste.csv
-    columns:
-      MOR_CPR: subject_id
-      Redigeringsdato: timestamp
-      Diagnosekode:
-      Diagnose:
+  # diagnosis:
+  #   filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Diagnoseliste.csv
+  #   columns:
+  #     MOR_CPR: subject_id
+  #     Redigeringsdato: timestamp
+  #     Diagnosekode:
+  #     Diagnose:
 
-  procedure:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Procedurer.csv
-    columns:
-      MOR_CPR: subject_id
-      ServiceDate: timestamp
-      ProcedureCode:
+  # procedure:
+  #   filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Procedurer.csv
+  #   columns:
+  #     MOR_CPR: subject_id
+  #     ServiceDate: timestamp
+  #     ProcedureCode:
 
-  medication:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Medicin.csv
-    columns:
-      MOR_CPR: subject_id
-      Administrationstidspunkt: timestamp
-      Bestillingsdato: fill_timestamp
-      ATC:
+  # medication:
+  #   filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Medicin.csv
+  #   columns:
+  #     MOR_CPR: subject_id
+  #     Administrationstidspunkt: timestamp
+  #     Bestillingsdato: fill_timestamp
+  #     ATC:
 
-  # TODO Add lab values
-  labtest:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Prøvesvar.csv
-    columns:
-      MOR_CPR: subject_id
-      Prøvetagningstidspunkt: timestamp
-      BestOrd:
-      Resultatværdi: lab_result
+  # # TODO Add lab values
+  # labtest:
+  #   filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Prøvesvar.csv
+  #   columns:
+  #     MOR_CPR: subject_id
+  #     Prøvetagningstidspunkt: timestamp
+  #     BestOrd:
+  #     Resultatværdi: lab_result
 
-  smoking_info:
-    filename: ${paths.tables_dir}/SP/tables/Mor - Rygning.csv
-    columns:
-      MOR_CPR: subject_id
-      Rygestatus: 
-      "Kontakt dato": timestamp
+  # smoking_info:
+  #   filename: ${paths.tables_dir}/SP/tables/Mor - Rygning.csv
+  #   columns:
+  #     MOR_CPR: subject_id
+  #     Rygestatus: 
+  #     "Kontakt dato": timestamp
 
-  alcohol_info:
-    filename: ${paths.tables_dir}/SP/tables/Mor - Alkohol.csv
-    columns:
-      MOR_CPR: subject_id
-      "Alkohol - Antal ugentlige genstande": weekly_drinks
-      "Kontakt dato": timestamp
+  # alcohol_info:
+  #   filename: ${paths.tables_dir}/SP/tables/Mor - Alkohol.csv
+  #   columns:
+  #     MOR_CPR: subject_id
+  #     "Alkohol - Antal ugentlige genstande": weekly_drinks
+  #     "Kontakt dato": timestamp
 
-  SDS_diagnoser:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
-    columns:
-      dw_ek_kontakt: contact_id
-      diagnosekode:
-      diagnosetype: 
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv           
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
-        join_on: dw_ek_kontakt
-        target_column: dato_slut      
-        rename_to: 
-        drop_source: true
+  # SDS_diagnoser:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
+  #   columns:
+  #     dw_ek_kontakt: contact_id
+  #     diagnosekode:
+  #     diagnosetype: 
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv           
+  #       join_on: dw_ek_kontakt
+  #       target_column: cpr
+  #       rename_to: subject_id
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
+  #       join_on: dw_ek_kontakt
+  #       target_column: dato_slut      
+  #       rename_to: 
+  #       drop_source: true
 
-  SDS_t_diag:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_diag.csv               
-    columns:
-      V_RECNUM: contact_id
-      C_DIAG: 
-      C_TILDIAG: 
-      C_DIAGTYPE: 
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
-        join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
-        join_on: K_RECNUM
-        target_column: D_UDDTO 
-        rename_to: 
-        drop_source: true
+  # SDS_t_diag:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_diag.csv               
+  #   columns:
+  #     V_RECNUM: contact_id
+  #     C_DIAG: 
+  #     C_TILDIAG: 
+  #     C_DIAGTYPE: 
+  #   mappings:
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
+  #       join_on: K_RECNUM
+  #       target_column: V_CPR
+  #       rename_to: subject_id
+  #     - source_column: contact_id
+  #       via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
+  #       join_on: K_RECNUM
+  #       target_column: D_UDDTO 
+  #       rename_to: 
+  #       drop_source: true
 
-  SDS_kontakter:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
-    columns:
-      cpr: subject_id
-      dato_start: 
-      tidspunkt_start: 
-      aktionsdiagnose:
-      kontaktaarsag: 
-      prioritet: 
-      kontakttype: 
-      hovedspeciale_ans: 
-      region_ans: 
-      dw_ek_kontakt: contact_id
+  # SDS_kontakter:
+  #   filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
+  #   columns:
+  #     cpr: subject_id
+  #     dato_start: 
+  #     tidspunkt_start: 
+  #     aktionsdiagnose:
+  #     kontaktaarsag: 
+  #     prioritet: 
+  #     kontakttype: 
+  #     hovedspeciale_ans: 
+  #     region_ans: 
+  #     dw_ek_kontakt: contact_id
 
   SDS_t_adm:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
