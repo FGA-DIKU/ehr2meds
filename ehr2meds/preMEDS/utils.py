@@ -119,9 +119,10 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
-    """Map column values using inline config mapping. Unmapped values become NaN."""
+    """Replace specific column values; other values are left unchanged."""
     for col, mapping in value_map_cfg.items():
-        df[col] = df[col].map(mapping)
+        if col in df.columns:
+            df[col] = df[col].replace(mapping)
     return df
 
 
