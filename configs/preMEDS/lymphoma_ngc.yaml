@@ -8,7 +8,6 @@ logging:
   path: ./outputs/logs
 
 
-test: false
 env: local
 run_name: preMEDS_registers_only
 chunksize: 1000000000
@@ -19,22 +18,25 @@ paths:
 
 write_file_type: parquet 
 
-align_timestamps: # removes information that is not in the global format
-  names: [timestamp]
-  format: "%Y-%m-%d %H:%M:%S"
-
 subject_id_mapping:
-  file: ${paths.tables_dir}/CPMI_PatientInfo.parquet # Table to derive mapping from (can be None)
+  file: ${paths.tables_dir}/CPMI_PatientInfo_no_datetime.parquet # Table to derive mapping from (can be None)
   subject_id_col: patientid # Column to use as the subject_id mapping
   mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
+  patients_info:
+    filename: ${paths.tables_dir}/CPMI_PatientInfo_no_datetime.parquet
+    columns:
+      patientid: subject_id
+      Fødselsdato: birthdate
+      Dødsdato: deathdate
+      Køn: gender
+  
   SDS_dimpatologiskdiagnose:
       filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
-      rename_columns:
-        diagnose_snomed_kode: code
+      columns:
         dw_ek_rekvisition: contact_id
-      code_prefix: "PAT/"
+        diagnose_snomed_kode:
       mappings:
         - source_column: contact_id
           via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
@@ -53,21 +55,13 @@ tables:
           target_column: dato_modtagelse 
           rename_to: timestamp_fallback
           drop_source: true
-      pad_values:
-        timestamp_fallback:
-          suffix: "T00:00:00"
-          unless_contains: ":"
-      fillna:
-        timestamp:
-          column: timestamp_fallback
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS_diagnoser.parquet               
-    rename_columns:
-      diagnosekode: code
-      diagnosetype: diagnosetype
+    columns:
       dw_ek_kontakt: contact_id
-    code_prefix: "RD/"
+      diagnosekode:
+      diagnosetype: 
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet           
@@ -85,23 +79,14 @@ tables:
         target_column: tidspunkt_slut      
         rename_to: time_end
         drop_source: true
-    combine_datetime:
-      timestamp:
-        date_col: date_end
-        time_col: time_end
-        drop_original: true  
-    unroll_columns:
-      - column: diagnosetype
-        prefix: "RD_TYPE/"
 
   SDS_t_diag:
     filename: ${paths.tables_dir}/SDS_t_diag.parquet               
-    rename_columns:
-      c_diag: c_diag
-      c_tildiag: c_tildiag
-      c_diagtype: c_diagtype
+    columns:
       v_recnum: contact_id
-    code_prefix: "RD/"
+      c_diag: 
+      c_tildiag: 
+      c_diagtype: 
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -114,51 +99,35 @@ tables:
         target_column: d_uddto 
         rename_to: timestamp
         drop_source: true
-    unroll_columns:
-      - column: c_diagtype
-        prefix: "RD_TYPE/"
-      - column: c_tildiag #NOTE: treated as also being a diagnosis to merge better with LPR3
-        prefix: "RD/"
-      - column: c_diag
-        prefix: "RD/"
 
   SDS_kontakter:
     filename: ${paths.tables_dir}/SDS_kontakter.parquet               
-    rename_columns:
+    columns:
       patientid: subject_id
       dato_start: date_start
       tidspunkt_start: time_start
-      aktionsdiagnose: code
-      kontaktaarsag: contact_reason
-      prioritet: priority
-      kontakttype: contact_type
-      hovedspeciale_ans: clinical_specialty
-      region_ans: region_code
+      aktionsdiagnose:
+      kontaktaarsag: 
+      prioritet: 
+      kontakttype: 
+      hovedspeciale_ans: 
+      region_ans: 
       dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
-    unroll_columns:
-      - column: contact_reason
-        prefix: "RC_REASON/"
-      - column: priority
-        prefix: "RC_PRIO/"
-      - column: contact_type
-        prefix: "RC_TYPE/"
-      - column: clinical_specialty
-        prefix: "RC_SPEC/"
-      - column: region_code
-        prefix: "RC_REG/"
-    code_prefix: "RC/"
 
   SDS_t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
-    normalize_columns:
-      - c_spec
-      - c_indm
-      - c_kontaars
+    columns:
+      patientid: subject_id
+      d_inddto: date_start
+      v_indtime: 
+      v_indminut: 
+      c_adiag:
+      c_kontaars: 
+      c_pattype:  
+      c_indm: priority # NOTE: mapped to priority
+      c_spec: 
+      c_sgh: 
+      k_recnum: contact_id
     value_map:
       c_spec:
         "01": "intern medicin"
@@ -203,7 +172,7 @@ tables:
         "86": "arbejdsmedicin"
         "90": "almen medicin"
         "91": "samfundsmedicin"
-      c_indm: # map emergency vs planned visits to LPR3
+      priority: # map emergency vs planned visits to LPR3
         "1": "ATA1"
         "2": "ATA3"
       c_kontaars:
@@ -215,59 +184,22 @@ tables:
         "7": "ALCC90"
         "8": "ALCC90"
         "9": "ALCC90"
-    rename_columns:
-      patientid: subject_id
-      d_inddto: date_start
-      v_indtime: v_indtime
-      v_indminut: v_indminut
-      c_adiag: code
-      c_kontaars: contact_reason
-      c_pattype: patient_type 
-      c_indm: priority # NOTE: mapped to priority
-      c_spec: clinical_specialty
-      c_sgh: hospital_code
-      k_recnum: contact_id
     mappings:
-    - source_column: hospital_code   
+    - source_column: c_sgh   
       via_file: ${paths.tables_dir}/shak_to_region.parquet # using resources
       join_on: kode
       target_column: region
-      rename_to: region_code
+      rename_to: c_sgh
       drop_source: true
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_indtime
-        minute_col: v_indminut
-        drop_original: true
-    unroll_columns:
-      - column: contact_reason
-        prefix: "RC_REASON/"
-      - column: patient_type
-        prefix: "RC_ADM_TYPE/"
-      - column: priority
-        prefix: "RC_PRIO/"
-      - column: clinical_specialty
-        prefix: "RC_SPEC/"
-      - column: region_code
-        prefix: "RC_REG/"
-    code_prefix: "RC_ADM/"
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS_t_sksopr.parquet   
-    rename_columns:
-      c_opr: code
-      d_odto: date_start
-      v_otime: v_otime
-      v_ominut: v_ominut
+    columns:
       v_recnum: contact_id
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_otime
-        minute_col: v_ominut
-        drop_original: true
-    code_prefix: "RPS/"
+      d_odto: date_start
+      v_otime: 
+      v_ominut: 
+      c_opr:
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -278,20 +210,13 @@ tables:
 
   SDS_t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
-    rename_columns:
-      c_opr: code
-      c_oprart: procedure_type
-      d_odto: date_start
-      v_otime: v_otime
-      v_ominut: v_ominut
+    columns:
       v_recnum: contact_id
-    combine_datetime_parts:
-      timestamp:
-        date_col: date_start
-        hour_col: v_otime
-        minute_col: v_ominut
-        drop_original: true
-    code_prefix: "RPO/"
+      d_odto: date_start
+      v_otime: 
+      v_ominut: 
+      c_opr:
+      c_oprart:  # TODO: Currently not in use
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -299,31 +224,14 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
-    fillna:
-      procedure_type:
-        value: "P" 
-
-  SDS_ekokur:
-    filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
-    rename_columns:
-      patientid: subject_id
-      atc: code
-      eksd: timestamp
-    code_prefix: "RM/"
 
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
-    rename_columns:
-      procedurekode: code
+    columns:
+      dw_ek_kontakt: contact_id
       dato_start: date_start
       tidspunkt_start: time_start
-      dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
-    code_prefix: "RPS/"
+      procedurekode:
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -334,18 +242,12 @@ tables:
 
   SDS_procedurer_andre:
     filename: ${paths.tables_dir}/SDS_procedurer_andre.parquet        
-    rename_columns:
-      procedurekode: code
-      proceduretype: procedure_type
+    columns:
+      dw_ek_kontakt: contact_id
       dato_start: date_start
       tidspunkt_start: time_start
-      dw_ek_kontakt: contact_id
-    combine_datetime:
-      timestamp:
-        date_col: date_start
-        time_col: time_start
-        drop_original: true
-    code_prefix: "RPO/"
+      procedurekode:
+      proceduretype: # TODO: Currently not in use
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -354,43 +256,28 @@ tables:
         rename_to: subject_id
         drop_source: true
 
+  SDS_ekokur:
+    filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
+    columns:
+      patientid: subject_id
+      eksd: timestamp
+      atc:
+
   SDS_indberetningmedpris:
     filename: ${paths.tables_dir}/SDS_indberetningmedpris.parquet
-    rename_columns:
-      c_atc: code
-      c_patienttype: patient_type #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
-      d_ord_start: timestamp
-      v_adm_dosis: dosage # not used
-      v_styrke_num: strength # not used
+    columns:
       patientid: subject_id
-    unroll_columns:
-    - column: code
-      prefix: "RMA/"
-    - column: patient_type
-      prefix: "RMA_PAT_TYPE/"
-    code_prefix: "RMA/"
+      d_ord_start: timestamp
+      c_atc:
+      c_patienttype:  #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
+      v_adm_dosis: dosage # TODO: Currently not in use
+      v_styrke_num: strength # TODO: Currently not in use
 
   SDS_laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
-    rename_columns:
-      analysiscode: code
-      samplevalue: numeric_value
-      samplingdate: samplingdate
-      samplingtime: samplingtime
+    columns:
       patientid: subject_id
-    combine_datetime:
-      timestamp:
-        date_col: samplingdate
-        time_col: samplingtime
-        drop_original: true
-    code_prefix: "L/"
-    numeric_columns: [numeric_value]
-
-  patients_info:
-    filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
-    rename_columns:
-      patientid: subject_id
-      Fødselsdato: birthdate
-      Dødsdato: deathdate
-      Køn: gender
-    file_type: parquet
+      samplingdate: 
+      samplingtime: 
+      analysiscode:
+      samplevalue: 
