@@ -169,6 +169,10 @@ tables:
         ".": null
       D_UDDTO:
         ".": null
+    compose: 
+      timestamp:
+        columns: [V_UDTIME]
+        append: ":00"
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
@@ -190,6 +194,10 @@ tables:
         target_column: V_CPR
         rename_to: subject_id
         drop_source: true
+    compose: 
+      timestamp: 
+        columns: [V_OTIME, V_OMINUT]
+        separator: ":"
 
   SDS_t_sksube:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksube.csv   
@@ -212,6 +220,10 @@ tables:
         target_column: V_CPR
         rename_to: subject_id
         drop_source: true
+    compose: 
+      timestamp: 
+        columns: [V_OTIME, V_OMINUT]
+        separator: ":"
 
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      

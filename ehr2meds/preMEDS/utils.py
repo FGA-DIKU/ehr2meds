@@ -135,3 +135,12 @@ def validate_subject_id(df: pd.DataFrame) -> None:
             f"{SUBJECT_ID} column must be of integer type\n\
                 Hint: Use the subject_id_mapping configuration to map string IDs to integers."
         )
+
+
+def compose_columns(df: pd.DataFrame, compose_cfg: dict) -> pd.DataFrame:
+    """Compose new columns from existing ones using a separator."""
+    for new_col, cfg in compose_cfg.items():
+        cols = cfg["columns"]
+        sep = cfg.get("separator", "")
+        df[new_col] = df[cols].astype(str).agg(sep.join, axis=1)
+    return df

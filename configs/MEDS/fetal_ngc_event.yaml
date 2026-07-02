@@ -99,34 +99,34 @@ SDS_kontakter:
 SDS_t_adm:
   SDS_t_adm:
     code: f"RC_ADM//{$C_ADIAG}"
-    time: $D_UDDTO as "%Y-%m-%d"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $timestamp as '%H')
   contact_reason:
     code: f"RC_REASON//{$C_KONTAARS}"
-    time: $D_UDDTO as "%Y-%m-%d"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $timestamp as '%H')
   patient_type:
     code: f"RC_ADM_TYPE//{$C_PATTYPE}"
-    time: $D_UDDTO as "%Y-%m-%d"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $timestamp as '%H')
   priority:
     code: f"RC_PRIO//{$priority}"
-    time: $D_UDDTO as "%Y-%m-%d"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $timestamp as '%H')
   clinical_specialty:
     code: f"RC_SPEC//{$C_SPEC}"
-    time: $D_UDDTO as "%Y-%m-%d"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $timestamp as '%H')
   hospital_code:
     code: f"RC_SGH//{$C_SGH}"
-    time: $D_UDDTO as "%Y-%m-%d"
+    time: set_time($D_UDDTO as '%Y-%m-%d', $timestamp as '%H')
 
 # LPR surgical procedures
 SDS_t_sksopr:
   procedure:
     code: f"RPS//{$C_OPR}"
-    time: $D_ODTO as "%Y-%m-%d"
+    time: set_time($D_ODTO as '%Y-%m-%d', $timestamp as '%H:%M')
 
 # LPR other procedures
 SDS_t_sksube:
   procedure:
     code: f"RPO//{$C_OPR}"
-    time: $D_ODTO as "%Y-%m-%d"
+    time: set_time($D_ODTO as '%Y-%m-%d', $timestamp as '%H:%M')
 
 # LPR3 surgical procedures
 SDS_procedurer_kirurgi:
