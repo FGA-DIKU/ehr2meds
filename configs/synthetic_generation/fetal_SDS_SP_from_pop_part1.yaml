@@ -209,6 +209,30 @@ linked_data:
         file: Population
         linked_on: BABY_CPR
 
+  Mor - CPMI - Patientinfo:
+    N: ${N_population}
+    linked_columns:
+      MOR_CPR:
+        type: choice_unique
+        file: Population
+        linked_on: MOR_CPR
+    columns:
+      Fødselsdato:
+        type: rand_datetimeseconds
+        args:
+          start: 1977
+      Køn:
+        type: choice
+        args:
+          options: ["Mand", "Kvinde"]
+      Dødsdato:
+        type: greater_than_datetimeseconds
+        match:
+          min_date: Fødselsdato
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.8
   nyfoedte:
   #MFR3
     N: ${N}
