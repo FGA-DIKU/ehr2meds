@@ -114,7 +114,6 @@ tables:
       C_DIAG: 
       C_TILDIAG: 
       C_DIAGTYPE: 
-      D_UDDTO:
     value_map: 
       D_UDDTO:
         ".": null
