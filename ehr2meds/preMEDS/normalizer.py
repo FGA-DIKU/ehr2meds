@@ -2,8 +2,8 @@ import logging
 import numpy as np
 import pandas as pd
 from ehr2meds.preMEDS.constants import CODE, SUBJECT_ID
-from ehr2meds.preMEDS.dataloading import DataLoader
-from os.path import dirname, join, split
+from ehr2meds.preMEDS.data_handler import DataHandler
+from os.path import join
 from tqdm import tqdm
 from typing import Dict, List
 
@@ -16,7 +16,9 @@ class Normalizer:
         self.test = cfg.test
         logger.info(f"test {self.test}")
         self.normalization_type = cfg.data["norm_type"]
-        self._init_data_loader()
+        self.data_handler = DataHandler(
+            chunksize=self.cfg.data.chunksize,
+        )
 
         # Initialize distribution data placeholders
         self.min_max_vals = None
@@ -24,13 +26,6 @@ class Normalizer:
         self.n_quantiles = None
 
         self.numeric_value = cfg.data["numeric_value"]
-
-    def _init_data_loader(self):
-        self.data_loader = DataLoader(
-            path=dirname(self.cfg.paths.input),
-            chunksize=self.cfg.data.chunksize,
-            test=self.test,
-        )
 
     def __call__(self):
         print("Getting lab distribution")
@@ -42,9 +37,7 @@ class Normalizer:
     def normalize_data(self):
         counter = 0
         for chunk in tqdm(
-            self.data_loader.load_chunks(
-                filename=split(self.cfg.paths.input)[1],
-            ),
+            self.data_handler.load_chunks(filename=self.cfg.paths.input, cols=self.cfg.columns),
             desc="Processing chunks",
         ):
             chunk = self._prepare_chunk(chunk, counter)
@@ -117,9 +110,7 @@ class Normalizer:
         counter = 0
 
         for chunk in tqdm(
-            self.data_loader.load_chunks(
-                filename=split(self.cfg.paths.input)[1],
-            ),
+            self.data_handler.load_chunks(filename=self.cfg.paths.input, cols=self.cfg.columns),
             desc="Building lab distribution",
         ):
             if self.numeric_value not in chunk.columns or CODE not in chunk.columns:
