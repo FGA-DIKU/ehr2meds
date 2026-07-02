@@ -9,11 +9,11 @@ import logging
 from functools import partial
 from pathlib import Path
 
-import polars as pl
 from MEDS_transforms.dataframe import read_df, write_df
 from MEDS_transforms.mapreduce.rwlock import rwlock_wrap
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig
+import polars as pl
 
 logger = logging.getLogger(__name__)
 

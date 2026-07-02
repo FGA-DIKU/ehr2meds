@@ -18,12 +18,12 @@ import logging
 from collections.abc import Iterable
 from pathlib import Path
 
-import polars as pl
 from dftly import extract_columns
 from MEDS_transforms.dataframe import read_df, write_df
 from MEDS_transforms.mapreduce.rwlock import rwlock_wrap
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig, OmegaConf
+import polars as pl
 import re
 
 logger = logging.getLogger(__name__)
