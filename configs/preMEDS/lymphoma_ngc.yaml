@@ -128,6 +128,10 @@ tables:
       c_spec: 
       c_sgh: 
       k_recnum: contact_id
+    compose:
+      time_start:
+        columns: [v_indtime, v_indminut]
+        separator: ":"
     value_map:
       c_spec:
         "01": "intern medicin"
@@ -207,6 +211,10 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
+    compose:
+      time_start:
+        columns: [v_otime, v_ominut]
+        separator: ":"
 
   SDS_t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
@@ -224,6 +232,10 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
+    compose:
+      time_start:
+        columns: [v_otime, v_ominut]
+        separator: ":"
 
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
