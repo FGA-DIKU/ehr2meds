@@ -93,7 +93,6 @@ tables:
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
     columns:
-    columns:
       dw_ek_kontakt: contact_id
       diagnosekode:
       diagnosetype: 
@@ -115,7 +114,6 @@ tables:
 
   SDS_t_diag:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_diag.csv               
-    columns:
     columns:
       V_RECNUM: contact_id
       C_DIAG: 
