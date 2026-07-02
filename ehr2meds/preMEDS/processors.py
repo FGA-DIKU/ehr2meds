@@ -21,11 +21,12 @@ class Processor:
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> pd.DataFrame:
         """Process the table.
-        1. OPTIONAL: Apply columns map
-        2. OPTIONAL: Apply value mappings
-        3. OPTIONAL: Apply pid integer mapping
-        4. clean data
-        5. validate subject_id column
+        1. OPTIONAL: Apply value mappings
+        2. OPTIONAL: Apply columns map
+        3. OPTIONAL: Compose new columns from existing ones
+        4. OPTIONAL: Apply pid integer mapping
+        5. clean data
+        6. validate subject_id column
         """
         df = Processor._apply_mappings(df, table_config.get("mappings", []), data_handler)
         df = apply_value_map(df, table_config.get("value_map", {}))

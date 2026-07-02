@@ -22,8 +22,6 @@ paths:
 
 write_file_type: csv 
 
-test: false
-
 subject_id_mapping:
   file: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_population.csv # Table to derive mapping from (can be None)
   subject_id_col: m_cpr # Column to use as the subject_id mapping
@@ -95,6 +93,7 @@ tables:
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
     columns:
+    columns:
       dw_ek_kontakt: contact_id
       diagnosekode:
       diagnosetype: 
@@ -116,6 +115,7 @@ tables:
 
   SDS_t_diag:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_diag.csv               
+    columns:
     columns:
       V_RECNUM: contact_id
       C_DIAG: 
@@ -169,10 +169,10 @@ tables:
         ".": null
       D_UDDTO:
         ".": null
-    compose: 
+    compose:
       time_start:
-        columns: [V_UDTIME]
-        append: ":00"
+        columns: [V_INDTIME, V_INDMINUT]
+        separator: ":"
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
