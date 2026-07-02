@@ -267,8 +267,6 @@ linked_data: # Data that needs to be linked to the data above
         type: choice
         args:
           options: ["A", "B", "+"]
-      dato_slut:
-        type: rand_date
     linked_columns:
       dw_ek_kontakt: 
         type: choice

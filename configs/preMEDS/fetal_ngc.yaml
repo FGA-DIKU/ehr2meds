@@ -91,7 +91,6 @@ tables:
       dw_ek_kontakt: contact_id
       diagnosekode:
       diagnosetype: 
-      dato_slut:
     value_map: 
       dato_slut:
         ".": null
@@ -148,7 +147,7 @@ tables:
     value_map: 
       tidspunkt_start:
         ".": null
-        
+
   SDS_t_adm:
     filename: ${paths.SDS_tables_dir}/t_adm.csv               
     columns:

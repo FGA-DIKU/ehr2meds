@@ -132,4 +132,4 @@ data/*
 *.DS*
 
 # Outputs
-*/outputs
+*outputs/*
