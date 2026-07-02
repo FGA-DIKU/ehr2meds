@@ -6,14 +6,13 @@ that column in BONSAI"""
 from __future__ import annotations
 
 import logging
+import polars as pl
 from functools import partial
-from pathlib import Path
-
 from MEDS_transforms.dataframe import read_df, write_df
 from MEDS_transforms.mapreduce.rwlock import rwlock_wrap
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig
-import polars as pl
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

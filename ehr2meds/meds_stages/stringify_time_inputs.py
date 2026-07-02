@@ -15,16 +15,15 @@ columns to strings.
 from __future__ import annotations
 
 import logging
+import polars as pl
+import re
 from collections.abc import Iterable
-from pathlib import Path
-
 from dftly import extract_columns
 from MEDS_transforms.dataframe import read_df, write_df
 from MEDS_transforms.mapreduce.rwlock import rwlock_wrap
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig, OmegaConf
-import polars as pl
-import re
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
