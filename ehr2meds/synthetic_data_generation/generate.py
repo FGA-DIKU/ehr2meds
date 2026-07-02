@@ -65,6 +65,14 @@ def rand_time():
     return time(hour, minute, second)
 
 
+def rand_timemicroseconds():
+    hour = random.randint(0, 23)
+    minute = random.randint(0, 59)
+    second = random.randint(0, 59)
+    microsecond = random.randint(0, 999_999)
+    return time(hour, minute, second, microsecond)
+
+
 def rand_string(min_length=10, max_length=100, include_digits=True):
     if include_digits:
         return "".join(
@@ -88,6 +96,13 @@ def greater_than_date(min_date, end=2020):
 
 
 def greater_than_datetime(min_date, end=2020):
+    delta = datetime(end, 12, 31) - min_date
+    random_seconds = random.randint(0, int(delta.total_seconds()))
+    return min_date + timedelta(seconds=random_seconds)
+
+
+def greater_than_datetimeseconds(min_date, end=2020):
+    min_date = datetime.strptime(min_date, "%Y-%m-%d %H:%M:%S.%f")
     delta = datetime(end, 12, 31) - min_date
     random_seconds = random.randint(0, int(delta.total_seconds()))
     return min_date + timedelta(seconds=random_seconds)

@@ -3,6 +3,7 @@ from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (
     apply_mapping,
     apply_value_map,
+    compose_columns,
     clean_data,
     map_pids_to_ints,
     validate_subject_id,
@@ -28,6 +29,7 @@ class Processor:
         """
         df = apply_value_map(df, table_config.get("value_map", {}))
         df = Processor._apply_mappings(df, table_config.get("mappings", []), data_handler)
+        df = compose_columns(df, table_config.get("compose", {}))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = clean_data(df)

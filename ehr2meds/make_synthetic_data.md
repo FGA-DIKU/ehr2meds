@@ -17,8 +17,9 @@ Run all commands below from that same directory unless noted.
 Uses `ehr2meds/generate_synthetic_raw_data.py`. YAML configs live under `configs/synthetic_generation/` (pass **only the filename** with `--config`).
 
 ```bash
-python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SP &&
-python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS &&
+python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1 N=100 &&
+python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2 N=100 &&
+python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3 N=100 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/dst &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/skin_cancer
 
@@ -33,7 +34,7 @@ Output paths are set inside each YAML (for example `paths.output` in `fetal_SP.y
 Run the PREMEDS conversion with a config that points at your synthetic raw data and desired PREMEDS output:
 
 ```bash
-python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP     
+python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_synth
 ```
 
 Adjust `--config-name` if you use a different PREMEDS profile.
@@ -63,7 +64,7 @@ bash ehr2meds/convert_premeds_to_meds.sh \
 
 ```bash
 source .env && bash ehr2meds/convert_premeds_to_meds.sh \
-  ${EHR2MEDS_DATA}/preMEDS/fetal_data/SP \
+  ${EHR2MEDS_DATA}/preMEDS/fetal_synth \
   ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
   ${EHR2MEDS_CONFIGS}/MEDS/default_event.yaml \
   ${EHR2MEDS_DATA}/MEDS/SP
@@ -72,10 +73,10 @@ source .env && bash ehr2meds/convert_premeds_to_meds.sh \
 **Example using relative paths:**
 ```bash
 bash ehr2meds/convert_premeds_to_meds.sh \
-  data/preMEDS/fetal_data/SP \
+  data/preMEDS/fetal_synth \
   configs/MEDS/default_pipeline.yaml \
-  configs/MEDS/default_event.yaml \
-  data/MEDS/SP
+  configs/MEDS/fetal_ngc_event.yaml \
+  data/MEDS/fetal_synth
 ```
 ---
 
