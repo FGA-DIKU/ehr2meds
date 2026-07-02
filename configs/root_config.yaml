@@ -7,3 +7,5 @@ hydra:
 logging:
   level: INFO
   path: ${oc.env:EHR2MEDS_DATA}/logs/${hydra:job.config_name}
+
+num_workers: 2

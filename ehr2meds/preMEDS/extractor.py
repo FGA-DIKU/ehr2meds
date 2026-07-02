@@ -1,10 +1,51 @@
 import logging
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.processors import Processor
+from multiprocessing import Pool
 from tqdm import tqdm
 from typing import Dict, Optional, Union
 
 logger = logging.getLogger(__name__)
+
+
+def process_single_table_worker(args):
+    """
+    Standalone worker function to process a single table in a separate process.
+    """
+    table_name, table_config, cfg, subject_id_mapping = args
+    logger.info(f"Starting process for table: {table_name}")
+
+    try:
+        # Initialize handlers inside the worker process to avoid shared resource/file handle issues
+        data_handler = DataHandler(
+            output_dir=cfg.paths.output,
+            write_file_type=cfg.write_file_type,
+            chunksize=cfg.chunksize,
+        )
+        processor = Processor()
+
+        for chunk in tqdm(
+            data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
+            desc=f"Chunks {table_name}",
+            position=0,  # Helps prevent progress bars from overlapping wildly
+            leave=True,
+        ):
+            processed_chunk = processor.process(
+                chunk,
+                table_config,
+                data_handler,
+                subject_id_mapping,
+            )
+
+            data_handler.save(processed_chunk, table_name)
+
+            if cfg.get("test"):
+                break
+
+        logger.info(f"Finished processing table: {table_name}")
+    except Exception as e:
+        logger.error(f"Error processing {table_name}: {str(e)}")
+        raise
 
 
 class PREMEDSExtractor:
@@ -19,7 +60,6 @@ class PREMEDSExtractor:
 
     def __init__(self, cfg):
         self.cfg = cfg
-
         # Create data handler for tables
         self.data_handler = DataHandler(
             output_dir=cfg.paths.output,
@@ -64,14 +104,19 @@ class PREMEDSExtractor:
         return subject_id_mapping
 
     def process_tables(self, subject_id_mapping: Optional[Dict[str, int]] = None) -> None:
-        """Processes each table in the tables config"""
-        for table_name, table_config in self.cfg["tables"].items():
-            logger.info(f"Processing table: {table_name}")
-            try:
-                self.process_table_chunks(table_name, table_config, subject_id_mapping)
-            except Exception as e:
-                logger.error(f"Error processing {table_name}: {str(e)}")
-                raise
+        """Processes each table in the tables config using parallel workers"""
+
+        # Prepare arguments for the worker pool
+        worker_tasks = [
+            (table_name, table_config, self.cfg, subject_id_mapping) for table_name, table_config in self.cfg["tables"].items()
+        ]
+
+        logger.info(f"Starting multiprocessing pool with {self.cfg.num_workers} workers.")
+
+        # Use a Pool to manage the N concurrent table workers
+        with Pool(processes=self.cfg.num_workers) as pool:
+            # map will block until all tables are processed and raise exceptions if any fail
+            pool.map(process_single_table_worker, worker_tasks)
 
     def process_table_chunks(
         self,
