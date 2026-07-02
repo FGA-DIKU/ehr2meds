@@ -20,7 +20,7 @@ admissions:
   out:
     code: f"OUT//{$Afsnit}"
     time: $Flyt_ud as "%Y-%m-%d %H:%M:%S%.f"
-    
+ 
 diagnosis:
   diagnosis:
     code: f"D//{$Diagnosekode}"

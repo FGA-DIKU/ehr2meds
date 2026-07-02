@@ -62,6 +62,8 @@ def apply_mapping(
 
     # Perform the mapping
     n_before = len(df)
+    if target_col in df.columns:
+        df.drop(columns=[target_col], inplace=True)  # Avoid duplicate column after merge
     df = pd.merge(
         df,
         map_table[[join_col, target_col]],  # Only select needed columns
@@ -90,13 +92,23 @@ def apply_mapping(
 def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
     """Map string patient IDs to integers; keep only IDs that are in the mapping."""
     df[SUBJECT_ID] = df[SUBJECT_ID].astype(object).astype(str)
-
     df[SUBJECT_ID] = df[SUBJECT_ID].map(subject_id_mapping)
     if df[SUBJECT_ID].isna().any():
-        missing_ids = df[SUBJECT_ID][df[SUBJECT_ID].isna()].unique()
-        print(f"Found {len(missing_ids)} subject IDs in the data that are not in the mapping. These IDs will be dropped")
-    df = df.dropna(subset=[SUBJECT_ID], how="any")
+        pre_drop_size = df.shape[0]
+        df = df.dropna(subset=[SUBJECT_ID], how="any")
+        print(f"Subject IDs not in mapping: dropped {pre_drop_size - df.shape[0]} rows")
     df[SUBJECT_ID] = df[SUBJECT_ID].astype(int)
+    return df
+
+
+def compose_columns(df: pd.DataFrame, compose_cfg: dict) -> pd.DataFrame:
+    """Compose new columns from existing ones using a separator."""
+    for new_col, cfg in compose_cfg.items():
+        cols = cfg["columns"]
+        sep = cfg.get("separator", "")
+        mask = df[cols].notna().all(axis=1)
+        df[new_col] = df[cols][mask].astype(str).agg(sep.join, axis=1)
+        df[new_col] = df[new_col].astype(str) + cfg.get("append", "")
     return df
 
 
@@ -121,8 +133,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
     """Replace specific column values; other values are left unchanged."""
     for col, mapping in value_map_cfg.items():
-        if col in df.columns:
-            df[col] = df[col].replace(mapping)
+        df.replace({col: mapping}, inplace=True)
     return df
 
 
@@ -135,13 +146,3 @@ def validate_subject_id(df: pd.DataFrame) -> None:
             f"{SUBJECT_ID} column must be of integer type\n\
                 Hint: Use the subject_id_mapping configuration to map string IDs to integers."
         )
-
-
-def compose_columns(df: pd.DataFrame, compose_cfg: dict) -> pd.DataFrame:
-    """Compose new columns from existing ones using a separator."""
-    for new_col, cfg in compose_cfg.items():
-        cols = cfg["columns"]
-        sep = cfg.get("separator", "")
-        df[new_col] = df[cols].astype(str).agg(sep.join, axis=1)
-        df[new_col] = df[new_col] + cfg.get("append", "")
-    return df

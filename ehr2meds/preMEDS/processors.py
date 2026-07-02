@@ -3,8 +3,8 @@ from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (
     apply_mapping,
     apply_value_map,
-    clean_data,
     compose_columns,
+    clean_data,
     map_pids_to_ints,
     validate_subject_id,
 )
