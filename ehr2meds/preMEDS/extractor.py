@@ -12,15 +12,15 @@ def process_single_table_worker(args):
     """
     Standalone worker function to process a single table in a separate process.
     """
-    table_name, table_config, cfg, subject_id_mapping = args
+    table_name, table_config, output_path, write_file_type, chunksize, subject_id_mapping = args
     logger.info(f"Starting process for table: {table_name}")
 
     try:
         # Initialize handlers inside the worker process to avoid shared resource/file handle issues
         data_handler = DataHandler(
-            output_dir=cfg.paths.output,
-            write_file_type=cfg.write_file_type,
-            chunksize=cfg.chunksize,
+            output_dir=output_path,
+            write_file_type=write_file_type,
+            chunksize=chunksize,
         )
         processor = Processor()
 
@@ -38,9 +38,6 @@ def process_single_table_worker(args):
             )
 
             data_handler.save(processed_chunk, table_name)
-
-            if cfg.get("test"):
-                break
 
         logger.info(f"Finished processing table: {table_name}")
     except Exception as e:
@@ -108,7 +105,8 @@ class PREMEDSExtractor:
 
         # Prepare arguments for the worker pool
         worker_tasks = [
-            (table_name, table_config, self.cfg, subject_id_mapping) for table_name, table_config in self.cfg["tables"].items()
+            (table_name, table_config, self.cfg.paths.output, self.cfg.write_file_type, self.cfg.chunksize, subject_id_mapping)
+            for table_name, table_config in self.cfg["tables"].items()
         ]
 
         logger.info(f"Starting multiprocessing pool with {self.cfg.num_workers} workers.")

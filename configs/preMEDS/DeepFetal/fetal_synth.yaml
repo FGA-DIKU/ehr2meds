@@ -1,7 +1,7 @@
 # @package _global_
 defaults: 
-  - ../root_config@
-  - fetal_ngc@
+  - /root_config@
+  - fetal_ngc_full@
   - _self_
 
 chunksize: 500000
@@ -9,7 +9,7 @@ chunksize: 500000
 paths:
   SDS_tables_dir: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population  
   SP_tables_dir: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population  
-  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/fetal_synth
+  output: ${hydra:run.dir}
 
 write_file_type: csv
 subject_id_mapping:
