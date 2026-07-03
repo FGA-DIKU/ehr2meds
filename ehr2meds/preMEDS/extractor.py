@@ -39,7 +39,7 @@ def process_single_table_worker(args):
 
             data_handler.save(processed_chunk, table_name)
 
-        logger.info(f"Finished processing table: {table_name}")
+        logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
         raise
