@@ -100,6 +100,8 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
 
 
 def save_df(df, output_dir, table_name, ext, saving_cfg):
+    if saving_cfg.get("file_type"):
+        ext = saving_cfg["file_type"]
     assert ext in ["csv", "asc", "parquet"]
     if ext == "parquet":
         df.to_parquet(output_dir / f"{table_name}.{ext}", index=False)
