@@ -7,12 +7,12 @@ central_patient:
 
 epikur:
   epikur:
-    code: f"PM//{$atc}"
+    code: f"MED//{$atc}"
     time: $eksd
 
 indberetningmedpris:
   indberetningmedpris:
-    code: f"AM//{$c_atc}"
+    code: f"MED//{$c_atc}"
     time: $d_ord_start
 
 t_diag:
