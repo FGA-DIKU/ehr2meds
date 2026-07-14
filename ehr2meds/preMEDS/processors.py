@@ -66,15 +66,11 @@ class Processor:
             filename = str(Path(__file__).parent.parent / "resources" / filename)  # TODO: Seems very hacky
 
         return data_handler.load(filename, cols=cols)
-    
+
     @staticmethod
     def _remove_timezones(df: pd.DataFrame) -> pd.DataFrame:
         """Convert timezone-aware datetime columns to timezone-naive UTC."""
         for col in df.select_dtypes(include=["datetimetz"]).columns:
-            df[col] = (
-                df[col]
-                .dt.tz_convert("UTC")
-                .dt.tz_localize(None)
-            )
+            df[col] = df[col].dt.tz_convert("UTC").dt.tz_localize(None)
 
         return df
