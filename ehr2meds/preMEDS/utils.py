@@ -136,13 +136,10 @@ def compose_columns(df: pd.DataFrame, compose_cfg: dict) -> pd.DataFrame:
         df[new_col] = df[new_col] + cfg.get("append", "")
     return df
 
+
 def remove_timezones(df: pd.DataFrame) -> pd.DataFrame:
     """Convert timezone-aware datetime columns to timezone-naive UTC."""
     for col in df.select_dtypes(include=["datetimetz"]).columns:
-        df[col] = (
-            df[col]
-            .dt.tz_convert("UTC")
-            .dt.tz_localize(None)
-        )
+        df[col] = df[col].dt.tz_convert("UTC").dt.tz_localize(None)
 
     return df
