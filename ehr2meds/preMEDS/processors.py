@@ -33,6 +33,7 @@ class Processor:
         df = compose_columns(df, table_config.get("compose", {}))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
+        df = Processor._remove_timezones(df)
         df = clean_data(df)
         validate_subject_id(df)
 
@@ -65,3 +66,15 @@ class Processor:
             filename = str(Path(__file__).parent.parent / "resources" / filename)  # TODO: Seems very hacky
 
         return data_handler.load(filename, cols=cols)
+    
+    @staticmethod
+    def _remove_timezones(df: pd.DataFrame) -> pd.DataFrame:
+        """Convert timezone-aware datetime columns to timezone-naive UTC."""
+        for col in df.select_dtypes(include=["datetimetz"]).columns:
+            df[col] = (
+                df[col]
+                .dt.tz_convert("UTC")
+                .dt.tz_localize(None)
+            )
+
+        return df

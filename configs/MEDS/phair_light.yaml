@@ -1,0 +1,61 @@
+subject_id_col: subject_id
+
+central_patient:
+  dob:
+    code: "DOB"
+    time: $birthdate
+
+epikur:
+  epikur:
+    code: f"PM//{$atc}"
+    time: $eksd
+
+indberetningmedpris:
+  indberetningmedpris:
+    code: f"AM//{$c_atc}"
+    time: $d_ord_start
+
+t_diag:
+  t_diag:
+    code: f"DIAG//{$c_diag}"
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+
+diagnoser:
+  diagnoser:
+    code: f"DIAG//{$diagnosekode}"
+    time: set_time($date_start, $time_start)
+
+t_psyk_diag:
+  t_psyk_diag:
+    code: f"DIAG//{$c_diag}"
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+
+t_sksopr:
+  t_sksopr:
+    code: f"OPR//{$c_opr}"
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+
+t_sksube:
+  t_sksube:
+    code: f"OPR//{$c_opr}"
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+
+t_psyk_sksopr:
+  t_psyk_sksopr:
+    code: f"OPR//{$c_opr}"
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+
+t_psyk_sksube:
+  t_psyk_sksube:
+    code: f"OPR//{$c_opr}"
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+
+procedurer_andre:
+  procedurer_andre:
+    code: f"OPR//{$procedurekode}"
+    time: set_time($date_start, $time_start)
+
+procedurer_kirurgi:
+  procedurer_kirurgi:
+    code: f"OPR//{$procedurekode}"
+    time: set_time($date_start, $time_start)
