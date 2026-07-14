@@ -21,8 +21,8 @@ paths:
 write_file_type: parquet
 
 subject_id_mapping:
-  file: /users/people/katjag_r/person_id_map.parquet
-  subject_id_col: id
+  file: ${paths.tables_dir}/t_person.parquet
+  subject_id_col: v_pnr
   mapping_id_col:
 
 tables:
