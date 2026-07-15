@@ -1,32 +1,22 @@
-"""Efficient drop-in replacement for the MEDS-Transforms `bin_numeric_values` stage.
+"""Efficient replacement for the MEDS-Transforms `bin_numeric_values` stage.
 
-Produces byte-for-byte identical output to the built-in stage (same bin indices, same
+Has been made specifically to produce the same output as the
+MEDS-Transforms `bin_numeric_values` stage (same bin indices, same
 `{code}//value_[{left},{right})` / `{bin}` formatting, same null and out-of-range
 handling, same `drop_numeric_value` behavior), but computes the bin index with a
 per-code `join_asof` instead of the built-in's per-row `list.explode().search_sorted().over("__idx")`.
 
-Why it is faster: the built-in explodes each row's endpoint list (rows x n_edges) and
-runs a window keyed on a unique per-row index, so peak memory scales with rows x edges
-and blows up on large shards. Here the endpoints are turned into a small per-code long
-table once, and the big frame only ever carries (code, numeric_value); the match is an
-O(n log n), memory-linear as-of join. Same 100 bins, seconds instead of hours.
-
-Register it in your package's pyproject.toml under the MEDS_transforms.stages group, e.g.
-    [project.entry-points."MEDS_transforms.stages"]
-    bin_numeric_values_fast = "ehr2meds_custom_stages.bin_numeric_values_fast:stage"
-then `pip install -e .` your custom-stages package so the entry point is discovered.
+This was done because the built-in stage is very slow on large shards, and can run out of memory.
 """
 
+import polars as pl
 import re
 from collections.abc import Callable
-from pathlib import Path
-
-import polars as pl
 from meds import CodeMetadataSchema, DataSchema
-from omegaconf import DictConfig, OmegaConf
-
 from MEDS_transforms.stages import Stage
 from MEDS_transforms.utils import PKG_PFX, resolve_pkg_path
+from omegaconf import DictConfig, OmegaConf
+from pathlib import Path
 
 CODE = DataSchema.code_name
 NV = DataSchema.numeric_value_name
@@ -42,10 +32,7 @@ def _bin_frame(
 ) -> pl.LazyFrame:
     # 1) Per-code endpoint list from the (small) metadata only; coalesce the bin columns.
     ep = pl.coalesce(
-        [
-            pl.when(pl.col(c).is_not_null()).then(pl.concat_list(pl.col(c).struct.unnest()))
-            for c in bin_with_columns
-        ]
+        [pl.when(pl.col(c).is_not_null()).then(pl.concat_list(pl.col(c).struct.unnest())) for c in bin_with_columns]
     )
     meta = code_metadata.lazy().select(*join_cols, ep.alias("__ep")).filter(pl.col("__ep").is_not_null())
 
@@ -103,13 +90,9 @@ def _bin_frame(
         "bin": pl.col("__idx").cast(pl.String),
     }
     new_code = pl.format(tmpl, *[fmap[f] for f in fields]) if fields else pl.lit(code_with_bin_name)
-    d = d.with_columns(
-        pl.when(pl.col("__idx").is_not_null()).then(new_code).otherwise(pl.col(CODE)).alias(CODE)
-    )
+    d = d.with_columns(pl.when(pl.col("__idx").is_not_null()).then(new_code).otherwise(pl.col(CODE)).alias(CODE))
     if do_drop_numeric_value:
-        d = d.with_columns(
-            pl.when(pl.col("__idx").is_not_null()).then(None).otherwise(pl.col(NV)).alias(NV)
-        )
+        d = d.with_columns(pl.when(pl.col("__idx").is_not_null()).then(None).otherwise(pl.col(NV)).alias(NV))
 
     helper = ["__row", "__idx", "__left", "__right", "__e1", "__m_idx", "__m_left", "__m_right"]
     return d.sort("__row").drop([c for c in helper if c in d.collect_schema().names()])
@@ -145,9 +128,7 @@ def bin_numeric_values_fast_fntr(
     cm = code_metadata
     if custom_bins:
         struct_dtype = pl.Struct(dict.fromkeys(next(iter(custom_bins.values())).keys(), pl.Float32))
-        s = pl.Series(
-            [custom_bins.get(c, None) for c in cm[CodeMetadataSchema.code_name]], dtype=struct_dtype
-        )
+        s = pl.Series([custom_bins.get(c, None) for c in cm[CodeMetadataSchema.code_name]], dtype=struct_dtype)
         cm = cm.with_columns(s.alias("__custom_bins"))
         bin_with_columns = ["__custom_bins", *bin_with_columns]
 
@@ -157,9 +138,7 @@ def bin_numeric_values_fast_fntr(
 
     def fn(df: pl.LazyFrame) -> pl.LazyFrame:
         nd = df.collect_schema()[NV]
-        local = cm.with_columns(
-            *[pl.col(c).cast(pl.Struct({f.name: nd for f in cm.schema[c].fields})) for c in cols]
-        )
+        local = cm.with_columns(*[pl.col(c).cast(pl.Struct({f.name: nd for f in cm.schema[c].fields})) for c in cols])
         return _bin_frame(df, local, cols, code_with_bin_name, join_cols, do_drop_numeric_value)
 
     return fn
