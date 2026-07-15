@@ -1,37 +1,9 @@
 import pandas as pd
 from ehr2meds.preMEDS.constants import (
-    CODE,
     MANDATORY_COLUMNS,
     SUBJECT_ID,
-    TIMESTAMP,
 )
-from typing import Dict, List
-
-
-def select_and_rename_columns(df: pd.DataFrame, columns_map: dict) -> pd.DataFrame:
-    """Select and rename columns based on columns_map."""
-    check_columns(df, columns_map)
-    df = df[list(columns_map.keys())]
-    df = df.rename(columns=columns_map)
-    return df
-
-
-def fill_missing_values(df: pd.DataFrame, fillna_cfg: dict) -> pd.DataFrame:
-    """
-    Fill missing values using specified columns and regex patterns.
-    Drop the columns used to fill missing values.
-    """
-    for target_col, fill_config in fillna_cfg.items():
-        fill_col = fill_config.get("column")
-        if fill_col and fill_col in df.columns:
-            fillna_regex = fill_config.get("regex")
-            if fillna_regex:
-                fill_vals = df[fill_col].str.extract(fillna_regex, expand=False)
-            else:
-                fill_vals = df[fill_col]
-            df[target_col] = df[target_col].fillna(fill_vals)
-            df = df.drop(columns=[fill_col])
-    return df
+from typing import Dict
 
 
 def check_columns(df: pd.DataFrame, columns_map: dict):
@@ -112,15 +84,6 @@ def apply_mapping(
     return df
 
 
-def convert_numeric_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-    """Convert specified columns to numeric type."""
-    numeric_cols = concept_config.get("numeric_columns", [])
-    for col in numeric_cols:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-    return df
-
-
 def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd.DataFrame:
     """Map string patient IDs to integers; keep only IDs that are in the mapping."""
     df[SUBJECT_ID] = df[SUBJECT_ID].astype(object).astype(str)
@@ -146,110 +109,10 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def unroll_columns(df: pd.DataFrame, concept_config: dict) -> List[pd.DataFrame]:
-    """
-    Unroll specified columns into separate dataframes with code format.
-
-    Returns a list of dataframes, each representing an unrolled column.
-    """
-    processed_dfs = []
-
-    # Required columns to keep in each unrolled dataframe
-    required_cols = [SUBJECT_ID]
-    if TIMESTAMP in df.columns:
-        required_cols.append(TIMESTAMP)
-
-    # Keep only the columns that exist in the dataframe
-    required_cols = [col for col in required_cols if col in df.columns]
-
-    # For each column to unroll, create a separate df with it as CODE
-    for col_info in concept_config["unroll_columns"]:
-        col_name = col_info.get("column")
-        if col_name in df.columns:
-            # Create a copy with just the required columns and the unroll column
-            unroll_df = df[required_cols + [col_name]].copy()
-
-            # Apply prefix if specified
-            prefix = col_info.get("prefix", "")
-
-            # Rename to CODE
-            unroll_df = unroll_df.rename(columns={col_name: CODE})
-
-            # Add prefix to codes
-            if prefix:
-                unroll_df[CODE] = prefix + unroll_df[CODE].astype(str)
-
-            processed_dfs.append(unroll_df)
-
-    return processed_dfs
-
-
-def convert_timestamp_columns(df: pd.DataFrame, names: List[str], format: str) -> pd.DataFrame:
-    """Convert timestamps to global format."""
-    for name in names:
-        if name in df.columns:
-            df[name] = pd.to_datetime(df[name]).dt.strftime(format)
-    return df
-
-
-def apply_value_map(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
+def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
     """Map column values using inline config mapping. Unmapped values become NaN."""
-    for col, mapping in concept_config.get("value_map", {}).items():
-        if col in df.columns:
-            df[col] = df[col].map(mapping)
-    return df
-
-
-def normalize_columns(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-    """Normalize column values by casting to int then str, getting rid of leading zeros."""
-    for col in concept_config.get("normalize_columns", []):
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64").astype(str)
-            df[col] = df[col].replace("<NA>", None)
-    return df
-
-
-def pad_values(df: pd.DataFrame, concept_config: dict) -> pd.DataFrame:
-    """Append suffix to column values that don't already contain it."""
-    for col, cfg in concept_config.get("pad_values", {}).items():
-        if col in df.columns:
-            suffix = cfg["suffix"]
-            contains = cfg.get("unless_contains", suffix)
-            mask = df[col].notna() & ~df[col].astype(str).str.contains(contains, regex=False, na=False)
-            df.loc[mask, col] = df.loc[mask, col].astype(str) + suffix
-    return df
-
-
-def apply_melt_step(df, cfg):
-    # Example df
-    value_cols = cfg.get("source_cols")
-    target_col = cfg.get("target_name")
-    prefix_col = cfg.get("prefix_col")
-    prefix_map = cfg.get("prefix_map")
-    id_cols = [c for c in df.columns if c not in value_cols]
-    df_melted = df.melt(id_vars=id_cols, value_vars=value_cols, var_name="source", value_name=target_col)
-
-    # Add prefix
-    df_melted[prefix_col] = df_melted["source"].map(prefix_map) + df_melted[prefix_col].astype(str)
-
-    # # Drop columns
-    cols_to_keep = list(set([prefix_col, target_col] + id_cols))
-    df_melted = df_melted[cols_to_keep]
-    return df_melted
-
-
-def melt_table(df: pd.DataFrame, expand_map: dict) -> pd.DataFrame:
-    if not expand_map:
-        return df
-    for step_cfg in expand_map:
-        df = apply_melt_step(df, step_cfg)
-    return df
-
-
-def prefix_codes(df: pd.DataFrame, code_prefix: str = None) -> pd.DataFrame:
-    """Add a prefix to the entries in the code column."""
-    if code_prefix and CODE in df.columns:
-        df[CODE] = code_prefix + df[CODE].astype(str)
+    for col, mapping in value_map_cfg.items():
+        df[col] = df[col].map(mapping)
     return df
 
 
@@ -262,3 +125,13 @@ def validate_subject_id(df: pd.DataFrame) -> None:
             f"{SUBJECT_ID} column must be of integer type\n\
                 Hint: Use the subject_id_mapping configuration to map string IDs to integers."
         )
+
+
+def compose_columns(df: pd.DataFrame, compose_cfg: dict) -> pd.DataFrame:
+    """Compose new columns from existing ones using a separator."""
+    for new_col, cfg in compose_cfg.items():
+        cols = cfg["columns"]
+        sep = cfg.get("separator", "")
+        df[new_col] = df[cols].astype(str).agg(sep.join, axis=1)
+        df[new_col] = df[new_col] + cfg.get("append", "")
+    return df

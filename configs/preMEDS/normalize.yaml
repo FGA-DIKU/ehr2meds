@@ -7,7 +7,6 @@ logging:
   level: INFO
   path: ./outputs/logs
 
-test: false
 env: local
 run_name: normalise_labs
 paths:

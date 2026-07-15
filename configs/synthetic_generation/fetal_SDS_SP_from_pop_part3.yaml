@@ -47,7 +47,6 @@ linked_data:
         file: patient_info
         linked_on: CPR
     save_info:
-      file_type: csv
       args:
         sep: "\t"
         encoding: "iso8859-1"
