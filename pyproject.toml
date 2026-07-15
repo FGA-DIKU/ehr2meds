@@ -49,8 +49,8 @@ where = ["."]
 line-length = 127
 
 [project.entry-points."MEDS_transforms.stages"]
-stringify_time_inputs = "ehr2meds.meds_stages.stringify_time_inputs:main"
 add_source_row_id = "ehr2meds.meds_stages.add_source_row_id:main"
+bin_numeric_values_fast = "ehr2meds.meds_stages.bin_numeric_values_fast:stage"
 
 [tool.ruff.lint]
 # "E": style/error codes (PEP 8–type errors, e.g. if x == None).
