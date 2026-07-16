@@ -7,6 +7,15 @@ handling, same `drop_numeric_value` behavior), but computes the bin index with a
 per-code `join_asof` instead of the built-in's per-row `list.explode().search_sorted().over("__idx")`.
 
 This was done because the built-in stage is very slow on large shards, and can run out of memory.
+
+NOTE: Attribution
+-----------
+The functionality is deliberately made to mirror MEDS-Transforms'
+``bin_numeric_values`` (MIT licensed, v0.6.7). The binning
+computation (``assign_value_bins`` and its helpers) is a reimplementation via
+``join_asof`` rather than a copy of their per-row explode/window approach. Output was
+verified equal to the built-in stage on v0.6.7 across both code templates,
+``drop_numeric_value`` on/off, tied/duplicate edges, and codes without bins.
 """
 
 import polars as pl
@@ -19,83 +28,179 @@ from omegaconf import DictConfig, OmegaConf
 from pathlib import Path
 
 CODE = DataSchema.code_name
-NV = DataSchema.numeric_value_name
+VALUE = DataSchema.numeric_value_name
 
 
-def _bin_frame(
-    df: pl.LazyFrame,
-    code_metadata: pl.DataFrame,
-    bin_with_columns: list[str],
-    code_with_bin_name: str,
-    join_cols: list[str],
-    do_drop_numeric_value: bool,
-) -> pl.LazyFrame:
-    # 1) Per-code endpoint list from the (small) metadata only; coalesce the bin columns.
-    ep = pl.coalesce(
-        [pl.when(pl.col(c).is_not_null()).then(pl.concat_list(pl.col(c).struct.unnest())) for c in bin_with_columns]
+def _edges_per_code(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str]) -> pl.LazyFrame:
+    """One row per code (+ modifiers) holding its sorted list of bin edges.
+
+    Extracted from the code_metadata stage. Edges are read from a struct column:
+    field names are ignored, the (already sorted) struct values are the edges.
+    If several ``bin_columns`` are provided, the first non-null struct for a code wins.
+    Codes with no edges are dropped.
+    """
+    edge_list = pl.coalesce(
+        [pl.when(pl.col(c).is_not_null()).then(pl.concat_list(pl.col(c).struct.unnest())) for c in bin_columns]
     )
-    meta = code_metadata.lazy().select(*join_cols, ep.alias("__ep")).filter(pl.col("__ep").is_not_null())
+    return code_metadata.lazy().select(*key, edge_list.alias("edges")).filter(pl.col("edges").is_not_null())
 
-    # 2) Long edge table for the as-of match, carrying the formatted [left, right) bounds.
-    edges = (
-        meta.with_row_index("__cr")
-        .explode("__ep")
-        .rename({"__ep": "__edge"})
-        .with_columns(
-            pl.int_range(1, pl.len() + 1).over("__cr").alias("__idx"),
-            pl.len().over("__cr").alias("__n"),
-            pl.col("__edge").shift(-1).over("__cr").alias("__next"),
-        )
-        .with_columns(
-            pl.col("__edge").cast(pl.String).alias("__left"),
-            pl.when(pl.col("__idx") == pl.col("__n"))
-            .then(pl.lit("inf"))
-            .otherwise(pl.col("__next").cast(pl.String))
-            .alias("__right"),
-        )
-        .select(*join_cols, "__edge", "__idx", "__left", "__right")
+
+def _bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str], value_dtype: pl.DataType) -> pl.LazyFrame:
+    """One row per (code, bin) describing every bin as a half-open interval ``[left, right)``.
+
+    A code's sorted edges ``e[1..n]`` are padded with sentinels into the boundary list
+    ``[-inf, e[1], ..., e[n], +inf]``. Consecutive boundaries form the bins, so bin ``k`` is
+    ``[boundary[k], boundary[k+1])``. ``edge`` is the bin's left boundary and is what values
+    are matched against: a value's bin is the one whose ``edge`` is the largest ``<=`` it.
+    Codes with no edges produce no rows, so their measurements are left unbinned.
+
+        edges [0.0, 1.0, 2.0]  ->  bin 0  edge=-inf  [-inf, 0.0)
+                                   bin 1  edge=0.0   [0.0, 1.0)
+                                   bin 2  edge=1.0   [1.0, 2.0)
+                                   bin 3  edge=2.0   [2.0, inf)
+    """
+    edges = _edges_per_code(code_metadata, bin_columns, key)
+
+    # Pad edges with -inf/+inf so all bins are pairs of boundaries.
+    padded = edges.select(
+        *key,
+        pl.concat_list([pl.lit(float("-inf")), pl.col("edges"), pl.lit(float("inf"))])
+        .cast(pl.List(value_dtype))
+        .alias("boundaries"),
     )
-    # First edge per code, used for the below-all-bins bin (index 0). Unique per code -> no fan-out.
-    min_edge = meta.select(*join_cols, pl.col("__ep").list.first().cast(pl.String).alias("__e1"))
 
-    # 3) As-of match: largest edge <= value, within code. Big frame carries only (row, code, value).
-    d = df.with_row_index("__row")
-    matched = (
-        d.select("__row", *join_cols, NV)
-        .filter(pl.col(NV).is_not_null())
-        .sort(NV)
-        .join_asof(edges.sort("__edge"), left_on=NV, right_on="__edge", by=join_cols, strategy="backward")
-        .select(
-            "__row",
-            pl.col("__idx").alias("__m_idx"),
-            pl.col("__left").alias("__m_left"),
-            pl.col("__right").alias("__m_right"),
-        )
+    # Bin k spans [boundaries[k], boundaries[k+1]).
+    # Only special cases are the first and the last bin.
+    # Exploding the two lists together yields one row per bin.
+    interval_ends = padded.select(
+        *key,
+        left_edge=pl.col("boundaries").list.slice(0, pl.col("boundaries").list.len() - 1),
+        right_edge=pl.col("boundaries").list.slice(1),
     )
-    d = d.join(min_edge, on=join_cols, how="left").join(matched, on="__row", how="left")
+    return interval_ends.explode(["left_edge", "right_edge"]).select(
+        *key,
+        bin=pl.int_range(0, pl.len()).over(key),  # 0-based bin index within the code
+        edge=pl.col("left_edge"),  # values are matched against the bin's left edge
+        left=pl.col("left_edge").cast(pl.String),
+        right=pl.col("right_edge").cast(pl.String),
+    )
 
-    do_bin = pl.col(NV).is_not_null() & pl.col("__e1").is_not_null()
-    idx = pl.when(do_bin).then(pl.col("__m_idx").fill_null(0)).otherwise(None)
-    left = pl.when(idx == 0).then(pl.lit("-inf")).otherwise(pl.col("__m_left"))
-    right = pl.when(idx == 0).then(pl.col("__e1")).otherwise(pl.col("__m_right"))
-    d = d.with_columns(idx.alias("__idx"), left.alias("__left"), right.alias("__right"))
 
-    # 4) Format the modified code exactly as the built-in does.
-    tmpl = re.sub(r"\{(code|left|right|bin)\}", "{}", code_with_bin_name)
-    fields = re.findall(r"\{(code|left|right|bin)\}", code_with_bin_name)
-    fmap = {
-        "code": pl.col(CODE),
-        "left": pl.col("__left"),
-        "right": pl.col("__right"),
-        "bin": pl.col("__idx").cast(pl.String),
+def _render_code(template: str) -> pl.Expr:
+    """Compile a code template into a string expression.
+
+    The template mixes literal text with the placeholders ``{code}``, ``{left}``,
+    ``{right}`` and ``{bin}``.
+    These are split into pieces, and each placeholder is swapped for the
+    matching column, and thereafter concatenated.
+
+    For example
+    ``"{code}//value_[{left},{right})"`` becomes
+    ``code + "//value_[" + left + "," + right + ")"``.
+    """
+    placeholder_column = {
+        "{code}": pl.col(CODE),
+        "{left}": pl.col("left"),
+        "{right}": pl.col("right"),
+        "{bin}": pl.col("bin").cast(pl.String),
     }
-    new_code = pl.format(tmpl, *[fmap[f] for f in fields]) if fields else pl.lit(code_with_bin_name)
-    d = d.with_columns(pl.when(pl.col("__idx").is_not_null()).then(new_code).otherwise(pl.col(CODE)).alias(CODE))
-    if do_drop_numeric_value:
-        d = d.with_columns(pl.when(pl.col("__idx").is_not_null()).then(None).otherwise(pl.col(NV)).alias(NV))
+    pieces = []
+    # re.split keeps the delimiters (the placeholders) as separate items in the list.
+    for piece in re.split(r"(\{code\}|\{left\}|\{right\}|\{bin\})", template):
+        if piece in placeholder_column:
+            pieces.append(placeholder_column[piece])
+        elif piece:  # non-empty literal text
+            pieces.append(pl.lit(piece))
+    return pl.concat_str(pieces)
 
-    helper = ["__row", "__idx", "__left", "__right", "__e1", "__m_idx", "__m_left", "__m_right"]
-    return d.sort("__row").drop([c for c in helper if c in d.collect_schema().names()])
+
+def assign_value_bins(
+    data: pl.LazyFrame,
+    code_metadata: pl.DataFrame,
+    *,
+    bin_columns: list[str],
+    code_template: str,
+    key: list[str],
+    drop_numeric_value: bool,
+) -> pl.LazyFrame:
+    """Rewrite ``code`` to include the value's bin, matching the built-in stage's output.
+
+    Args:
+        data: MEDS data frame with ``code``, ``numeric_value`` and the ``key`` columns.
+        code_metadata: per-code frame carrying the bin-edge struct column(s).
+        bin_columns: struct columns holding edges (first non-null wins).
+        code_template: e.g. ``"{code}//value_[{left},{right})"`` or ``"{code}//{bin}"``.
+        key: join columns, ``["code", *code_modifiers]``.
+        drop_numeric_value: if True, null out ``numeric_value`` on rows that were binned.
+
+    Returns:
+        The data frame with binned codes; unbinned rows (null value or code without edges)
+        are returned unchanged. Helper columns are dropped.
+
+    Example:
+        >>> data = pl.LazyFrame({
+        ...     "code": ["lab//A", "lab//A", "lab//A", "lab//A", "dx//1"],
+        ...     "numeric_value": [-1.0, 0.5, 1.0, 3.0, None],
+        ... })
+        >>> code_metadata = pl.DataFrame(
+        ...     {"code": ["lab//A", "dx//1"]},
+        ... ).with_columns(pl.Series("values/quantiles", [{"a": 0.0, "b": 1.0, "c": 2.0}, None]))
+        >>> assign_value_bins(
+        ...     data, code_metadata, bin_columns=["values/quantiles"],
+        ...     code_template="{code}//value_[{left},{right})", key=["code"],
+        ...     drop_numeric_value=False,
+        ... ).collect()["code"].to_list()
+        ['lab//A//value_[-inf,0.0)', 'lab//A//value_[0.0,1.0)', 'lab//A//value_[1.0,2.0)', 'lab//A//value_[2.0,inf)', 'dx//1']
+    """
+    value_dtype = data.collect_schema()[VALUE]
+    bins = _bin_table(code_metadata, bin_columns, key, value_dtype)
+
+    rows = data.with_row_index("_row")
+
+    # The important change from the MEDS_transform version:
+    # Match each value to its bin, (largest edge <= the value).
+    # Do one as-of join instead of the built-in per-row explode + window.
+    # This is the whole speedup. Codes with no bins are absent from
+    # `bins`, so their rows get no match and pass through unchanged.
+    matches = (
+        rows.select("_row", *key, VALUE)
+        .filter(pl.col(VALUE).is_not_null())
+        .sort(VALUE)
+        .join_asof(bins.sort(["edge", "bin"]), left_on=VALUE, right_on="edge", by=key, strategy="backward")
+        .select("_row", "bin", "left", "right")
+    )
+    labelled = rows.join(matches, on="_row", how="left")
+
+    # A matched row (bin is not null) gets its rewritten code
+    was_binned = pl.col("bin").is_not_null()
+    labelled = labelled.with_columns(pl.when(was_binned).then(_render_code(code_template)).otherwise(pl.col(CODE)).alias(CODE))
+    if drop_numeric_value:
+        labelled = labelled.with_columns(pl.when(was_binned).then(None).otherwise(pl.col(VALUE)).alias(VALUE))
+
+    working = ["_row", "bin", "left", "right"]
+    return labelled.sort("_row").drop([c for c in working if c in labelled.collect_schema().names()])
+
+
+def _load_custom_bins(stage_cfg: DictConfig) -> dict:
+    """Read inline ``custom_bins`` and/or a ``custom_bins_filepath`` YAML, inline taking
+    precedence, matching the built-in stage."""
+    inline = stage_cfg.get("custom_bins", {})
+    if isinstance(inline, DictConfig):
+        inline = OmegaConf.to_container(inline)
+
+    fp = stage_cfg.get("custom_bins_filepath")
+    if not fp:
+        return inline or {}
+
+    path = resolve_pkg_path(fp) if fp.startswith(PKG_PFX) else Path(fp)
+    if not path.is_file():
+        raise FileNotFoundError(f"custom_bins_filepath '{fp}' does not exist.")
+    from_file = OmegaConf.load(path)
+    if isinstance(from_file, DictConfig):
+        from_file = OmegaConf.to_container(from_file)
+    if not isinstance(from_file, dict):
+        raise TypeError("custom_bins_filepath must point to a YAML file with a dictionary")
+    return {**from_file, **inline}
 
 
 @Stage.register(is_metadata=False)
@@ -104,44 +209,46 @@ def bin_numeric_values_fast_fntr(
     code_metadata: pl.DataFrame,
     code_modifiers: list[str] | None = None,
 ) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
-    """Same config surface as the built-in bin_numeric_values stage."""
-    if code_modifiers is None:
-        code_modifiers = []
+    """Build the per-shard binning function.
 
-    custom_bins = stage_cfg.get("custom_bins", {})
-    if isinstance(custom_bins, DictConfig):
-        custom_bins = OmegaConf.to_container(custom_bins)
-    custom_bins_fp = stage_cfg.get("custom_bins_filepath")
-    if custom_bins_fp:
-        fp = resolve_pkg_path(custom_bins_fp) if custom_bins_fp.startswith(PKG_PFX) else Path(custom_bins_fp)
-        if not fp.is_file():
-            raise FileNotFoundError(f"custom_bins_filepath '{custom_bins_fp}' does not exist.")
-        file_bins = OmegaConf.load(fp)
-        if isinstance(file_bins, DictConfig):
-            file_bins = OmegaConf.to_container(file_bins)
-        custom_bins = {**file_bins, **custom_bins}
+    Recognized ``stage_cfg`` keys (same as the built-in stage):
+        bin_with_columns:     struct columns holding edges. Default ``["values/quantiles"]``.
+        code_with_bin_name:   code template. Default ``"{code}//value_[{left},{right})"``.
+        drop_numeric_value:   null the value on binned rows. Default ``False``.
+        custom_bins:          inline ``{code: {name: edge, ...}}`` mapping. Optional.
+        custom_bins_filepath: YAML file with the same mapping. Optional.
+    """
+    code_modifiers = code_modifiers or []
+    key = [CodeMetadataSchema.code_name, *code_modifiers]
 
-    do_drop_numeric_value = stage_cfg.get("drop_numeric_value", False)
-    bin_with_columns = list(stage_cfg.get("bin_with_columns", ["values/quantiles"]))
-    code_with_bin_name = stage_cfg.get("code_with_bin_name", "{code}//value_[{left},{right})")
+    bin_columns = list(stage_cfg.get("bin_with_columns", ["values/quantiles"]))
+    code_template = stage_cfg.get("code_with_bin_name", "{code}//value_[{left},{right})")
+    drop_numeric_value = stage_cfg.get("drop_numeric_value", False)
 
-    cm = code_metadata
+    # Optional custom edges, which override the code_metadata stage's edges.
+    custom_bins = _load_custom_bins(stage_cfg)
+    metadata = code_metadata
     if custom_bins:
         struct_dtype = pl.Struct(dict.fromkeys(next(iter(custom_bins.values())).keys(), pl.Float32))
-        s = pl.Series([custom_bins.get(c, None) for c in cm[CodeMetadataSchema.code_name]], dtype=struct_dtype)
-        cm = cm.with_columns(s.alias("__custom_bins"))
-        bin_with_columns = ["__custom_bins", *bin_with_columns]
+        custom_series = pl.Series([custom_bins.get(c) for c in metadata[CodeMetadataSchema.code_name]], dtype=struct_dtype)
+        metadata = metadata.with_columns(custom_series.alias("__custom_bins"))
+        bin_columns = ["__custom_bins", *bin_columns]
 
-    join_cols = [CodeMetadataSchema.code_name, *code_modifiers]
-    cols = [c for c in bin_with_columns if c in cm.columns]
-    cm = cm.select(*join_cols, *cols)
+    bin_columns = [c for c in bin_columns if c in metadata.columns]
+    metadata = metadata.select(*key, *bin_columns)
 
-    def fn(df: pl.LazyFrame) -> pl.LazyFrame:
-        nd = df.collect_schema()[NV]
-        local = cm.with_columns(*[pl.col(c).cast(pl.Struct({f.name: nd for f in cm.schema[c].fields})) for c in cols])
-        return _bin_frame(df, local, cols, code_with_bin_name, join_cols, do_drop_numeric_value)
+    def bin_shard(df: pl.LazyFrame) -> pl.LazyFrame:
+        return assign_value_bins(
+            df,
+            metadata,
+            bin_columns=bin_columns,
+            code_template=code_template,
+            key=key,
+            drop_numeric_value=drop_numeric_value,
+        )
 
-    return fn
+    return bin_shard
 
 
+# Entry point
 stage = bin_numeric_values_fast_fntr
