@@ -4,7 +4,6 @@ from ehr2meds.preMEDS.utils import (
     apply_mapping,
     apply_value_map,
     clean_data,
-    compose_columns,
     map_pids_to_ints,
     remove_timezones,
     validate_subject_id,
@@ -24,15 +23,13 @@ class Processor:
         """Process the table.
         1. OPTIONAL: Apply value mappings
         2. OPTIONAL: Apply columns map
-        3. OPTIONAL: Compose new columns from existing ones
-        4. OPTIONAL: Apply pid integer mapping
-        5. Remove timezone information from timezone-aware datetime columns
-        6. Clean data
-        7. Validate subject_id column
+        3. OPTIONAL: Apply pid integer mapping
+        4. Remove timezone information from timezone-aware datetime columns
+        5. Clean data
+        6. Validate subject_id column
         """
         df = apply_value_map(df, table_config.get("value_map", {}))
         df = Processor._apply_mappings(df, table_config.get("mappings", []), data_handler)
-        df = compose_columns(df, table_config.get("compose", {}))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = remove_timezones(df)

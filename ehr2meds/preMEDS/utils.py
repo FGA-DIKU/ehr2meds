@@ -127,16 +127,6 @@ def validate_subject_id(df: pd.DataFrame) -> None:
         )
 
 
-def compose_columns(df: pd.DataFrame, compose_cfg: dict) -> pd.DataFrame:
-    """Compose new columns from existing ones using a separator."""
-    for new_col, cfg in compose_cfg.items():
-        cols = cfg["columns"]
-        sep = cfg.get("separator", "")
-        df[new_col] = df[cols].astype(str).agg(sep.join, axis=1)
-        df[new_col] = df[new_col] + cfg.get("append", "")
-    return df
-
-
 def remove_timezones(df: pd.DataFrame) -> pd.DataFrame:
     """Convert timezone-aware datetime columns to timezone-naive UTC."""
     for col in df.select_dtypes(include=["datetimetz"]).columns:
