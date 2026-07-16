@@ -18,11 +18,6 @@ paths:
 
 write_file_type: parquet 
 
-#subject_id_mapping:
-#  file: # ${paths.tables_dir}/CPMI_PatientInfo.parquet # Table to derive mapping from (can be None)
-#  subject_id_col: # patientid # Column to use as the subject_id mapping
-#  mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
-
 tables:
   patients_info:
     filename: ${paths.tables_dir}/CPMI_PatientInfo_with_datetime.parquet
@@ -128,10 +123,6 @@ tables:
       c_spec: 
       c_sgh: 
       k_recnum: contact_id
-    # compose:
-    #   time_start:
-    #     columns: [v_indtime, v_indminut]
-    #     separator: ":"
     value_map:
       c_spec:
         "01": "intern medicin"
@@ -211,10 +202,6 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
-    # compose:
-    #   time_start:
-    #     columns: [v_otime, v_ominut]
-    #     separator: ":"
 
   SDS_t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
