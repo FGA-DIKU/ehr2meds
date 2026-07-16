@@ -24,9 +24,6 @@ stages:
       output_dir: ${output_dir}/add_source_row_id
 
   - shard_events:
-      # shard_events searches the parent of data_input_dir.
-      # Therefore this points it at:
-      # ${output_dir}/add_source_row_id
       infer_schema_length: 999999999
       data_input_dir: ${output_dir}/add_source_row_id/data
 
@@ -59,15 +56,3 @@ stages:
       custom_bins_filepath: null
   - finalize_MEDS_metadata
   - finalize_MEDS_data
-
-# stages:
-#   - shard_events
-#   - add_source_row_id
-#   - split_and_shard_subjects
-#   - convert_to_subject_sharded
-#   - stringify_time_inputs # new custom stage to align formats
-#   - convert_to_MEDS_events
-#   - merge_to_MEDS_cohort
-#   - extract_code_metadata
-#   - finalize_MEDS_metadata
-#   - finalize_MEDS_data
