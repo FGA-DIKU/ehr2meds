@@ -2,24 +2,21 @@
 
 from __future__ import annotations
 
-import yaml
 from collections.abc import Mapping
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig, OmegaConf
 from pathlib import Path
-from typing import Any
 
 DEFAULT_EVENT_COLUMNS = {"row_idx": "$row_idx"}
-YamlMapping = dict[str, Any]
 
 
-def _read_config(path: Path) -> YamlMapping:
+def _read_config(path: Path) -> DictConfig:
     """Read an event configuration and require a YAML mapping at its root."""
     if not path.is_file():
         raise FileNotFoundError(f"Event configuration does not exist: {path}")
 
-    config = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(config, dict):
+    config = OmegaConf.load(path)
+    if not isinstance(config, DictConfig):
         raise TypeError("Event configuration must contain a top-level mapping")
     return config
 
@@ -35,24 +32,23 @@ def _validate_event_columns(value: object) -> dict[str, str]:
     return dict(value)
 
 
-def _write_config(config: YamlMapping, path: Path) -> None:
+def _write_config(config: DictConfig, path: Path) -> None:
     """Write readable YAML while preserving the original key order."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    rendered = yaml.safe_dump(config, sort_keys=False, allow_unicode=True)
-    path.write_text(rendered, encoding="utf-8")
+    OmegaConf.save(config, path, resolve=False)
 
 
-def _add_event_columns(config: YamlMapping, columns: Mapping[str, str]) -> int:
+def _add_event_columns(config: DictConfig, columns: Mapping[str, str]) -> int:
     """Add shared columns to every event and return the number of events found."""
     event_count = 0
 
     for file_name, file_config in config.items():
-        if not isinstance(file_config, dict):
+        if not isinstance(file_config, DictConfig):
             continue
 
         for event_name, event_config in file_config.items():
             # Using code as a proxy for event definitions, skipping other blocks
-            if not isinstance(event_config, dict) or "code" not in event_config:
+            if not isinstance(event_config, DictConfig) or "code" not in event_config:
                 continue
 
             event_count += 1
@@ -96,8 +92,6 @@ def main(cfg: DictConfig) -> None:
     """Create the augmented config consumed by subsequent extraction stages."""
     stage_cfg = cfg.stage_cfg
     event_columns = stage_cfg.get("event_columns", DEFAULT_EVENT_COLUMNS)
-    if OmegaConf.is_config(event_columns):
-        event_columns = OmegaConf.to_container(event_columns)
 
     augment_event_config(
         Path(str(stage_cfg.source_event_conversion_config_fp)),
