@@ -219,10 +219,6 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
-    # compose:
-    #   time_start:
-    #     columns: [v_otime, v_ominut]
-    #     separator: ":"
 
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
