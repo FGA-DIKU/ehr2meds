@@ -9,8 +9,6 @@ from typing import Dict
 
 def add_row_idx(df: pd.DataFrame, start: int = 0) -> pd.DataFrame:
     """Add a stable, contiguous source-row index to a preMEDS chunk."""
-    if ROW_INDEX in df.columns:
-        raise ValueError(f"Reserved provenance column already exists: {ROW_INDEX}")
     df[ROW_INDEX] = range(start, start + len(df))
     return df
 
