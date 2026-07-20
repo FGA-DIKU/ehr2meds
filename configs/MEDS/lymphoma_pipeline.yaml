@@ -40,8 +40,8 @@ stages:
   - convert_to_MEDS_events:
       do_dedup_text_and_numeric: true
   - merge_to_MEDS_cohort:
-      # source_block and row_idx identify the source table and original row.
-      additional_sort_by: [source_block, row_idx]
+      # row_idx provides deterministic ordering for simultaneous events.
+      additional_sort_by: [row_idx]
   - extract_code_metadata
   - aggregate_numeric_metadata:
       train_only: true
