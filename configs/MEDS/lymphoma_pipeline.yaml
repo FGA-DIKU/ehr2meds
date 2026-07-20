@@ -7,11 +7,11 @@ description: |-
   export PREMEDS_INPUT_DIR=../preMEDS_w_meta                 # Path to the output dir of the pre-MEDS step
   export MEDS_OUTPUT_DIR=../MEDS_new_data            # Path to where you want the dataset to live
 
-event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
-
 input_dir: ${oc.env:PREMEDS_INPUT_DIR}
 output_dir: ${oc.env:MEDS_OUTPUT_DIR}
 shards_map_fp: ${output_dir}/metadata/.shards.json
+source_event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
+event_conversion_config_fp: ${output_dir}/event_conversion_config.augmented.yaml
 
 
 etl_metadata:
@@ -19,13 +19,15 @@ etl_metadata:
   dataset_version: 2.0
 
 stages:
-  - add_source_row_id:
-      data_input_dir: ${input_dir}
-      output_dir: ${output_dir}/add_source_row_id
+  - augment_event_config:
+      source_event_conversion_config_fp: ${source_event_conversion_config_fp}
+      output_event_conversion_config_fp: ${event_conversion_config_fp}
+      event_columns:
+        row_idx: $row_idx
 
   - shard_events:
       infer_schema_length: 999999999
-      data_input_dir: ${output_dir}/add_source_row_id/data
+      data_input_dir: ${input_dir}
 
   - split_and_shard_subjects:
       n_subjects_per_shard: 10000
@@ -36,7 +38,10 @@ stages:
   - convert_to_subject_sharded
   - convert_to_MEDS_events:
       do_dedup_text_and_numeric: true
-  - merge_to_MEDS_cohort
+  - merge_to_MEDS_cohort:
+      # Time remains the primary event ordering key. row_idx gives events at
+      # the same time a stable order within their originating preMEDS table.
+      additional_sort_by: [row_idx]
   - extract_code_metadata
   - aggregate_code_metadata:
       train_only: true

@@ -31,6 +31,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "hydra-core>=1.3.2",
     "omegaconf>=2.3.0",
+    "PyYAML>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -49,7 +50,7 @@ where = ["."]
 line-length = 127
 
 [project.entry-points."MEDS_transforms.stages"]
-add_source_row_id = "ehr2meds.meds_stages.add_source_row_id:main"
+augment_event_config = "ehr2meds.meds_stages.augment_event_config:main"
 bin_numeric_values_fast = "ehr2meds.meds_stages.bin_numeric_values_fast:stage"
 
 [tool.ruff.lint]
