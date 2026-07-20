@@ -27,7 +27,7 @@ stages:
 
   - shard_events:
       infer_schema_length: 999999999
-      data_input_dir: ${input_dir}
+      data_input_dir: ${input_dir}/data
 
   - split_and_shard_subjects:
       n_subjects_per_shard: 10000
@@ -40,8 +40,9 @@ stages:
       do_dedup_text_and_numeric: true
   - merge_to_MEDS_cohort:
       # ordering primarily on timestamp and patientid, but also on row_idx to ensure deterministic ordering for events with the same timestamp and patientid.
+      # We add source_block to the ordering to ensure that events from different source blocks are ordered consistently, even if they have the same timestamp and patientid. 
       # Note that ordering for code is given in the event configs explicitly and therefore is not given here.
-      additional_sort_by: [row_idx]
+      additional_sort_by: [source_block, row_idx]
   - extract_code_metadata
   - aggregate_code_metadata:
       train_only: true
