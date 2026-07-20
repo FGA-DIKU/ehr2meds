@@ -113,8 +113,11 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     if all(col in df.columns for col in MANDATORY_COLUMNS):
         df = df.dropna(subset=MANDATORY_COLUMNS, how="any")
 
+    # row_idx is always unique, so don't consider that column
+    columns_to_check = [col for col in df.columns if col != ROW_INDEX]
+
     # Remove duplicates
-    df = df.drop_duplicates()
+    df = df.drop_duplicates(columns_to_check)
 
     return df
 
