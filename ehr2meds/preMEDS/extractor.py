@@ -79,16 +79,23 @@ class PREMEDSExtractor:
         table_config: dict,
         subject_id_mapping: Optional[Dict[str, int]] = None,
     ) -> None:
+        # Chunks are yielded in source-file order. Advancing by the number of
+        # input rows makes row_idx independent of rows removed during processing.
+        next_row_idx = 0
         for chunk in tqdm(
             self.data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
             desc=f"Chunks {table_name}",
         ):
+            input_row_count = len(chunk)
             processed_chunk = self.processor.process(
                 chunk,
                 table_config,
                 self.data_handler,
                 subject_id_mapping,
+                row_index_start=next_row_idx,
             )
+
+            next_row_idx += input_row_count
 
             self.data_handler.save(processed_chunk, table_name)
 
