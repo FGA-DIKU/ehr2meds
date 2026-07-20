@@ -39,8 +39,8 @@ stages:
   - convert_to_MEDS_events:
       do_dedup_text_and_numeric: true
   - merge_to_MEDS_cohort:
-      # Time remains the primary event ordering key. row_idx gives events at
-      # the same time a stable order within their originating preMEDS table.
+      # ordering primarily on timestamp and patientid, but also on row_idx to ensure deterministic ordering for events with the same timestamp and patientid.
+      # Note that ordering for code is given in the event configs explicitly and therefore is not given here.
       additional_sort_by: [row_idx]
   - extract_code_metadata
   - aggregate_code_metadata:
