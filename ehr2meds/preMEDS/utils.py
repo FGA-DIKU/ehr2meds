@@ -8,12 +8,11 @@ from typing import Dict
 
 
 def add_row_idx(df: pd.DataFrame, start: int = 0) -> pd.DataFrame:
-    """Return a copy with a stable, contiguous preMEDS row index."""
+    """Add a stable, contiguous source-row index to a preMEDS chunk."""
     if ROW_INDEX in df.columns:
         raise ValueError(f"Reserved provenance column already exists: {ROW_INDEX}")
-    result = df.copy()
-    result.insert(len(result.columns), ROW_INDEX, range(start, start + len(result)))
-    return result
+    df[ROW_INDEX] = range(start, start + len(df))
+    return df
 
 
 def check_columns(df: pd.DataFrame, columns_map: dict):
