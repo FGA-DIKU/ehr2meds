@@ -22,10 +22,12 @@ SDS_dimpatologiskdiagnose:
 SDS_diagnoser:
   SDS_diagnoser:
     code: f"RD//{$diagnosekode}"
-    time: set_time($date_end, $time_end)
+    # SDS_kontakter time columns are stored as strings, with mixed optional
+    # fractional seconds. Parse them before combining with the contact date.
+    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
   diagnose_type:
     code: f"RD_TYPE//{$diagnosetype}"
-    time: set_time($date_end, $time_end)
+    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
 
 # LPR diagnoses 
 SDS_t_diag:
@@ -43,22 +45,22 @@ SDS_t_diag:
 SDS_kontakter:
   SDS_kontakter:
     code: f"RC//{$aktionsdiagnose}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   contact_reason:
     code: f"RC_REASON//{$kontaktaarsag}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   priority:
     code: f"RC_PRIO//{$prioritet}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   contact_type:
     code: f"RC_TYPE//{$kontakttype}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   clinical_specialty:
     code: f"RC_SPEC//{$hovedspeciale_ans}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   region_code:
     code: f"RC_REG//{$region_ans}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
 # LPR admissions 
 SDS_t_adm:
