@@ -50,7 +50,6 @@ where = ["."]
 line-length = 127
 
 [project.entry-points."MEDS_transforms.stages"]
-add_source_row_id = "ehr2meds.meds_stages.add_source_row_id:main"
 aggregate_numeric_metadata = "ehr2meds.meds_stages.aggregate_numeric_metadata:stage"
 annotate_numeric_values = "ehr2meds.meds_stages.annotate_numeric_values:stage"
 augment_event_config = "ehr2meds.meds_stages.augment_event_config:main"

@@ -23,16 +23,12 @@ stages:
       source_event_conversion_config_fp: ${source_event_conversion_config_fp}
       output_event_conversion_config_fp: ${event_conversion_config_fp}
       event_columns:
-        source_row_id: $source_row_id
-        source_row_index: $source_row_index
-
-  - add_source_row_id:
-      data_input_dir: ${input_dir}
-      output_dir: ${output_dir}/add_source_row_id
+        row_idx: $row_idx
 
   - shard_events:
       infer_schema_length: 999999999
-      data_input_dir: ${output_dir}/add_source_row_id/data
+      # MEDS-Extract derives the raw cohort root from this path's parent.
+      data_input_dir: ${input_dir}/data
 
   - split_and_shard_subjects:
       n_subjects_per_shard: 10000
@@ -44,9 +40,8 @@ stages:
   - convert_to_MEDS_events:
       do_dedup_text_and_numeric: true
   - merge_to_MEDS_cohort:
-      # Subject and time remain the primary sort keys. These columns make
-      # simultaneous events deterministic without changing chronology.
-      additional_sort_by: [source_block, source_row_index, code]
+      # source_block and row_idx identify the source table and original row.
+      additional_sort_by: [source_block, row_idx]
   - extract_code_metadata
   - aggregate_numeric_metadata:
       train_only: true
