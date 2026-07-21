@@ -33,9 +33,8 @@ stages:
   - split_and_shard_subjects:
       n_subjects_per_shard: 10000
       split_fracs:
-          train: 0.8
+          train: 0.9
           tuning: 0.1
-          held_out: 0.1
   - convert_to_subject_sharded
   - convert_to_MEDS_events:
       do_dedup_text_and_numeric: true
@@ -45,6 +44,9 @@ stages:
   - extract_code_metadata
   - aggregate_numeric_metadata:
       train_only: true
+      # Fit normalization and bins only on pre-cutoff events from training subjects.
+      # The fitted transform is still applied to every event downstream.
+      event_time_cutoff: "2022-01-01"
       lower_quantile: 0.01
       upper_quantile: 0.99
       min_bins: 2

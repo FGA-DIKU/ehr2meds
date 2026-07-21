@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import math
-import polars as pl
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date, datetime, time
+from pathlib import Path
+
+import polars as pl
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig
-from pathlib import Path
 
 CODE = DataSchema.code_name
 VALUE = DataSchema.numeric_value_name
+TIME = DataSchema.time_name
 TRAINING_VALUES = "numeric_values/training_values"
 LOWER_BOUND = "numeric/p1"
 UPPER_BOUND = "numeric/p99"
@@ -100,6 +103,25 @@ def _keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) ->
     )
 
 
+def _event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
+    """Restrict fitting to events before an optional calendar date.
+
+    The cutoff is the first excluded date. Null event times cannot be shown to
+    precede it, so they are also excluded whenever a cutoff is configured.
+    """
+    configured_cutoff = stage_cfg.get("event_time_cutoff")
+    if configured_cutoff is None:
+        return None
+
+    try:
+        cutoff_date = date.fromisoformat(str(configured_cutoff))
+    except ValueError as error:
+        raise ValueError("event_time_cutoff must be a date in YYYY-MM-DD format") from error
+
+    cutoff = datetime.combine(cutoff_date, time.min)
+    return pl.col(TIME) < cutoff
+
+
 def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str, object]:
     """Transform and annotate one code."""
     series = pl.Series(sorted(values), dtype=pl.Float64)
@@ -127,11 +149,14 @@ def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[st
 
 
 def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
-    """Collect valid training values (``train_only`` selects shards)."""
+    """Collect eligible values (``train_only`` selects the input shards)."""
     key = [CODE, *(code_modifiers or [])]
     bounds = _read_value_bounds(stage_cfg)
+    time_filter = _event_time_filter(stage_cfg)
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
+        if time_filter is not None:
+            df = df.filter(time_filter)
         return (
             _keep_values_within_bounds(df, bounds)
             .group_by(key)
