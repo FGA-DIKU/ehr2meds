@@ -94,6 +94,7 @@ SDS_t_sksube:
   SDS_t_sksube:
     code: f"RPO//{$c_opr}"
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
+    procedure_type: coalesce($c_oprart, "P")
 
 # LPR3 surgical procedures 
 SDS_procedurer_kirurgi:
@@ -105,7 +106,8 @@ SDS_procedurer_kirurgi:
 SDS_procedurer_andre:
   SDS_procedurer_andre:
     code: f"RPO//{$procedurekode}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    procedure_type: $proceduretype
 
 # Medication (NOTE; can be safely replaced with epikur)
 SDS_ekokur:
