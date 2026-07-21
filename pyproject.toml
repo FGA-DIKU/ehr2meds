@@ -48,6 +48,9 @@ where = ["."]
 [tool.ruff]
 line-length = 127
 
+[project.entry-points."MEDS_transforms.stages"]
+augment_event_config = "ehr2meds.meds_stages.augment_event_config:main"
+bin_numeric_values_fast = "ehr2meds.meds_stages.bin_numeric_values_fast:stage"
 
 [tool.ruff.lint]
 # "E": style/error codes (PEP 8–type errors, e.g. if x == None).

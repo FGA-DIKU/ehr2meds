@@ -1,9 +1,16 @@
 import pandas as pd
 from ehr2meds.preMEDS.constants import (
     MANDATORY_COLUMNS,
+    ROW_INDEX,
     SUBJECT_ID,
 )
 from typing import Dict
+
+
+def add_row_idx(df: pd.DataFrame, start: int = 0) -> pd.DataFrame:
+    """Add a stable, contiguous source-row index to a preMEDS chunk."""
+    df[ROW_INDEX] = range(start, start + len(df))
+    return df
 
 
 def check_columns(df: pd.DataFrame, columns_map: dict):
@@ -103,8 +110,11 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     if all(col in df.columns for col in MANDATORY_COLUMNS):
         df = df.dropna(subset=MANDATORY_COLUMNS, how="any")
 
+    # row_idx is always unique, so don't consider that column
+    columns_to_check = [col for col in df.columns if col != ROW_INDEX]
+
     # Remove duplicates
-    df = df.drop_duplicates()
+    df = df.drop_duplicates(columns_to_check)
 
     return df
 
@@ -125,16 +135,6 @@ def validate_subject_id(df: pd.DataFrame) -> None:
             f"{SUBJECT_ID} column must be of integer type\n\
                 Hint: Use the subject_id_mapping configuration to map string IDs to integers."
         )
-
-
-def compose_columns(df: pd.DataFrame, compose_cfg: dict) -> pd.DataFrame:
-    """Compose new columns from existing ones using a separator."""
-    for new_col, cfg in compose_cfg.items():
-        cols = cfg["columns"]
-        sep = cfg.get("separator", "")
-        df[new_col] = df[cols].astype(str).agg(sep.join, axis=1)
-        df[new_col] = df[new_col] + cfg.get("append", "")
-    return df
 
 
 def remove_timezones(df: pd.DataFrame) -> pd.DataFrame:
