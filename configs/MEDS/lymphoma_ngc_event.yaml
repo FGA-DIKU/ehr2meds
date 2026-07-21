@@ -22,24 +22,22 @@ SDS_dimpatologiskdiagnose:
 SDS_diagnoser:
   SDS_diagnoser:
     code: f"RD//{$diagnosekode}"
-    # SDS_kontakter time columns are stored as strings, with mixed optional
-    # fractional seconds. Parse them before combining with the contact date.
-    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   diagnose_type:
     code: f"RD_TYPE//{$diagnosetype}"
-    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
 # LPR diagnoses 
 SDS_t_diag:
   diag:
     code: f"RD//{$c_diag}"
-    time: $timestamp
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
   diag_type:
     code: f"RD_TYPE//{$c_diagtype}"
-    time: $timestamp
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
   tildiag:
     code: f"RD//{$c_tildiag}"
-    time: $timestamp
+    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
 
 # LPR3 contacts 
 SDS_kontakter:
@@ -94,7 +92,9 @@ SDS_t_sksube:
   SDS_t_sksube:
     code: f"RPO//{$c_opr}"
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
-    procedure_type: coalesce($c_oprart, "P")
+  procedure_type:
+    code: f"RPO_TYPE//{coalesce($c_oprart, "P")}" # NOTE: default to "P" if missing, as this is LPR3 behavior
+    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
 
 # LPR3 surgical procedures 
 SDS_procedurer_kirurgi:
@@ -107,7 +107,9 @@ SDS_procedurer_andre:
   SDS_procedurer_andre:
     code: f"RPO//{$procedurekode}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
-    procedure_type: $proceduretype
+  procedure_type:
+    code: f"RPO_TYPE//{$proceduretype}" # NOTE: default to "P" if missing, as this is LPR3 behavior
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
 # Medication (NOTE; can be safely replaced with epikur)
 SDS_ekokur:
@@ -128,6 +130,6 @@ SDS_indberetningmedpris:
 SDS_laboratorieproevesvar:
   SDS_laboratorieproevesvar:
     code: f"L//{$analysiscode}"
-    time: set_time($samplingdate as '%Y-%m-%d', $samplingtime as '%H:%M:%S%.f')
-    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $samplevalue) as float64'
-    text_value: "$samplevalue"
+    time: set_time($samplingdate as '%Y-%m-%d', $samplingtime as '%H:%M:%S%.f') # sampling time had SQL precision, which is the reason for added x.f
+    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $samplevalue) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
+    text_value: "$samplevalue" # the value as string, for cases where the value is not numeric (e.g., "NEG", "POS", "<0.1", etc.). Duplicates where text and numeric are the same are dropped.

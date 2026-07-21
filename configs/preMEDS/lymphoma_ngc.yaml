@@ -20,7 +20,7 @@ write_file_type: parquet
 
 tables:
   patients_info:
-    filename: ${paths.tables_dir}/CPMI_PatientInfo_with_datetime.parquet
+    filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
     columns:
       patientid: subject_id
       Fødselsdato: birthdate
@@ -66,13 +66,13 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: dato_slut      
-        rename_to: date_end
+        target_column: dato_start      
+        rename_to: date_start
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: tidspunkt_slut      
-        rename_to: time_end
+        target_column: tidspunkt_start    
+        rename_to: time_start
         drop_source: true
 
   SDS_t_diag:
@@ -91,8 +91,18 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
-        target_column: d_uddto 
-        rename_to: timestamp
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
         drop_source: true
 
   SDS_kontakter:
@@ -211,7 +221,7 @@ tables:
       v_otime: 
       v_ominut: 
       c_opr:
-      c_oprart: #TODO: not implemented
+      c_oprart:
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -242,7 +252,7 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       procedurekode:
-      proceduretype: #TODO: not implemented
+      proceduretype:
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -275,4 +285,4 @@ tables:
       samplingdate: 
       samplingtime: 
       analysiscode:
-      samplevalue:
+      samplevalue: 

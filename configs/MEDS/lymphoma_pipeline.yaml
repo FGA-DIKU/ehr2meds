@@ -63,6 +63,6 @@ stages:
       numeric_metadata_filepath: null
   # Final model representation: valid lab values become LAB_CODE//BIN.
   - join_numeric_bins:
-      separator: "//"
+      separator: "//bin_"
   - finalize_MEDS_metadata
   - finalize_MEDS_data
