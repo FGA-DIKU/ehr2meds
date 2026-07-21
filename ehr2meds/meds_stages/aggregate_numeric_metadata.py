@@ -18,6 +18,8 @@ LOWER_BOUND = "numeric/p1"
 UPPER_BOUND = "numeric/p99"
 BIN_EDGES = "numeric/bin_edges"
 BIN_REPRESENTATIVES = "numeric/bin_representatives"
+HARD_MINIMUM = "numeric/hard_minimum"
+HARD_MAXIMUM = "numeric/hard_maximum"
 
 
 @dataclass(frozen=True)
@@ -52,6 +54,52 @@ def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, int(round(1.14 * n_unique**0.237))))
 
 
+def _read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
+    """Validate optional per-code hard bounds and return them as a table."""
+    configured_bounds = stage_cfg.get("numeric_value_bounds")
+    if not configured_bounds:
+        return None
+
+    rows = []
+    for code, bounds in configured_bounds.items():
+        minimum = bounds.get("min")
+        maximum = bounds.get("max")
+        minimum = float(minimum) if minimum is not None else None
+        maximum = float(maximum) if maximum is not None else None
+
+        if minimum is None and maximum is None:
+            raise ValueError(f"numeric_value_bounds[{code!r}] must define min, max, or both")
+        if minimum is not None and not math.isfinite(minimum):
+            raise ValueError(f"numeric_value_bounds[{code!r}].min must be finite")
+        if maximum is not None and not math.isfinite(maximum):
+            raise ValueError(f"numeric_value_bounds[{code!r}].max must be finite")
+        if minimum is not None and maximum is not None and minimum > maximum:
+            raise ValueError(f"numeric_value_bounds[{code!r}] has min greater than max")
+
+        rows.append({CODE: str(code), HARD_MINIMUM: minimum, HARD_MAXIMUM: maximum})
+
+    return pl.DataFrame(
+        rows,
+        schema={CODE: pl.String, HARD_MINIMUM: pl.Float64, HARD_MAXIMUM: pl.Float64},
+    )
+
+
+def _keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) -> pl.LazyFrame:
+    """Keep finite values and, where configured, values within hard bounds."""
+    df = df.filter(pl.col(VALUE).is_not_null() & pl.col(VALUE).is_finite())
+    if bounds is None:
+        return df
+
+    return (
+        df.join(bounds.lazy(), on=CODE, how="left")
+        .filter(
+            (pl.col(HARD_MINIMUM).is_null() | (pl.col(VALUE) >= pl.col(HARD_MINIMUM)))
+            & (pl.col(HARD_MAXIMUM).is_null() | (pl.col(VALUE) <= pl.col(HARD_MAXIMUM)))
+        )
+        .drop(HARD_MINIMUM, HARD_MAXIMUM)
+    )
+
+
 def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str, object]:
     """Fit the minimal transform needed to annotate one code."""
     series = pl.Series(sorted(values), dtype=pl.Float64)
@@ -79,12 +127,13 @@ def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[st
 
 
 def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
-    """Collect raw finite values. The framework's ``train_only`` selects shards."""
+    """Collect valid training values. The framework's ``train_only`` selects shards."""
     key = [CODE, *(code_modifiers or [])]
+    bounds = _read_value_bounds(stage_cfg)
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
         return (
-            df.filter(pl.col(VALUE).is_not_null() & pl.col(VALUE).is_finite())
+            _keep_values_within_bounds(df, bounds)
             .group_by(key)
             .agg(pl.col(VALUE).cast(pl.Float64).alias(TRAINING_VALUES))
             .sort(key)
@@ -136,6 +185,7 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
     """Build the global reducer using one immutable, validated configuration."""
     key = [CODE, *(code_modifiers or [])]
     config = NumericBinningConfig.from_stage_config(stage_cfg)
+    bounds = _read_value_bounds(stage_cfg)
     configured_output = stage_cfg.get("numeric_metadata_output_filepath")
     output_filepath = (
         Path(str(configured_output))
@@ -152,6 +202,8 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
             lower_quantile=config.lower_quantile,
             upper_quantile=config.upper_quantile,
         )
+        if bounds is not None and not metadata.is_empty():
+            metadata = metadata.join(bounds, on=CODE, how="left")
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
         metadata.write_json(output_filepath)
         return metadata
