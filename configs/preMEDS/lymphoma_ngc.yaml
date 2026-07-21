@@ -211,7 +211,7 @@ tables:
       v_otime: 
       v_ominut: 
       c_opr:
-      c_oprart:
+      c_oprart: #TODO: not implemented
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -242,7 +242,7 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       procedurekode:
-      proceduretype:
+      proceduretype: #TODO: not implemented
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
