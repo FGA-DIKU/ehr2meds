@@ -7,7 +7,6 @@ from collections.abc import Callable
 from ehr2meds.meds_stages.aggregate_numeric_metadata import (
     BIN_EDGES,
     BIN_REPRESENTATIVES,
-    IS_CONSTANT,
     LOWER_BOUND,
     UPPER_BOUND,
 )
@@ -23,10 +22,8 @@ DERIVED_COLUMNS = {
     "numeric_value_normalized": pl.Float32,
     "numeric_value_bin": pl.Int32,
     "numeric_value_binned": pl.Float32,
-    "numeric_value_present": pl.Boolean,
-    "numeric_value_was_clipped": pl.Boolean,
 }
-REQUIRED_METADATA_COLUMNS = [LOWER_BOUND, UPPER_BOUND, BIN_EDGES, BIN_REPRESENTATIVES, IS_CONSTANT]
+TRANSFORM_COLUMNS = [LOWER_BOUND, UPPER_BOUND, BIN_EDGES, BIN_REPRESENTATIVES]
 
 
 def _find_bin(row: dict[str, object]) -> int | None:
@@ -39,15 +36,21 @@ def _find_bin(row: dict[str, object]) -> int | None:
 
 
 def _load_external_metadata(filepath: str) -> pl.DataFrame:
-    """Load frozen numeric metadata from a Parquet file or MEDS metadata directory."""
+    """Load frozen numeric metadata from JSON, Parquet, or a MEDS metadata directory."""
     path = resolve_pkg_path(filepath) if filepath.startswith(PKG_PFX) else Path(filepath)
     if path.is_dir():
         path = path / "codes.parquet"
     if not path.is_file():
         raise FileNotFoundError(f"numeric_metadata_filepath '{filepath}' does not exist")
-    if path.suffix.lower() != ".parquet":
-        raise ValueError("numeric_metadata_filepath must be a Parquet file or a directory containing codes.parquet")
-    return pl.read_parquet(path)
+    match path.suffix.lower():
+        case ".parquet":
+            return pl.read_parquet(path)
+        case ".json":
+            return pl.read_json(path)
+        case _:
+            raise ValueError(
+                "numeric_metadata_filepath must be a JSON or Parquet file, or a directory containing codes.parquet"
+            )
 
 
 def _combine_numeric_metadata(
@@ -57,7 +60,7 @@ def _combine_numeric_metadata(
     key: list[str],
 ) -> pl.DataFrame:
     """Overlay external transforms on local transforms, matching by code key."""
-    required = [*key, *REQUIRED_METADATA_COLUMNS]
+    required = [*key, *TRANSFORM_COLUMNS]
     for label, metadata in (("fitted", fitted_metadata), ("external", external_metadata)):
         missing = set(required) - set(metadata.columns)
         if missing:
@@ -78,17 +81,15 @@ def _combine_numeric_metadata(
 def annotate_numeric_values(data: pl.LazyFrame, metadata: pl.DataFrame, *, key: list[str]) -> pl.LazyFrame:
     """Apply frozen transforms while preserving the original event columns.
 
-    Numeric rows for unseen concepts retain ``numeric_value_present=True`` but
-    receive null derived values because no training-only transform exists.
-    Nonnumeric rows receive ``numeric_value_present=False`` and null derived
+    Numeric rows for unseen concepts and nonnumeric rows receive null derived
     values. The base ``code`` and canonical ``numeric_value`` are never changed.
     """
     available = set(metadata.columns)
-    missing = set(REQUIRED_METADATA_COLUMNS) - available
+    missing = set(TRANSFORM_COLUMNS) - available
     if missing:
         raise ValueError(f"numeric metadata is missing columns: {sorted(missing)}")
 
-    frozen_metadata = metadata.lazy().select(*key, *REQUIRED_METADATA_COLUMNS)
+    frozen_metadata = metadata.lazy().select(*key, *TRANSFORM_COLUMNS)
     joined = data.join(frozen_metadata, on=key, how="left")
 
     value_is_present = pl.col(VALUE).is_not_null() & pl.col(VALUE).is_finite()
@@ -96,7 +97,7 @@ def annotate_numeric_values(data: pl.LazyFrame, metadata: pl.DataFrame, *, key: 
     value_can_be_annotated = value_is_present & transform_is_fitted
     clipped = pl.col(VALUE).clip(pl.col(LOWER_BOUND), pl.col(UPPER_BOUND))
     normalized = (
-        pl.when(pl.col(IS_CONSTANT))
+        pl.when(pl.col(UPPER_BOUND) <= pl.col(LOWER_BOUND))
         .then(0.0)
         .otherwise((clipped - pl.col(LOWER_BOUND)) / (pl.col(UPPER_BOUND) - pl.col(LOWER_BOUND)))
     )
@@ -116,9 +117,7 @@ def annotate_numeric_values(data: pl.LazyFrame, metadata: pl.DataFrame, *, key: 
         .then(pl.col(BIN_REPRESENTATIVES).list.get(bin_index, null_on_oob=True))
         .cast(pl.Float32)
         .alias("numeric_value_binned"),
-        value_is_present.cast(pl.Boolean).alias("numeric_value_present"),
-        pl.when(value_can_be_annotated).then(pl.col(VALUE) != clipped).cast(pl.Boolean).alias("numeric_value_was_clipped"),
-    ).drop(REQUIRED_METADATA_COLUMNS)
+    ).drop(TRANSFORM_COLUMNS)
 
 
 @Stage.register(output_schema_updates=DERIVED_COLUMNS)
@@ -129,9 +128,9 @@ def annotate_numeric_values_fntr(
 ) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Build the shard annotator from local and optional external metadata.
 
-    ``numeric_metadata_filepath`` may point directly to another dataset's
-    ``metadata/codes.parquet`` or to its ``metadata`` directory. External
-    transforms override locally fitted transforms for matching code keys.
+    ``numeric_metadata_filepath`` may point to a fitted numeric-metadata JSON,
+    another dataset's ``metadata/codes.parquet``, or its ``metadata`` directory.
+    External transforms override locally fitted transforms for matching keys.
     """
     key = [CodeMetadataSchema.code_name, *(code_modifiers or [])]
     metadata = code_metadata
