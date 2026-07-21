@@ -24,7 +24,7 @@ HARD_MAXIMUM = "numeric/hard_maximum"
 
 @dataclass(frozen=True)
 class NumericBinningConfig:
-    """Parameters shared by every fitted laboratory concept."""
+    """Parameters shared by every fitted numeric concept."""
 
     min_bins: int = 2
     max_bins: int = 100
@@ -101,7 +101,7 @@ def _keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) ->
 
 
 def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str, object]:
-    """Fit the minimal transform needed to annotate one code."""
+    """Transform and annotate one code."""
     series = pl.Series(sorted(values), dtype=pl.Float64)
     lower = float(series.quantile(config.lower_quantile, interpolation="linear"))
     upper = float(series.quantile(config.upper_quantile, interpolation="linear"))
@@ -127,7 +127,7 @@ def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[st
 
 
 def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
-    """Collect valid training values. The framework's ``train_only`` selects shards."""
+    """Collect valid training values (``train_only`` selects shards)."""
     key = [CODE, *(code_modifiers or [])]
     bounds = _read_value_bounds(stage_cfg)
 
@@ -150,11 +150,10 @@ def fit_numeric_metadata(
     lower_quantile: float = 0.01,
     upper_quantile: float = 0.99,
 ) -> pl.DataFrame:
-    """Combine training shards into deterministic per-code transforms.
+    """Combine training shards and make per-code transformations.
 
-    The caller controls which shards are supplied. In the pipeline this function
-    receives only training shards because the stage is configured with
-    ``train_only: true``.
+    The intended behavior is to receive only training shards, configured
+    by running the command with ``train_only: true``.
     """
     config = NumericBinningConfig(
         min_bins=min_bins,
@@ -182,7 +181,7 @@ def fit_numeric_metadata(
 
 
 def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[..., pl.DataFrame]:
-    """Build the global reducer using one immutable, validated configuration."""
+    """Build the global reducer usin one configuration."""
     key = [CODE, *(code_modifiers or [])]
     config = NumericBinningConfig.from_stage_config(stage_cfg)
     bounds = _read_value_bounds(stage_cfg)
