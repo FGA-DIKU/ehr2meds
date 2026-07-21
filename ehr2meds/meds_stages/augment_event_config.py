@@ -11,7 +11,7 @@ DEFAULT_EVENT_COLUMNS = {"row_idx": "$row_idx"}
 
 
 def _read_config(path: Path) -> DictConfig:
-    """Read an event configuration and require a YAML mapping at its root."""
+    """Read an event configuration and require a YAML mapping."""
     if not path.is_file():
         raise FileNotFoundError(f"Event configuration does not exist: {path}")
 
@@ -33,7 +33,7 @@ def _validate_event_columns(value: object) -> dict[str, str]:
 
 
 def _write_config(config: DictConfig, path: Path) -> None:
-    """Write readable YAML while preserving the original key order."""
+    """Write YAML with the original key order."""
     path.parent.mkdir(parents=True, exist_ok=True)
     OmegaConf.save(config, path, resolve=False)
 
@@ -73,8 +73,7 @@ def augment_event_config(
     """Add shared output columns to every event definition.
 
     Event blocks are identified by the presence of ``code``. This skips
-    structural blocks such as ``subject_id_col``, ``transforms``, and ``join``.
-    Existing identical declarations are accepted; conflicts raise an error.
+    structural blocks (i.e., ``subject_id_col``, ``transforms``,``join``).
     """
     columns = _validate_event_columns(event_columns)
     config = _read_config(src_fp)
