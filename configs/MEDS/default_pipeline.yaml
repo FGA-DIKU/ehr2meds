@@ -27,7 +27,10 @@ stages:
   - shard_events:
       infer_schema_length: 999999999
       data_input_dir: ${input_dir}/data
-  - split_and_shard_subjects
+  - split_and_shard_subjects:
+      split_fracs:
+          train: 0.9
+          tuning: 0.1
   - convert_to_subject_sharded
   - convert_to_MEDS_events:
       do_dedup_text_and_numeric: true # If true, nullify ``text_value`` when it equals ``numeric_value``.
