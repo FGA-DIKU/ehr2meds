@@ -58,6 +58,21 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
 
    Example configuration files can be found in the [configs/MEDS](./ehr2meds/configs/MEDS).
 
+### Custom MEDS stages
+
+The package includes the following stages to be used in MEDS pipeline configurations: 
+| Stage | Purpose |
+| --- | --- |
+| `augment_event_config` | Adds shared columns, such as `row_idx`, to every event definition so they do not need to be repeated throughout the event configuration. |
+| `aggregate_numeric_metadata` | Fits per-code numeric normalization bounds and adaptive quantile bins. It supports training-only fitting, an optional date cutoff (for OOT settings), hard plausibility limits (filtering values greater or lower than biological limits), and writes reusable numeric metadata. |
+| `annotate_numeric_values` | Applies the fitted metadata (from `aggregate_numeric_metadata`) to create new columns based on the numeric values. It adds normalized values, bin indices, and binned representatives. External numeric metadata can override locally fitted metadata. |
+| `join_numeric_bins` | Optionally creates the "joined representation" of numeric values, such as `LAB_CODE//bin_3`, from the numeric bin index. |
+| `bin_numeric_values_fast` | A faster, memory-efficient replacement for the standard MEDS-Transforms discrete binning stage. It rewrites codes using bin indices or interval labels. |
+
+For combined numeric encoding, use `aggregate_numeric_metadata` followed by
+`annotate_numeric_values`. Add `join_numeric_bins` afterwards only when the final
+model input should contain joined lab-and-bin codes.
+
 3. **Normalization:**  
    (Optional) Normalizes lab test data before MEDS conversion.  
    You need to run [normalize_premeds.py](./ehr2meds/normalize_premeds.py) to run the normalization.
