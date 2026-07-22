@@ -7,34 +7,54 @@ description: |-
   export PREMEDS_INPUT_DIR=../preMEDS_w_meta                 # Path to the output dir of the pre-MEDS step
   export MEDS_OUTPUT_DIR=../MEDS_new_data            # Path to where you want the dataset to live
 
-event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
-
 input_dir: ${oc.env:PREMEDS_INPUT_DIR}
 output_dir: ${oc.env:MEDS_OUTPUT_DIR}
 shards_map_fp: ${output_dir}/metadata/.shards.json
-
+source_event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
+event_conversion_config_fp: ${output_dir}/event_conversion_config.augmented.yaml
 
 etl_metadata:
   dataset_name: preMEDS
   dataset_version: 2.0
 
-stage_configs:
-  shard_events:
-    infer_schema_length: 999999999
-  split_and_shard_subjects:
-    split_fracs:
-      train: 0.8
-      tuning: 0.1
-      held_out: 0.1
-    # external_splits_json_fp: <path_to_json_split_file_inside ehr2meds> should have a dict with split names as keys and lists of subject ids as values
-
 # can be kept as is
 stages:
-  - shard_events
+  - augment_event_config:
+      source_event_conversion_config_fp: ${source_event_conversion_config_fp}
+      output_event_conversion_config_fp: ${event_conversion_config_fp}
+      event_columns:
+        row_idx: $row_idx
+  - shard_events:
+      infer_schema_length: 999999999
+      data_input_dir: ${input_dir}/data
   - split_and_shard_subjects
   - convert_to_subject_sharded
-  - convert_to_MEDS_events
-  - merge_to_MEDS_cohort
+  - convert_to_MEDS_events:
+      do_dedup_text_and_numeric: true # If true, nullify ``text_value`` when it equals ``numeric_value``.
+  - merge_to_MEDS_cohort:
+      additional_sort_by: [row_idx]
   - extract_code_metadata
+  - aggregate_numeric_metadata:
+      train_only: true
+      # Fit normalization and bins only on pre-cutoff events from training subjects.
+      # The fitted transform is still applied to every event downstream.
+      # event_time_cutoff: "2022-01-01"
+      lower_quantile: 0.01
+      upper_quantile: 0.99
+      min_bins: 2
+      max_bins: 100
+      # Optional hard plausibility limits. Values outside these ranges retain
+      # their raw numeric_value but receive null normalized/binned values.
+      numeric_value_bounds: {}
+      # Example:
+      #   "L//NPU01566": {min: 0, max: 250}
+      numeric_metadata_output_filepath: ${output_dir}/numeric_metadata.json
+  - annotate_numeric_values:
+      # Optional: a fitted numeric_metadata.json, MEDS metadata directory, or codes.parquet.
+      # Matching external code transforms override the locally fitted ones.
+      numeric_metadata_filepath: null
+  # Final model representation: valid lab values become LAB_CODE//BIN.
+  - join_numeric_bins:
+      separator: "//bin_"
   - finalize_MEDS_metadata
   - finalize_MEDS_data

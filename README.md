@@ -22,7 +22,7 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    example:
 
    ```bash
-   python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP     
+   python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP_synth   
    ```
 
    Example configuration files can be found in the [configs/preMEDS](./ehr2meds/configs/preMEDS).

@@ -25,7 +25,8 @@ labtest:
   labtest:
     code: f"LAB//{$BestOrd}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S%.f"
-    lab_value: $numeric_value
+    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $samplevalue) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
+    text_value: "$samplevalue" # the value as string, for cases where the value is not numeric (e.g., "NEG", "POS", "<0.1", etc.). Duplicates where text and numeric are the same are dropped.
 
 admissions:
   IN:

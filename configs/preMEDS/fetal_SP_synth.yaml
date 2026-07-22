@@ -45,7 +45,7 @@ tables:
       CPR: subject_id
       Bestillingsdato: timestamp
       BestOrd:
-      Resultatværdi: numeric_value
+      Resultatværdi: samplevalue
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/diagnoser.csv               

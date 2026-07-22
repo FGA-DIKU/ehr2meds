@@ -127,8 +127,9 @@ linked_data:
                 max_length: 100
             - type: choice
               args:
-                options: ["EKG", "KBT", "Blodprøve, UG:2", "Andet", "BT", "COVID", "test;længde"]
-          probabilities: [0.5, 0.5]
+                options: ["EKG", "KBT", "Blodprøve, UG:2", "Andet", "BT", "COVID", "test;længde", 
+                          "Trombocytter", "ALBU, H", "KALIUM;P", "LEUKOCYTTER;B", "ALBUMIN;P", "ELEKTROKARDIOGRAFI [EKG12];PT"]
+          probabilities: [0.3, 0.7]
       Bestillingsdato:
         type: rand_datetime
       Enhed:

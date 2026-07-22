@@ -144,10 +144,6 @@ tables:
       C_SPEC: 
       C_SGH: 
       K_RECNUM: contact_id
-    compose:
-      time_start:
-        columns: [V_INDTIME, V_INDMINUT]
-        separator: ":"
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
@@ -164,10 +160,6 @@ tables:
         target_column: V_CPR
         rename_to: subject_id
         drop_source: true
-    compose:
-      time_start:
-        columns: [V_OTIME, V_OMINUT]
-        separator: ":"
 
   SDS_t_sksube:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksube.csv   
@@ -185,10 +177,6 @@ tables:
         target_column: V_CPR
         rename_to: subject_id
         drop_source: true
-    compose:
-      time_start:
-        columns: [V_OTIME, V_OMINUT]
-        separator: ":"
 
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
