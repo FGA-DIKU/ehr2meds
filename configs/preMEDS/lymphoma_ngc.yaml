@@ -20,7 +20,7 @@ write_file_type: parquet
 
 tables:
   patients_info:
-    filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
+    filename: ${paths.tables_dir}/CPMI_PatientInfo_with_datetime.parquet
     columns:
       patientid: subject_id
       Fødselsdato: birthdate
