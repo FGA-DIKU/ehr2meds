@@ -20,7 +20,7 @@ test: false
 
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
-  tables_dir: ${oc.env:EHR2MEDS_DATA}/    
+  tables_dir: ${oc.env:EHR2MEDS_DATA}/
 
 write_file_type: csv 
 
@@ -30,7 +30,6 @@ subject_id_mapping:
   mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
-  # TODO Add smoking status
   patients_info:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Patientinfo.csv
     columns:
@@ -38,46 +37,6 @@ tables:
       Fødselsdato: birthdate
       Dødsdato: deathdate
       Køn: gender
-
-  admissions:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - ADT hændelser.csv
-    columns:
-      MOR_CPR: subject_id
-      Flyt_ind: 
-      Flyt_ud: 
-      Afsnit: 
-
-  diagnosis:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Diagnoseliste.csv
-    columns:
-      MOR_CPR: subject_id
-      Redigeringsdato: timestamp
-      Diagnosekode:
-      Diagnose:
-
-  procedure:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Procedurer.csv
-    columns:
-      MOR_CPR: subject_id
-      ServiceDate: timestamp
-      ProcedureCode:
-
-  medication:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Medicin.csv
-    columns:
-      MOR_CPR: subject_id
-      Administrationstidspunkt: timestamp
-      Bestillingsdato: fill_timestamp
-      ATC:
-
-  # TODO Add lab values
-  labtest:
-    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Prøvesvar.csv
-    columns:
-      MOR_CPR: subject_id
-      Prøvetagningstidspunkt: timestamp
-      BestOrd:
-      Resultatværdi: 
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/diagnoser.csv               
@@ -98,6 +57,90 @@ tables:
         rename_to: timestamp
         drop_source: true
 
+  SDS_ekokur:
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/ekokur_all.csv                  
+    columns:
+      cpr: subject_id
+      vnr: vnr_code
+      eksd: timestamp
+    mappings:
+      - source_column: vnr_code
+        how: left
+        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/laegemiddeloplysninger.csv   
+        join_on: vnr
+        target_column: pname
+        rename_to: code
+        drop_source: false
+
+  SDS_kontakter:
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
+    columns:
+      cpr: subject_id
+      dato_start: date_start
+      tidspunkt_start: time_start
+      aktionsdiagnose:
+      kontaktaarsag: 
+      prioritet: 
+      kontakttype: 
+      hovedspeciale_ans: 
+      region_ans: 
+      dw_ek_kontakt: contact_id
+
+  SDS_laboratorieproevesvar:
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/lab_dm_forsker_all.csv
+    columns:
+      PATIENT_CPR: subject_id
+      SAMPLINGDATE: 
+      SAMPLINGTIME: 
+      ANALYSISCODE:
+      VALUE: 
+
+  SDS_procedurer_andre:
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_andre.csv        
+    columns:
+      dw_ek_kontakt: contact_id
+      dato_start: date_start
+      tidspunkt_start: time_start
+      procedurekode:
+      proceduretype:
+    mappings:
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
+        join_on: dw_ek_kontakt
+        target_column: cpr
+        rename_to: subject_id
+        drop_source: true
+
+  SDS_procedurer_kirurgi:
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
+    columns:
+      dw_ek_kontakt: contact_id
+      dato_start: date_start
+      tidspunkt_start: time_start
+      procedurekode:
+    mappings:
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
+        join_on: dw_ek_kontakt
+        target_column: cpr
+        rename_to: subject_id
+        drop_source: true
+
+  SDS_t_adm:
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
+    columns:
+      V_CPR: subject_id
+      D_INDDTO: date_start
+      V_INDTIME: 
+      V_INDMINUT: 
+      C_ADIAG:
+      C_KONTAARS: 
+      C_PATTYPE:  
+      C_INDM: priority # NOTE: mapped to priority
+      C_SPEC: 
+      C_SGH: 
+      K_RECNUM: contact_id
+
   SDS_t_diag:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_diag.csv               
     columns:
@@ -117,35 +160,6 @@ tables:
         target_column: D_UDDTO 
         rename_to: timestamp
         drop_source: true
-
-  SDS_kontakter:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
-    columns:
-      cpr: subject_id
-      dato_start: date_start
-      tidspunkt_start: time_start
-      aktionsdiagnose:
-      kontaktaarsag: 
-      prioritet: 
-      kontakttype: 
-      hovedspeciale_ans: 
-      region_ans: 
-      dw_ek_kontakt: contact_id
-
-  SDS_t_adm:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
-    columns:
-      V_CPR: subject_id
-      D_INDDTO: date_start
-      V_INDTIME: 
-      V_INDMINUT: 
-      C_ADIAG:
-      C_KONTAARS: 
-      C_PATTYPE:  
-      C_INDM: priority # NOTE: mapped to priority
-      C_SPEC: 
-      C_SGH: 
-      K_RECNUM: contact_id
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
@@ -171,7 +185,7 @@ tables:
       V_OTIME: 
       V_OMINUT: 
       C_OPR:
-      C_OPRART: procedure_type # TODO: Currently not in use
+      C_OPRART: procedure_type
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
@@ -180,57 +194,55 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_procedurer_kirurgi:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
+  SP_admissions:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - ADT hændelser.csv
     columns:
-      dw_ek_kontakt: contact_id
-      dato_start: date_start
-      tidspunkt_start: time_start
-      procedurekode:
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-        drop_source: true
+      MOR_CPR: subject_id
+      Flyt_ind: 
+      Flyt_ud: 
+      Afsnit: 
 
-  SDS_procedurer_andre:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_andre.csv        
+  SP_alcohol_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - Alkohol.csv
     columns:
-      dw_ek_kontakt: contact_id
-      dato_start: date_start
-      tidspunkt_start: time_start
-      procedurekode:
-      proceduretype: # TODO: Currently not in use
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-        drop_source: true
+      MOR_CPR: subject_id
+      "Alkohol - Antal ugentlige genstande": weekly_drinks
+      "Kontakt dato": timestamp
+  
+  SP_diagnosis:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Diagnoseliste.csv
+    columns:
+      MOR_CPR: subject_id
+      Redigeringsdato: timestamp
+      Diagnosekode:
+      Diagnose:
 
-  SDS_ekokur:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/ekokur_all.csv                  
+  SP_labtest:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Prøvesvar.csv
     columns:
-      cpr: subject_id
-      vnr: vnr_code
-      eksd: timestamp
-    mappings:
-      - source_column: vnr_code
-        how: left
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/laegemiddeloplysninger.csv   
-        join_on: vnr
-        target_column: pname
-        rename_to: code
-        drop_source: false
+      MOR_CPR: subject_id
+      Prøvetagningstidspunkt: timestamp
+      BestOrd:
+      Resultatværdi: 
 
-  SDS_laboratorieproevesvar:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/lab_dm_forsker_all.csv
+  SP_medication:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Medicin.csv
     columns:
-      PATIENT_CPR: subject_id
-      SAMPLINGDATE: 
-      SAMPLINGTIME: 
-      ANALYSISCODE:
-      VALUE: 
+      MOR_CPR: subject_id
+      Administrationstidspunkt: timestamp
+      Bestillingsdato: fill_timestamp
+      ATC:
+
+  SP_procedure:
+    filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Procedurer.csv
+    columns:
+      MOR_CPR: subject_id
+      ServiceDate: timestamp
+      ProcedureCode:
+
+  SP_smoking_info:
+    filename: ${paths.tables_dir}/SP/tables/Mor - Rygning.csv
+    columns:
+      MOR_CPR: subject_id
+      Rygestatus: 
+      "Kontakt dato": timestamp
