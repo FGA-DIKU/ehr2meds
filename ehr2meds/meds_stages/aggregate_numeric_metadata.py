@@ -44,7 +44,8 @@ def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     """Return the bounded adaptive bin count B(N)=1.14*N_unique**0.237."""
     if minimum < 1 or maximum < minimum:
         raise ValueError("bin bounds must satisfy 1 <= min_bins <= max_bins")
-    return max(minimum, min(maximum, int(round(1.14 * n_unique**0.237))))
+    estimated = round(1.14 * n_unique**0.237)
+    return max(minimum, min(maximum, estimated))
 
 
 def _read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
@@ -79,18 +80,17 @@ def _read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
 
 def _keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) -> pl.LazyFrame:
     """Keep finite values and, where configured, values within hard bounds."""
-    df = df.filter(pl.col(VALUE).is_not_null() & pl.col(VALUE).is_finite())
+    finite_value = pl.col(VALUE).is_not_null() & pl.col(VALUE).is_finite()
+    df = df.filter(finite_value)
     if bounds is None:
         return df
 
-    return (
-        df.join(bounds.lazy(), on=CODE, how="left")
-        .filter(
-            (pl.col(HARD_MINIMUM).is_null() | (pl.col(VALUE) >= pl.col(HARD_MINIMUM)))
-            & (pl.col(HARD_MAXIMUM).is_null() | (pl.col(VALUE) <= pl.col(HARD_MAXIMUM)))
-        )
-        .drop(HARD_MINIMUM, HARD_MAXIMUM)
-    )
+    above_minimum = pl.col(HARD_MINIMUM).is_null() | (pl.col(VALUE) >= pl.col(HARD_MINIMUM))
+    below_maximum = pl.col(HARD_MAXIMUM).is_null() | (pl.col(VALUE) <= pl.col(HARD_MAXIMUM))
+
+    df = df.join(bounds.lazy(), on=CODE, how="left")
+    df = df.filter(above_minimum & below_maximum)
+    return df.drop(HARD_MINIMUM, HARD_MAXIMUM)
 
 
 def _event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
@@ -112,7 +112,7 @@ def _event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
 
 
 def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str, object]:
-    """Transform and annotate one code."""
+    """Fit one code's normalization bounds and quantile bins."""
     series = pl.Series(sorted(values), dtype=pl.Float64)
     lower = float(series.quantile(config.lower_quantile, interpolation="linear"))
     upper = float(series.quantile(config.upper_quantile, interpolation="linear"))
@@ -122,9 +122,11 @@ def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[st
         edges: list[float] = []
         representatives = [0.0]
     else:
-        clipped = series.clip(lower, upper)
-        normalized = (clipped - lower) / (upper - lower)
-        quantile_edges = [float(normalized.quantile(i / n_bins, interpolation="linear")) for i in range(1, n_bins)]
+        normalized = (series.clip(lower, upper) - lower) / (upper - lower)
+        quantile_edges = [
+            float(normalized.quantile(index / n_bins, interpolation="linear"))
+            for index in range(1, n_bins)
+        ]
         edges = sorted(set(quantile_edges))
         boundaries = [0.0, *edges, 1.0]
         representatives = [(left + right) / 2 for left, right in zip(boundaries, boundaries[1:])]
@@ -146,12 +148,10 @@ def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
         if time_filter is not None:
             df = df.filter(time_filter)
-        return (
-            _keep_values_within_bounds(df, bounds)
-            .group_by(key)
-            .agg(pl.col(VALUE).cast(pl.Float64).alias(TRAINING_VALUES))
-            .sort(key)
-        )
+
+        df = _keep_values_within_bounds(df, bounds)
+        values = pl.col(VALUE).cast(pl.Float64).alias(TRAINING_VALUES)
+        return df.group_by(key).agg(values).sort(key)
 
     return mapper
 
@@ -165,18 +165,21 @@ def _fit_numeric_metadata(
     frames = [df.collect() if isinstance(df, pl.LazyFrame) else df for df in dfs]
     if not frames:
         return pl.DataFrame()
+
     values_by_key: dict[tuple, list[float]] = {}
     for frame in frames:
         for row in frame.iter_rows(named=True):
-            group = tuple(row[c] for c in key)
+            group = tuple(row[column] for column in key)
             finite_values = (float(value) for value in row[TRAINING_VALUES] if value is not None)
             values_by_key.setdefault(group, []).extend(value for value in finite_values if math.isfinite(value))
 
+    def group_sort_key(group: tuple) -> tuple[str, ...]:
+        return tuple("" if value is None else str(value) for value in group)
+
     records = []
-    for group in sorted(values_by_key, key=lambda x: tuple("" if v is None else str(v) for v in x)):
-        values = sorted(values_by_key[group])
+    for group in sorted(values_by_key, key=group_sort_key):
         record = dict(zip(key, group, strict=True))
-        record.update(_fit_transform(values, config))
+        record.update(_fit_transform(values_by_key[group], config))
         records.append(record)
     return pl.DataFrame(records).sort(key)
 
@@ -192,11 +195,10 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
     )
     bounds = _read_value_bounds(stage_cfg)
     configured_output = stage_cfg.get("numeric_metadata_output_filepath")
-    output_filepath = (
-        Path(str(configured_output))
-        if configured_output
-        else Path(str(stage_cfg.reducer_output_dir)) / "numeric_metadata.json"
-    )
+    if configured_output:
+        output_filepath = Path(str(configured_output))
+    else:
+        output_filepath = Path(str(stage_cfg.reducer_output_dir)) / "numeric_metadata.json"
 
     def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame:
         metadata = _fit_numeric_metadata(*dfs, key=key, config=config)

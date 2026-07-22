@@ -62,15 +62,15 @@ def _load_external_metadata(filepath: str) -> pl.DataFrame:
 
 def _prepare_metadata(metadata: pl.DataFrame, *, key: list[str], label: str = "numeric") -> pl.DataFrame:
     """Validate and select the metadata required for annotation."""
-    required = [*key, *TRANSFORM_COLUMNS]
-    missing = set(required) - set(metadata.columns)
+    missing = set([*key, *TRANSFORM_COLUMNS]) - set(metadata.columns)
     if missing:
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
 
     missing_bounds = [column for column in BOUND_COLUMNS if column not in metadata.columns]
-    return metadata.with_columns(*(pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds)).select(
-        *key, *METADATA_COLUMNS
+    metadata = metadata.with_columns(
+        *(pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds)
     )
+    return metadata.select(*key, *METADATA_COLUMNS)
 
 
 def _combine_numeric_metadata(
@@ -80,16 +80,13 @@ def _combine_numeric_metadata(
     key: list[str],
 ) -> pl.DataFrame:
     """Overlay external transforms on local transforms, matching by code key."""
-    # External rows come first and therefore win. Local rows provide fallback.
-    # Local rows cover concepts absent from the external metadata.
     external_metadata = _prepare_metadata(external_metadata, key=key, label="external")
     fitted_metadata = _prepare_metadata(fitted_metadata, key=key, label="fitted")
 
-    return (
-        pl.concat([external_metadata, fitted_metadata], how="vertical_relaxed")
-        .unique(subset=key, keep="first", maintain_order=True)
-        .sort(key)
-    )
+    # External rows come first, so they take precedence for matching codes.
+    combined = pl.concat([external_metadata, fitted_metadata], how="vertical_relaxed")
+    combined = combined.unique(subset=key, keep="first", maintain_order=True)
+    return combined.sort(key)
 
 
 def _usable_value() -> pl.Expr:
@@ -103,12 +100,11 @@ def _usable_value() -> pl.Expr:
 
 def _normalized_value() -> pl.Expr:
     """Clip to fitted percentiles and normalize to the interval [0, 1]."""
-    clipped = pl.col(VALUE).clip(pl.col(LOWER_BOUND), pl.col(UPPER_BOUND))
-    return (
-        pl.when(pl.col(UPPER_BOUND) <= pl.col(LOWER_BOUND))
-        .then(0.0)
-        .otherwise((clipped - pl.col(LOWER_BOUND)) / (pl.col(UPPER_BOUND) - pl.col(LOWER_BOUND)))
-    )
+    lower = pl.col(LOWER_BOUND)
+    upper = pl.col(UPPER_BOUND)
+    clipped = pl.col(VALUE).clip(lower, upper)
+    normalized = (clipped - lower) / (upper - lower)
+    return pl.when(upper <= lower).then(0.0).otherwise(normalized)
 
 
 def _bin_index(normalized: pl.Expr) -> pl.Expr:
@@ -126,14 +122,12 @@ def _annotation_columns() -> list[pl.Expr]:
     usable = _usable_value()
     normalized = _normalized_value()
     bin_index = _bin_index(normalized)
+    representative = pl.col(BIN_REPRESENTATIVES).list.get(bin_index, null_on_oob=True)
 
     return [
         pl.when(usable).then(normalized).cast(pl.Float32).alias(NORMALIZED_VALUE),
         pl.when(usable).then(bin_index).cast(pl.Int32).alias(BIN_INDEX),
-        pl.when(usable)
-        .then(pl.col(BIN_REPRESENTATIVES).list.get(bin_index, null_on_oob=True))
-        .cast(pl.Float32)
-        .alias(BINNED_VALUE),
+        pl.when(usable).then(representative).cast(pl.Float32).alias(BINNED_VALUE),
     ]
 
 
@@ -144,7 +138,9 @@ def annotate_numeric_values(data: pl.LazyFrame, metadata: pl.DataFrame, *, key: 
     values. The base ``code`` and ``numeric_value`` are never changed.
     """
     transforms = _prepare_metadata(metadata, key=key).lazy()
-    return data.join(transforms, on=key, how="left").with_columns(_annotation_columns()).drop(*METADATA_COLUMNS)
+    annotated = data.join(transforms, on=key, how="left")
+    annotated = annotated.with_columns(_annotation_columns())
+    return annotated.drop(*METADATA_COLUMNS)
 
 
 @Stage.register(output_schema_updates=DERIVED_COLUMNS)
@@ -163,11 +159,8 @@ def annotate_numeric_values_fntr(
     metadata = code_metadata
     external_filepath = stage_cfg.get("numeric_metadata_filepath")
     if external_filepath:
-        metadata = _combine_numeric_metadata(
-            code_metadata,
-            _load_external_metadata(str(external_filepath)),
-            key=key,
-        )
+        external_metadata = _load_external_metadata(str(external_filepath))
+        metadata = _combine_numeric_metadata(code_metadata, external_metadata, key=key)
 
     def annotate(df: pl.LazyFrame) -> pl.LazyFrame:
         return annotate_numeric_values(df, metadata, key=key)
