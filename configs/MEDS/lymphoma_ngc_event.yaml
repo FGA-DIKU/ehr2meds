@@ -126,7 +126,8 @@ SDS_indberetningmedpris:
     code: f"RMA_PAT_TYPE//{$c_patienttype}"
     time: $timestamp
 
-# NOTE: numeric_value is NOT normalized here - needs to adhere to splits to not have information leakage
+# Keep numeric_value raw here. Split-aware normalization and binning should be
+# performed later by aggregate_numeric_metadata and annotate_numeric_values.
 SDS_laboratorieproevesvar:
   SDS_laboratorieproevesvar:
     code: f"L//{$analysiscode}"

@@ -136,7 +136,8 @@ SDS_ekokur:
     code: f"RM//{$code}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
 
-# NOTE: numeric_value is normalized before this step
+# Keep numeric_value raw here. Split-aware normalization and binning should be
+# performed later by aggregate_numeric_metadata and annotate_numeric_values.
 SDS_laboratorieproevesvar:
   SDS_laboratorieproevesvar:
     code: f"L//{$ANALYSISCODE}"
