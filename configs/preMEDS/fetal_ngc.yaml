@@ -16,6 +16,8 @@ env: local
 run_name: preMEDS_SP_and_SDS
 chunksize: 1000000000
 
+test: false
+
 paths:
   output: ../data/preMEDS/fetal_data/SDS_SP/dmpl/
   tables_dir: ${oc.env:EHR2MEDS_DATA}/    
