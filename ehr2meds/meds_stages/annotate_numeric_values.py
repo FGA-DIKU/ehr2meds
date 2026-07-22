@@ -67,9 +67,7 @@ def _prepare_metadata(metadata: pl.DataFrame, *, key: list[str], label: str = "n
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
 
     missing_bounds = [column for column in BOUND_COLUMNS if column not in metadata.columns]
-    metadata = metadata.with_columns(
-        *(pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds)
-    )
+    metadata = metadata.with_columns(*(pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds))
     return metadata.select(*key, *METADATA_COLUMNS)
 
 

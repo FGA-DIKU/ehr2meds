@@ -123,10 +123,7 @@ def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[st
         representatives = [0.0]
     else:
         normalized = (series.clip(lower, upper) - lower) / (upper - lower)
-        quantile_edges = [
-            float(normalized.quantile(index / n_bins, interpolation="linear"))
-            for index in range(1, n_bins)
-        ]
+        quantile_edges = [float(normalized.quantile(index / n_bins, interpolation="linear")) for index in range(1, n_bins)]
         edges = sorted(set(quantile_edges))
         boundaries = [0.0, *edges, 1.0]
         representatives = [(left + right) / 2 for left, right in zip(boundaries, boundaries[1:])]
