@@ -31,12 +31,14 @@ DERIVED_COLUMNS = {
 TRANSFORM_COLUMNS = [LOWER_BOUND, UPPER_BOUND, BIN_EDGES, BIN_REPRESENTATIVES]
 BOUND_COLUMNS = [HARD_MINIMUM, HARD_MAXIMUM]
 METADATA_COLUMNS = [*TRANSFORM_COLUMNS, *BOUND_COLUMNS]
+EDGES_FIELD = "edges"
+NORMALIZED_FIELD = "normalized"
 
 
 def _find_bin(row: dict[str, object]) -> int | None:
     """Return the right-sided insertion index of a value in its bin edges."""
-    edges = row[BIN_EDGES]
-    normalized = row["normalized"]
+    edges = row[EDGES_FIELD]
+    normalized = row[NORMALIZED_FIELD]
     if edges is None or normalized is None:
         return None
     return sum(edge <= normalized for edge in edges)
@@ -87,40 +89,59 @@ def _combine_numeric_metadata(
     return combined.sort(key)
 
 
-def _usable_value() -> pl.Expr:
+def _is_usable(
+    *,
+    value: pl.Expr,
+    hard_minimum: pl.Expr,
+    hard_maximum: pl.Expr,
+    lower_bound: pl.Expr,
+) -> pl.Expr:
     """Identify finite values that satisfy optional hard bounds."""
-    is_finite = pl.col(VALUE).is_not_null() & pl.col(VALUE).is_finite()
-    above_minimum = pl.col(HARD_MINIMUM).is_null() | (pl.col(VALUE) >= pl.col(HARD_MINIMUM))
-    below_maximum = pl.col(HARD_MAXIMUM).is_null() | (pl.col(VALUE) <= pl.col(HARD_MAXIMUM))
-    has_transform = pl.col(LOWER_BOUND).is_not_null()
+    is_finite = value.is_not_null() & value.is_finite()
+    above_minimum = hard_minimum.is_null() | (value >= hard_minimum)
+    below_maximum = hard_maximum.is_null() | (value <= hard_maximum)
+    has_transform = lower_bound.is_not_null()
     return is_finite & above_minimum & below_maximum & has_transform
 
 
-def _normalized_value() -> pl.Expr:
+def _normalize(*, value: pl.Expr, lower_bound: pl.Expr, upper_bound: pl.Expr) -> pl.Expr:
     """Clip to fitted percentiles and normalize to the interval [0, 1]."""
-    lower = pl.col(LOWER_BOUND)
-    upper = pl.col(UPPER_BOUND)
-    clipped = pl.col(VALUE).clip(lower, upper)
-    normalized = (clipped - lower) / (upper - lower)
-    return pl.when(upper <= lower).then(0.0).otherwise(normalized)
+    clipped = value.clip(lower_bound, upper_bound)
+    normalized = (clipped - lower_bound) / (upper_bound - lower_bound)
+    return pl.when(upper_bound <= lower_bound).then(0.0).otherwise(normalized)
 
 
-def _bin_index(normalized: pl.Expr) -> pl.Expr:
+def _bin_index(*, normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
     """Find each normalized value's right-sided quantile bin."""
     # Polars cannot reference the row's normalized scalar inside list.eval.
     # The edge lists are small and bounded, so a row-local struct is clear and safe.
-    return pl.struct(pl.col(BIN_EDGES), normalized.alias("normalized")).map_elements(
+    row = pl.struct(edges.alias(EDGES_FIELD), normalized.alias(NORMALIZED_FIELD))
+    return row.map_elements(
         _find_bin,
         return_dtype=pl.Int32,
     )
 
 
-def _annotation_columns() -> list[pl.Expr]:
+def _annotation_columns(
+    *,
+    value: pl.Expr,
+    hard_minimum: pl.Expr,
+    hard_maximum: pl.Expr,
+    lower_bound: pl.Expr,
+    upper_bound: pl.Expr,
+    bin_edges: pl.Expr,
+    bin_representatives: pl.Expr,
+) -> list[pl.Expr]:
     """Build the three numeric columns added to each event."""
-    usable = _usable_value()
-    normalized = _normalized_value()
-    bin_index = _bin_index(normalized)
-    representative = pl.col(BIN_REPRESENTATIVES).list.get(bin_index, null_on_oob=True)
+    usable = _is_usable(
+        value=value,
+        hard_minimum=hard_minimum,
+        hard_maximum=hard_maximum,
+        lower_bound=lower_bound,
+    )
+    normalized = _normalize(value=value, lower_bound=lower_bound, upper_bound=upper_bound)
+    bin_index = _bin_index(normalized=normalized, edges=bin_edges)
+    representative = bin_representatives.list.get(bin_index, null_on_oob=True)
 
     return [
         pl.when(usable).then(normalized).cast(pl.Float32).alias(NORMALIZED_VALUE),
@@ -137,7 +158,16 @@ def annotate_numeric_values(data: pl.LazyFrame, metadata: pl.DataFrame, *, key: 
     """
     transforms = _prepare_metadata(metadata, key=key).lazy()
     annotated = data.join(transforms, on=key, how="left")
-    annotated = annotated.with_columns(_annotation_columns())
+    columns = _annotation_columns(
+        value=pl.col(VALUE),
+        hard_minimum=pl.col(HARD_MINIMUM),
+        hard_maximum=pl.col(HARD_MAXIMUM),
+        lower_bound=pl.col(LOWER_BOUND),
+        upper_bound=pl.col(UPPER_BOUND),
+        bin_edges=pl.col(BIN_EDGES),
+        bin_representatives=pl.col(BIN_REPRESENTATIVES),
+    )
+    annotated = annotated.with_columns(columns)
     return annotated.drop(*METADATA_COLUMNS)
 
 
