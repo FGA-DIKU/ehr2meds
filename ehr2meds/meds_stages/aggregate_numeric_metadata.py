@@ -39,16 +39,6 @@ class NumericBinningConfig:
         if not 0 <= self.lower_quantile < self.upper_quantile <= 1:
             raise ValueError("quantiles must satisfy 0 <= lower < upper <= 1")
 
-    @classmethod
-    def from_stage_config(cls, stage_cfg: DictConfig) -> "NumericBinningConfig":
-        return cls(
-            min_bins=int(stage_cfg.get("min_bins", 2)),
-            max_bins=int(stage_cfg.get("max_bins", 100)),
-            lower_quantile=float(stage_cfg.get("lower_quantile", 0.01)),
-            upper_quantile=float(stage_cfg.get("upper_quantile", 0.99)),
-        )
-
-
 def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     """Return the bounded adaptive bin count B(N)=1.14*N_unique**0.237."""
     if minimum < 1 or maximum < minimum:
@@ -205,9 +195,14 @@ def fit_numeric_metadata(
 
 
 def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[..., pl.DataFrame]:
-    """Build the global reducer usin one configuration."""
+    """Build the global reducer using one configuration."""
     key = [CODE, *(code_modifiers or [])]
-    config = NumericBinningConfig.from_stage_config(stage_cfg)
+    config = NumericBinningConfig(
+        min_bins=int(stage_cfg.get("min_bins", 2)),
+        max_bins=int(stage_cfg.get("max_bins", 100)),
+        lower_quantile=float(stage_cfg.get("lower_quantile", 0.01)),
+        upper_quantile=float(stage_cfg.get("upper_quantile", 0.99)),
+    )
     bounds = _read_value_bounds(stage_cfg)
     configured_output = stage_cfg.get("numeric_metadata_output_filepath")
     output_filepath = (
