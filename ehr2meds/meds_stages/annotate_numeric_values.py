@@ -18,8 +18,6 @@ from MEDS_transforms.utils import PKG_PFX, resolve_pkg_path
 from omegaconf import DictConfig
 from pathlib import Path
 
-CODE = DataSchema.code_name
-VALUE = DataSchema.numeric_value_name
 NORMALIZED_VALUE = "numeric_value_normalized"
 BIN_INDEX = "numeric_value_bin"
 BINNED_VALUE = "numeric_value_binned"
@@ -159,7 +157,7 @@ def annotate_numeric_values(data: pl.LazyFrame, metadata: pl.DataFrame, *, key: 
     transforms = prepare_metadata(metadata, key=key).lazy()
     annotated = data.join(transforms, on=key, how="left")
     columns = annotation_columns(
-        value=pl.col(VALUE),
+        value=pl.col(DataSchema.numeric_value_name),
         hard_minimum=pl.col(HARD_MINIMUM),
         hard_maximum=pl.col(HARD_MAXIMUM),
         lower_bound=pl.col(LOWER_BOUND),

@@ -5,16 +5,12 @@ from __future__ import annotations
 import math
 import polars as pl
 from collections.abc import Callable
-from dataclasses import dataclass
 from datetime import datetime
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig
 from pathlib import Path
 
-CODE = DataSchema.code_name
-VALUE = DataSchema.numeric_value_name
-TIME = DataSchema.time_name
 TRAINING_VALUES = "numeric_values/training_values"
 LOWER_BOUND = "numeric/bin_1"
 UPPER_BOUND = "numeric/bin_99"
@@ -22,22 +18,6 @@ BIN_EDGES = "numeric/bin_edges"
 BIN_REPRESENTATIVES = "numeric/bin_representatives"
 HARD_MINIMUM = "numeric/hard_minimum"
 HARD_MAXIMUM = "numeric/hard_maximum"
-
-
-@dataclass(frozen=True)
-class NumericBinningConfig:
-    """Parameters shared by every fitted numeric concept."""
-
-    min_bins: int = 2
-    max_bins: int = 100
-    lower_quantile: float = 0.01
-    upper_quantile: float = 0.99
-
-    def __post_init__(self) -> None:
-        if self.min_bins < 1 or self.max_bins < self.min_bins:
-            raise ValueError("bin bounds must satisfy 1 <= min_bins <= max_bins")
-        if not 0 <= self.lower_quantile < self.upper_quantile <= 1:
-            raise ValueError("quantiles must satisfy 0 <= lower < upper <= 1")
 
 
 def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
@@ -68,25 +48,26 @@ def read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
         if minimum is not None and maximum is not None and minimum > maximum:
             raise ValueError(f"numeric_value_bounds[{code!r}] has min greater than max")
 
-        rows.append({CODE: str(code), HARD_MINIMUM: minimum, HARD_MAXIMUM: maximum})
+        rows.append({DataSchema.code_name: str(code), HARD_MINIMUM: minimum, HARD_MAXIMUM: maximum})
 
     return pl.DataFrame(
         rows,
-        schema={CODE: pl.String, HARD_MINIMUM: pl.Float64, HARD_MAXIMUM: pl.Float64},
+        schema={DataSchema.code_name: pl.String, HARD_MINIMUM: pl.Float64, HARD_MAXIMUM: pl.Float64},
     )
 
 
 def keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) -> pl.LazyFrame:
     """Keep finite values and, where configured, values within hard bounds."""
-    finite_value = pl.col(VALUE).is_not_null() & pl.col(VALUE).is_finite()
+    value = pl.col(DataSchema.numeric_value_name)
+    finite_value = value.is_not_null() & value.is_finite()
     df = df.filter(finite_value)
     if bounds is None:
         return df
 
-    above_minimum = pl.col(HARD_MINIMUM).is_null() | (pl.col(VALUE) >= pl.col(HARD_MINIMUM))
-    below_maximum = pl.col(HARD_MAXIMUM).is_null() | (pl.col(VALUE) <= pl.col(HARD_MAXIMUM))
+    above_minimum = pl.col(HARD_MINIMUM).is_null() | (value >= pl.col(HARD_MINIMUM))
+    below_maximum = pl.col(HARD_MAXIMUM).is_null() | (value <= pl.col(HARD_MAXIMUM))
 
-    df = df.join(bounds.lazy(), on=CODE, how="left")
+    df = df.join(bounds.lazy(), on=DataSchema.code_name, how="left")
     df = df.filter(above_minimum & below_maximum)
     return df.drop(HARD_MINIMUM, HARD_MAXIMUM)
 
@@ -106,18 +87,22 @@ def event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
     except ValueError as error:
         raise ValueError("event_time_cutoff must be a date in YYYY-MM-DD format") from error
 
-    return pl.col(TIME) < cutoff
+    return pl.col(DataSchema.time_name) < cutoff
 
 
-def fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str, object]:
+def fit_transform(
+    values: list[float],
+    *,
+    min_bins: int,
+    max_bins: int,
+    lower_quantile: float,
+    upper_quantile: float,
+) -> dict[str, object]:
     """Fit one code's normalization bounds and quantile bins."""
     series = pl.Series(sorted(values), dtype=pl.Float64)
-    lower = float(series.quantile(config.lower_quantile, interpolation="linear"))
-    upper = float(series.quantile(config.upper_quantile, interpolation="linear"))
-    n_bins = calculate_bin_count(series.n_unique(), config.min_bins, config.max_bins)
-
-    if upper < lower:
-        raise RuntimeError(f"quantile bounds are reversed: lower={lower}, upper={upper}")
+    lower = float(series.quantile(lower_quantile, interpolation="linear"))
+    upper = float(series.quantile(upper_quantile, interpolation="linear"))
+    n_bins = calculate_bin_count(series.n_unique(), min_bins, max_bins)
 
     if upper == lower:
         edges: list[float] = []
@@ -139,7 +124,7 @@ def fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str
 
 def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Collect eligible values (``train_only`` selects the input shards)."""
-    key = [CODE, *(code_modifiers or [])]
+    key = [DataSchema.code_name, *(code_modifiers or [])]
     bounds = read_value_bounds(stage_cfg)
     time_filter = event_time_filter(stage_cfg)
 
@@ -148,7 +133,7 @@ def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) 
             df = df.filter(time_filter)
 
         df = keep_values_within_bounds(df, bounds)
-        values = pl.col(VALUE).cast(pl.Float64).alias(TRAINING_VALUES)
+        values = pl.col(DataSchema.numeric_value_name).cast(pl.Float64).alias(TRAINING_VALUES)
         return df.group_by(key).agg(values).sort(key)
 
     return mapper
@@ -157,7 +142,10 @@ def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) 
 def fit_numeric_metadata(
     *dfs: pl.DataFrame | pl.LazyFrame,
     key: list[str],
-    config: NumericBinningConfig,
+    min_bins: int,
+    max_bins: int,
+    lower_quantile: float,
+    upper_quantile: float,
 ) -> pl.DataFrame:
     """Combine mapped training shards and fit each code's transformation."""
     frames = [df.collect() if isinstance(df, pl.LazyFrame) else df for df in dfs]
@@ -177,20 +165,29 @@ def fit_numeric_metadata(
     records = []
     for group in sorted(values_by_key, key=group_sort_key):
         record = dict(zip(key, group, strict=True))
-        record.update(fit_transform(values_by_key[group], config))
+        transform = fit_transform(
+            values_by_key[group],
+            min_bins=min_bins,
+            max_bins=max_bins,
+            lower_quantile=lower_quantile,
+            upper_quantile=upper_quantile,
+        )
+        record.update(transform)
         records.append(record)
     return pl.DataFrame(records).sort(key)
 
 
 def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[..., pl.DataFrame]:
-    """Build the global reducer using one configuration."""
-    key = [CODE, *(code_modifiers or [])]
-    config = NumericBinningConfig(
-        min_bins=int(stage_cfg.get("min_bins", 2)),
-        max_bins=int(stage_cfg.get("max_bins", 100)),
-        lower_quantile=float(stage_cfg.get("lower_quantile", 0.01)),
-        upper_quantile=float(stage_cfg.get("upper_quantile", 0.99)),
-    )
+    """Build the global metadata reducer."""
+    key = [DataSchema.code_name, *(code_modifiers or [])]
+    min_bins = int(stage_cfg.min_bins)
+    max_bins = int(stage_cfg.max_bins)
+    lower_quantile = float(stage_cfg.lower_quantile)
+    upper_quantile = float(stage_cfg.upper_quantile)
+    if min_bins < 1 or max_bins < min_bins:
+        raise ValueError("bin bounds must satisfy 1 <= min_bins <= max_bins")
+    if not 0 <= lower_quantile < upper_quantile <= 1:
+        raise ValueError("quantiles must satisfy 0 <= lower < upper <= 1")
     bounds = read_value_bounds(stage_cfg)
     configured_output = stage_cfg.get("numeric_metadata_output_filepath")
     if configured_output:
@@ -199,9 +196,16 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
         output_filepath = Path(str(stage_cfg.reducer_output_dir)) / "numeric_metadata.json"
 
     def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame:
-        metadata = fit_numeric_metadata(*dfs, key=key, config=config)
+        metadata = fit_numeric_metadata(
+            *dfs,
+            key=key,
+            min_bins=min_bins,
+            max_bins=max_bins,
+            lower_quantile=lower_quantile,
+            upper_quantile=upper_quantile,
+        )
         if bounds is not None and not metadata.is_empty():
-            metadata = metadata.join(bounds, on=CODE, how="left")
+            metadata = metadata.join(bounds, on=DataSchema.code_name, how="left")
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
         metadata.write_json(output_filepath)
         return metadata
