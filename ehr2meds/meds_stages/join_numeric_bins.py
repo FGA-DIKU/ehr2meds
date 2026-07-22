@@ -29,9 +29,7 @@ def join_numeric_bins(data: pl.LazyFrame, *, separator: str = "//") -> pl.LazyFr
 
 def join_numeric_bins_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Build the final code-representation transform."""
-    separator = str(stage_cfg.get("separator", "//"))
-    if not separator:
-        raise ValueError("separator must not be empty")
+    separator = stage_cfg.get("separator", "//")
 
     def transform(df: pl.LazyFrame) -> pl.LazyFrame:
         return join_numeric_bins(df, separator=separator)
