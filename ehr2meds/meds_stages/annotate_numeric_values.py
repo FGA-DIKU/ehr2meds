@@ -60,24 +60,17 @@ def _load_external_metadata(filepath: str) -> pl.DataFrame:
             )
 
 
-def _with_optional_bounds(metadata: pl.DataFrame) -> pl.DataFrame:
-    """Make absent hard bounds into nullable columns for uniform annotation."""
-    missing_bounds = [column for column in BOUND_COLUMNS if column not in metadata.columns]
-    return metadata.with_columns(*(pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds))
-
-
-def _validate_metadata(metadata: pl.DataFrame, *, key: list[str], label: str = "numeric") -> None:
-    """Require the key and transform columns needed to annotate events."""
+def _prepare_metadata(metadata: pl.DataFrame, *, key: list[str], label: str = "numeric") -> pl.DataFrame:
+    """Validate and select the metadata required for annotation."""
     required = [*key, *TRANSFORM_COLUMNS]
     missing = set(required) - set(metadata.columns)
     if missing:
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
 
-
-def _metadata_for_annotation(metadata: pl.DataFrame, *, key: list[str]) -> pl.LazyFrame:
-    """Validate metadata, add absent optional bounds, and select join columns."""
-    _validate_metadata(metadata, key=key)
-    return _with_optional_bounds(metadata).lazy().select(*key, *METADATA_COLUMNS)
+    missing_bounds = [column for column in BOUND_COLUMNS if column not in metadata.columns]
+    return metadata.with_columns(*(pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds)).select(
+        *key, *METADATA_COLUMNS
+    )
 
 
 def _combine_numeric_metadata(
@@ -87,20 +80,13 @@ def _combine_numeric_metadata(
     key: list[str],
 ) -> pl.DataFrame:
     """Overlay external transforms on local transforms, matching by code key."""
-    for label, metadata in (("fitted", fitted_metadata), ("external", external_metadata)):
-        _validate_metadata(metadata, key=key, label=label)
-
     # External rows come first and therefore win. Local rows provide fallback.
-    # Useful when for instance concepts are not present in the external metadata.
-    external_metadata = _with_optional_bounds(external_metadata)
-    fitted_metadata = _with_optional_bounds(fitted_metadata)
-    columns = [*key, *METADATA_COLUMNS]
+    # Local rows cover concepts absent from the external metadata.
+    external_metadata = _prepare_metadata(external_metadata, key=key, label="external")
+    fitted_metadata = _prepare_metadata(fitted_metadata, key=key, label="fitted")
 
     return (
-        pl.concat(
-            [external_metadata.select(columns), fitted_metadata.select(columns)],
-            how="vertical_relaxed",
-        )
+        pl.concat([external_metadata, fitted_metadata], how="vertical_relaxed")
         .unique(subset=key, keep="first", maintain_order=True)
         .sort(key)
     )
@@ -157,7 +143,7 @@ def annotate_numeric_values(data: pl.LazyFrame, metadata: pl.DataFrame, *, key: 
     Numeric rows for unseen concepts and nonnumeric rows receive null derived
     values. The base ``code`` and ``numeric_value`` are never changed.
     """
-    transforms = _metadata_for_annotation(metadata, key=key)
+    transforms = _prepare_metadata(metadata, key=key).lazy()
     return data.join(transforms, on=key, how="left").with_columns(_annotation_columns()).drop(*METADATA_COLUMNS)
 
 
