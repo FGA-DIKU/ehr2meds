@@ -131,8 +131,8 @@ SP_labtest:
   labtest:
     code: f"LAB//{$BestOrd}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
-    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $Resultatværdi) as float64'
-    text_value: "$Resultatværdi"
+    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $sample_value) as float64'
+    text_value: "$sample_value"
 
 SP_medication:
   medication:

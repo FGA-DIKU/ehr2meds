@@ -223,7 +223,7 @@ tables:
       MOR_CPR: subject_id
       Prøvetagningstidspunkt: timestamp
       BestOrd:
-      Resultatværdi: 
+      Resultatværdi: sample_value
 
   SP_medication:
     filename: ${paths.tables_dir}/SP/tables/Mor - CPMI - Medicin.csv
