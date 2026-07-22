@@ -42,8 +42,6 @@ class NumericBinningConfig:
 
 def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     """Return the bounded adaptive bin count B(N)=1.14*N_unique**0.237."""
-    if minimum < 1 or maximum < minimum:
-        raise ValueError("bin bounds must satisfy 1 <= min_bins <= max_bins")
     estimated = round(1.14 * n_unique**0.237)
     return max(minimum, min(maximum, estimated))
 
