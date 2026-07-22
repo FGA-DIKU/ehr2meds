@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import math
-import polars as pl
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import datetime
+from pathlib import Path
+
+import polars as pl
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig
-from pathlib import Path
 
 CODE = DataSchema.code_name
 VALUE = DataSchema.numeric_value_name
@@ -38,6 +39,7 @@ class NumericBinningConfig:
             raise ValueError("bin bounds must satisfy 1 <= min_bins <= max_bins")
         if not 0 <= self.lower_quantile < self.upper_quantile <= 1:
             raise ValueError("quantiles must satisfy 0 <= lower < upper <= 1")
+
 
 def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     """Return the bounded adaptive bin count B(N)=1.14*N_unique**0.237."""
@@ -103,11 +105,10 @@ def _event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
         return None
 
     try:
-        cutoff_date = date.fromisoformat(str(configured_cutoff))
+        cutoff = datetime.strptime(str(configured_cutoff), "%Y-%m-%d")
     except ValueError as error:
         raise ValueError("event_time_cutoff must be a date in YYYY-MM-DD format") from error
 
-    cutoff = datetime.combine(cutoff_date, time.min)
     return pl.col(TIME) < cutoff
 
 
@@ -156,25 +157,12 @@ def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) 
     return mapper
 
 
-def fit_numeric_metadata(
+def _fit_numeric_metadata(
     *dfs: pl.DataFrame | pl.LazyFrame,
     key: list[str],
-    min_bins: int = 2,
-    max_bins: int = 100,
-    lower_quantile: float = 0.01,
-    upper_quantile: float = 0.99,
+    config: NumericBinningConfig,
 ) -> pl.DataFrame:
-    """Combine training shards and make per-code transformations.
-
-    The intended behavior is to receive only training shards, configured
-    by running the command with ``train_only: true``.
-    """
-    config = NumericBinningConfig(
-        min_bins=min_bins,
-        max_bins=max_bins,
-        lower_quantile=lower_quantile,
-        upper_quantile=upper_quantile,
-    )
+    """Combine mapped training shards and fit each code's transformation."""
     frames = [df.collect() if isinstance(df, pl.LazyFrame) else df for df in dfs]
     if not frames:
         return pl.DataFrame()
@@ -212,14 +200,7 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
     )
 
     def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame:
-        metadata = fit_numeric_metadata(
-            *dfs,
-            key=key,
-            min_bins=config.min_bins,
-            max_bins=config.max_bins,
-            lower_quantile=config.lower_quantile,
-            upper_quantile=config.upper_quantile,
-        )
+        metadata = _fit_numeric_metadata(*dfs, key=key, config=config)
         if bounds is not None and not metadata.is_empty():
             metadata = metadata.join(bounds, on=CODE, how="left")
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
