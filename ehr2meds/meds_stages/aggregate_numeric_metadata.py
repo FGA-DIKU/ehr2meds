@@ -116,7 +116,10 @@ def fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str
     upper = float(series.quantile(config.upper_quantile, interpolation="linear"))
     n_bins = calculate_bin_count(series.n_unique(), config.min_bins, config.max_bins)
 
-    if upper <= lower:
+    if upper < lower:
+        raise RuntimeError(f"quantile bounds are reversed: lower={lower}, upper={upper}")
+
+    if upper == lower:
         edges: list[float] = []
         representatives = [0.0]
     else:
