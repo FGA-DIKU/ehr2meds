@@ -40,7 +40,8 @@ labtest:
   labtest:
     code: f"LAB//{$BestOrd}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
-    numeric_value: $Resultatværdi
+    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $Resultatværdi) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
+    text_value: "$Resultatværdi" # the value as string, for cases where the value is not numeric (e.g., "NEG", "POS", "<0.1", etc.). Duplicates where text and numeric are the same are dropped.
 
 # Register concepts (register_concepts)
 # LPR3 diagnoses
@@ -145,4 +146,5 @@ SDS_laboratorieproevesvar:
   SDS_laboratorieproevesvar:
     code: f"L//{$ANALYSISCODE}"
     time: set_time($SAMPLINGDATE as '%Y-%m-%d', $SAMPLINGTIME as '%H:%M:%S')
-    numeric_value: $VALUE
+    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $VALUE) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
+    text_value: "$VALUE" # the value as string, for cases where the value is not numeric (e.g., "NEG", "POS", "<0.1", etc.). Duplicates where text and numeric are the same are dropped.
