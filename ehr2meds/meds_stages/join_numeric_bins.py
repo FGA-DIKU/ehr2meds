@@ -24,12 +24,7 @@ def join_numeric_bins(data: pl.LazyFrame, *, separator: str = "//") -> pl.LazyFr
         pl.col(NUMERIC_BIN).cast(pl.String),
     )
 
-    return data.with_columns(
-        pl.when(pl.col(NUMERIC_BIN).is_not_null())
-        .then(joined_code)
-        .otherwise(pl.col(CODE))
-        .alias(CODE)
-    )
+    return data.with_columns(pl.when(pl.col(NUMERIC_BIN).is_not_null()).then(joined_code).otherwise(pl.col(CODE)).alias(CODE))
 
 
 def join_numeric_bins_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
