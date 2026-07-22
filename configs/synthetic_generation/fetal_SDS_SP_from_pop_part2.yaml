@@ -584,7 +584,7 @@ linked_data: # Data that needs to be linked to the data above
     N: ${N}
     linked_columns:
       CPR:
-        type: choice
+        type: choice_unique
         file: Population
         linked_on: BABY_CPR
     columns:

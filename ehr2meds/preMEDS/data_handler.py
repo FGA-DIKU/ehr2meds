@@ -31,7 +31,7 @@ class DataHandler:
         if filename.endswith(".parquet"):
             return pd.read_parquet(filename, columns=list(cols)).rename(columns=rename)
         elif filename.endswith((".csv", ".asc")):
-            return pd.read_csv(filename, usecols=list(cols)).rename(columns=rename, engine="python")
+            return pd.read_csv(filename, usecols=list(cols), engine="python").rename(columns=rename)
         else:
             raise ValueError(f"Unsupported file type: {filename}")
 
