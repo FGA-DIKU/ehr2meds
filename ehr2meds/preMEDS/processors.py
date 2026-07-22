@@ -33,7 +33,7 @@ class Processor:
         """
         df = add_row_idx(df, start=row_index_start)
         df = apply_value_map(df, table_config.get("value_map", {}))
-        df = Processor._apply_mappings(df, table_config.get("mappings", []), data_handler)
+        df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = remove_timezones(df)
@@ -42,9 +42,9 @@ class Processor:
         return df
 
     @staticmethod
-    def _apply_mappings(df: pd.DataFrame, mapping_cfg: List[dict], data_handler: DataHandler) -> pd.DataFrame:
+    def apply_mappings(df: pd.DataFrame, mapping_cfg: List[dict], data_handler: DataHandler) -> pd.DataFrame:
         for mapping in mapping_cfg:
-            map_table = Processor._get_mapping_table(data_handler, mapping)
+            map_table = Processor.get_mapping_table(data_handler, mapping)
             df = apply_mapping(
                 df,
                 map_table,
@@ -58,7 +58,7 @@ class Processor:
         return df
 
     @staticmethod
-    def _get_mapping_table(data_handler, mapping: dict):
+    def get_mapping_table(data_handler, mapping: dict):
         "Find path and relevant columns in either registry or the resources folder."
         filename = mapping["via_file"]
         cols = dict.fromkeys([mapping["join_on"], mapping["target_column"]])

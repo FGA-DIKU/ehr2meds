@@ -31,7 +31,7 @@ CODE = DataSchema.code_name
 VALUE = DataSchema.numeric_value_name
 
 
-def _edges_per_code(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str]) -> pl.LazyFrame:
+def edges_per_code(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str]) -> pl.LazyFrame:
     """One row per code (+ modifiers) holding its sorted list of bin edges.
 
     Extracted from the code_metadata stage. Edges are read from a struct column:
@@ -45,7 +45,7 @@ def _edges_per_code(code_metadata: pl.DataFrame, bin_columns: list[str], key: li
     return code_metadata.lazy().select(*key, edge_list.alias("edges")).filter(pl.col("edges").is_not_null())
 
 
-def _bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str], value_dtype: pl.DataType) -> pl.LazyFrame:
+def bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str], value_dtype: pl.DataType) -> pl.LazyFrame:
     """One row per (code, bin) describing every bin as a half-open interval ``[left, right)``.
 
     A code's sorted edges ``e[1..n]`` are padded with sentinels into the boundary list
@@ -59,7 +59,7 @@ def _bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[st
                                    bin 2  edge=1.0   [1.0, 2.0)
                                    bin 3  edge=2.0   [2.0, inf)
     """
-    edges = _edges_per_code(code_metadata, bin_columns, key)
+    edges = edges_per_code(code_metadata, bin_columns, key)
 
     # Pad edges with -inf/+inf so all bins are pairs of boundaries.
     padded = edges.select(
@@ -86,7 +86,7 @@ def _bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[st
     )
 
 
-def _render_code(template: str) -> pl.Expr:
+def render_code(template: str) -> pl.Expr:
     """Compile a code template into a string expression.
 
     The template mixes literal text with the placeholders ``{code}``, ``{left}``,
@@ -153,7 +153,7 @@ def assign_value_bins(
         ['lab//A//value_[-inf,0.0)', 'lab//A//value_[0.0,1.0)', 'lab//A//value_[1.0,2.0)', 'lab//A//value_[2.0,inf)', 'dx//1']
     """
     value_dtype = data.collect_schema()[VALUE]
-    bins = _bin_table(code_metadata, bin_columns, key, value_dtype)
+    bins = bin_table(code_metadata, bin_columns, key, value_dtype)
 
     rows = data.with_row_index("_row")
 
@@ -173,7 +173,7 @@ def assign_value_bins(
 
     # A matched row (bin is not null) gets its rewritten code
     was_binned = pl.col("bin").is_not_null()
-    labelled = labelled.with_columns(pl.when(was_binned).then(_render_code(code_template)).otherwise(pl.col(CODE)).alias(CODE))
+    labelled = labelled.with_columns(pl.when(was_binned).then(render_code(code_template)).otherwise(pl.col(CODE)).alias(CODE))
     if drop_numeric_value:
         labelled = labelled.with_columns(pl.when(was_binned).then(None).otherwise(pl.col(VALUE)).alias(VALUE))
 
@@ -181,7 +181,7 @@ def assign_value_bins(
     return labelled.sort("_row").drop([c for c in working if c in labelled.collect_schema().names()])
 
 
-def _load_custom_bins(stage_cfg: DictConfig) -> dict:
+def load_custom_bins(stage_cfg: DictConfig) -> dict:
     """Read inline ``custom_bins`` and/or a ``custom_bins_filepath`` YAML, inline taking
     precedence, matching the built-in stage."""
     inline = stage_cfg.get("custom_bins", {})
@@ -226,7 +226,7 @@ def bin_numeric_values_fast_fntr(
     drop_numeric_value = stage_cfg.get("drop_numeric_value", False)
 
     # Optional custom edges, which override the code_metadata stage's edges.
-    custom_bins = _load_custom_bins(stage_cfg)
+    custom_bins = load_custom_bins(stage_cfg)
     metadata = code_metadata
     if custom_bins:
         struct_dtype = pl.Struct(dict.fromkeys(next(iter(custom_bins.values())).keys(), pl.Float32))

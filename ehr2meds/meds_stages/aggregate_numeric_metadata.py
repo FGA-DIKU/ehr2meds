@@ -46,7 +46,7 @@ def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, estimated))
 
 
-def _read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
+def read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
     """Validate optional per-code hard bounds and return them as a table."""
     configured_bounds = stage_cfg.get("numeric_value_bounds")
     if not configured_bounds:
@@ -76,7 +76,7 @@ def _read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
     )
 
 
-def _keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) -> pl.LazyFrame:
+def keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) -> pl.LazyFrame:
     """Keep finite values and, where configured, values within hard bounds."""
     finite_value = pl.col(VALUE).is_not_null() & pl.col(VALUE).is_finite()
     df = df.filter(finite_value)
@@ -91,7 +91,7 @@ def _keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) ->
     return df.drop(HARD_MINIMUM, HARD_MAXIMUM)
 
 
-def _event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
+def event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
     """Restrict fitting to events before an optional calendar date.
 
     The cutoff is the first excluded date. Null event times cannot be shown to
@@ -109,7 +109,7 @@ def _event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
     return pl.col(TIME) < cutoff
 
 
-def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str, object]:
+def fit_transform(values: list[float], config: NumericBinningConfig) -> dict[str, object]:
     """Fit one code's normalization bounds and quantile bins."""
     series = pl.Series(sorted(values), dtype=pl.Float64)
     lower = float(series.quantile(config.lower_quantile, interpolation="linear"))
@@ -137,21 +137,21 @@ def _fit_transform(values: list[float], config: NumericBinningConfig) -> dict[st
 def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Collect eligible values (``train_only`` selects the input shards)."""
     key = [CODE, *(code_modifiers or [])]
-    bounds = _read_value_bounds(stage_cfg)
-    time_filter = _event_time_filter(stage_cfg)
+    bounds = read_value_bounds(stage_cfg)
+    time_filter = event_time_filter(stage_cfg)
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
         if time_filter is not None:
             df = df.filter(time_filter)
 
-        df = _keep_values_within_bounds(df, bounds)
+        df = keep_values_within_bounds(df, bounds)
         values = pl.col(VALUE).cast(pl.Float64).alias(TRAINING_VALUES)
         return df.group_by(key).agg(values).sort(key)
 
     return mapper
 
 
-def _fit_numeric_metadata(
+def fit_numeric_metadata(
     *dfs: pl.DataFrame | pl.LazyFrame,
     key: list[str],
     config: NumericBinningConfig,
@@ -174,7 +174,7 @@ def _fit_numeric_metadata(
     records = []
     for group in sorted(values_by_key, key=group_sort_key):
         record = dict(zip(key, group, strict=True))
-        record.update(_fit_transform(values_by_key[group], config))
+        record.update(fit_transform(values_by_key[group], config))
         records.append(record)
     return pl.DataFrame(records).sort(key)
 
@@ -188,7 +188,7 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
         lower_quantile=float(stage_cfg.get("lower_quantile", 0.01)),
         upper_quantile=float(stage_cfg.get("upper_quantile", 0.99)),
     )
-    bounds = _read_value_bounds(stage_cfg)
+    bounds = read_value_bounds(stage_cfg)
     configured_output = stage_cfg.get("numeric_metadata_output_filepath")
     if configured_output:
         output_filepath = Path(str(configured_output))
@@ -196,7 +196,7 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
         output_filepath = Path(str(stage_cfg.reducer_output_dir)) / "numeric_metadata.json"
 
     def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame:
-        metadata = _fit_numeric_metadata(*dfs, key=key, config=config)
+        metadata = fit_numeric_metadata(*dfs, key=key, config=config)
         if bounds is not None and not metadata.is_empty():
             metadata = metadata.join(bounds, on=CODE, how="left")
         output_filepath.parent.mkdir(parents=True, exist_ok=True)

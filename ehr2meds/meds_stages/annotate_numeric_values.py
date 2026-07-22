@@ -35,7 +35,7 @@ EDGES_FIELD = "edges"
 NORMALIZED_FIELD = "normalized"
 
 
-def _find_bin(row: dict[str, object]) -> int | None:
+def find_bin(row: dict[str, object]) -> int | None:
     """Return the right-sided insertion index of a value in its bin edges."""
     edges = row[EDGES_FIELD]
     normalized = row[NORMALIZED_FIELD]
@@ -44,7 +44,7 @@ def _find_bin(row: dict[str, object]) -> int | None:
     return sum(edge <= normalized for edge in edges)
 
 
-def _load_external_metadata(filepath: str) -> pl.DataFrame:
+def load_external_metadata(filepath: str) -> pl.DataFrame:
     """Load frozen numeric metadata from JSON, Parquet, or a MEDS metadata directory."""
     path = resolve_pkg_path(filepath) if filepath.startswith(PKG_PFX) else Path(filepath)
     if path.is_dir():
@@ -62,7 +62,7 @@ def _load_external_metadata(filepath: str) -> pl.DataFrame:
             )
 
 
-def _prepare_metadata(metadata: pl.DataFrame, *, key: list[str], label: str = "numeric") -> pl.DataFrame:
+def prepare_metadata(metadata: pl.DataFrame, *, key: list[str], label: str = "numeric") -> pl.DataFrame:
     """Validate and select the metadata required for annotation."""
     missing = set([*key, *TRANSFORM_COLUMNS]) - set(metadata.columns)
     if missing:
@@ -73,15 +73,15 @@ def _prepare_metadata(metadata: pl.DataFrame, *, key: list[str], label: str = "n
     return metadata.select(*key, *METADATA_COLUMNS)
 
 
-def _combine_numeric_metadata(
+def combine_numeric_metadata(
     fitted_metadata: pl.DataFrame,
     external_metadata: pl.DataFrame,
     *,
     key: list[str],
 ) -> pl.DataFrame:
     """Overlay external transforms on local transforms, matching by code key."""
-    external_metadata = _prepare_metadata(external_metadata, key=key, label="external")
-    fitted_metadata = _prepare_metadata(fitted_metadata, key=key, label="fitted")
+    external_metadata = prepare_metadata(external_metadata, key=key, label="external")
+    fitted_metadata = prepare_metadata(fitted_metadata, key=key, label="fitted")
 
     # External rows come first, so they take precedence for matching codes.
     combined = pl.concat([external_metadata, fitted_metadata], how="vertical_relaxed")
@@ -89,7 +89,7 @@ def _combine_numeric_metadata(
     return combined.sort(key)
 
 
-def _is_usable(
+def is_usable(
     *,
     value: pl.Expr,
     hard_minimum: pl.Expr,
@@ -104,25 +104,25 @@ def _is_usable(
     return is_finite & above_minimum & below_maximum & has_transform
 
 
-def _normalize(*, value: pl.Expr, lower_bound: pl.Expr, upper_bound: pl.Expr) -> pl.Expr:
+def normalize(*, value: pl.Expr, lower_bound: pl.Expr, upper_bound: pl.Expr) -> pl.Expr:
     """Clip to fitted percentiles and normalize to the interval [0, 1]."""
     clipped = value.clip(lower_bound, upper_bound)
     normalized = (clipped - lower_bound) / (upper_bound - lower_bound)
     return pl.when(upper_bound <= lower_bound).then(0.0).otherwise(normalized)
 
 
-def _bin_index(*, normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
+def calculate_bin_index(*, normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
     """Find each normalized value's right-sided quantile bin."""
     # Polars cannot reference the row's normalized scalar inside list.eval.
     # The edge lists are small and bounded, so a row-local struct is clear and safe.
     row = pl.struct(edges.alias(EDGES_FIELD), normalized.alias(NORMALIZED_FIELD))
     return row.map_elements(
-        _find_bin,
+        find_bin,
         return_dtype=pl.Int32,
     )
 
 
-def _annotation_columns(
+def annotation_columns(
     *,
     value: pl.Expr,
     hard_minimum: pl.Expr,
@@ -133,14 +133,14 @@ def _annotation_columns(
     bin_representatives: pl.Expr,
 ) -> list[pl.Expr]:
     """Build the three numeric columns added to each event."""
-    usable = _is_usable(
+    usable = is_usable(
         value=value,
         hard_minimum=hard_minimum,
         hard_maximum=hard_maximum,
         lower_bound=lower_bound,
     )
-    normalized = _normalize(value=value, lower_bound=lower_bound, upper_bound=upper_bound)
-    bin_index = _bin_index(normalized=normalized, edges=bin_edges)
+    normalized = normalize(value=value, lower_bound=lower_bound, upper_bound=upper_bound)
+    bin_index = calculate_bin_index(normalized=normalized, edges=bin_edges)
     representative = bin_representatives.list.get(bin_index, null_on_oob=True)
 
     return [
@@ -156,9 +156,9 @@ def annotate_numeric_values(data: pl.LazyFrame, metadata: pl.DataFrame, *, key: 
     Numeric rows for unseen concepts and nonnumeric rows receive null derived
     values. The base ``code`` and ``numeric_value`` are never changed.
     """
-    transforms = _prepare_metadata(metadata, key=key).lazy()
+    transforms = prepare_metadata(metadata, key=key).lazy()
     annotated = data.join(transforms, on=key, how="left")
-    columns = _annotation_columns(
+    columns = annotation_columns(
         value=pl.col(VALUE),
         hard_minimum=pl.col(HARD_MINIMUM),
         hard_maximum=pl.col(HARD_MAXIMUM),
@@ -187,8 +187,8 @@ def annotate_numeric_values_fntr(
     metadata = code_metadata
     external_filepath = stage_cfg.get("numeric_metadata_filepath")
     if external_filepath:
-        external_metadata = _load_external_metadata(str(external_filepath))
-        metadata = _combine_numeric_metadata(code_metadata, external_metadata, key=key)
+        external_metadata = load_external_metadata(str(external_filepath))
+        metadata = combine_numeric_metadata(code_metadata, external_metadata, key=key)
 
     def annotate(df: pl.LazyFrame) -> pl.LazyFrame:
         return annotate_numeric_values(df, metadata, key=key)
