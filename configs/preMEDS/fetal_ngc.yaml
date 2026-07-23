@@ -47,6 +47,8 @@ tables:
     value_map: 
       dato_slut:
         ".": null
+      tidspunkt_slut:
+        ".": null
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv           

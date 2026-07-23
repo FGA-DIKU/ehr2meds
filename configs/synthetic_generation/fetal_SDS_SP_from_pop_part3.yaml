@@ -115,7 +115,7 @@ linked_data:
         linked_on: MOR_CPR
 
   labtest:
-    N: 1000000 #${N}
+    N: ${N}
     columns:
       BestOrd:
         type: mix_function
