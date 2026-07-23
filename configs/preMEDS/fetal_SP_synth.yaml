@@ -12,64 +12,64 @@ paths:
 
 write_file_type: csv
 subject_id_mapping:
-  file: ${paths.tables_dir}/patient_info.csv # Table to derive mapping from (can be None)
-  subject_id_col: CPR # Column to use as the subject_id mapping
+  file: ${paths.tables_dir}/Mor - CPMI - Patientinfo.csv # Table to derive mapping from (can be None)
+  subject_id_col: MOR_CPR # Column to use as the subject_id mapping
   mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
   diagnosis:
-    filename: ${paths.tables_dir}/diagnosis.csv
+    filename: ${paths.tables_dir}/Mor - CPMI - Diagnoseliste.csv
     columns:
-      CPR: subject_id
+      MOR_CPR: subject_id
       Redigeringsdato: timestamp
       Diagnosekode:
 
   procedure:
-    filename: ${paths.tables_dir}/procedure.csv
+    filename: ${paths.tables_dir}/Mor - CPMI - Procedurer.csv
     columns:
-      CPR: subject_id
-      Redigeringsdato: timestamp
-      Procedurekode:
+      MOR_CPR: subject_id
+      ServiceDate: timestamp
+      ProcedureCode:
 
   admissions:
-    filename: ${paths.tables_dir}/admissions.csv
+    filename: ${paths.tables_dir}/Mor - CPMI - ADT hændelser.csv
     columns:
-      CPR: subject_id
+      MOR_CPR: subject_id
       Flyt_ind: timestamp_in
       Flyt_ud: timestamp_out
       Afsnit:
 
   labtest:
-    filename: ${paths.tables_dir}/labtest.asc
+    filename: ${paths.tables_dir}/Mor - CPMI - Prøvesvar.csv
     columns:
-      CPR: subject_id
-      Bestillingsdato: timestamp
+      MOR_CPR: subject_id
+      Prøvetagningstidspunkt: timestamp
       BestOrd:
       Resultatværdi: samplevalue
 
   SDS_diagnoser:
     filename: ${paths.tables_dir}/diagnoser.csv               
     columns:
-      contact_id_new: contact_id
+      dw_ek_kontakt: contact_id
       diagnosekode:
-      diagnose_type:
+      diagnosetype:
     mappings:
       - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.csv           
-        join_on: contact_id
-        target_column: person_id
+        via_file: ${paths.tables_dir}/kontakter_all.csv           
+        join_on: dw_ek_kontakt
+        target_column: cpr
         rename_to: subject_id
       - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.csv
-        join_on: contact_id
+        via_file: ${paths.tables_dir}/kontakter_all.csv
+        join_on: dw_ek_kontakt
         target_column: dato_slut      
         rename_to: timestamp
         drop_source: true
 
   patients_info:
-    filename: ${paths.tables_dir}/patient_info.csv
+    filename: ${paths.tables_dir}/Mor - CPMI - Patientinfo.csv
     columns:
-      CPR: subject_id
-      Birthdate:
-      Deathdate:
-      Gender:
+      MOR_CPR: subject_id
+      Fødselsdato: Birthdate
+      Dødsdato: Deathdate
+      Køn: Gender

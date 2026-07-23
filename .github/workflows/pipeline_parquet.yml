@@ -44,6 +44,6 @@ jobs:
               run: |
                 bash ehr2meds/convert_premeds_to_meds.sh \
                       ${EHR2MEDS_DATA}/preMEDS/DST_parquet \
-                      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
+                      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline_wo_vals.yaml \
                       ${EHR2MEDS_CONFIGS}/MEDS/dst_event.yaml \
                       ${EHR2MEDS_DATA}/MEDS/DST_parquet

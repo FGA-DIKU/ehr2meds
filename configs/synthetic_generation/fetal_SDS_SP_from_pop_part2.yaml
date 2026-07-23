@@ -606,9 +606,17 @@ linked_data: # Data that needs to be linked to the data above
       Prøvetagningstidspunkt:
         type: rand_datetimeseconds
       BestOrd:
-        type: medical_code
+        type: mix_function
         args:
-          prefix: "NPU"
+          functions:
+            - type: medical_code
+              args:
+                prefix: "NPU"
+            - type: choice
+              args:
+                options: ["EKG", "KBT", "Blodprøve, UG:2", "Andet", "BT", "COVID", "test;længde", 
+                          "Trombocytter", "ALBU, H", "KALIUM;P", "LEUKOCYTTER;B", "ALBUMIN;P", "ELEKTROKARDIOGRAFI [EKG12];PT"]
+          probabilities: [0.4, 0.6]
       Resultatværdi:
         type: mix_function
         args:
