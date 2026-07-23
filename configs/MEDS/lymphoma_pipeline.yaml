@@ -47,10 +47,6 @@ stages:
       # Fit normalization and bins only on pre-cutoff events from training subjects.
       # The fitted transform is still applied to every event downstream.
       event_time_cutoff: "2022-01-01"
-      lower_quantile: 0.01
-      upper_quantile: 0.99
-      min_bins: 2
-      max_bins: 100
       # Optional hard plausibility limits. Values outside these ranges retain
       # their raw numeric_value but receive null normalized/binned values.
       numeric_value_bounds: {}
@@ -60,9 +56,8 @@ stages:
   - annotate_numeric_values:
       # Optional: a fitted numeric_metadata.json, MEDS metadata directory, or codes.parquet.
       # Matching external code transforms override the locally fitted ones.
-      numeric_metadata_filepath: null
+      # numeric_metadata_filepath: /path/to/numeric_metadata.json
   # Final model representation: valid lab values become LAB_CODE//BIN.
-  - join_numeric_bins:
-      separator: "//bin_"
+  - join_numeric_bins
   - finalize_MEDS_metadata
   - finalize_MEDS_data

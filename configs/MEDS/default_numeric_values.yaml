@@ -1,0 +1,35 @@
+numeric_value_columns:
+  training_values: "numeric_values/training_values"
+  lower_bound: "numeric/bin_1"
+  upper_bound: "numeric/bin_99"
+  bin_edges: "numeric/bin_edges"
+  bin_representatives: "numeric/bin_representatives"
+  hard_minimum: "numeric/hard_minimum"
+  hard_maximum: "numeric/hard_maximum"
+  normalized: "numeric_value_normalized"
+  bin_index: "numeric_value_bin"
+  binned: "numeric_value_binned"
+
+numeric_value_column_groups:
+  transform:
+    - lower_bound
+    - upper_bound
+    - bin_edges
+    - bin_representatives
+  bounds:
+    - hard_minimum
+    - hard_maximum
+  derived:
+    - normalized
+    - bin_index
+    - binned
+
+lower_quantile: 0.01
+upper_quantile: 0.99
+min_bins: 2
+max_bins: 100
+event_time_cutoff: null
+numeric_value_bounds: {}
+numeric_metadata_output_filepath: null
+numeric_metadata_filepath: null
+separator: "//bin_"
