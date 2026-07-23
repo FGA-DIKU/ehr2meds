@@ -7,34 +7,38 @@ from collections.abc import Callable
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig
-
-CODE = DataSchema.code_name
-NUMERIC_BIN = "numeric_value_bin"
+from pathlib import Path
 
 
-def join_numeric_bins(data: pl.LazyFrame, *, separator: str = "//") -> pl.LazyFrame:
+def join_numeric_bins(data: pl.LazyFrame, *, bin_column: str, separator: str) -> pl.LazyFrame:
     """Rewrite binned codes as ``<code><separator><bin>``.
 
     Rows without a valid numeric bin retain their original code. All other
     event columns, including the raw and derived numeric values, are unchanged.
     """
     joined_code = pl.concat_str(
-        pl.col(CODE),
+        pl.col(DataSchema.code_name),
         pl.lit(separator),
-        pl.col(NUMERIC_BIN).cast(pl.String),
+        pl.col(bin_column).cast(pl.String),
     )
 
-    return data.with_columns(pl.when(pl.col(NUMERIC_BIN).is_not_null()).then(joined_code).otherwise(pl.col(CODE)).alias(CODE))
+    has_bin = pl.col(bin_column).is_not_null()
+    code = pl.when(has_bin).then(joined_code).otherwise(pl.col(DataSchema.code_name))
+    return data.with_columns(code.alias(DataSchema.code_name))
 
 
 def join_numeric_bins_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Build the final code-representation transform."""
-    separator = stage_cfg.get("separator", "//")
+    bin_column = stage_cfg.numeric_value_columns.bin_index
+    separator = str(stage_cfg.separator)
 
     def transform(df: pl.LazyFrame) -> pl.LazyFrame:
-        return join_numeric_bins(df, separator=separator)
+        return join_numeric_bins(df, bin_column=bin_column, separator=separator)
 
     return transform
 
 
-stage = Stage.register(is_metadata=False)(join_numeric_bins_fntr)
+stage = Stage.register(
+    is_metadata=False,
+    default_config=Path("configs/MEDS/default_numeric_values.yaml"),
+)(join_numeric_bins_fntr)

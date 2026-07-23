@@ -25,7 +25,7 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP     
    ```
 
-   Example configuration files can be found in the [configs/preMEDS](./ehr2meds/configs/preMEDS).
+   Example configuration files can be found in the [configs/preMEDS](./configs/preMEDS).
    
    The main functionalities of this is to 
    * Map subject ID hashes to integer values to ensure compatibility with MEDS
@@ -56,7 +56,7 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
       ${EHR2MEDS_DATA}/MEDS/SP
    ```
 
-   Example configuration files can be found in the [configs/MEDS](./ehr2meds/configs/MEDS).
+   Example configuration files can be found in the [configs/MEDS](./configs/MEDS).
 
 ### Custom MEDS stages
 
@@ -72,3 +72,10 @@ The package includes the following stages to be used in MEDS pipeline configurat
 For combined numeric encoding, use `aggregate_numeric_metadata` followed by
 `annotate_numeric_values`. Add `join_numeric_bins` afterwards only when the final
 model input should contain joined lab-and-bin codes.
+
+Shared numeric column names and stage defaults are defined in
+`configs/MEDS/default_numeric_values.yaml`; pipeline configurations only
+need to specify dataset- or run-specific overrides. Any setting can be overridden
+under the relevant pipeline stage. The `numeric_value_column_groups` lists control
+which transform, optional bound, and derived columns are used; column names and
+derived outputs are configured through `numeric_value_columns`.

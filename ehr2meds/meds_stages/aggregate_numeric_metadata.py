@@ -11,14 +11,6 @@ from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig
 from pathlib import Path
 
-TRAINING_VALUES = "numeric_values/training_values"
-LOWER_BOUND = "numeric/bin_1"
-UPPER_BOUND = "numeric/bin_99"
-BIN_EDGES = "numeric/bin_edges"
-BIN_REPRESENTATIVES = "numeric/bin_representatives"
-HARD_MINIMUM = "numeric/hard_minimum"
-HARD_MAXIMUM = "numeric/hard_maximum"
-
 
 def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     """Return the bounded adaptive bin count B(N)=1.14*N_unique**0.237."""
@@ -26,7 +18,7 @@ def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, estimated))
 
 
-def read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
+def read_value_bounds(stage_cfg: DictConfig, columns: DictConfig) -> pl.DataFrame | None:
     """Validate optional per-code hard bounds and return them as a table."""
     configured_bounds = stage_cfg.get("numeric_value_bounds")
     if not configured_bounds:
@@ -48,15 +40,29 @@ def read_value_bounds(stage_cfg: DictConfig) -> pl.DataFrame | None:
         if minimum is not None and maximum is not None and minimum > maximum:
             raise ValueError(f"numeric_value_bounds[{code!r}] has min greater than max")
 
-        rows.append({DataSchema.code_name: str(code), HARD_MINIMUM: minimum, HARD_MAXIMUM: maximum})
+        rows.append(
+            {
+                DataSchema.code_name: str(code),
+                columns.hard_minimum: minimum,
+                columns.hard_maximum: maximum,
+            }
+        )
 
     return pl.DataFrame(
         rows,
-        schema={DataSchema.code_name: pl.String, HARD_MINIMUM: pl.Float64, HARD_MAXIMUM: pl.Float64},
+        schema={
+            DataSchema.code_name: pl.String,
+            columns.hard_minimum: pl.Float64,
+            columns.hard_maximum: pl.Float64,
+        },
     )
 
 
-def keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) -> pl.LazyFrame:
+def keep_values_within_bounds(
+    df: pl.LazyFrame,
+    bounds: pl.DataFrame | None,
+    columns: DictConfig,
+) -> pl.LazyFrame:
     """Keep finite values and, where configured, values within hard bounds."""
     value = pl.col(DataSchema.numeric_value_name)
     finite_value = value.is_not_null() & value.is_finite()
@@ -64,12 +70,14 @@ def keep_values_within_bounds(df: pl.LazyFrame, bounds: pl.DataFrame | None) -> 
     if bounds is None:
         return df
 
-    above_minimum = pl.col(HARD_MINIMUM).is_null() | (value >= pl.col(HARD_MINIMUM))
-    below_maximum = pl.col(HARD_MAXIMUM).is_null() | (value <= pl.col(HARD_MAXIMUM))
+    hard_minimum = pl.col(columns.hard_minimum)
+    hard_maximum = pl.col(columns.hard_maximum)
+    above_minimum = hard_minimum.is_null() | (value >= hard_minimum)
+    below_maximum = hard_maximum.is_null() | (value <= hard_maximum)
 
     df = df.join(bounds.lazy(), on=DataSchema.code_name, how="left")
     df = df.filter(above_minimum & below_maximum)
-    return df.drop(HARD_MINIMUM, HARD_MAXIMUM)
+    return df.drop(columns.hard_minimum, columns.hard_maximum)
 
 
 def event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
@@ -93,6 +101,7 @@ def event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
 def fit_transform(
     values: list[float],
     *,
+    columns: DictConfig,
     min_bins: int,
     max_bins: int,
     lower_quantile: float,
@@ -115,25 +124,26 @@ def fit_transform(
         representatives = [(left + right) / 2 for left, right in zip(boundaries, boundaries[1:])]
 
     return {
-        LOWER_BOUND: lower,
-        UPPER_BOUND: upper,
-        BIN_EDGES: edges,
-        BIN_REPRESENTATIVES: representatives,
+        columns.lower_bound: lower,
+        columns.upper_bound: upper,
+        columns.bin_edges: edges,
+        columns.bin_representatives: representatives,
     }
 
 
 def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Collect eligible values (``train_only`` selects the input shards)."""
     key = [DataSchema.code_name, *(code_modifiers or [])]
-    bounds = read_value_bounds(stage_cfg)
+    columns = stage_cfg.numeric_value_columns
+    bounds = read_value_bounds(stage_cfg, columns)
     time_filter = event_time_filter(stage_cfg)
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
         if time_filter is not None:
             df = df.filter(time_filter)
 
-        df = keep_values_within_bounds(df, bounds)
-        values = pl.col(DataSchema.numeric_value_name).cast(pl.Float64).alias(TRAINING_VALUES)
+        df = keep_values_within_bounds(df, bounds, columns)
+        values = pl.col(DataSchema.numeric_value_name).cast(pl.Float64).alias(columns.training_values)
         return df.group_by(key).agg(values).sort(key)
 
     return mapper
@@ -142,6 +152,7 @@ def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) 
 def fit_numeric_metadata(
     *dfs: pl.DataFrame | pl.LazyFrame,
     key: list[str],
+    columns: DictConfig,
     min_bins: int,
     max_bins: int,
     lower_quantile: float,
@@ -156,7 +167,7 @@ def fit_numeric_metadata(
     for frame in frames:
         for row in frame.iter_rows(named=True):
             group = tuple(row[column] for column in key)
-            finite_values = (float(value) for value in row[TRAINING_VALUES] if value is not None)
+            finite_values = (float(value) for value in row[columns.training_values] if value is not None)
             values_by_key.setdefault(group, []).extend(value for value in finite_values if math.isfinite(value))
 
     def group_sort_key(group: tuple) -> tuple[str, ...]:
@@ -167,6 +178,7 @@ def fit_numeric_metadata(
         record = dict(zip(key, group, strict=True))
         transform = fit_transform(
             values_by_key[group],
+            columns=columns,
             min_bins=min_bins,
             max_bins=max_bins,
             lower_quantile=lower_quantile,
@@ -180,6 +192,7 @@ def fit_numeric_metadata(
 def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[..., pl.DataFrame]:
     """Build the global metadata reducer."""
     key = [DataSchema.code_name, *(code_modifiers or [])]
+    columns = stage_cfg.numeric_value_columns
     min_bins = int(stage_cfg.min_bins)
     max_bins = int(stage_cfg.max_bins)
     lower_quantile = float(stage_cfg.lower_quantile)
@@ -188,7 +201,7 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
         raise ValueError("bin bounds must satisfy 1 <= min_bins <= max_bins")
     if not 0 <= lower_quantile < upper_quantile <= 1:
         raise ValueError("quantiles must satisfy 0 <= lower < upper <= 1")
-    bounds = read_value_bounds(stage_cfg)
+    bounds = read_value_bounds(stage_cfg, columns)
     configured_output = stage_cfg.get("numeric_metadata_output_filepath")
     if configured_output:
         output_filepath = Path(str(configured_output))
@@ -199,6 +212,7 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
         metadata = fit_numeric_metadata(
             *dfs,
             key=key,
+            columns=columns,
             min_bins=min_bins,
             max_bins=max_bins,
             lower_quantile=lower_quantile,
@@ -213,4 +227,8 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
     return reducer
 
 
-stage = Stage.register(map_fn=mapper_fntr, reduce_fn=reducer_fntr)
+stage = Stage.register(
+    map_fn=mapper_fntr,
+    reduce_fn=reducer_fntr,
+    default_config=Path("configs/MEDS/default_numeric_values.yaml"),
+)
