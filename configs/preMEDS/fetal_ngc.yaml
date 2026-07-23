@@ -44,6 +44,9 @@ tables:
       dw_ek_kontakt: contact_id
       diagnosekode:
       diagnosetype: 
+    value_map: 
+      dato_slut:
+        ".": null
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv           
@@ -51,10 +54,15 @@ tables:
         target_column: cpr
         rename_to: subject_id
       - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv
+        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv  
         join_on: dw_ek_kontakt
         target_column: dato_slut      
-        rename_to: timestamp
+        rename_to: 
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv  
+        join_on: dw_ek_kontakt
+        target_column: tidspunkt_slut    
+        rename_to: 
         drop_source: true
 
   SDS_ekokur:
@@ -73,11 +81,14 @@ tables:
         drop_source: false
 
   SDS_kontakter:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv               
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/kontakter_all.csv      
+    value_map: 
+      tidspunkt_start:
+        ".": null         
     columns:
       cpr: subject_id
-      dato_start: date_start
-      tidspunkt_start: time_start
+      dato_start: 
+      tidspunkt_start: 
       aktionsdiagnose:
       kontaktaarsag: 
       prioritet: 
@@ -99,8 +110,8 @@ tables:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_andre.csv        
     columns:
       dw_ek_kontakt: contact_id
-      dato_start: date_start
-      tidspunkt_start: time_start
+      dato_start: 
+      tidspunkt_start: 
       procedurekode:
       proceduretype:
     mappings:
@@ -115,8 +126,8 @@ tables:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/procedurer_kirurgi.csv      
     columns:
       dw_ek_kontakt: contact_id
-      dato_start: date_start
-      tidspunkt_start: time_start
+      dato_start: 
+      tidspunkt_start: 
       procedurekode:
     mappings:
       - source_column: contact_id
@@ -127,10 +138,17 @@ tables:
         drop_source: true
 
   SDS_t_adm:
-    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv               
+    filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv   
+    value_map: 
+      V_INDTIME:
+        ".": null
+      V_UDTIME:
+        ".": null
+      D_INDDTO:
+        ".": null             
     columns:
       V_CPR: subject_id
-      D_INDDTO: date_start
+      D_INDDTO: 
       V_INDTIME: 
       V_INDMINUT: 
       C_ADIAG:
@@ -147,7 +165,12 @@ tables:
       V_RECNUM: contact_id
       C_DIAG: 
       C_TILDIAG: 
-      C_DIAGTYPE: 
+      C_DIAGTYPE:
+    value_map: 
+      D_UDDTO:
+        ".": null 
+      V_UDTIME:
+        ".": null 
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
@@ -157,18 +180,31 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
         join_on: K_RECNUM
-        target_column: D_UDDTO 
-        rename_to: timestamp
+        target_column: D_UDDTO
+        rename_to: 
+        drop_source: true
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
+        join_on: K_RECNUM
+        target_column: V_UDTIME
+        rename_to: 
         drop_source: true
 
   SDS_t_sksopr:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksopr.csv   
     columns:
       V_RECNUM: contact_id
-      D_ODTO: date_start
+      D_ODTO: 
       V_OTIME: 
       V_OMINUT: 
       C_OPR:
+    value_map: 
+      D_ODTO:
+        ".": null 
+      V_OTIME:
+        ".": null
+      V_OMINUT:
+        ".": null
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
@@ -181,11 +217,16 @@ tables:
     filename: ${paths.tables_dir}/SDS/registers_pseudonymized/t_sksube.csv   
     columns:
       V_RECNUM: contact_id
-      D_ODTO: date_start
+      D_ODTO: 
       V_OTIME: 
       V_OMINUT: 
       C_OPR:
       C_OPRART: procedure_type
+    value_map: 
+      V_OTIME:
+        ".": null
+      V_OMINUT:
+        ".": null
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
