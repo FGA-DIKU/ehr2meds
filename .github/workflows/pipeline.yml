@@ -40,12 +40,12 @@ jobs:
 
             - name: Convert synthetic data to preMEDS
               run: |
-                python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_synth
+                python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/DeepFetal/fetal_synth
 
             - name: Convert preMEDS to MEDS
               run: |
                 bash ehr2meds/convert_premeds_to_meds.sh \
-                      ${EHR2MEDS_DATA}/preMEDS/fetal_synth \
+                      ${EHR2MEDS_DATA}/preMEDS/DeepFetal/fetal_synth \
                       ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
                       ${EHR2MEDS_CONFIGS}/MEDS/fetal_ngc_event.yaml \
                       ${EHR2MEDS_DATA}/MEDS/fetal_synth

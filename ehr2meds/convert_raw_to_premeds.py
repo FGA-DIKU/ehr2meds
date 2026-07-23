@@ -3,8 +3,7 @@ import pathlib
 from dotenv import load_dotenv
 from ehr2meds.paths import get_config_path
 from ehr2meds.preMEDS.extractor import PREMEDSExtractor
-from omegaconf import DictConfig, OmegaConf
-from os.path import join
+from omegaconf import DictConfig
 
 load_dotenv()
 
