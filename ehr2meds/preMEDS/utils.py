@@ -124,12 +124,8 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
 def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
     """Replace specific column values; other values are left unchanged"""
-    n_before = len(df)
     for col, mapping in value_map_cfg.items():
         df.replace({col: mapping}, inplace=True)
-    n_after = len(df)
-    if n_before > n_after:
-        print(f"Dropped {n_before - n_after} rows from {col} due to value mapping")
     return df
 
 

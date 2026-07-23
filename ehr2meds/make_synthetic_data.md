@@ -34,7 +34,7 @@ Output paths are set inside each YAML (for example `paths.output` in `fetal_SP.y
 Run the PREMEDS conversion with a config that points at your synthetic raw data and desired PREMEDS output:
 
 ```bash
-python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP     
+python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/DeepFetal/fetal_synth_full
 ```
 
 Adjust `--config-name` if you use a different PREMEDS profile.
@@ -57,20 +57,20 @@ bash ehr2meds/convert_premeds_to_meds.sh \
 **Example using env paths:**
 
 ```bash
-source .env && bash ehr2meds/convert_premeds_to_meds.sh \
-  ${EHR2MEDS_DATA}/preMEDS/fetal_data/SP \
+source .env && rm -rf ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full && bash ehr2meds/convert_premeds_to_meds.sh \
+  ${EHR2MEDS_DATA}/preMEDS/DeepFetal/fetal_synth_full \
   ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
-  ${EHR2MEDS_CONFIGS}/MEDS/default_event.yaml \
-  ${EHR2MEDS_DATA}/MEDS/SP
+  ${EHR2MEDS_CONFIGS}/MEDS/fetal_ngc_event.yaml \
+  ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full
 ```
 
 **Example using relative paths:**
 ```bash
 bash ehr2meds/convert_premeds_to_meds.sh \
-  data/preMEDS/fetal_data/SP \
+  data/preMEDS/DeepFetal/fetal_synth_full \
   configs/MEDS/default_pipeline.yaml \
-  configs/MEDS/default_event.yaml \
-  data/MEDS/SP
+  configs/MEDS/fetal_ngc_event.yaml \
+  data/MEDS/DeepFetal/fetal_synth_full
 ```
 ---
 

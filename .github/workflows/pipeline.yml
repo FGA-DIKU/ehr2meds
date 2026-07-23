@@ -40,7 +40,7 @@ jobs:
 
             - name: Convert synthetic data to preMEDS
               run: |
-                python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP_synth
+                python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/DeepFetal/fetal_synth_full
 
             - name: Convert preMEDS to MEDS
               run: |
