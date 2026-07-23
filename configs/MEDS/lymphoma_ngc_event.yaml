@@ -18,32 +18,34 @@ SDS_dimpatologiskdiagnose:
     code: f"PAT//{$diagnose_snomed_kode}"
     time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d') as datetime)
 
-# LPR3 diagnoses
+# LPR3 diagnoses have no independent timestamp and are conservatively placed
+# at contact end, when the diagnosis is known to have been available.
 SDS_diagnoser:
   SDS_diagnoser:
     code: f"RD//{$diagnosekode}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
   diagnose_type:
     code: f"RD_TYPE//{$diagnosetype}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
 
-# LPR diagnoses 
+# LPR diagnoses likewise inherit the admission end timestamp.
 SDS_t_diag:
   diag:
     code: f"RD//{$c_diag}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $date_end
   diag_type:
     code: f"RD_TYPE//{$c_diagtype}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $date_end
   tildiag:
     code: f"RD//{$c_tildiag}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $date_end
 
-# LPR3 contacts 
+# LPR3 action diagnosis is finalized at contact end. Attributes known when the
+# contact starts remain at the start timestamp.
 SDS_kontakter:
   SDS_kontakter:
     code: f"RC//{$aktionsdiagnose}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
   contact_reason:
     code: f"RC_REASON//{$kontaktaarsag}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
@@ -60,11 +62,12 @@ SDS_kontakter:
     code: f"RC_REG//{$region_ans}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
-# LPR admissions 
+# LPR action diagnosis is placed at admission end; start-known attributes stay
+# at the admission start timestamp.
 SDS_t_adm:
   SDS_t_adm:
     code: f"RC_ADM//{$c_adiag}"
-    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
+    time: $date_end
   contact_reason:
     code: f"RC_REASON//{$c_kontaars}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
