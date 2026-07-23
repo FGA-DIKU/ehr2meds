@@ -58,7 +58,77 @@ linked_data:
         corruptions:
           - type: insert_missing
             args:
-              probability: 0.05        
+              probability: 0.05  
+
+  kontakter_all: 
+  #LPR3
+    N: ${N}
+    linked_columns:
+      cpr:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+    corruptions:
+      - type: row_dropout
+        args:
+          probability: 0.05
+          forced_idx: [5, 10]
+    columns:
+      aktionsdiagnose:
+        type: medical_code
+        args:
+          prefix: "D"
+      dato_start:
+        type: rand_date
+      dato_slut:
+        type: greater_than_date
+        match:
+          min_date: dato_start
+      dw_ek_forloeb: 
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 600000    
+      dw_ek_kontakt:
+        type: person_id
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 5
+              probability: 0.05
+              forced_idx: [3]
+      kontaktaarsag:
+        type: choice
+        args:
+          options: ["Ukendt"]
+      kontakttype:
+        type: choice
+        args:
+          options: ["Ukendt"]
+      hovedspeciale_ans:
+        type: choice
+        args:
+          options: ["børne- og ungdomspsykiatri"]
+      region_ans:
+        type: choice
+        args:
+          options: ["1082"]
+      prioritet: # urgency
+        type: choice
+        args:
+          options: [1, 2, 3]
+      tidspunkt_start:
+        type: rand_timemicroseconds
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "."
+              probability: 0.05
+      tidspunkt_slut:
+        type: rand_timemicroseconds
+
+
+
   mfr:
   # MFR2_main
     N: ${N}
@@ -139,6 +209,30 @@ linked_data:
         file: Population
         linked_on: BABY_CPR
 
+  Mor - CPMI - Patientinfo:
+    N: ${N_population}
+    linked_columns:
+      MOR_CPR:
+        type: choice_unique
+        file: Population
+        linked_on: MOR_CPR
+    columns:
+      Fødselsdato:
+        type: rand_datetimeseconds
+        args:
+          start: 1977
+      Køn:
+        type: choice
+        args:
+          options: ["Mand", "Kvinde"]
+      Dødsdato:
+        type: greater_than_datetimeseconds
+        match:
+          min_date: Fødselsdato
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.8
   nyfoedte:
   #MFR3
     N: ${N}
