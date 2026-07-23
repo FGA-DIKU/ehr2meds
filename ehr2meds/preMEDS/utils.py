@@ -1,9 +1,16 @@
 import pandas as pd
 from ehr2meds.preMEDS.constants import (
     MANDATORY_COLUMNS,
+    ROW_INDEX,
     SUBJECT_ID,
 )
 from typing import Dict
+
+
+def add_row_idx(df: pd.DataFrame, start: int = 0) -> pd.DataFrame:
+    """Add a stable, contiguous source-row index to a preMEDS chunk."""
+    df[ROW_INDEX] = range(start, start + len(df))
+    return df
 
 
 def check_columns(df: pd.DataFrame, columns_map: dict):
@@ -116,16 +123,13 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """Clean the data."""
     # Clean data
     if all(col in df.columns for col in MANDATORY_COLUMNS):
-        n_before = len(df)
         df = df.dropna(subset=MANDATORY_COLUMNS, how="any")
-        if len(df) < n_before:
-            print(f"Dropped {n_before - len(df)} rows with missing mandatory columns {MANDATORY_COLUMNS}")
+
+    # row_idx is always unique, so don't consider that column
+    columns_to_check = [col for col in df.columns if col != ROW_INDEX]
 
     # Remove duplicates
-    n_before = len(df)
-    df = df.drop_duplicates()
-    if len(df) < n_before:
-        print(f"Dropped {n_before - len(df)} duplicate rows")
+    df = df.drop_duplicates(columns_to_check)
 
     return df
 
@@ -146,3 +150,11 @@ def validate_subject_id(df: pd.DataFrame) -> None:
             f"{SUBJECT_ID} column must be of integer type\n\
                 Hint: Use the subject_id_mapping configuration to map string IDs to integers."
         )
+
+
+def remove_timezones(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert timezone-aware datetime columns to timezone-naive UTC."""
+    for col in df.select_dtypes(include=["datetimetz"]).columns:
+        df[col] = df[col].dt.tz_convert("UTC").dt.tz_localize(None)
+
+    return df

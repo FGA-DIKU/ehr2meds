@@ -1,0 +1,284 @@
+# @package _global_
+defaults:
+  - ../root_config@
+  - _self_
+
+logging:
+  level: INFO
+  path: ./outputs/logs
+
+env: local
+run_name: preMEDS_phair_light
+chunksize: 10_000_000
+
+test: false
+
+paths:
+  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/PHAIR_light
+  tables_dir: /storage/archive/UCPH/PHAIR/dhr/tables/parquet
+  #file_type: parquet
+
+write_file_type: parquet
+
+subject_id_mapping:
+  file: ${paths.tables_dir}/t_person.parquet
+  subject_id_col: v_pnr
+  mapping_id_col:
+
+tables:
+  t_psyk_diag:
+    filename: ${paths.tables_dir}/t_psyk_diag.parquet
+    columns:
+      v_recnum: record_number
+      c_diag:
+    mappings:
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_cpr
+        rename_to: subject_id
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
+        drop_source: true  
+  
+  t_sksopr:
+    filename: ${paths.tables_dir}/t_sksopr.parquet
+    columns:
+      v_recnum: record_number
+      c_opr:
+    mappings:
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_cpr
+        rename_to: subject_id
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
+        drop_source: true
+      
+  t_sksube:
+    filename: ${paths.tables_dir}/t_sksube.parquet
+    columns:
+      v_recnum: record_number
+      c_opr:
+    mappings:
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_cpr
+        rename_to: subject_id
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
+        drop_source: true
+
+  t_psyk_sksopr:
+    filename: ${paths.tables_dir}/t_psyk_sksopr.parquet
+    columns:
+      v_recnum: record_number
+      c_opr:
+    mappings:
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_cpr
+        rename_to: subject_id
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
+        drop_source: true
+
+  t_psyk_sksube:
+    filename: ${paths.tables_dir}/t_psyk_sksube.parquet
+    columns:
+      v_recnum: record_number
+      c_opr:
+    mappings:
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_cpr
+        rename_to: subject_id
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
+        drop_source: true
+  
+  procedurer_andre:
+    filename: ${paths.tables_dir}/procedurer_andre.parquet
+    columns:
+      dw_ek_kontakt: contact_id
+      procedurekode:
+    mappings:
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: cpr
+        rename_to: subject_id
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: dato_start
+        rename_to: date_start
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: tidspunkt_start
+        rename_to: time_start
+        drop_source: true
+
+  procedurer_kirurgi:
+    filename: ${paths.tables_dir}/procedurer_kirurgi.parquet
+    columns:
+      dw_ek_kontakt: contact_id
+      procedurekode:
+    mappings:
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: cpr
+        rename_to: subject_id
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: dato_start
+        rename_to: date_start
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: tidspunkt_start
+        rename_to: time_start
+        drop_source: true
+  
+  epikur:
+    filename: ${paths.tables_dir}/epikur.parquet
+    columns:
+      cpr: subject_id
+      eksd:
+      atc:
+
+  indberetningmedpris:
+    filename: ${paths.tables_dir}/indberetningmedpris.parquet
+    columns:
+      v_cpr: subject_id
+      d_ord_start:
+      c_atc:
+
+  t_diag:
+    filename: ${paths.tables_dir}/t_diag.parquet
+    columns:
+      v_recnum: record_number
+      c_diag:
+    mappings:
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_cpr
+        rename_to: subject_id
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
+        drop_source: true
+      
+  diagnoser:
+    filename: ${paths.tables_dir}/diagnoser.parquet
+    columns:
+      dw_ek_kontakt: contact_id
+      diagnosekode:
+    mappings:
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: cpr
+        rename_to: subject_id
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: dato_start
+        rename_to: date_start
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: tidspunkt_start
+        rename_to: time_start
+        drop_source: true
+
+  central_patient:
+    filename: ${paths.tables_dir}/t_person.parquet
+    columns:
+      v_pnr: subject_id
+      d_foddato: birthdate

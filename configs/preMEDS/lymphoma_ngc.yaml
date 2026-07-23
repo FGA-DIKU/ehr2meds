@@ -18,14 +18,9 @@ paths:
 
 write_file_type: parquet 
 
-subject_id_mapping:
-  file: ${paths.tables_dir}/CPMI_PatientInfo.parquet # Table to derive mapping from (can be None)
-  subject_id_col: patientid # Column to use as the subject_id mapping
-  mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
-
 tables:
   patients_info:
-    filename: ${paths.tables_dir}/CPMI_PatientInfo.parquet
+    filename: ${paths.tables_dir}/CPMI_PatientInfo_with_datetime.parquet
     columns:
       patientid: subject_id
       Fødselsdato: birthdate
@@ -128,10 +123,6 @@ tables:
       c_spec: 
       c_sgh: 
       k_recnum: contact_id
-    compose:
-      time_start:
-        columns: [v_indtime, v_indminut]
-        separator: ":"
     value_map:
       c_spec:
         "01": "intern medicin"
@@ -176,7 +167,7 @@ tables:
         "86": "arbejdsmedicin"
         "90": "almen medicin"
         "91": "samfundsmedicin"
-      c_indm: # map emergency vs planned visits to LPR3
+      priority: # map emergency vs planned visits to LPR3
         "1": "ATA1"
         "2": "ATA3"
       c_kontaars:
@@ -189,7 +180,7 @@ tables:
         "8": "ALCC90"
         "9": "ALCC90"
     mappings:
-    - source_column: hospital_code   
+    - source_column: c_sgh   
       via_file: ${paths.tables_dir}/shak_to_region.parquet # using resources
       join_on: kode
       target_column: region
@@ -211,10 +202,6 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
-    compose:
-      time_start:
-        columns: [v_otime, v_ominut]
-        separator: ":"
 
   SDS_t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
@@ -232,10 +219,6 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
-    compose:
-      time_start:
-        columns: [v_otime, v_ominut]
-        separator: ":"
 
   SDS_procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      

@@ -47,7 +47,6 @@ linked_data:
         file: Population
         linked_on: MOR_CPR
     save_info:
-      file_type: csv
       args:
         sep: "\t"
         encoding: "iso8859-1"

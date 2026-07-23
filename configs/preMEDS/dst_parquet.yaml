@@ -1,0 +1,29 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+
+chunksize: 500000
+
+paths:
+  tables_dir: ${oc.env:EHR2MEDS_DATA}/raw/DST_parquet/  
+  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/DST_parquet
+
+write_file_type: parquet
+subject_id_mapping:
+  file: ${paths.tables_dir}/LPR3_kontakter.parquet
+  subject_id_col: person_id
+  mapping_id_col: 
+
+tables:
+  LPR3_kontakter:
+    filename: ${paths.tables_dir}/LPR3_kontakter.parquet
+    columns:
+      person_id: subject_id
+      aktionsdiagnose: 
+      priority:
+      dato_start:
+      tidspunkt_start:
+      dato_slut:
+      tidspunkt_slut:
