@@ -72,12 +72,8 @@ def combine_numeric_metadata(
     groups: DictConfig,
 ) -> pl.DataFrame:
     """Overlay external transforms on local transforms, matching by code key."""
-    external_metadata = prepare_metadata(
-        external_metadata, key=key, columns=columns, groups=groups, label="external"
-    )
-    fitted_metadata = prepare_metadata(
-        fitted_metadata, key=key, columns=columns, groups=groups, label="fitted"
-    )
+    external_metadata = prepare_metadata(external_metadata, key=key, columns=columns, groups=groups, label="external")
+    fitted_metadata = prepare_metadata(fitted_metadata, key=key, columns=columns, groups=groups, label="fitted")
 
     # External rows come first, so they take precedence for matching codes.
     combined = pl.concat([external_metadata, fitted_metadata], how="vertical_relaxed")
@@ -146,10 +142,7 @@ def annotation_columns(
         "bin_index": bin_index.cast(pl.Int32),
         "binned": representative.cast(pl.Float32),
     }
-    return [
-        pl.when(usable).then(values_by_role[role]).alias(columns[role])
-        for role in groups.derived
-    ]
+    return [pl.when(usable).then(values_by_role[role]).alias(columns[role]) for role in groups.derived]
 
 
 def annotate_numeric_values(
