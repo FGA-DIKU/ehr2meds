@@ -10,8 +10,8 @@ from pathlib import Path
 DEFAULT_EVENT_COLUMNS = {"row_idx": "$row_idx"}
 
 
-def _read_config(path: Path) -> DictConfig:
-    """Read an event configuration and require a YAML mapping at its root."""
+def read_config(path: Path) -> DictConfig:
+    """Read an event configuration and require a YAML mapping."""
     if not path.is_file():
         raise FileNotFoundError(f"Event configuration does not exist: {path}")
 
@@ -21,7 +21,7 @@ def _read_config(path: Path) -> DictConfig:
     return config
 
 
-def _validate_event_columns(value: object) -> dict[str, str]:
+def validate_event_columns(value: object) -> dict[str, str]:
     """Return event columns as a plain mapping after validating the config."""
     if not isinstance(value, Mapping) or not all(
         isinstance(column, str) and isinstance(expression, str) for column, expression in value.items()
@@ -32,13 +32,13 @@ def _validate_event_columns(value: object) -> dict[str, str]:
     return dict(value)
 
 
-def _write_config(config: DictConfig, path: Path) -> None:
-    """Write readable YAML while preserving the original key order."""
+def write_config(config: DictConfig, path: Path) -> None:
+    """Write YAML with the original key order."""
     path.parent.mkdir(parents=True, exist_ok=True)
     OmegaConf.save(config, path, resolve=False)
 
 
-def _add_event_columns(config: DictConfig, columns: Mapping[str, str]) -> int:
+def add_event_columns(config: DictConfig, columns: Mapping[str, str]) -> int:
     """Add shared columns to every event and return the number of events found."""
     event_count = 0
 
@@ -73,17 +73,16 @@ def augment_event_config(
     """Add shared output columns to every event definition.
 
     Event blocks are identified by the presence of ``code``. This skips
-    structural blocks such as ``subject_id_col``, ``transforms``, and ``join``.
-    Existing identical declarations are accepted; conflicts raise an error.
+    structural blocks (i.e., ``subject_id_col``, ``transforms``,``join``).
     """
-    columns = _validate_event_columns(event_columns)
-    config = _read_config(src_fp)
+    columns = validate_event_columns(event_columns)
+    config = read_config(src_fp)
 
-    event_count = _add_event_columns(config, columns)
+    event_count = add_event_columns(config, columns)
     if event_count == 0:
         raise ValueError(f"Event configuration contains no event definitions: {src_fp}")
 
-    _write_config(config, out_fp)
+    write_config(config, out_fp)
     return out_fp
 
 

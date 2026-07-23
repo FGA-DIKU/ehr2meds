@@ -66,12 +66,12 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: dato_slut      
+        target_column: dato_slut
         rename_to: date_end
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: tidspunkt_slut      
+        target_column: tidspunkt_slut
         rename_to: time_end
         drop_source: true
 
@@ -91,8 +91,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
-        target_column: d_uddto 
-        rename_to: timestamp
+        target_column: d_uddto
+        rename_to: date_end
         drop_source: true
 
   SDS_kontakter:
@@ -101,6 +101,8 @@ tables:
       patientid: subject_id
       dato_start: date_start
       tidspunkt_start: time_start
+      dato_slut: date_end
+      tidspunkt_slut: time_end
       aktionsdiagnose:
       kontaktaarsag: 
       prioritet: 
@@ -114,6 +116,7 @@ tables:
     columns:
       patientid: subject_id
       d_inddto: date_start
+      d_uddto: date_end
       v_indtime: 
       v_indminut: 
       c_adiag:
@@ -211,7 +214,7 @@ tables:
       v_otime: 
       v_ominut: 
       c_opr:
-      c_oprart:  # TODO: Currently not in use
+      c_oprart:
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -242,7 +245,7 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       procedurekode:
-      proceduretype: # TODO: Currently not in use
+      proceduretype:
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -275,4 +278,4 @@ tables:
       samplingdate: 
       samplingtime: 
       analysiscode:
-      samplevalue: 
+      samplevalue:

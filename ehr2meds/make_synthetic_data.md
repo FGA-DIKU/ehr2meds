@@ -38,12 +38,6 @@ python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP
 
 Adjust `--config-name` if you use a different PREMEDS profile.
 
-Optionally you can also normalise the data after converting to preMEDS, using 
-```bash
-python ehr2meds/normalize_premeds.py --config-name preMEDS/normalize     
-```
----
-
 ### 3. PREMEDS → MEDS
 
 Invoke the MEDS transform shell script with four arguments: PREMEDS input directory, pipeline config, event conversion config, and MEDS output directory. Optional fifth argument: `do_unzip=true` or `do_unzip=false` for `.csv.gz` inputs.
