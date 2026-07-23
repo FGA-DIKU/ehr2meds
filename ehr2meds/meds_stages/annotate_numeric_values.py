@@ -51,9 +51,7 @@ def prepare_metadata(
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
 
     missing_bounds = [column for column in bound_columns if column not in metadata.columns]
-    metadata = metadata.with_columns(
-        [pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds]
-    )
+    metadata = metadata.with_columns([pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds])
     return metadata.select(key + transform_columns + bound_columns)
 
 
@@ -118,41 +116,6 @@ def calculate_bin_index(normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
     )
 
 
-def annotation_columns(
-    derived_roles: list[str],
-    normalized_column: str,
-    bin_index_column: str,
-    binned_column: str,
-    value: pl.Expr,
-    hard_minimum: pl.Expr,
-    hard_maximum: pl.Expr,
-    lower_bound: pl.Expr,
-    upper_bound: pl.Expr,
-    bin_edges: pl.Expr,
-    bin_representatives: pl.Expr,
-) -> list[pl.Expr]:
-    """Build the three numeric columns added to each event."""
-    usable = is_usable(
-        value=value,
-        hard_minimum=hard_minimum,
-        hard_maximum=hard_maximum,
-        lower_bound=lower_bound,
-    )
-    normalized = normalize(value=value, lower_bound=lower_bound, upper_bound=upper_bound)
-    bin_index = calculate_bin_index(normalized=normalized, edges=bin_edges)
-    representative = bin_representatives.list.get(bin_index, null_on_oob=True)
-
-    values_by_role = {
-        "normalized": (normalized.cast(pl.Float32), normalized_column),
-        "bin_index": (bin_index.cast(pl.Int32), bin_index_column),
-        "binned": (representative.cast(pl.Float32), binned_column),
-    }
-    return [
-        pl.when(usable).then(values_by_role[role][0]).alias(values_by_role[role][1])
-        for role in derived_roles
-    ]
-
-
 def annotate_numeric_values(
     data: pl.LazyFrame,
     metadata: pl.DataFrame,
@@ -182,19 +145,35 @@ def annotate_numeric_values(
         bound_columns=bound_columns,
     ).lazy()
     annotated = data.join(transforms, on=key, how="left")
-    derived_columns = annotation_columns(
-        derived_roles=derived_roles,
-        normalized_column=normalized_column,
-        bin_index_column=bin_index_column,
-        binned_column=binned_column,
-        value=pl.col(DataSchema.numeric_value_name),
-        hard_minimum=pl.col(hard_minimum_column) if hard_minimum_column in bound_columns else pl.lit(None),
-        hard_maximum=pl.col(hard_maximum_column) if hard_maximum_column in bound_columns else pl.lit(None),
-        lower_bound=pl.col(lower_bound_column),
-        upper_bound=pl.col(upper_bound_column),
-        bin_edges=pl.col(bin_edges_column),
-        bin_representatives=pl.col(bin_representatives_column),
+
+    value = pl.col(DataSchema.numeric_value_name)
+    lower_bound = pl.col(lower_bound_column)
+    upper_bound = pl.col(upper_bound_column)
+    hard_minimum = pl.col(hard_minimum_column) if hard_minimum_column in bound_columns else pl.lit(None)
+    hard_maximum = pl.col(hard_maximum_column) if hard_maximum_column in bound_columns else pl.lit(None)
+
+    usable = is_usable(
+        value=value,
+        hard_minimum=hard_minimum,
+        hard_maximum=hard_maximum,
+        lower_bound=lower_bound,
     )
+    normalized = normalize(value=value, lower_bound=lower_bound, upper_bound=upper_bound)
+    bin_index = calculate_bin_index(normalized=normalized, edges=pl.col(bin_edges_column))
+    binned = pl.col(bin_representatives_column).list.get(bin_index, null_on_oob=True)
+
+    derived_values = {
+        "normalized": normalized.cast(pl.Float32),
+        "bin_index": bin_index.cast(pl.Int32),
+        "binned": binned.cast(pl.Float32),
+    }
+    derived_names = {
+        "normalized": normalized_column,
+        "bin_index": bin_index_column,
+        "binned": binned_column,
+    }
+    derived_columns = [pl.when(usable).then(derived_values[role]).alias(derived_names[role]) for role in derived_roles]
+
     annotated = annotated.with_columns(derived_columns)
     return annotated.drop(transform_columns + bound_columns)
 

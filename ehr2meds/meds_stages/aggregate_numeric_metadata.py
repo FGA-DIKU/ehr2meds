@@ -185,8 +185,9 @@ def fit_numeric_metadata(
     for frame in frames:
         for row in frame.iter_rows(named=True):
             group = tuple(row[column] for column in key)
-            finite_values = (float(value) for value in row[training_values_column] if value is not None)
-            values_by_key.setdefault(group, []).extend(value for value in finite_values if math.isfinite(value))
+            values = [float(value) for value in row[training_values_column] if value is not None]
+            finite_values = [value for value in values if math.isfinite(value)]
+            values_by_key.setdefault(group, []).extend(finite_values)
 
     def group_sort_key(group: tuple) -> tuple[str, ...]:
         return tuple("" if value is None else str(value) for value in group)
