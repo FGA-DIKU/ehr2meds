@@ -11,11 +11,6 @@ from omegaconf import DictConfig
 from pathlib import Path
 
 
-def column_names(columns: DictConfig, roles: list[str]) -> list[str]:
-    """Resolve configured column roles to their concrete names."""
-    return [columns[role] for role in roles]
-
-
 def find_bin(row: dict[str, object]) -> int | None:
     """Return the right-sided insertion index of a value in its bin edges."""
     edges = row["edges"]
@@ -47,13 +42,11 @@ def prepare_metadata(
     metadata: pl.DataFrame,
     *,
     key: list[str],
-    columns: DictConfig,
-    groups: DictConfig,
+    transform_columns: list[str],
+    bound_columns: list[str],
     label: str = "numeric",
 ) -> pl.DataFrame:
     """Validate and select the metadata required for annotation."""
-    transform_columns = column_names(columns, groups.transform)
-    bound_columns = column_names(columns, groups.bounds)
     missing = set([*key, *transform_columns]) - set(metadata.columns)
     if missing:
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
@@ -68,12 +61,24 @@ def combine_numeric_metadata(
     external_metadata: pl.DataFrame,
     *,
     key: list[str],
-    columns: DictConfig,
-    groups: DictConfig,
+    transform_columns: list[str],
+    bound_columns: list[str],
 ) -> pl.DataFrame:
     """Overlay external transforms on local transforms, matching by code key."""
-    external_metadata = prepare_metadata(external_metadata, key=key, columns=columns, groups=groups, label="external")
-    fitted_metadata = prepare_metadata(fitted_metadata, key=key, columns=columns, groups=groups, label="fitted")
+    external_metadata = prepare_metadata(
+        external_metadata,
+        key=key,
+        transform_columns=transform_columns,
+        bound_columns=bound_columns,
+        label="external",
+    )
+    fitted_metadata = prepare_metadata(
+        fitted_metadata,
+        key=key,
+        transform_columns=transform_columns,
+        bound_columns=bound_columns,
+        label="fitted",
+    )
 
     # External rows come first, so they take precedence for matching codes.
     combined = pl.concat([external_metadata, fitted_metadata], how="vertical_relaxed")
@@ -116,8 +121,10 @@ def calculate_bin_index(*, normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
 
 def annotation_columns(
     *,
-    columns: DictConfig,
-    groups: DictConfig,
+    derived_roles: list[str],
+    normalized_column: str,
+    bin_index_column: str,
+    binned_column: str,
     value: pl.Expr,
     hard_minimum: pl.Expr,
     hard_maximum: pl.Expr,
@@ -138,11 +145,14 @@ def annotation_columns(
     representative = bin_representatives.list.get(bin_index, null_on_oob=True)
 
     values_by_role = {
-        "normalized": normalized.cast(pl.Float32),
-        "bin_index": bin_index.cast(pl.Int32),
-        "binned": representative.cast(pl.Float32),
+        "normalized": (normalized.cast(pl.Float32), normalized_column),
+        "bin_index": (bin_index.cast(pl.Int32), bin_index_column),
+        "binned": (representative.cast(pl.Float32), binned_column),
     }
-    return [pl.when(usable).then(values_by_role[role]).alias(columns[role]) for role in groups.derived]
+    return [
+        pl.when(usable).then(values_by_role[role][0]).alias(values_by_role[role][1])
+        for role in derived_roles
+    ]
 
 
 def annotate_numeric_values(
@@ -150,29 +160,43 @@ def annotate_numeric_values(
     metadata: pl.DataFrame,
     *,
     key: list[str],
-    columns: DictConfig,
-    groups: DictConfig,
+    transform_columns: list[str],
+    bound_columns: list[str],
+    derived_roles: list[str],
+    lower_bound_column: str,
+    upper_bound_column: str,
+    bin_edges_column: str,
+    bin_representatives_column: str,
+    hard_minimum_column: str,
+    hard_maximum_column: str,
+    normalized_column: str,
+    bin_index_column: str,
+    binned_column: str,
 ) -> pl.LazyFrame:
     """Apply frozen transforms while preserving the original event columns.
 
     Numeric rows for unseen concepts and nonnumeric rows receive null derived
     values. The base ``code`` and ``numeric_value`` are never changed.
     """
-    transform_columns = column_names(columns, groups.transform)
-    bound_columns = column_names(columns, groups.bounds)
-    bound_roles = set(groups.bounds)
-    transforms = prepare_metadata(metadata, key=key, columns=columns, groups=groups).lazy()
+    transforms = prepare_metadata(
+        metadata,
+        key=key,
+        transform_columns=transform_columns,
+        bound_columns=bound_columns,
+    ).lazy()
     annotated = data.join(transforms, on=key, how="left")
     derived_columns = annotation_columns(
-        columns=columns,
-        groups=groups,
+        derived_roles=derived_roles,
+        normalized_column=normalized_column,
+        bin_index_column=bin_index_column,
+        binned_column=binned_column,
         value=pl.col(DataSchema.numeric_value_name),
-        hard_minimum=pl.col(columns.hard_minimum) if "hard_minimum" in bound_roles else pl.lit(None),
-        hard_maximum=pl.col(columns.hard_maximum) if "hard_maximum" in bound_roles else pl.lit(None),
-        lower_bound=pl.col(columns.lower_bound),
-        upper_bound=pl.col(columns.upper_bound),
-        bin_edges=pl.col(columns.bin_edges),
-        bin_representatives=pl.col(columns.bin_representatives),
+        hard_minimum=pl.col(hard_minimum_column) if hard_minimum_column in bound_columns else pl.lit(None),
+        hard_maximum=pl.col(hard_maximum_column) if hard_maximum_column in bound_columns else pl.lit(None),
+        lower_bound=pl.col(lower_bound_column),
+        upper_bound=pl.col(upper_bound_column),
+        bin_edges=pl.col(bin_edges_column),
+        bin_representatives=pl.col(bin_representatives_column),
     )
     annotated = annotated.with_columns(derived_columns)
     return annotated.drop(*transform_columns, *bound_columns)
@@ -195,6 +219,9 @@ def annotate_numeric_values_fntr(
     key = [CodeMetadataSchema.code_name, *(code_modifiers or [])]
     columns = stage_cfg.numeric_value_columns
     groups = stage_cfg.numeric_value_column_groups
+    transform_columns = [columns[role] for role in groups.transform]
+    bound_columns = [columns[role] for role in groups.bounds]
+    derived_roles = list(groups.derived)
     metadata = code_metadata
     external_filepath = stage_cfg.get("numeric_metadata_filepath")
     if external_filepath:
@@ -203,8 +230,8 @@ def annotate_numeric_values_fntr(
             code_metadata,
             external_metadata,
             key=key,
-            columns=columns,
-            groups=groups,
+            transform_columns=transform_columns,
+            bound_columns=bound_columns,
         )
 
     def annotate(df: pl.LazyFrame) -> pl.LazyFrame:
@@ -212,8 +239,18 @@ def annotate_numeric_values_fntr(
             df,
             metadata,
             key=key,
-            columns=columns,
-            groups=groups,
+            transform_columns=transform_columns,
+            bound_columns=bound_columns,
+            derived_roles=derived_roles,
+            lower_bound_column=columns.lower_bound,
+            upper_bound_column=columns.upper_bound,
+            bin_edges_column=columns.bin_edges,
+            bin_representatives_column=columns.bin_representatives,
+            hard_minimum_column=columns.hard_minimum,
+            hard_maximum_column=columns.hard_maximum,
+            normalized_column=columns.normalized,
+            bin_index_column=columns.bin_index,
+            binned_column=columns.binned,
         )
 
     return annotate

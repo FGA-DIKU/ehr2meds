@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import polars as pl
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import datetime
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
@@ -18,9 +18,13 @@ def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, estimated))
 
 
-def read_value_bounds(stage_cfg: DictConfig, columns: DictConfig) -> pl.DataFrame | None:
+def read_value_bounds(
+    configured_bounds: Mapping[str, Mapping[str, float | None]] | None,
+    *,
+    hard_minimum_column: str,
+    hard_maximum_column: str,
+) -> pl.DataFrame | None:
     """Validate optional per-code hard bounds and return them as a table."""
-    configured_bounds = stage_cfg.get("numeric_value_bounds")
     if not configured_bounds:
         return None
 
@@ -43,8 +47,8 @@ def read_value_bounds(stage_cfg: DictConfig, columns: DictConfig) -> pl.DataFram
         rows.append(
             {
                 DataSchema.code_name: str(code),
-                columns.hard_minimum: minimum,
-                columns.hard_maximum: maximum,
+                hard_minimum_column: minimum,
+                hard_maximum_column: maximum,
             }
         )
 
@@ -52,8 +56,8 @@ def read_value_bounds(stage_cfg: DictConfig, columns: DictConfig) -> pl.DataFram
         rows,
         schema={
             DataSchema.code_name: pl.String,
-            columns.hard_minimum: pl.Float64,
-            columns.hard_maximum: pl.Float64,
+            hard_minimum_column: pl.Float64,
+            hard_maximum_column: pl.Float64,
         },
     )
 
@@ -61,7 +65,9 @@ def read_value_bounds(stage_cfg: DictConfig, columns: DictConfig) -> pl.DataFram
 def keep_values_within_bounds(
     df: pl.LazyFrame,
     bounds: pl.DataFrame | None,
-    columns: DictConfig,
+    *,
+    hard_minimum_column: str,
+    hard_maximum_column: str,
 ) -> pl.LazyFrame:
     """Keep finite values and, where configured, values within hard bounds."""
     value = pl.col(DataSchema.numeric_value_name)
@@ -70,23 +76,22 @@ def keep_values_within_bounds(
     if bounds is None:
         return df
 
-    hard_minimum = pl.col(columns.hard_minimum)
-    hard_maximum = pl.col(columns.hard_maximum)
+    hard_minimum = pl.col(hard_minimum_column)
+    hard_maximum = pl.col(hard_maximum_column)
     above_minimum = hard_minimum.is_null() | (value >= hard_minimum)
     below_maximum = hard_maximum.is_null() | (value <= hard_maximum)
 
     df = df.join(bounds.lazy(), on=DataSchema.code_name, how="left")
     df = df.filter(above_minimum & below_maximum)
-    return df.drop(columns.hard_minimum, columns.hard_maximum)
+    return df.drop(hard_minimum_column, hard_maximum_column)
 
 
-def event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
+def event_time_filter(configured_cutoff: str | None) -> pl.Expr | None:
     """Restrict fitting to events before an optional calendar date.
 
     The cutoff is the first excluded date. Null event times cannot be shown to
     precede it, so they are also excluded whenever a cutoff is configured.
     """
-    configured_cutoff = stage_cfg.get("event_time_cutoff")
     if configured_cutoff is None:
         return None
 
@@ -101,7 +106,10 @@ def event_time_filter(stage_cfg: DictConfig) -> pl.Expr | None:
 def fit_transform(
     values: list[float],
     *,
-    columns: DictConfig,
+    lower_bound_column: str,
+    upper_bound_column: str,
+    bin_edges_column: str,
+    bin_representatives_column: str,
     min_bins: int,
     max_bins: int,
     lower_quantile: float,
@@ -124,10 +132,10 @@ def fit_transform(
         representatives = [(left + right) / 2 for left, right in zip(boundaries, boundaries[1:])]
 
     return {
-        columns.lower_bound: lower,
-        columns.upper_bound: upper,
-        columns.bin_edges: edges,
-        columns.bin_representatives: representatives,
+        lower_bound_column: lower,
+        upper_bound_column: upper,
+        bin_edges_column: edges,
+        bin_representatives_column: representatives,
     }
 
 
@@ -135,14 +143,23 @@ def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) 
     """Collect eligible values (``train_only`` selects the input shards)."""
     key = [DataSchema.code_name, *(code_modifiers or [])]
     columns = stage_cfg.numeric_value_columns
-    bounds = read_value_bounds(stage_cfg, columns)
-    time_filter = event_time_filter(stage_cfg)
+    bounds = read_value_bounds(
+        stage_cfg.get("numeric_value_bounds"),
+        hard_minimum_column=columns.hard_minimum,
+        hard_maximum_column=columns.hard_maximum,
+    )
+    time_filter = event_time_filter(stage_cfg.get("event_time_cutoff"))
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
         if time_filter is not None:
             df = df.filter(time_filter)
 
-        df = keep_values_within_bounds(df, bounds, columns)
+        df = keep_values_within_bounds(
+            df,
+            bounds,
+            hard_minimum_column=columns.hard_minimum,
+            hard_maximum_column=columns.hard_maximum,
+        )
         values = pl.col(DataSchema.numeric_value_name).cast(pl.Float64).alias(columns.training_values)
         return df.group_by(key).agg(values).sort(key)
 
@@ -152,7 +169,11 @@ def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) 
 def fit_numeric_metadata(
     *dfs: pl.DataFrame | pl.LazyFrame,
     key: list[str],
-    columns: DictConfig,
+    training_values_column: str,
+    lower_bound_column: str,
+    upper_bound_column: str,
+    bin_edges_column: str,
+    bin_representatives_column: str,
     min_bins: int,
     max_bins: int,
     lower_quantile: float,
@@ -167,7 +188,7 @@ def fit_numeric_metadata(
     for frame in frames:
         for row in frame.iter_rows(named=True):
             group = tuple(row[column] for column in key)
-            finite_values = (float(value) for value in row[columns.training_values] if value is not None)
+            finite_values = (float(value) for value in row[training_values_column] if value is not None)
             values_by_key.setdefault(group, []).extend(value for value in finite_values if math.isfinite(value))
 
     def group_sort_key(group: tuple) -> tuple[str, ...]:
@@ -178,7 +199,10 @@ def fit_numeric_metadata(
         record = dict(zip(key, group, strict=True))
         transform = fit_transform(
             values_by_key[group],
-            columns=columns,
+            lower_bound_column=lower_bound_column,
+            upper_bound_column=upper_bound_column,
+            bin_edges_column=bin_edges_column,
+            bin_representatives_column=bin_representatives_column,
             min_bins=min_bins,
             max_bins=max_bins,
             lower_quantile=lower_quantile,
@@ -201,7 +225,11 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
         raise ValueError("bin bounds must satisfy 1 <= min_bins <= max_bins")
     if not 0 <= lower_quantile < upper_quantile <= 1:
         raise ValueError("quantiles must satisfy 0 <= lower < upper <= 1")
-    bounds = read_value_bounds(stage_cfg, columns)
+    bounds = read_value_bounds(
+        stage_cfg.get("numeric_value_bounds"),
+        hard_minimum_column=columns.hard_minimum,
+        hard_maximum_column=columns.hard_maximum,
+    )
     configured_output = stage_cfg.get("numeric_metadata_output_filepath")
     if configured_output:
         output_filepath = Path(str(configured_output))
@@ -212,7 +240,11 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
         metadata = fit_numeric_metadata(
             *dfs,
             key=key,
-            columns=columns,
+            training_values_column=columns.training_values,
+            lower_bound_column=columns.lower_bound,
+            upper_bound_column=columns.upper_bound,
+            bin_edges_column=columns.bin_edges,
+            bin_representatives_column=columns.bin_representatives,
             min_bins=min_bins,
             max_bins=max_bins,
             lower_quantile=lower_quantile,
