@@ -3,3 +3,5 @@ hydra:
   output_subdir: hydra
   run:
     dir: ${oc.env:EHR2MEDS_DATA}/${hydra:job.config_name}
+
+num_workers: 2
