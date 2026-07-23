@@ -182,7 +182,6 @@ tables:
         join_on: K_RECNUM
         target_column: D_UDDTO
         rename_to: 
-        drop_source: true
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS/registers_pseudonymized/t_adm.csv
         join_on: K_RECNUM
