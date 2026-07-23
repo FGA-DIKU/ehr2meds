@@ -20,7 +20,6 @@ def calculate_bin_count(n_unique: int, minimum: int, maximum: int) -> int:
 
 def read_value_bounds(
     configured_bounds: Mapping[str, Mapping[str, float | None]] | None,
-    *,
     hard_minimum_column: str,
     hard_maximum_column: str,
 ) -> pl.DataFrame | None:
@@ -65,7 +64,6 @@ def read_value_bounds(
 def keep_values_within_bounds(
     df: pl.LazyFrame,
     bounds: pl.DataFrame | None,
-    *,
     hard_minimum_column: str,
     hard_maximum_column: str,
 ) -> pl.LazyFrame:
@@ -105,7 +103,6 @@ def event_time_filter(configured_cutoff: str | None) -> pl.Expr | None:
 
 def fit_transform(
     values: list[float],
-    *,
     lower_bound_column: str,
     upper_bound_column: str,
     bin_edges_column: str,
@@ -128,7 +125,7 @@ def fit_transform(
         normalized = (series.clip(lower, upper) - lower) / (upper - lower)
         quantile_edges = [float(normalized.quantile(index / n_bins, interpolation="linear")) for index in range(1, n_bins)]
         edges = sorted(set(quantile_edges))
-        boundaries = [0.0, *edges, 1.0]
+        boundaries = [0.0] + edges + [1.0]
         representatives = [(left + right) / 2 for left, right in zip(boundaries, boundaries[1:])]
 
     return {
@@ -141,7 +138,7 @@ def fit_transform(
 
 def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Collect eligible values (``train_only`` selects the input shards)."""
-    key = [DataSchema.code_name, *(code_modifiers or [])]
+    key = [DataSchema.code_name] + list(code_modifiers or [])
     columns = stage_cfg.numeric_value_columns
     bounds = read_value_bounds(
         stage_cfg.get("numeric_value_bounds"),
@@ -215,7 +212,7 @@ def fit_numeric_metadata(
 
 def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[..., pl.DataFrame]:
     """Build the global metadata reducer."""
-    key = [DataSchema.code_name, *(code_modifiers or [])]
+    key = [DataSchema.code_name] + list(code_modifiers or [])
     columns = stage_cfg.numeric_value_columns
     min_bins = int(stage_cfg.min_bins)
     max_bins = int(stage_cfg.max_bins)

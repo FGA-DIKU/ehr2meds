@@ -10,7 +10,7 @@ from omegaconf import DictConfig
 from pathlib import Path
 
 
-def join_numeric_bins(data: pl.LazyFrame, *, bin_column: str, separator: str) -> pl.LazyFrame:
+def join_numeric_bins(data: pl.LazyFrame, bin_column: str, separator: str) -> pl.LazyFrame:
     """Rewrite binned codes as ``<code><separator><bin>``.
 
     Rows without a valid numeric bin retain their original code. All other

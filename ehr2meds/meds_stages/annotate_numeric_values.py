@@ -40,26 +40,26 @@ def load_external_metadata(filepath: str) -> pl.DataFrame:
 
 def prepare_metadata(
     metadata: pl.DataFrame,
-    *,
     key: list[str],
     transform_columns: list[str],
     bound_columns: list[str],
     label: str = "numeric",
 ) -> pl.DataFrame:
     """Validate and select the metadata required for annotation."""
-    missing = set([*key, *transform_columns]) - set(metadata.columns)
+    missing = set(key + transform_columns) - set(metadata.columns)
     if missing:
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
 
     missing_bounds = [column for column in bound_columns if column not in metadata.columns]
-    metadata = metadata.with_columns(*(pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds))
-    return metadata.select(*key, *transform_columns, *bound_columns)
+    metadata = metadata.with_columns(
+        [pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds]
+    )
+    return metadata.select(key + transform_columns + bound_columns)
 
 
 def combine_numeric_metadata(
     fitted_metadata: pl.DataFrame,
     external_metadata: pl.DataFrame,
-    *,
     key: list[str],
     transform_columns: list[str],
     bound_columns: list[str],
@@ -87,7 +87,6 @@ def combine_numeric_metadata(
 
 
 def is_usable(
-    *,
     value: pl.Expr,
     hard_minimum: pl.Expr,
     hard_maximum: pl.Expr,
@@ -101,14 +100,14 @@ def is_usable(
     return is_finite & above_minimum & below_maximum & has_transform
 
 
-def normalize(*, value: pl.Expr, lower_bound: pl.Expr, upper_bound: pl.Expr) -> pl.Expr:
+def normalize(value: pl.Expr, lower_bound: pl.Expr, upper_bound: pl.Expr) -> pl.Expr:
     """Clip to fitted percentiles and normalize to the interval [0, 1]."""
     clipped = value.clip(lower_bound, upper_bound)
     normalized = (clipped - lower_bound) / (upper_bound - lower_bound)
     return pl.when(upper_bound <= lower_bound).then(0.0).otherwise(normalized)
 
 
-def calculate_bin_index(*, normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
+def calculate_bin_index(normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
     """Find each normalized value's right-sided quantile bin."""
     # Polars cannot reference the row's normalized scalar inside list.eval.
     # The edge lists are small and bounded, so a row-local struct is clear and safe.
@@ -120,7 +119,6 @@ def calculate_bin_index(*, normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
 
 
 def annotation_columns(
-    *,
     derived_roles: list[str],
     normalized_column: str,
     bin_index_column: str,
@@ -158,7 +156,6 @@ def annotation_columns(
 def annotate_numeric_values(
     data: pl.LazyFrame,
     metadata: pl.DataFrame,
-    *,
     key: list[str],
     transform_columns: list[str],
     bound_columns: list[str],
@@ -199,7 +196,7 @@ def annotate_numeric_values(
         bin_representatives=pl.col(bin_representatives_column),
     )
     annotated = annotated.with_columns(derived_columns)
-    return annotated.drop(*transform_columns, *bound_columns)
+    return annotated.drop(transform_columns + bound_columns)
 
 
 @Stage.register(
@@ -216,7 +213,7 @@ def annotate_numeric_values_fntr(
     another dataset's ``metadata/codes.parquet``, or its ``metadata`` directory.
     External transforms override locally fitted transforms for matching keys.
     """
-    key = [CodeMetadataSchema.code_name, *(code_modifiers or [])]
+    key = [CodeMetadataSchema.code_name] + list(code_modifiers or [])
     columns = stage_cfg.numeric_value_columns
     groups = stage_cfg.numeric_value_column_groups
     transform_columns = [columns[role] for role in groups.transform]
