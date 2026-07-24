@@ -20,7 +20,7 @@ Uses `ehr2meds/generate_synthetic_raw_data.py`. YAML configs live under `configs
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1 N=100 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2 N=100 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3 N=100 &&
-python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/dst &&
+python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/dst_parquet &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/skin_cancer
 
 ```
