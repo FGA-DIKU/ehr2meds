@@ -1,0 +1,54 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+paths:
+  output: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population
+
+N: 1000
+
+# Shared unique patient IDs, then separate output tables in order.
+# Later tables can condition on earlier columns with ``by`` (e.g. lab_value by diagnostic_label).
+correlated_data:
+  correlated_lab_cohort:
+    N: ${N}
+    linked_columns:
+      CPR:
+        type: choice_unique
+        file: Population
+        linked_on: MOR_CPR
+    tables:
+      synthetic_diagnostic_data:
+        columns:
+          diagnostic_label:
+            type: choice
+            args:
+              options: ["Positive", "Negative"]
+          timestamp:
+            type: rand_datetime
+            args:
+              start: 2023
+              end: 2023
+      synthetic_lab_data:
+        repeat: 10
+        columns:
+          lab_name:
+            type: choice
+            args:
+              options: ["LAB_TEST_1"]
+          lab_value:
+            type: gaussian_distribution
+            by: diagnostic_label
+            args:
+              Positive:
+                mean: 35
+                std: 10
+              Negative:
+                mean: 65
+                std: 10
+          timestamp:
+            type: rand_datetime
+            args:
+              start: 2020
+              end: 2022

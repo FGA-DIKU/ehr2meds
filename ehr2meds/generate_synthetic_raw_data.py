@@ -28,9 +28,15 @@ def generate_rows(table_cfg, row, row_index, generators_dict, corruptors_dict):
             raise ValueError(f"Unknown generation function type: {col_cfg['type']}")
         func = generators_dict[col_cfg["type"]]
 
-        col_args = col_cfg.get("args", {}).copy()
+        col_args = col_cfg.get("args", {})
+        if OmegaConf.is_config(col_args):
+            col_args = OmegaConf.to_container(col_args, resolve=True)
+        else:
+            col_args = dict(col_args)
+        if "by" in col_cfg:
+            col_args = col_args[row[col_cfg["by"]]]
         if col_cfg["type"] == "mix_function":
-            col_args = handle_mix_function(OmegaConf.to_container(col_args), generators_dict)
+            col_args = handle_mix_function(col_args, generators_dict)
 
         # Handle dependencies between columns using the "match" key
         if "match" in col_cfg:
@@ -116,6 +122,37 @@ def save_df(df, output_dir, table_name, ext, saving_cfg):
         )
 
 
+def generate_correlated_cohort(cohort_cfg, generators_dict, corruptors_dict, output_dir):
+    """Generate separate tables that share unique linked IDs and ordered conditioning."""
+    linked_names = list(cohort_cfg["linked_columns"].keys())
+    table_rows = {name: [] for name in cohort_cfg["tables"]}
+    unused_idxs = None
+
+    for i in range(cohort_cfg["N"]):
+        context = {}
+        context, unused_idxs = generate_linked_columns(
+            cohort_cfg, context, output_dir, unused_idxs=unused_idxs
+        )
+        linked_values = {name: context[name] for name in linked_names}
+
+        for table_name, table_spec in cohort_cfg["tables"].items():
+            for child_idx in range(int(table_spec.get("repeat", 1))):
+                row = generate_rows(
+                    table_spec,
+                    dict(context),
+                    i * 1000 + child_idx,
+                    generators_dict,
+                    corruptors_dict,
+                )
+                generated = {column: row[column] for column in table_spec["columns"]}
+                generated = generate_corruptions(table_spec, generated, i, corruptors_dict)
+                table_rows[table_name].append({**linked_values, **generated})
+                if child_idx == 0:
+                    context.update(generated)
+
+    return table_rows
+
+
 def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
     # Iterate through each file and its corresponding configuration
     for table_name, table_cfg in cfg.get("data", {}).items():
@@ -142,6 +179,20 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
         df = pd.DataFrame(rows).convert_dtypes()
         save_df(df, output_dir, table_name, ext=cfg.get("save_file_type", "csv"), saving_cfg=table_cfg.get("save_info", {}))
 
+    for _, cohort_cfg in cfg.get("correlated_data", {}).items():
+        table_rows = generate_correlated_cohort(
+            cohort_cfg, generators_dict, corruptors_dict, output_dir
+        )
+        for table_name, rows in table_rows.items():
+            df = pd.DataFrame(rows).convert_dtypes()
+            save_df(
+                df,
+                output_dir,
+                table_name,
+                ext=cfg.get("save_file_type", "csv"),
+                saving_cfg=cohort_cfg.get("save_info", {}),
+            )
+
 
 @hydra.main(
     config_path=get_config_path(),
@@ -150,6 +201,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
 )
 def main(cfg: DictConfig) -> None:
     random.seed(0)
+    generators.np.random.seed(0)
     output_dir = Path(cfg.paths.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 

@@ -89,6 +89,10 @@ def choice(options):
     return random.choice(options)
 
 
+def gaussian_distribution(mean=0.0, std=1.0):
+    return float(np.random.normal(loc=mean, scale=std))
+
+
 def greater_than_date(min_date, end=2020):
     delta = date(end, 12, 31) - min_date
     random_days = random.randint(0, delta.days)
