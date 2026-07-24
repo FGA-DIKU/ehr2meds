@@ -24,6 +24,8 @@ def process_single_table_worker(args):
         )
         processor = Processor()
 
+        next_row_idx = 0
+
         for chunk in tqdm(
             data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
             desc=f"Chunks {table_name}",
@@ -35,7 +37,10 @@ def process_single_table_worker(args):
                 table_config,
                 data_handler,
                 subject_id_mapping,
+                row_index_start=next_row_idx,
             )
+
+            next_row_idx += len(chunk)
 
             data_handler.save(processed_chunk, table_name)
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
@@ -115,32 +120,3 @@ class PREMEDSExtractor:
         with Pool(processes=self.cfg.num_workers) as pool:
             # map will block until all tables are processed and raise exceptions if any fail
             pool.map(process_single_table_worker, worker_tasks)
-
-    def process_table_chunks(
-        self,
-        table_name: str,
-        table_config: dict,
-        subject_id_mapping: Optional[Dict[str, int]] = None,
-    ) -> None:
-        # Chunks are yielded in source-file order. Advancing by the number of
-        # input rows makes row_idx independent of rows removed during processing.
-        next_row_idx = 0
-        for chunk in tqdm(
-            self.data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
-            desc=f"Chunks {table_name}",
-        ):
-            input_row_count = len(chunk)
-            processed_chunk = self.processor.process(
-                chunk,
-                table_config,
-                self.data_handler,
-                subject_id_mapping,
-                row_index_start=next_row_idx,
-            )
-
-            next_row_idx += input_row_count
-
-            self.data_handler.save(processed_chunk, table_name)
-
-            if self.cfg.get("test"):
-                break
