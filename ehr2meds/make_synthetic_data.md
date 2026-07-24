@@ -60,7 +60,7 @@ bash ehr2meds/convert_premeds_to_meds.sh \
 source .env && rm -rf ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full && bash ehr2meds/convert_premeds_to_meds.sh \
   ${EHR2MEDS_DATA}/preMEDS/DeepFetal/fetal_synth_full \
   ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
-  ${EHR2MEDS_CONFIGS}/MEDS/fetal_ngc_event.yaml \
+  ${EHR2MEDS_CONFIGS}/MEDS/DeepFetal/fetal_ngc_event.yaml \
   ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full
 ```
 
