@@ -32,8 +32,8 @@ class Processor:
         7. Validate subject_id column
         """
         df = add_row_idx(df, start=row_index_start)
-        df = apply_value_map(df, table_config.get("value_map", {}))
         df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
+        df = apply_value_map(df, table_config.get("value_map", {}))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = remove_timezones(df)

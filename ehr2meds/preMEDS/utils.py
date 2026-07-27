@@ -114,15 +114,18 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     columns_to_check = [col for col in df.columns if col != ROW_INDEX]
 
     # Remove duplicates
+    n_before = len(df)
     df = df.drop_duplicates(columns_to_check)
-
+    n_after = len(df)
+    if n_before > n_after:
+        print(f"Dropped {n_before - n_after} rows from {columns_to_check} due to duplicates")
     return df
 
 
 def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
-    """Map column values using inline config mapping. Unmapped values become NaN."""
+    """Replace specific column values; other values are left unchanged"""
     for col, mapping in value_map_cfg.items():
-        df[col] = df[col].map(mapping)
+        df.replace({col: mapping}, inplace=True)
     return df
 
 

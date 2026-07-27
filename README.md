@@ -22,7 +22,7 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    example:
 
    ```bash
-   python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP     
+   python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/DeepFetal/fetal_synth_full
    ```
 
    Example configuration files can be found in the [configs/preMEDS](./configs/preMEDS).
@@ -49,11 +49,11 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    Example:
 
    ```bash
-      source .env && bash ehr2meds/convert_premeds_to_meds.sh \
-      ${EHR2MEDS_DATA}/preMEDS/fetal_data/SP \
-      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
-      ${EHR2MEDS_CONFIGS}/MEDS/default_event.yaml \
-      ${EHR2MEDS_DATA}/MEDS/SP
+   source .env && bash ehr2meds/convert_premeds_to_meds.sh \
+   ${EHR2MEDS_DATA}/preMEDS/DeepFetal/fetal_synth_full \
+   ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
+   ${EHR2MEDS_CONFIGS}/MEDS/fetal_ngc_event.yaml \
+   ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full
    ```
 
    Example configuration files can be found in the [configs/MEDS](./configs/MEDS).

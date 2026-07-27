@@ -32,19 +32,9 @@ stages:
           train: 0.9
           tuning: 0.1
   - convert_to_subject_sharded
-  - convert_to_MEDS_events:
-      do_dedup_text_and_numeric: true # If true, nullify ``text_value`` when it equals ``numeric_value``.
+  - convert_to_MEDS_events
   - merge_to_MEDS_cohort:
       additional_sort_by: [row_idx]
   - extract_code_metadata
-  - aggregate_numeric_metadata:
-      train_only: true
-      numeric_metadata_output_filepath: ${output_dir}/numeric_metadata.json
-  - annotate_numeric_values:
-      # Optional: a fitted numeric_metadata.json, MEDS metadata directory, or codes.parquet.
-      # Matching external code transforms override the locally fitted ones.
-      numeric_metadata_filepath: null
-  - join_numeric_bins:
-      separator: "//bin_"
   - finalize_MEDS_metadata
   - finalize_MEDS_data
