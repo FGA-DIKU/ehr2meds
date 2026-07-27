@@ -12,7 +12,7 @@ def process_single_table_worker(args):
     """
     Standalone worker function to process a single table in a separate process.
     """
-    table_name, table_config, output_path, write_file_type, chunksize, subject_id_mapping = args
+    table_name, table_config, output_path, write_file_type, chunksize, test, subject_id_mapping = args
     logger.info(f"Starting process for table: {table_name}")
 
     try:
@@ -43,6 +43,10 @@ def process_single_table_worker(args):
             next_row_idx += len(chunk)
 
             data_handler.save(processed_chunk, table_name)
+
+            if test:
+                break
+
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
@@ -110,11 +114,19 @@ class PREMEDSExtractor:
 
         # Prepare arguments for the worker pool
         worker_tasks = [
-            (table_name, table_config, self.cfg.paths.output, self.cfg.write_file_type, self.cfg.chunksize, subject_id_mapping)
+            (
+                table_name,
+                table_config,
+                self.cfg.paths.output,
+                self.cfg.write_file_type,
+                self.cfg.chunksize,
+                self.cfg.test,
+                subject_id_mapping,
+            )
             for table_name, table_config in self.cfg["tables"].items()
         ]
 
-        logger.info(f"Starting multiprocessing pool with {self.cfg.num_workers} workers.")
+        logger.info(f"Starting multiprocessing pool with {self.cfg.num_workers} workers. Test enabled: {self.cfg.test}")
 
         # Use a Pool to manage the N concurrent table workers
         with Pool(processes=self.cfg.num_workers) as pool:

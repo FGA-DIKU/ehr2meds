@@ -4,4 +4,6 @@ hydra:
   run:
     dir: ${oc.env:EHR2MEDS_DATA}/${hydra:job.config_name}
 
+test: False
+
 num_workers: 2
