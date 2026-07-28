@@ -66,8 +66,45 @@ The package includes the following stages to be used in MEDS pipeline configurat
 | `augment_event_config` | Adds shared columns, such as `row_idx`, to every event definition so they do not need to be repeated throughout the event configuration. |
 | `aggregate_numeric_metadata` | Fits per-code numeric normalization bounds and adaptive quantile bins. It supports training-only fitting, an optional date cutoff (for OOT settings), hard plausibility limits (filtering values greater or lower than biological limits), and writes reusable numeric metadata. |
 | `annotate_numeric_values` | Applies the fitted metadata (from `aggregate_numeric_metadata`) to create new columns based on the numeric values. It adds normalized values, bin indices, and binned representatives. External numeric metadata can override locally fitted metadata. |
+| `fit_adaptive_code_mapping` | Fits a hierarchy-aware code mapping from training-event counts. It supports ATC levels, the bundled Danish SKS hierarchy, synthetic diagnosis prefix families, and external hierarchy overlays. |
+| `apply_adaptive_code_mapping` | Applies the frozen local and/or external adaptive mapping to every data split while retaining the MEDS event namespace. |
+| `finalize_adaptive_code_metadata` | Rewrites and collapses `codes.parquet` to match the adaptively transformed data vocabulary. |
 | `join_numeric_bins` | Optionally creates the "joined representation" of numeric values, such as `LAB_CODE//bin_3`, from the numeric bin index. |
 | `bin_numeric_values_fast` | A faster, memory-efficient replacement for the standard MEDS-Transforms discrete binning stage. It rewrites codes using bin indices or interval labels. |
+
+Adaptive truncation uses raw training-event counts, not distinct-subject
+counts. Its normal configuration is deliberately small: set `minimum_count`
+and map each MEDS namespace to one of `sks_diagnosis`, `sks_operation`,
+`sks_other_procedure`, or `atc` under `namespaces`. Built-in definitions hold
+the hierarchy details.
+
+The three adaptive stages correspond to different MEDS-Transforms data flows:
+
+1. `fit_adaptive_code_mapping` globally reduces **training shards** into one
+   frozen mapping.
+2. `apply_adaptive_code_mapping` maps **every data shard** without learning
+   from tuning or test data.
+3. `finalize_adaptive_code_metadata` reconciles **code metadata** after the
+   transformed data vocabulary is known.
+
+`extract_code_metadata` is the standard upstream MEDS stage, not part of the
+adaptive implementation. The fit stage writes the full reviewable mapping as
+Parquet and a compact `*.summary.json` audit containing vocabulary sizes,
+affected event counts, and decisions by hierarchy and reason. Later per-code
+metadata stages must follow metadata reconciliation.
+
+Custom profiles remain available through the optional `hierarchies` mapping.
+For example, a fixed-length hierarchy can be defined as
+`my_codes: {kind: levels, levels: [2, 4, 6]}` and selected with
+`namespaces: {MY_NAMESPACE: my_codes}`. An entry named like a built-in profile
+overrides only the specified built-in fields.
+
+`mapping_filepath` can point to a frozen JSON or Parquet mapping with `code`
+and `adaptive/mapped_code` columns. In the default `overlay` mode, external
+rows override locally fitted rows. Set `external_mapping_mode: replace` to use
+only the external mapping. `external_hierarchy_filepath` similarly overlays
+parent relations before local fitting; it accepts `code`, `parent_code`, and
+an optional `profile` column.
 
 For combined numeric encoding, use `aggregate_numeric_metadata` followed by
 `annotate_numeric_values`. Add `join_numeric_bins` afterwards only when the final
