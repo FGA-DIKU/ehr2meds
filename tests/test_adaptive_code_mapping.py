@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ehr2meds.meds_stages.adaptive_code_mapping as adaptive
+import json
 import polars as pl
 import pytest
 from ehr2meds.meds_stages.adaptive_code_mapping import (
@@ -21,8 +22,9 @@ from ehr2meds.meds_stages.adaptive_code_mapping import (
     read_profiles,
     summarize_mapping,
 )
-from ehr2meds.meds_stages.fit_adaptive_code_mapping import mapper_fntr
+from ehr2meds.meds_stages.fit_adaptive_code_mapping import mapper_fntr, reducer_fntr
 from omegaconf import OmegaConf
+from pathlib import Path
 
 
 def profiles() -> dict[str, HierarchyProfile]:
@@ -176,6 +178,54 @@ def test_mapping_summary_is_compact_and_reviewable() -> None:
         "remapped_training_events": 55,
     }
     assert {row["reason"] for row in audit["decisions"]} == {"grouped", "retained"}
+
+
+def test_fit_stage_emits_mapping_and_readable_summary(monkeypatch) -> None:
+    written: dict[str, object] = {}
+
+    def capture_mapping(frame: pl.DataFrame, path: Path) -> None:
+        written["mapping_path"] = str(path)
+        written["mapping"] = frame
+
+    def capture_summary(path: Path, text: str, **_kwargs) -> None:
+        written["summary_path"] = str(path)
+        written["summary"] = text
+
+    monkeypatch.setattr(Path, "is_file", lambda _path: False)
+    monkeypatch.setattr(Path, "mkdir", lambda _path, **_kwargs: None)
+    monkeypatch.setattr(pl.DataFrame, "write_parquet", capture_mapping)
+    monkeypatch.setattr(Path, "write_text", capture_summary)
+    cfg = OmegaConf.create(
+        {
+            "minimum_count": 10,
+            "namespaces": {"RM": "atc"},
+            "metadata_input_dir": "metadata",
+            "reducer_output_dir": "output",
+        }
+    )
+
+    reducer_fntr(cfg)(
+        pl.DataFrame(
+            {
+                "code": ["RM//N02BA01", "RM//N02BA02"],
+                COUNT_COLUMN: [6, 5],
+            }
+        )
+    ).collect()
+
+    assert written["mapping_path"] == str(Path("output/adaptive_code_mapping.parquet"))
+    assert written["summary_path"] == str(Path("output/adaptive_code_mapping.summary.json"))
+    summary = json.loads(str(written["summary"]))
+    assert summary["summary"]["training_events"] == 11
+    assert summary["summary"]["output_codes"] == 1
+    assert summary["decisions"] == [
+        {
+            "profile": "atc",
+            "reason": "grouped",
+            "source_codes": 2,
+            "training_events": 11,
+        }
+    ]
 
 
 def test_mapper_counts_events_not_subjects() -> None:
