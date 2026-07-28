@@ -53,11 +53,10 @@ def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
         else Path(str(stage_cfg.reducer_output_dir)) / "adaptive_code_mapping.parquet"
     )
     configured_summary = stage_cfg.get("mapping_summary_output_filepath")
-    summary_filepath = (
-        Path(str(configured_summary))
-        if configured_summary
-        else output_filepath.with_suffix(".summary.json")
-    )
+    if configured_summary:
+        summary_filepath = Path(str(configured_summary))
+    else:
+        summary_filepath = output_filepath.with_suffix(".summary.json")
     code_metadata_filepath = Path(str(stage_cfg.metadata_input_dir)) / "codes.parquet"
     code_metadata = (
         pl.read_parquet(code_metadata_filepath)

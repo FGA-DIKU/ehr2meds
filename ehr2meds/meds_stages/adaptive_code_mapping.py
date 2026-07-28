@@ -419,12 +419,15 @@ def summarize_mapping(mapping: pl.DataFrame) -> dict[str, object]:
         pl.col(COUNT_COLUMN).filter(changed).sum().alias("remapped_training_events"),
     ).to_dicts()[0]
     decisions = (
-        mapping.group_by(PROFILE_COLUMN, REASON_COLUMN)
+        mapping.group_by(
+            pl.col(PROFILE_COLUMN).alias("profile"),
+            pl.col(REASON_COLUMN).alias("reason"),
+        )
         .agg(
             pl.len().alias("source_codes"),
             pl.col(COUNT_COLUMN).sum().alias("training_events"),
         )
-        .sort(PROFILE_COLUMN, REASON_COLUMN, nulls_last=True)
+        .sort("profile", "reason", nulls_last=True)
         .to_dicts()
     )
     return {
