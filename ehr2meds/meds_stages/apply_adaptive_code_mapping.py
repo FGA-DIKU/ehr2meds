@@ -12,12 +12,11 @@ from pathlib import Path
 
 def apply_mapping(data: pl.LazyFrame, mapping: pl.DataFrame) -> pl.LazyFrame:
     """Rewrite codes through a frozen mapping while preserving row order and schema."""
-    temporary = "_adaptive_mapped_code"
-    lookup = mapping.select(CODE_COLUMN, pl.col(MAPPED_CODE_COLUMN).alias(temporary)).lazy()
+    lookup = mapping.select(CODE_COLUMN, MAPPED_CODE_COLUMN).lazy()
     return (
         data.join(lookup, on=CODE_COLUMN, how="left", maintain_order="left")
-        .with_columns(pl.coalesce(temporary, CODE_COLUMN).alias(CODE_COLUMN))
-        .drop(temporary)
+        .with_columns(pl.coalesce(MAPPED_CODE_COLUMN, CODE_COLUMN).alias(CODE_COLUMN))
+        .drop(MAPPED_CODE_COLUMN)
     )
 
 
