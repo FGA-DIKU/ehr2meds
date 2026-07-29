@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -c ' *)",
-      "Bash(python -m pytest tests/test_adaptive_code_mapping.py -q)",
-      "Bash(python -m pytest -q)"
-    ]
-  }
-}
