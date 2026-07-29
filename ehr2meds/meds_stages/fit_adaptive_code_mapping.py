@@ -28,13 +28,6 @@ class HierarchyProfile:
     levels: tuple[int, ...]
 
 
-def build_profile(raw: Mapping[str, object], default_minimum: int) -> HierarchyProfile:
-    return HierarchyProfile(
-        minimum_count=int(raw.get("minimum_count", default_minimum)),
-        levels=tuple(sorted({int(level) for level in raw["levels"]}, reverse=True)),
-    )
-
-
 def read_profiles(stage_cfg: DictConfig) -> tuple[dict[str, HierarchyProfile], dict[str, str]]:
     """Build the configured hierarchy profiles and namespace routing.
 
@@ -50,7 +43,11 @@ def read_profiles(stage_cfg: DictConfig) -> tuple[dict[str, HierarchyProfile], d
     hierarchies = cfg.get("hierarchies", {})
     default_minimum = int(cfg.get("minimum_count", 100))
     profiles = {
-        name: build_profile(hierarchies[name], default_minimum) for name in sorted(set(namespaces.values()))
+        name: HierarchyProfile(
+            minimum_count=int(hierarchies[name].get("minimum_count", default_minimum)),
+            levels=tuple(sorted({int(level) for level in hierarchies[name]["levels"]}, reverse=True)),
+        )
+        for name in sorted(set(namespaces.values()))
     }
     return profiles, namespaces
 
@@ -122,41 +119,37 @@ def fit_mapping(
     for profile_name in sorted(pending_by_profile):
         profile = profiles[profile_name]
         pending = pending_by_profile[profile_name]
-        lengths = sorted(
-            {len(candidate) for code in pending for candidate in candidates_by_code[code]},
-            reverse=True,
-        )
-        for length in lengths:
-            groups: dict[str, list[str]] = defaultdict(list)
-            for code in sorted(pending):
-                for candidate in candidates_by_code[code]:
-                    if len(candidate) == length:
-                        groups[candidate].append(code)
-                        break
 
-            for candidate in sorted(groups):
-                members = list(groups[candidate])
-                # If the target itself is observed, its events belong to the
-                # target's denominator. Claim it too so it can't later move
-                # farther upward.
-                candidate_is_pending = candidate in pending
-                if candidate_is_pending:
-                    members.append(candidate)
+        by_candidate: dict[str, list[str]] = defaultdict(list)
+        for code in sorted(pending):
+            for candidate in candidates_by_code[code]:
+                by_candidate[candidate].append(code)
 
-                mapped_count = sum(int(counts[code]) for code in members)
-                candidate_needs_own_count = candidate in counts and not candidate_is_pending
-                if candidate_needs_own_count:
-                    mapped_count += int(counts[candidate])
+        # Try candidates most-specific (longest) first. A code already
+        # resolved by a longer candidate is skipped once a shorter one comes up.
+        for candidate in sorted(by_candidate, key=lambda c: (-len(c), c)):
+            members = [code for code in by_candidate[candidate] if code in pending]
+            # If the target itself is observed, its events belong to the
+            # target's denominator. Claim it too so it can't later move
+            # farther upward.
+            candidate_is_pending = candidate in pending
+            if candidate_is_pending:
+                members.append(candidate)
 
-                if mapped_count < profile.minimum_count:
-                    continue
-                for code in members:
-                    records[code] = make_record(
-                        code, int(counts[code]), profile_name, "grouped", mapped_code=candidate, mapped_count=mapped_count
-                    )
-                    pending.remove(code)
-                if candidate_needs_own_count:
-                    records[candidate][MAPPED_COUNT_COLUMN] = mapped_count
+            mapped_count = sum(int(counts[code]) for code in members)
+            candidate_needs_own_count = candidate in counts and not candidate_is_pending
+            if candidate_needs_own_count:
+                mapped_count += int(counts[candidate])
+
+            if mapped_count < profile.minimum_count:
+                continue
+            for code in members:
+                records[code] = make_record(
+                    code, int(counts[code]), profile_name, "grouped", mapped_code=candidate, mapped_count=mapped_count
+                )
+                pending.remove(code)
+            if candidate_needs_own_count:
+                records[candidate][MAPPED_COUNT_COLUMN] = mapped_count
 
         for code in sorted(pending):
             records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold")
