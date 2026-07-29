@@ -19,31 +19,20 @@ PROFILE_COLUMN = "adaptive/profile"
 REASON_COLUMN = "adaptive/reason"
 MEMBER_COUNT_COLUMN = "adaptive/member_count"
 
-# Stable hierarchy definitions for the code systems supported out of the box.
-# A config normally only needs to route MEDS namespaces to these names.
+# Character-position level widths for the code systems supported out of the
+# box. A config normally only needs to route MEDS namespaces to these names.
 BUILTIN_HIERARCHIES: dict[str, dict[str, object]] = {
     "sks_diagnosis": {
-        "kind": "table",
-        "record_types": ["dia"],
-        "leading_marker": "D",
-        "minimum_canonical_length": 2,
-        "synthetic_prefix_lengths": [2, 3],
+        "levels": [4, 3, 2, 1],
     },
     "sks_operation": {
-        "kind": "table",
-        "record_types": ["opr"],
-        "leading_marker": "K",
-        "minimum_canonical_length": 2,
+        "levels": [7, 6, 5, 4, 3, 2, 1],
     },
     "sks_other_procedure": {
-        "kind": "table",
-        "record_types": ["pro", "und"],
-        "minimum_canonical_length": 2,
+        "levels": [8, 7, 6, 5, 4, 3, 2, 1],
     },
     "atc": {
-        "kind": "levels",
         "levels": [1, 3, 4, 5, 7],
-        "minimum_canonical_length": 1,
     },
 }
 
@@ -53,13 +42,9 @@ class HierarchyProfile:
     """Validated configuration for one hierarchy."""
 
     name: str
-    kind: str
     minimum_count: int
     levels: tuple[int, ...] = ()
-    record_types: tuple[str, ...] = ()
-    leading_marker: str | None = None
     minimum_canonical_length: int = 1
-    synthetic_prefix_lengths: tuple[int, ...] = ()
     uppercase: bool = True
     remove_dots: bool = True
 
@@ -100,37 +85,24 @@ def read_profiles(stage_cfg: DictConfig) -> tuple[dict[str, HierarchyProfile], d
         if not isinstance(override, dict):
             raise TypeError(f"hierarchies[{name!r}] must be a mapping")
         raw.update(override)
-        kind = str(raw.get("kind", "")).lower()
-        if kind not in {"levels", "table"}:
-            raise ValueError(f"hierarchies[{name!r}].kind must be 'levels' or 'table'")
 
         levels = tuple(sorted({int(level) for level in raw.get("levels", [])}, reverse=True))
-        if kind == "levels" and (not levels or min(levels) < 1):
+        if not levels or min(levels) < 1:
             raise ValueError(f"hierarchies[{name!r}].levels must contain positive integers")
-
-        record_types = tuple(str(value) for value in raw.get("record_types", []))
-        if kind == "table" and not record_types:
-            raise ValueError(f"hierarchies[{name!r}].record_types cannot be empty")
 
         minimum_count = int(raw.get("minimum_count", default_minimum))
         if minimum_count < 1:
             raise ValueError(f"hierarchies[{name!r}].minimum_count must be at least 1")
 
-        synthetic = tuple(sorted({int(level) for level in raw.get("synthetic_prefix_lengths", [])}, reverse=True))
         minimum_length = int(raw.get("minimum_canonical_length", 1))
-        if minimum_length < 1 or any(level < minimum_length for level in synthetic):
-            raise ValueError(f"hierarchies[{name!r}] prefix lengths must be at least minimum_canonical_length")
+        if minimum_length < 1:
+            raise ValueError(f"hierarchies[{name!r}].minimum_canonical_length must be at least 1")
 
-        marker = raw.get("leading_marker")
         profiles[str(name)] = HierarchyProfile(
             name=str(name),
-            kind=kind,
             minimum_count=minimum_count,
             levels=levels,
-            record_types=record_types,
-            leading_marker=str(marker).upper() if marker else None,
             minimum_canonical_length=minimum_length,
-            synthetic_prefix_lengths=synthetic,
             uppercase=bool(raw.get("uppercase", True)),
             remove_dots=bool(raw.get("remove_dots", True)),
         )
@@ -141,9 +113,7 @@ def read_profiles(stage_cfg: DictConfig) -> tuple[dict[str, HierarchyProfile], d
 
 
 def resolve_resource_path(filepath: str) -> Path:
-    """Resolve normal, package, and bundled-resource paths."""
-    if filepath == "builtin://sks":
-        return Path(__file__).resolve().parents[1] / "resources" / "sks_hierarchy.parquet"
+    """Resolve normal and package resource paths."""
     return resolve_pkg_path(filepath) if filepath.startswith(PKG_PFX) else Path(filepath)
 
 
@@ -159,67 +129,6 @@ def load_frame(filepath: str, label: str) -> pl.DataFrame:
             return pl.read_json(path)
         case _:
             raise ValueError(f"{label} filepath must point to a JSON or Parquet file")
-
-
-@dataclass
-class TableHierarchy:
-    """Code-table lookup shared by table-based profiles."""
-
-    parent_by_code: dict[str, str | None]
-    allowed_by_profile: dict[str, set[str]]
-
-
-def load_table_hierarchy(
-    profiles: Mapping[str, HierarchyProfile],
-    hierarchy_filepath: str | None,
-    external_hierarchy_filepath: str | None = None,
-) -> TableHierarchy:
-    """Load the base hierarchy and overlay optional external parent rows."""
-    table_profiles = {name: profile for name, profile in profiles.items() if profile.kind == "table"}
-    if not table_profiles:
-        return TableHierarchy({}, {})
-    if not hierarchy_filepath:
-        raise ValueError("hierarchy_filepath is required when a table hierarchy is configured")
-
-    base = load_frame(str(hierarchy_filepath), "hierarchy")
-    required = {"record_type", "code", "parent_code"}
-    missing = required - set(base.columns)
-    if missing:
-        raise ValueError(f"hierarchy is missing columns: {sorted(missing)}")
-
-    pairs = base.select("code", "parent_code").unique()
-    conflicts = pairs.group_by("code").agg(pl.col("parent_code").n_unique().alias("_n")).filter(pl.col("_n") > 1)
-    if conflicts.height:
-        raise ValueError("hierarchy contains codes with conflicting parents")
-    parent_by_code = dict(pairs.iter_rows())
-    allowed_by_profile = {
-        name: set(base.filter(pl.col("record_type").is_in(profile.record_types)).get_column("code").unique().to_list())
-        for name, profile in table_profiles.items()
-    }
-
-    if external_hierarchy_filepath:
-        external = load_frame(str(external_hierarchy_filepath), "external hierarchy")
-        missing = {"code", "parent_code"} - set(external.columns)
-        if missing:
-            raise ValueError(f"external hierarchy is missing columns: {sorted(missing)}")
-        if external.get_column("code").n_unique() != external.height:
-            raise ValueError("external hierarchy must contain at most one row per code")
-
-        has_profile = "profile" in external.columns
-        for row in external.iter_rows(named=True):
-            code = str(row["code"])
-            parent = None if row["parent_code"] is None else str(row["parent_code"])
-            parent_by_code[code] = parent
-            if has_profile and row["profile"] is not None:
-                profile_name = str(row["profile"])
-                if profile_name not in table_profiles:
-                    raise ValueError(f"external hierarchy references unknown table profile {profile_name!r}")
-                allowed_by_profile[profile_name].add(code)
-            else:
-                for allowed in allowed_by_profile.values():
-                    allowed.add(code)
-
-    return TableHierarchy(parent_by_code, allowed_by_profile)
 
 
 def normalize_payload(payload: str, profile: HierarchyProfile) -> str:
@@ -240,64 +149,25 @@ def split_code(code: str) -> tuple[str, str] | None:
     return namespace, payload
 
 
-def _display_candidate(canonical: str, marker_was_added: bool, profile: HierarchyProfile) -> str:
-    if marker_was_added and profile.leading_marker and canonical.startswith(profile.leading_marker):
-        return canonical[len(profile.leading_marker) :]
-    return canonical
-
-
-def candidate_ancestors(
-    payload: str,
-    profile: HierarchyProfile,
-    table: TableHierarchy,
-) -> list[tuple[str, str]]:
-    """Return nearest-to-broadest ``(payload, reason)`` candidates."""
+def candidate_ancestors(payload: str, profile: HierarchyProfile) -> list[str]:
+    """Return nearest-to-broadest candidate ancestor payloads."""
     normalized = normalize_payload(payload, profile)
-    if profile.kind == "levels":
-        return [
-            (normalized[:length], "structural")
-            for length in profile.levels
-            if length < len(normalized) and length >= profile.minimum_canonical_length
-        ]
-
-    allowed = table.allowed_by_profile.get(profile.name, set())
-    canonical = normalized
-    marker_was_added = False
-    if canonical not in allowed and profile.leading_marker and f"{profile.leading_marker}{canonical}" in allowed:
-        canonical = f"{profile.leading_marker}{canonical}"
-        marker_was_added = True
-    if canonical not in allowed:
-        return []
-
-    candidates: dict[str, str] = {}
-    seen = {canonical}
-    parent = table.parent_by_code.get(canonical)
-    while parent is not None:
-        if parent in seen:
-            raise ValueError(f"hierarchy cycle detected at {parent!r}")
-        seen.add(parent)
-        if len(parent) >= profile.minimum_canonical_length:
-            candidates[parent] = "official"
-        parent = table.parent_by_code.get(parent)
-
-    for length in profile.synthetic_prefix_lengths:
-        if profile.minimum_canonical_length <= length < len(canonical):
-            candidates.setdefault(canonical[:length], "synthetic")
-
-    ordered = sorted(candidates.items(), key=lambda item: (-len(item[0]), item[0]))
-    return [(_display_candidate(candidate, marker_was_added, profile), reason) for candidate, reason in ordered]
+    return [
+        normalized[:length]
+        for length in profile.levels
+        if length < len(normalized) and length >= profile.minimum_canonical_length
+    ]
 
 
 def fit_mapping(
     counts: Mapping[str, int],
     profiles: Mapping[str, HierarchyProfile],
     namespaces: Mapping[str, str],
-    table: TableHierarchy,
 ) -> pl.DataFrame:
     """Fit a deterministic, disjoint adaptive hierarchy mapping."""
     records: dict[str, dict[str, object]] = {}
     pending_by_profile: dict[str, set[str]] = defaultdict(set)
-    candidates_by_code: dict[str, list[tuple[str, str]]] = {}
+    candidates_by_code: dict[str, list[str]] = {}
 
     for code in sorted(counts):
         count = int(counts[code])
@@ -327,9 +197,7 @@ def fit_mapping(
             continue
 
         namespace, payload = parsed
-        ancestors = [
-            (f"{namespace}//{candidate}", reason) for candidate, reason in candidate_ancestors(payload, profile, table)
-        ]
+        ancestors = [f"{namespace}//{candidate}" for candidate in candidate_ancestors(payload, profile)]
         if not ancestors:
             records[code] = {
                 CODE_COLUMN: code,
@@ -347,33 +215,44 @@ def fit_mapping(
         profile = profiles[profile_name]
         pending = pending_by_profile[profile_name]
         lengths = sorted(
-            {len(candidate) for code in pending for candidate, _ in candidates_by_code[code]},
+            {len(candidate) for code in pending for candidate in candidates_by_code[code]},
             reverse=True,
         )
         for length in lengths:
-            groups: dict[str, list[tuple[str, str]]] = defaultdict(list)
+            groups: dict[str, list[str]] = defaultdict(list)
             for code in sorted(pending):
-                for candidate, reason in candidates_by_code[code]:
+                for candidate in candidates_by_code[code]:
                     if len(candidate) == length:
-                        groups[candidate].append((code, reason))
+                        groups[candidate].append(code)
                         break
 
             for candidate in sorted(groups):
-                members = [(code, reason) for code, reason in groups[candidate] if code in pending]
-                mapped_count = sum(int(counts[code]) for code, _ in members)
+                members = [code for code in groups[candidate] if code in pending]
+                # If the target is itself observed, its events belong to the
+                # target denominator. Claim a pending target with its
+                # descendants so it cannot subsequently move farther upward.
+                if candidate in pending:
+                    members.append(candidate)
+
+                mapped_count = sum(int(counts[code]) for code in members)
+                exact_target_already_assigned = candidate in counts and candidate not in set(members)
+                if exact_target_already_assigned:
+                    mapped_count += int(counts[candidate])
+
                 if mapped_count < profile.minimum_count:
                     continue
-                reason = "synthetic" if any(member_reason == "synthetic" for _, member_reason in members) else "grouped"
-                for code, _ in members:
+                for code in members:
                     records[code] = {
                         CODE_COLUMN: code,
                         MAPPED_CODE_COLUMN: candidate,
                         COUNT_COLUMN: int(counts[code]),
                         MAPPED_COUNT_COLUMN: mapped_count,
                         PROFILE_COLUMN: profile_name,
-                        REASON_COLUMN: reason,
+                        REASON_COLUMN: "grouped",
                     }
                     pending.remove(code)
+                if exact_target_already_assigned and candidate in records:
+                    records[candidate][MAPPED_COUNT_COLUMN] = mapped_count
 
         for code in sorted(pending):
             records[code] = {

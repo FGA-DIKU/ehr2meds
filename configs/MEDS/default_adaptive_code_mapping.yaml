@@ -1,14 +1,13 @@
 minimum_count: 100
-hierarchy_filepath: builtin://sks
-external_hierarchy_filepath: null
 mapping_output_filepath: null
 # Defaults to <mapping_output_filepath>.summary.json.
 mapping_summary_output_filepath: null
 mapping_filepath: null
 external_mapping_mode: overlay
 
-# Built-in profiles contain the official SKS relations and ATC levels.
-# Only namespace routing normally needs configuration.
+# Built-in profiles hold character-position level widths for ATC and SKS
+# diagnosis/operation/procedure codes. Only namespace routing normally needs
+# configuration.
 namespaces:
   RD: sks_diagnosis
   RC: sks_diagnosis
