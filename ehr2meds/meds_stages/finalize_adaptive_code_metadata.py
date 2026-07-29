@@ -21,24 +21,19 @@ from pathlib import Path
 
 def collapse_code_metadata(metadata: pl.DataFrame, mapping: pl.DataFrame) -> pl.DataFrame:
     """Rewrite and deterministically collapse code metadata."""
-    temporary = "_adaptive_mapped_code"
+    is_exact_match = "is_exact_match"
     mapped = (
-        metadata.join(
-            mapping.select(CODE_COLUMN, pl.col(MAPPED_CODE_COLUMN).alias(temporary)),
-            on=CODE_COLUMN,
-            how="left",
-        )
+        metadata.join(mapping.select(CODE_COLUMN, MAPPED_CODE_COLUMN), on=CODE_COLUMN, how="left")
         .with_columns(
-            pl.coalesce(temporary, CODE_COLUMN).alias(temporary),
-            (pl.col(CODE_COLUMN) == pl.coalesce(temporary, CODE_COLUMN)).alias("_adaptive_exact"),
+            pl.coalesce(MAPPED_CODE_COLUMN, CODE_COLUMN).alias(MAPPED_CODE_COLUMN),
+            (pl.col(CODE_COLUMN) == pl.coalesce(MAPPED_CODE_COLUMN, CODE_COLUMN)).alias(is_exact_match),
         )
-        .sort(temporary, "_adaptive_exact", CODE_COLUMN, descending=[False, True, False])
+        .sort(MAPPED_CODE_COLUMN, is_exact_match, CODE_COLUMN, descending=[False, True, False])
     )
 
     technical = {
         CODE_COLUMN,
-        temporary,
-        "_adaptive_exact",
+        is_exact_match,
         MAPPED_CODE_COLUMN,
         COUNT_COLUMN,
         MAPPED_COUNT_COLUMN,
@@ -52,16 +47,14 @@ def collapse_code_metadata(metadata: pl.DataFrame, mapping: pl.DataFrame) -> pl.
         aggregations.append(pl.col(COUNT_COLUMN).fill_null(0).sum().alias(COUNT_COLUMN))
     aggregations.append(pl.len().cast(pl.UInt32).alias(MEMBER_COUNT_COLUMN))
 
-    collapsed = mapped.group_by(temporary, maintain_order=True).agg(*aggregations).rename({temporary: CODE_COLUMN})
+    collapsed = (
+        mapped.group_by(MAPPED_CODE_COLUMN, maintain_order=True)
+        .agg(*aggregations)
+        .rename({MAPPED_CODE_COLUMN: CODE_COLUMN})
+    )
 
     if "description" in collapsed.columns:
-        generic = pl.concat_str(
-            pl.lit("Adaptive aggregation "),
-            pl.col(CODE_COLUMN),
-            pl.lit(" ("),
-            pl.col(MEMBER_COUNT_COLUMN),
-            pl.lit(" source codes)"),
-        )
+        generic = pl.format("Adaptive aggregation {} ({} source codes)", CODE_COLUMN, MEMBER_COUNT_COLUMN)
         collapsed = collapsed.with_columns(
             pl.when(pl.col(MEMBER_COUNT_COLUMN) > 1).then(generic).otherwise(pl.col("description")).alias("description")
         )
@@ -85,12 +78,6 @@ def add_missing_observed_metadata(metadata: pl.DataFrame, observed_codes: Sequen
     for name, dtype in metadata.schema.items():
         if name == CODE_COLUMN:
             columns[name] = pl.Series(name, missing_codes, dtype=pl.String)
-        elif name == "description":
-            columns[name] = pl.Series(
-                name,
-                [f"Code observed outside adaptive-training metadata: {code}" for code in missing_codes],
-                dtype=pl.String,
-            )
         elif name == COUNT_COLUMN:
             columns[name] = pl.Series(name, [0] * len(missing_codes), dtype=dtype)
         elif name == MEMBER_COUNT_COLUMN:
@@ -116,7 +103,7 @@ def main(cfg: DictConfig) -> None:
     mapping = prepare_mapping(
         metadata,
         external_mapping_filepath=cfg.stage_cfg.get("mapping_filepath"),
-        external_mapping_mode=str(cfg.stage_cfg.get("external_mapping_mode", "overlay")),
+        external_mapping_mode=str(cfg.stage_cfg["external_mapping_mode"]),
     )
     collapsed = collapse_code_metadata(metadata, mapping)
     data_input_dir = Path(str(cfg.stage_cfg.data_input_dir))
