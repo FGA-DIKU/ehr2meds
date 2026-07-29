@@ -32,7 +32,7 @@ def apply_adaptive_code_mapping_fntr(
     mapping = prepare_mapping(
         code_metadata,
         external_mapping_filepath=stage_cfg.get("mapping_filepath"),
-        external_mapping_mode=str(stage_cfg.get("external_mapping_mode", "overlay")),
+        external_mapping_mode=str(stage_cfg["external_mapping_mode"]),
     )
 
     def transform(df: pl.LazyFrame) -> pl.LazyFrame:
