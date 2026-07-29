@@ -40,8 +40,8 @@ def read_profiles(stage_cfg: DictConfig) -> tuple[dict[str, HierarchyProfile], d
     """
     cfg = OmegaConf.to_container(stage_cfg, resolve=True)
     namespaces = {str(namespace): str(profile) for namespace, profile in cfg["namespaces"].items()}
-    hierarchies = cfg.get("hierarchies", {})
-    default_minimum = int(cfg.get("minimum_count", 100))
+    hierarchies = cfg["hierarchies"]
+    default_minimum = int(cfg["minimum_count"])
     profiles = {
         name: HierarchyProfile(
             minimum_count=int(hierarchies[name].get("minimum_count", default_minimum)),
