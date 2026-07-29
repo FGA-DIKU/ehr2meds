@@ -8,10 +8,10 @@ from ehr2meds.meds_stages.adaptive_code_mapping import (
     CODE_COLUMN,
     COUNT_COLUMN,
     MAPPED_CODE_COLUMN,
+    MAPPED_COUNT_COLUMN,
     MEMBER_COUNT_COLUMN,
     REASON_COLUMN,
     HierarchyProfile,
-    TableHierarchy,
     add_missing_observed_metadata,
     add_unseen_metadata_codes,
     apply_mapping,
@@ -31,75 +31,29 @@ def profiles() -> dict[str, HierarchyProfile]:
     return {
         "diagnosis": HierarchyProfile(
             name="diagnosis",
-            kind="table",
             minimum_count=50,
-            record_types=("dia",),
-            leading_marker="D",
-            minimum_canonical_length=2,
-            synthetic_prefix_lengths=(3, 2),
+            levels=(4, 3, 2, 1),
         ),
         "operation": HierarchyProfile(
             name="operation",
-            kind="table",
             minimum_count=50,
-            record_types=("opr",),
-            leading_marker="K",
-            minimum_canonical_length=2,
+            levels=(6, 4, 3, 2, 1),
         ),
         "atc": HierarchyProfile(
             name="atc",
-            kind="levels",
             minimum_count=50,
             levels=(7, 5, 4, 3, 1),
         ),
     }
 
 
-def hierarchy() -> TableHierarchy:
-    parent_by_code = {
-        "D": None,
-        "DC83": "D",
-        "DC833": "DC83",
-        "DC833A": "DC833",
-        "DC833B": "DC833",
-        "DC833C": "DC833",
-        "K": None,
-        "KA": "K",
-        "KAB": "KA",
-        "KABA": "KAB",
-        "KABA00": "KABA",
-    }
-    return TableHierarchy(
-        parent_by_code,
-        {
-            "diagnosis": {code for code in parent_by_code if code.startswith("D")},
-            "operation": {code for code in parent_by_code if code.startswith("K")},
-        },
-    )
-
-
-def test_candidate_ancestors_use_real_and_structural_boundaries() -> None:
+def test_candidate_ancestors_use_character_position_levels() -> None:
     configured = profiles()
-    table = hierarchy()
 
-    assert candidate_ancestors("C833A", configured["diagnosis"], table) == [
-        ("C833", "official"),
-        ("C83", "official"),
-        ("C8", "synthetic"),
-        ("C", "synthetic"),
-    ]
-    assert candidate_ancestors("KABA00", configured["operation"], table) == [
-        ("KABA", "official"),
-        ("KAB", "official"),
-        ("KA", "official"),
-    ]
-    assert candidate_ancestors("N02BA01", configured["atc"], table) == [
-        ("N02BA", "structural"),
-        ("N02B", "structural"),
-        ("N02", "structural"),
-        ("N", "structural"),
-    ]
-    assert candidate_ancestors("FLAT", configured["diagnosis"], table) == []
+    assert candidate_ancestors("C833A", configured["diagnosis"]) == ["C833", "C83", "C8", "C"]
+    assert candidate_ancestors("KABA00", configured["operation"]) == ["KABA", "KAB", "KA", "K"]
+    assert candidate_ancestors("N02BA01", configured["atc"]) == ["N02BA", "N02B", "N02", "N"]
+    assert candidate_ancestors("C", configured["diagnosis"]) == []
 
 
 def test_fit_mapping_keeps_common_codes_and_groups_rare_siblings() -> None:
@@ -115,7 +69,6 @@ def test_fit_mapping_keeps_common_codes_and_groups_rare_siblings() -> None:
         counts,
         profiles=profiles(),
         namespaces={"RD": "diagnosis", "RC": "diagnosis"},
-        table=hierarchy(),
     )
     result = {row[CODE_COLUMN]: row for row in mapping.to_dicts()}
 
@@ -133,31 +86,71 @@ def test_fit_mapping_keeps_common_codes_and_groups_rare_siblings() -> None:
     assert result["OTHER//C833A"][REASON_COLUMN] == "unconfigured"
 
 
-def test_fit_mapping_can_use_synthetic_diagnosis_family() -> None:
+def test_observed_parent_is_claimed_with_rare_descendants() -> None:
+    mapping = fit_mapping(
+        {
+            "RPS//KABA": 20,
+            "RPS//KABA00": 30,
+        },
+        profiles=profiles(),
+        namespaces={"RPS": "operation"},
+    )
+    result = {row[CODE_COLUMN]: row for row in mapping.to_dicts()}
+
+    assert {row[MAPPED_CODE_COLUMN] for row in result.values()} == {"RPS//KABA"}
+    assert {row[MAPPED_COUNT_COLUMN] for row in result.values()} == {50}
+    assert result["RPS//KABA"][MAPPED_CODE_COLUMN] == "RPS//KABA"
+
+
+def test_common_observed_parent_contributes_to_descendant_threshold() -> None:
+    mapping = fit_mapping(
+        {
+            "RPS//KABA": 50,
+            "RPS//KABA00": 10,
+        },
+        profiles=profiles(),
+        namespaces={"RPS": "operation"},
+    )
+    result = {row[CODE_COLUMN]: row for row in mapping.to_dicts()}
+
+    assert {row[MAPPED_CODE_COLUMN] for row in result.values()} == {"RPS//KABA"}
+    assert {row[MAPPED_COUNT_COLUMN] for row in result.values()} == {60}
+    assert result["RPS//KABA"][REASON_COLUMN] == "retained"
+
+
+def test_rare_codes_continue_upward_until_combined_count_reaches_threshold() -> None:
+    mapping = fit_mapping(
+        {
+            "RPS//KAB": 30,
+            "RPS//KABA": 10,
+            "RPS//KABA00": 10,
+        },
+        profiles=profiles(),
+        namespaces={"RPS": "operation"},
+    )
+    result = {row[CODE_COLUMN]: row for row in mapping.to_dicts()}
+
+    # KABA + KABA00 = 20, so that candidate is too small. Adding the exact
+    # KAB events gives 50 at the next level, where the traversal stops.
+    assert {row[MAPPED_CODE_COLUMN] for row in result.values()} == {"RPS//KAB"}
+    assert {row[MAPPED_COUNT_COLUMN] for row in result.values()} == {50}
+
+
+def test_fit_mapping_climbs_to_a_shared_coarser_level_when_needed() -> None:
+    # None of these share a category (length-4) or block (length-3) prefix,
+    # but they do share the length-2 chapter-letter-plus-digit prefix "C8".
     counts = {
         "RD//C833A": 20,
         "RD//C849A": 20,
         "RD//C859A": 20,
     }
-    table = hierarchy()
-    table.parent_by_code.update(
-        {
-            "DC849A": "DC84",
-            "DC84": "D",
-            "DC859A": "DC85",
-            "DC85": "D",
-        }
-    )
-    table.allowed_by_profile["diagnosis"].update({"DC849A", "DC84", "DC859A", "DC85"})
-
     mapping = fit_mapping(
         counts,
         profiles=profiles(),
         namespaces={"RD": "diagnosis"},
-        table=table,
     )
     assert mapping.get_column(MAPPED_CODE_COLUMN).to_list() == ["RD//C8", "RD//C8", "RD//C8"]
-    assert mapping.get_column(REASON_COLUMN).to_list() == ["synthetic", "synthetic", "synthetic"]
+    assert mapping.get_column(REASON_COLUMN).to_list() == ["grouped", "grouped", "grouped"]
 
 
 def test_mapping_summary_is_compact_and_reviewable() -> None:
@@ -165,7 +158,6 @@ def test_mapping_summary_is_compact_and_reviewable() -> None:
         {"RD//C833A": 30, "RD//C833B": 25, "RD//C833C": 100},
         profiles=profiles(),
         namespaces={"RD": "diagnosis"},
-        table=hierarchy(),
     )
     audit = summarize_mapping(mapping)
 
@@ -232,12 +224,7 @@ def test_mapper_counts_events_not_subjects() -> None:
     cfg = OmegaConf.create(
         {
             "minimum_count": 2,
-            "hierarchies": {
-                "atc": {
-                    "kind": "levels",
-                    "levels": [1, 3, 4, 5, 7],
-                }
-            },
+            "hierarchies": {"atc": {"levels": [1, 3, 4, 5, 7]}},
             "namespaces": {"RM": "atc"},
         }
     )
@@ -268,13 +255,13 @@ def test_builtin_profile_can_be_partially_overridden() -> None:
         {
             "minimum_count": 25,
             "namespaces": {"RD": "sks_diagnosis"},
-            "hierarchies": {"sks_diagnosis": {"synthetic_prefix_lengths": []}},
+            "hierarchies": {"sks_diagnosis": {"levels": [3, 1]}},
         }
     )
     configured, _ = read_profiles(cfg)
 
-    assert configured["sks_diagnosis"].record_types == ("dia",)
-    assert configured["sks_diagnosis"].synthetic_prefix_lengths == ()
+    assert configured["sks_diagnosis"].levels == (3, 1)
+    assert configured["sks_diagnosis"].minimum_count == 25
 
 
 def test_apply_mapping_preserves_rows_and_unmapped_codes() -> None:
@@ -298,7 +285,6 @@ def test_unseen_training_codes_are_carried_forward_without_fitting() -> None:
         {"RD//C833A": 20},
         profiles=profiles(),
         namespaces={"RD": "diagnosis"},
-        table=hierarchy(),
     )
     metadata = pl.DataFrame({"code": ["RD//C833A", "RD//C833B", "OTHER//X"]})
     completed = add_unseen_metadata_codes(mapping, metadata)
@@ -376,7 +362,7 @@ def test_profile_validation_rejects_unknown_namespace_profile() -> None:
     cfg = OmegaConf.create(
         {
             "minimum_count": 10,
-            "hierarchies": {"atc": {"kind": "levels", "levels": [1, 3, 7]}},
+            "hierarchies": {"atc": {"levels": [1, 3, 7]}},
             "namespaces": {"RM": "missing"},
         }
     )

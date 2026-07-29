@@ -10,7 +10,6 @@ from ehr2meds.meds_stages.adaptive_code_mapping import (
     add_unseen_metadata_codes,
     combine_count_frames,
     fit_mapping,
-    load_table_hierarchy,
     read_profiles,
     summarize_mapping,
 )
@@ -41,11 +40,6 @@ def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]
 def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
     """Fit one global mapping and write its reusable mapping and audit files."""
     profiles, namespaces = read_profiles(stage_cfg)
-    hierarchy = load_table_hierarchy(
-        profiles,
-        hierarchy_filepath=stage_cfg.get("hierarchy_filepath"),
-        external_hierarchy_filepath=stage_cfg.get("external_hierarchy_filepath"),
-    )
     configured_output = stage_cfg.get("mapping_output_filepath")
     output_filepath = (
         Path(str(configured_output))
@@ -66,7 +60,7 @@ def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
 
     def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.LazyFrame:
         counts = combine_count_frames(*dfs)
-        mapping = fit_mapping(counts, profiles=profiles, namespaces=namespaces, table=hierarchy)
+        mapping = fit_mapping(counts, profiles=profiles, namespaces=namespaces)
         mapping = add_unseen_metadata_codes(mapping, code_metadata)
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
         mapping.write_parquet(output_filepath)
