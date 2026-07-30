@@ -29,12 +29,8 @@ def apply_adaptive_code_mapping_fntr(
     stage_cfg: DictConfig,
     code_metadata: pl.DataFrame,
 ) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
-    """Build the data transform from local and optional external mappings."""
-    mapping = prepare_mapping(
-        code_metadata,
-        external_mapping_filepath=stage_cfg.get("mapping_filepath"),
-        external_mapping_mode=str(stage_cfg["external_mapping_mode"]),
-    )
+    """Build the data transform from the local fitted mapping or an external one."""
+    mapping = prepare_mapping(code_metadata, external_mapping_filepath=stage_cfg.get("mapping_filepath"))
 
     def transform(df: pl.LazyFrame) -> pl.LazyFrame:
         return apply_mapping(df, mapping)

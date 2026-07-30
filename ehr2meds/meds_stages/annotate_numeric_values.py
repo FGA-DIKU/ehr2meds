@@ -45,33 +45,24 @@ def prepare_metadata(
     return metadata.select(key + transform_columns + bound_columns)
 
 
-def combine_numeric_metadata(
+def prepare_numeric_metadata(
     fitted_metadata: pl.DataFrame,
-    external_metadata: pl.DataFrame,
+    external_filepath: str | None,
     key: list[str],
     transform_columns: list[str],
     bound_columns: list[str],
 ) -> pl.DataFrame:
-    """Overlay external transforms on local transforms, matching by code key."""
-    external_metadata = prepare_metadata(
-        external_metadata,
-        key=key,
-        transform_columns=transform_columns,
-        bound_columns=bound_columns,
-        label="external",
-    )
-    fitted_metadata = prepare_metadata(
-        fitted_metadata,
-        key=key,
-        transform_columns=transform_columns,
-        bound_columns=bound_columns,
-        label="fitted",
-    )
+    """Use the locally fitted numeric metadata if it exists; otherwise fall back to an external source."""
+    if set(key + transform_columns).issubset(fitted_metadata.columns):
+        return prepare_metadata(fitted_metadata, key=key, transform_columns=transform_columns, bound_columns=bound_columns)
 
-    # External rows come first, so they take precedence for matching codes.
-    combined = pl.concat([external_metadata, fitted_metadata], how="vertical_relaxed")
-    combined = combined.unique(subset=key, keep="first", maintain_order=True)
-    return combined.sort(key)
+    if not external_filepath:
+        missing = sorted(set(key + transform_columns) - set(fitted_metadata.columns))
+        raise ValueError(f"fitted numeric metadata is missing columns: {missing}")
+    external_metadata = load_external_metadata(str(external_filepath))
+    return prepare_metadata(
+        external_metadata, key=key, transform_columns=transform_columns, bound_columns=bound_columns, label="external"
+    )
 
 
 def is_usable(
@@ -176,11 +167,13 @@ def annotate_numeric_values_fntr(
     code_metadata: pl.DataFrame,
     code_modifiers: list[str] | None = None,
 ) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
-    """Build the shard annotator from local and optional external metadata.
+    """Build the shard annotator from the locally fitted metadata, or an external source if none was fitted.
 
     ``numeric_metadata_filepath`` may point to a fitted numeric-metadata JSON,
     another dataset's ``metadata/codes.parquet``, or its ``metadata`` directory.
-    External transforms override locally fitted transforms for matching keys.
+    It's a fallback, not an override: whenever ``aggregate_numeric_metadata``
+    ran locally, that metadata is used and ``numeric_metadata_filepath`` is
+    ignored.
     """
     key = [CodeMetadataSchema.code_name] + list(code_modifiers or [])
     columns = stage_cfg.numeric_value_columns
@@ -188,17 +181,13 @@ def annotate_numeric_values_fntr(
     transform_columns = [columns[role] for role in groups.transform]
     bound_columns = [columns[role] for role in groups.bounds]
     derived_roles = list(groups.derived)
-    metadata = code_metadata
-    external_filepath = stage_cfg.get("numeric_metadata_filepath")
-    if external_filepath:
-        external_metadata = load_external_metadata(str(external_filepath))
-        metadata = combine_numeric_metadata(
-            code_metadata,
-            external_metadata,
-            key=key,
-            transform_columns=transform_columns,
-            bound_columns=bound_columns,
-        )
+    metadata = prepare_numeric_metadata(
+        code_metadata,
+        stage_cfg.get("numeric_metadata_filepath"),
+        key=key,
+        transform_columns=transform_columns,
+        bound_columns=bound_columns,
+    )
 
     def annotate(df: pl.LazyFrame) -> pl.LazyFrame:
         return annotate_numeric_values(
