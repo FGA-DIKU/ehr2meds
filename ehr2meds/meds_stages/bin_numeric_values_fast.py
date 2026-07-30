@@ -21,11 +21,10 @@ verified equal to the built-in stage on v0.6.7 across both code templates,
 import polars as pl
 import re
 from collections.abc import Callable
+from ehr2meds.io_utils import resolve_resource_path
 from meds import CodeMetadataSchema, DataSchema
 from MEDS_transforms.stages import Stage
-from MEDS_transforms.utils import PKG_PFX, resolve_pkg_path
 from omegaconf import DictConfig, OmegaConf
-from pathlib import Path
 
 CODE = DataSchema.code_name
 VALUE = DataSchema.numeric_value_name
@@ -192,7 +191,7 @@ def load_custom_bins(stage_cfg: DictConfig) -> dict:
     if not fp:
         return inline or {}
 
-    path = resolve_pkg_path(fp) if fp.startswith(PKG_PFX) else Path(fp)
+    path = resolve_resource_path(fp)
     if not path.is_file():
         raise FileNotFoundError(f"custom_bins_filepath '{fp}' does not exist.")
     from_file = OmegaConf.load(path)
