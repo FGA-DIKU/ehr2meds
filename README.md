@@ -65,9 +65,9 @@ The package includes the following stages to be used in MEDS pipeline configurat
 | --- | --- |
 | `augment_event_config` | Adds shared columns, such as `row_idx`, to every event definition so they do not need to be repeated throughout the event configuration. |
 | `aggregate_numeric_metadata` | Fits per-code numeric normalization bounds and adaptive quantile bins. It supports training-only fitting, an optional date cutoff (for OOT settings), hard plausibility limits (filtering values greater or lower than biological limits), and writes reusable numeric metadata. |
-| `annotate_numeric_values` | Applies the fitted metadata (from `aggregate_numeric_metadata`) to create new columns based on the numeric values. It adds normalized values, bin indices, and binned representatives. External numeric metadata can override locally fitted metadata. |
+| `annotate_numeric_values` | Applies the fitted metadata (from `aggregate_numeric_metadata`) to create new columns based on the numeric values. It adds normalized values, bin indices, and binned representatives. If no local fit exists, falls back to external numeric metadata instead. |
 | `fit_adaptive_code_mapping` | Fits a code mapping from training-event counts by climbing character-position levels (ATC and SKS diagnosis/operation/procedure) only as far as needed to clear a minimum count. |
-| `apply_adaptive_code_mapping` | Applies the frozen local and/or external adaptive mapping to every data split while retaining the MEDS event namespace. |
+| `apply_adaptive_code_mapping` | Applies the frozen local mapping (or, if none was fitted, an external one) to every data split while retaining the MEDS event namespace. |
 | `finalize_adaptive_code_metadata` | Rewrites and collapses `codes.parquet` to match the adaptively transformed data vocabulary. |
 | `join_numeric_bins` | Optionally creates the "joined representation" of numeric values, such as `LAB_CODE//bin_3`, from the numeric bin index. |
 | `bin_numeric_values_fast` | A faster, memory-efficient replacement for the standard MEDS-Transforms discrete binning stage. It rewrites codes using bin indices or interval labels. |
@@ -111,13 +111,24 @@ For example, a fixed-length hierarchy can be defined as
 overrides only the specified built-in fields.
 
 `mapping_filepath` can point to a frozen JSON or Parquet mapping with `code`
-and `adaptive/mapped_code` columns. In the default `overlay` mode, external
-rows override locally fitted rows. Set `external_mapping_mode: replace` to use
-only the external mapping.
+and `adaptive/mapped_code` columns, sourced from an external collaborator.
+It's a fallback, not an override: whenever `fit_adaptive_code_mapping` ran
+locally, that mapping is used and `mapping_filepath` is ignored. Set it
+(and drop `fit_adaptive_code_mapping` from `stages`) to run `apply_adaptive_code_mapping`
+and `finalize_adaptive_code_metadata` purely off an externally-supplied
+mapping -- see `configs/MEDS/lymphoma_pipeline_external_mapping.yaml` for a
+worked example of this pattern (e.g. adopting a mapping produced by a
+consortium such as PHAIR instead of fitting one locally).
 
 For combined numeric encoding, use `aggregate_numeric_metadata` followed by
 `annotate_numeric_values`. Add `join_numeric_bins` afterwards only when the final
 model input should contain joined lab-and-bin codes.
+
+`annotate_numeric_values`'s `numeric_metadata_filepath` follows the same
+fallback rule as `mapping_filepath` above: it's only used when
+`aggregate_numeric_metadata` did not run locally. See
+`configs/MEDS/lymphoma_pipeline_external_mapping.yaml`, which uses this for
+both numeric metadata and code mapping together.
 
 Shared numeric column names and stage defaults are defined in
 `configs/MEDS/default_numeric_values.yaml`; pipeline configurations only

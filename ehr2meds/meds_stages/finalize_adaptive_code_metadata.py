@@ -100,11 +100,7 @@ def main(cfg: DictConfig) -> None:
     if not input_filepath.is_file():
         raise FileNotFoundError(f"Adaptive code metadata input does not exist: {input_filepath}")
     metadata = pl.read_parquet(input_filepath)
-    mapping = prepare_mapping(
-        metadata,
-        external_mapping_filepath=cfg.stage_cfg.get("mapping_filepath"),
-        external_mapping_mode=str(cfg.stage_cfg["external_mapping_mode"]),
-    )
+    mapping = prepare_mapping(metadata, external_mapping_filepath=cfg.stage_cfg.get("mapping_filepath"))
     collapsed = collapse_code_metadata(metadata, mapping)
     data_input_dir = Path(str(cfg.stage_cfg.data_input_dir))
     data_files = sorted(data_input_dir.glob("**/*.parquet"))

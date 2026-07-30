@@ -1,0 +1,82 @@
+description: |-
+  Variant of `lymphoma_pipeline.yaml` for sites that adopt an adaptive code
+  mapping and/or numeric-value metadata produced elsewhere (e.g. by a
+  consortium such as PHAIR) instead of fitting their own from local training
+  counts. The only differences from the base pipeline are:
+
+  1. `fit_adaptive_code_mapping` is dropped from `stages` entirely -- no
+     local code-mapping fit is attempted. `apply_adaptive_code_mapping` and
+     `finalize_adaptive_code_metadata` both set `mapping_filepath` to the
+     externally-supplied mapping.
+  2. `aggregate_numeric_metadata` is likewise dropped -- no local numeric fit
+     is attempted. `annotate_numeric_values` sets `numeric_metadata_filepath`
+     to the externally-supplied numeric metadata instead.
+
+  In both cases, the external source is a fallback, not an override: since
+  no local fit ran, the relevant metadata columns don't exist yet at that
+  point in the pipeline, so both stages fall back to the external source
+  (see README.md, "Custom MEDS stages", for why a local fit -- when one
+  exists -- always takes precedence over this instead of being merged with
+  it).
+
+  Set the same environment variables as the base pipeline, plus:
+
+  export EXTERNAL_MAPPING_FP=/path/to/phair_code_mapping.parquet          # code + adaptive/mapped_code columns
+  export EXTERNAL_NUMERIC_METADATA_FP=/path/to/phair_numeric_metadata.json # fitted numeric-value transforms
+
+input_dir: ${oc.env:PREMEDS_INPUT_DIR}
+output_dir: ${oc.env:MEDS_OUTPUT_DIR}
+shards_map_fp: ${output_dir}/metadata/.shards.json
+source_event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
+event_conversion_config_fp: ${output_dir}/event_conversion_config.augmented.yaml
+external_mapping_fp: ${oc.env:EXTERNAL_MAPPING_FP}
+external_numeric_metadata_fp: ${oc.env:EXTERNAL_NUMERIC_METADATA_FP}
+
+
+etl_metadata:
+  dataset_name: preMEDS
+  dataset_version: 2.0
+
+stages:
+  - augment_event_config:
+      source_event_conversion_config_fp: ${source_event_conversion_config_fp}
+      output_event_conversion_config_fp: ${event_conversion_config_fp}
+      event_columns:
+        row_idx: $row_idx
+
+  - shard_events:
+      infer_schema_length: 999999999
+      # MEDS-Extract derives the raw cohort root from this path's parent.
+      data_input_dir: ${input_dir}/data
+
+  - split_and_shard_subjects:
+      n_subjects_per_shard: 10000
+      split_fracs:
+          train: 0.9
+          tuning: 0.1
+  - convert_to_subject_sharded
+  - convert_to_MEDS_events:
+      do_dedup_text_and_numeric: true
+  - merge_to_MEDS_cohort:
+      # row_idx provides deterministic ordering for simultaneous events.
+      additional_sort_by: [row_idx]
+
+  # No local fit here -- adopt the externally-supplied mapping instead.
+  - extract_code_metadata
+
+  # APPLY the external mapping to all train/tuning/test event shards.
+  - apply_adaptive_code_mapping:
+      mapping_filepath: ${external_mapping_fp}
+
+  # RECONCILE codes.parquet with the vocabulary now present in the data.
+  - finalize_adaptive_code_metadata:
+      mapping_filepath: ${external_mapping_fp}
+
+  # No local fit here either -- adopt the externally-supplied numeric
+  # metadata instead.
+  - annotate_numeric_values:
+      numeric_metadata_filepath: ${external_numeric_metadata_fp}
+  # Final model representation: valid lab values become LAB_CODE//BIN.
+  - join_numeric_bins
+  - finalize_MEDS_metadata
+  - finalize_MEDS_data

@@ -69,8 +69,8 @@ stages:
       #   "L//NPU01566": {min: 0, max: 250}
       numeric_metadata_output_filepath: ${output_dir}/numeric_metadata.json
   - annotate_numeric_values:
-      # Optional: a fitted numeric_metadata.json, MEDS metadata directory, or codes.parquet.
-      # Matching external code transforms override the locally fitted ones.
+      # Optional fallback (JSON, MEDS metadata directory, or codes.parquet)
+      # used only if aggregate_numeric_metadata did not run locally.
       numeric_metadata_filepath: null
   # Final model representation: valid lab values become LAB_CODE//BIN.
   - join_numeric_bins

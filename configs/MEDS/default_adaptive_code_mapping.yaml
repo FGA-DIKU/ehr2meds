@@ -2,8 +2,11 @@ minimum_count: 100
 mapping_output_filepath: null
 # Defaults to <mapping_output_filepath>.summary.json.
 mapping_summary_output_filepath: null
+# A frozen mapping (JSON or Parquet, with `code` and `adaptive/mapped_code`
+# columns) from an external collaborator. Only used as a fallback when
+# `fit_adaptive_code_mapping` did not run locally -- a local fit always
+# takes precedence over this.
 mapping_filepath: null
-external_mapping_mode: overlay
 
 # Only namespace routing normally needs configuration; the level widths for
 # each profile are defined below under `hierarchies`.
