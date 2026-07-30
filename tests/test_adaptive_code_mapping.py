@@ -1,49 +1,44 @@
 from __future__ import annotations
 
-import ehr2meds.meds_stages.adaptive_code_mapping as adaptive
+import ehr2meds.adaptive_code_mapping as adaptive
 import json
 import polars as pl
 import pytest
-from ehr2meds.meds_stages.adaptive_code_mapping import (
-    CODE_COLUMN,
+from ehr2meds.adaptive_code_mapping import (
     COUNT_COLUMN,
     MAPPED_CODE_COLUMN,
     MAPPED_COUNT_COLUMN,
     MEMBER_COUNT_COLUMN,
     REASON_COLUMN,
-    HierarchyProfile,
-    add_missing_observed_metadata,
-    add_unseen_metadata_codes,
-    apply_mapping,
-    candidate_ancestors,
-    collapse_code_metadata,
-    fit_mapping,
     prepare_mapping,
+)
+from ehr2meds.meds_stages.apply_adaptive_code_mapping import apply_mapping
+from ehr2meds.meds_stages.finalize_adaptive_code_metadata import (
+    add_missing_observed_metadata,
+    collapse_code_metadata,
+)
+from ehr2meds.meds_stages.fit_adaptive_code_mapping import (
+    HierarchyProfile,
+    add_unseen_metadata_codes,
+    candidate_ancestors,
+    fit_mapping,
+    mapper_fntr,
     read_profiles,
+    reducer_fntr,
     summarize_mapping,
 )
-from ehr2meds.meds_stages.fit_adaptive_code_mapping import mapper_fntr, reducer_fntr
+from meds import DataSchema
 from omegaconf import OmegaConf
 from pathlib import Path
+
+DEFAULT_CONFIG_PATH = Path(__file__).parents[1] / "configs" / "MEDS" / "default_adaptive_code_mapping.yaml"
 
 
 def profiles() -> dict[str, HierarchyProfile]:
     return {
-        "diagnosis": HierarchyProfile(
-            name="diagnosis",
-            minimum_count=50,
-            levels=(4, 3, 2, 1),
-        ),
-        "operation": HierarchyProfile(
-            name="operation",
-            minimum_count=50,
-            levels=(6, 4, 3, 2, 1),
-        ),
-        "atc": HierarchyProfile(
-            name="atc",
-            minimum_count=50,
-            levels=(7, 5, 4, 3, 1),
-        ),
+        "diagnosis": HierarchyProfile(minimum_count=50, levels=(4, 3, 2, 1)),
+        "operation": HierarchyProfile(minimum_count=50, levels=(6, 4, 3, 2, 1)),
+        "atc": HierarchyProfile(minimum_count=50, levels=(7, 5, 4, 3, 1)),
     }
 
 
@@ -70,7 +65,7 @@ def test_fit_mapping_keeps_common_codes_and_groups_rare_siblings() -> None:
         profiles=profiles(),
         namespaces={"RD": "diagnosis", "RC": "diagnosis"},
     )
-    result = {row[CODE_COLUMN]: row for row in mapping.to_dicts()}
+    result = {row[DataSchema.code_name]: row for row in mapping.to_dicts()}
 
     assert result["RD//C833A"][MAPPED_CODE_COLUMN] == "RD//C833"
     assert result["RD//C833B"][MAPPED_CODE_COLUMN] == "RD//C833"
@@ -95,7 +90,7 @@ def test_observed_parent_is_claimed_with_rare_descendants() -> None:
         profiles=profiles(),
         namespaces={"RPS": "operation"},
     )
-    result = {row[CODE_COLUMN]: row for row in mapping.to_dicts()}
+    result = {row[DataSchema.code_name]: row for row in mapping.to_dicts()}
 
     assert {row[MAPPED_CODE_COLUMN] for row in result.values()} == {"RPS//KABA"}
     assert {row[MAPPED_COUNT_COLUMN] for row in result.values()} == {50}
@@ -111,7 +106,7 @@ def test_common_observed_parent_contributes_to_descendant_threshold() -> None:
         profiles=profiles(),
         namespaces={"RPS": "operation"},
     )
-    result = {row[CODE_COLUMN]: row for row in mapping.to_dicts()}
+    result = {row[DataSchema.code_name]: row for row in mapping.to_dicts()}
 
     assert {row[MAPPED_CODE_COLUMN] for row in result.values()} == {"RPS//KABA"}
     assert {row[MAPPED_COUNT_COLUMN] for row in result.values()} == {60}
@@ -128,7 +123,7 @@ def test_rare_codes_continue_upward_until_combined_count_reaches_threshold() -> 
         profiles=profiles(),
         namespaces={"RPS": "operation"},
     )
-    result = {row[CODE_COLUMN]: row for row in mapping.to_dicts()}
+    result = {row[DataSchema.code_name]: row for row in mapping.to_dicts()}
 
     # KABA + KABA00 = 20, so that candidate is too small. Adding the exact
     # KAB events gives 50 at the next level, where the traversal stops.
@@ -190,6 +185,7 @@ def test_fit_stage_emits_mapping_and_readable_summary(monkeypatch) -> None:
     cfg = OmegaConf.create(
         {
             "minimum_count": 10,
+            "hierarchies": {"atc": {"levels": [1, 3, 4, 5, 7]}},
             "namespaces": {"RM": "atc"},
             "metadata_input_dir": "metadata",
             "reducer_output_dir": "output",
@@ -241,8 +237,14 @@ def test_mapper_counts_events_not_subjects() -> None:
     ]
 
 
-def test_builtin_profile_only_needs_namespace_routing() -> None:
-    cfg = OmegaConf.create({"minimum_count": 25, "namespaces": {"RM": "atc"}})
+def test_read_profiles_builds_profiles_from_configured_hierarchies() -> None:
+    cfg = OmegaConf.create(
+        {
+            "minimum_count": 25,
+            "namespaces": {"RM": "atc"},
+            "hierarchies": {"atc": {"levels": [7, 5, 4, 3, 1]}},
+        }
+    )
     configured, namespaces = read_profiles(cfg)
 
     assert namespaces == {"RM": "atc"}
@@ -250,18 +252,36 @@ def test_builtin_profile_only_needs_namespace_routing() -> None:
     assert configured["atc"].minimum_count == 25
 
 
-def test_builtin_profile_can_be_partially_overridden() -> None:
-    cfg = OmegaConf.create(
-        {
-            "minimum_count": 25,
-            "namespaces": {"RD": "sks_diagnosis"},
-            "hierarchies": {"sks_diagnosis": {"levels": [3, 1]}},
-        }
-    )
+def test_pipeline_can_partially_override_one_default_hierarchy() -> None:
+    # This exercises the real Hydra/OmegaConf config composition (deep merge
+    # of nested dicts) rather than a hand-rolled Python merge: a pipeline
+    # config overriding one field of one profile must not disturb the other
+    # fields of that profile or any other profile.
+    base = OmegaConf.load(DEFAULT_CONFIG_PATH)
+    pipeline_override = OmegaConf.create({"hierarchies": {"sks_diagnosis": {"levels": [3, 1]}}})
+    cfg = OmegaConf.merge(base, pipeline_override)
     configured, _ = read_profiles(cfg)
 
     assert configured["sks_diagnosis"].levels == (3, 1)
-    assert configured["sks_diagnosis"].minimum_count == 25
+    # The override takes full, unguarded effect -- including level 1, which
+    # the default config leaves out for exactly this profile (see test below
+    # for why that's unsafe for SKS/ICD). Overriding levels is a deliberate
+    # choice with no separate floor protecting against it.
+    assert candidate_ancestors("C833A", configured["sks_diagnosis"]) == ["C83", "C"]
+    assert configured["atc"].levels == (7, 5, 4, 3, 1)
+
+
+def test_default_config_excludes_the_bare_chapter_letter_for_sks_profiles() -> None:
+    # ICD-10/SKS chapter boundaries don't align with the leading letter (e.g.
+    # "D" spans both the tail of chapter II, neoplasms, and all of chapter
+    # III, blood disorders), so truncating to length 1 would merge clinically
+    # unrelated codes. Only ATC's length-1 level is a real, official tier.
+    cfg = OmegaConf.load(DEFAULT_CONFIG_PATH)
+    configured, _ = read_profiles(cfg)
+
+    for name in ["sks_diagnosis", "sks_operation", "sks_other_procedure"]:
+        assert 1 not in configured[name].levels
+    assert 1 in configured["atc"].levels
 
 
 def test_apply_mapping_preserves_rows_and_unmapped_codes() -> None:
@@ -288,7 +308,7 @@ def test_unseen_training_codes_are_carried_forward_without_fitting() -> None:
     )
     metadata = pl.DataFrame({"code": ["RD//C833A", "RD//C833B", "OTHER//X"]})
     completed = add_unseen_metadata_codes(mapping, metadata)
-    result = {row[CODE_COLUMN]: row for row in completed.to_dicts()}
+    result = {row[DataSchema.code_name]: row for row in completed.to_dicts()}
 
     assert result["RD//C833B"][MAPPED_CODE_COLUMN] == "RD//C833B"
     assert result["RD//C833B"][COUNT_COLUMN] == 0
@@ -296,25 +316,35 @@ def test_unseen_training_codes_are_carried_forward_without_fitting() -> None:
     assert result["OTHER//X"][REASON_COLUMN] == "unseen_training"
 
 
-def test_external_mapping_overlay_and_replace(monkeypatch) -> None:
-    local = pl.DataFrame(
-        {
-            "code": ["A", "B"],
-            MAPPED_CODE_COLUMN: ["LOCAL_A", "LOCAL_B"],
-        }
-    )
-    external = pl.DataFrame(
-        {
-            "code": ["A", "C"],
-            MAPPED_CODE_COLUMN: ["EXTERNAL_A", "EXTERNAL_C"],
-        }
-    )
+def test_prepare_mapping_prefers_local_fit_over_external(monkeypatch) -> None:
+    # A local fit exists and is complete, so the external mapping is never
+    # even loaded -- it's a fallback, not an override.
+    local = pl.DataFrame({"code": ["A", "B"], MAPPED_CODE_COLUMN: ["LOCAL_A", "LOCAL_B"]})
+
+    def fail_if_called(filepath: str, label: str) -> None:
+        raise AssertionError("external mapping should not be loaded when a local fit exists")
+
+    monkeypatch.setattr(adaptive, "load_frame", fail_if_called)
+
+    result = prepare_mapping(local, "external.parquet")
+    assert dict(result.iter_rows()) == {"A": "LOCAL_A", "B": "LOCAL_B"}
+
+
+def test_prepare_mapping_falls_back_to_external_when_no_local_fit(monkeypatch) -> None:
+    # No fit_adaptive_code_mapping ran locally (no adaptive/mapped_code
+    # column at all), so the external mapping is used standalone.
+    local = pl.DataFrame({"code": ["A", "B"], "description": ["a", "b"]})
+    external = pl.DataFrame({"code": ["A", "C"], MAPPED_CODE_COLUMN: ["EXTERNAL_A", "EXTERNAL_C"]})
     monkeypatch.setattr(adaptive, "load_frame", lambda filepath, label: external)
 
-    overlay = prepare_mapping(local, "external.parquet", "overlay")
-    assert dict(overlay.iter_rows()) == {"A": "EXTERNAL_A", "C": "EXTERNAL_C", "B": "LOCAL_B"}
-    replacement = prepare_mapping(local, "external.parquet", "replace")
-    assert dict(replacement.iter_rows()) == {"A": "EXTERNAL_A", "C": "EXTERNAL_C"}
+    result = prepare_mapping(local, "external.parquet")
+    assert dict(result.iter_rows()) == {"A": "EXTERNAL_A", "C": "EXTERNAL_C"}
+
+
+def test_prepare_mapping_requires_either_local_fit_or_external_mapping() -> None:
+    local = pl.DataFrame({"code": ["A", "B"], "description": ["a", "b"]})
+    with pytest.raises(ValueError, match="missing columns"):
+        prepare_mapping(local, None)
 
 
 def test_collapse_metadata_produces_one_row_per_mapped_code() -> None:
@@ -358,7 +388,9 @@ def test_missing_held_out_codes_are_added_to_final_metadata() -> None:
     assert held_out[MEMBER_COUNT_COLUMN] == 1
 
 
-def test_profile_validation_rejects_unknown_namespace_profile() -> None:
+def test_unknown_namespace_profile_fails_with_key_error() -> None:
+    # No custom validation here -- an unknown profile name just fails to look
+    # up in `hierarchies`, same as any other malformed config.
     cfg = OmegaConf.create(
         {
             "minimum_count": 10,
@@ -366,5 +398,5 @@ def test_profile_validation_rejects_unknown_namespace_profile() -> None:
             "namespaces": {"RM": "missing"},
         }
     )
-    with pytest.raises(ValueError, match="undefined hierarchy"):
+    with pytest.raises(KeyError, match="missing"):
         read_profiles(cfg)
