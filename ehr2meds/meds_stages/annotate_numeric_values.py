@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import polars as pl
 from collections.abc import Callable
+from ehr2meds.io_utils import load_frame, resolve_resource_path
 from meds import CodeMetadataSchema, DataSchema
 from MEDS_transforms.stages import Stage
-from MEDS_transforms.utils import PKG_PFX, resolve_pkg_path
 from omegaconf import DictConfig
 from pathlib import Path
 
@@ -22,20 +22,10 @@ def find_bin(row: dict[str, object]) -> int | None:
 
 def load_external_metadata(filepath: str) -> pl.DataFrame:
     """Load frozen numeric metadata from JSON, Parquet, or a MEDS metadata directory."""
-    path = resolve_pkg_path(filepath) if filepath.startswith(PKG_PFX) else Path(filepath)
+    path = resolve_resource_path(filepath)
     if path.is_dir():
         path = path / "codes.parquet"
-    if not path.is_file():
-        raise FileNotFoundError(f"numeric_metadata_filepath '{filepath}' does not exist")
-    match path.suffix.lower():
-        case ".parquet":
-            return pl.read_parquet(path)
-        case ".json":
-            return pl.read_json(path)
-        case _:
-            raise ValueError(
-                "numeric_metadata_filepath must be a JSON or Parquet file, or a directory containing codes.parquet"
-            )
+    return load_frame(str(path), "numeric_metadata_filepath")
 
 
 def prepare_metadata(

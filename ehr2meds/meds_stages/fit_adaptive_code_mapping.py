@@ -8,13 +8,13 @@ from collections import defaultdict
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from ehr2meds.adaptive_code_mapping import (
-    CODE_COLUMN,
     COUNT_COLUMN,
     MAPPED_CODE_COLUMN,
     MAPPED_COUNT_COLUMN,
     PROFILE_COLUMN,
     REASON_COLUMN,
 )
+from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig, OmegaConf
 from pathlib import Path
@@ -75,7 +75,7 @@ def make_record(
     mapped_count: int | None = None,
 ) -> dict:
     return {
-        CODE_COLUMN: code,
+        DataSchema.code_name: code,
         MAPPED_CODE_COLUMN: code if mapped_code is None else mapped_code,
         COUNT_COLUMN: count,
         MAPPED_COUNT_COLUMN: count if mapped_count is None else mapped_count,
@@ -155,7 +155,7 @@ def fit_mapping(
             records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold")
 
     schema = {
-        CODE_COLUMN: pl.String,
+        DataSchema.code_name: pl.String,
         MAPPED_CODE_COLUMN: pl.String,
         COUNT_COLUMN: pl.UInt64,
         MAPPED_COUNT_COLUMN: pl.UInt64,
@@ -170,14 +170,14 @@ def combine_count_frames(*dfs: pl.DataFrame | pl.LazyFrame) -> dict[str, int]:
     totals: dict[str, int] = defaultdict(int)
     for df in dfs:
         frame = df.collect() if isinstance(df, pl.LazyFrame) else df
-        for code, count in frame.select(CODE_COLUMN, COUNT_COLUMN).iter_rows():
+        for code, count in frame.select(DataSchema.code_name, COUNT_COLUMN).iter_rows():
             totals[str(code)] += int(count)
     return dict(totals)
 
 
 def summarize_mapping(mapping: pl.DataFrame) -> dict[str, object]:
     """Return a compact, JSON-friendly audit of a fitted mapping."""
-    changed = pl.col(CODE_COLUMN) != pl.col(MAPPED_CODE_COLUMN)
+    changed = pl.col(DataSchema.code_name) != pl.col(MAPPED_CODE_COLUMN)
     training_rows = pl.col(COUNT_COLUMN) > 0
     totals = mapping.select(
         pl.len().alias("metadata_source_codes"),
@@ -203,7 +203,7 @@ def summarize_mapping(mapping: pl.DataFrame) -> dict[str, object]:
         "summary": totals,
         "decisions": decisions,
         "columns": {
-            CODE_COLUMN: "original MEDS code",
+            DataSchema.code_name: "original MEDS code",
             MAPPED_CODE_COLUMN: "code used after adaptive truncation",
             COUNT_COLUMN: "raw events in training data",
             MAPPED_COUNT_COLUMN: "training events represented by the mapped code",
@@ -215,12 +215,12 @@ def summarize_mapping(mapping: pl.DataFrame) -> dict[str, object]:
 
 def add_unseen_metadata_codes(mapping: pl.DataFrame, code_metadata: pl.DataFrame) -> pl.DataFrame:
     """Carry forward metadata codes absent from training without fitting them."""
-    unseen_codes = sorted(set(code_metadata.get_column(CODE_COLUMN).to_list()) - set(mapping.get_column(CODE_COLUMN)))
+    unseen_codes = sorted(set(code_metadata.get_column(DataSchema.code_name).to_list()) - set(mapping.get_column(DataSchema.code_name)))
     if not unseen_codes:
         return mapping
     unseen = pl.DataFrame(
         {
-            CODE_COLUMN: unseen_codes,
+            DataSchema.code_name: unseen_codes,
             MAPPED_CODE_COLUMN: unseen_codes,
             COUNT_COLUMN: [0] * len(unseen_codes),
             MAPPED_COUNT_COLUMN: [0] * len(unseen_codes),
@@ -229,7 +229,7 @@ def add_unseen_metadata_codes(mapping: pl.DataFrame, code_metadata: pl.DataFrame
         },
         schema=mapping.schema,
     )
-    return pl.concat([mapping, unseen]).sort(CODE_COLUMN)
+    return pl.concat([mapping, unseen]).sort(DataSchema.code_name)
 
 
 def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
@@ -238,13 +238,13 @@ def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
         return (
-            df.group_by(CODE_COLUMN)
+            df.group_by(DataSchema.code_name)
             .len()
             .select(
-                pl.col(CODE_COLUMN),
+                pl.col(DataSchema.code_name),
                 pl.col("len").cast(pl.UInt64).alias(COUNT_COLUMN),
             )
-            .sort(CODE_COLUMN)
+            .sort(DataSchema.code_name)
         )
 
     return mapper
@@ -268,7 +268,7 @@ def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
     code_metadata = (
         pl.read_parquet(code_metadata_filepath)
         if code_metadata_filepath.is_file()
-        else pl.DataFrame(schema={CODE_COLUMN: pl.String})
+        else pl.DataFrame(schema={DataSchema.code_name: pl.String})
     )
 
     def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.LazyFrame:
