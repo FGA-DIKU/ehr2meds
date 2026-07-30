@@ -215,7 +215,9 @@ def summarize_mapping(mapping: pl.DataFrame) -> dict[str, object]:
 
 def add_unseen_metadata_codes(mapping: pl.DataFrame, code_metadata: pl.DataFrame) -> pl.DataFrame:
     """Carry forward metadata codes absent from training without fitting them."""
-    unseen_codes = sorted(set(code_metadata.get_column(DataSchema.code_name).to_list()) - set(mapping.get_column(DataSchema.code_name)))
+    unseen_codes = sorted(
+        set(code_metadata.get_column(DataSchema.code_name).to_list()) - set(mapping.get_column(DataSchema.code_name))
+    )
     if not unseen_codes:
         return mapping
     unseen = pl.DataFrame(
