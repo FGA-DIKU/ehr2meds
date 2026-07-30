@@ -19,14 +19,8 @@ namespaces:
 # Character-position level widths per code system. A pipeline config can
 # override any single field of a profile (e.g. `hierarchies: {atc: {levels:
 # [...]}}`) without repeating the rest, or add a wholly new profile name.
-#
-# Level 1 (the bare chapter letter) is deliberately excluded from the SKS
-# profiles: ICD-10/SKS chapter boundaries don't align with the leading
-# letter (e.g. "D" spans both the tail of chapter II, neoplasms, and all of
-# chapter III, blood disorders), so it would merge clinically unrelated
-# codes. ATC's level 1 is a real, official top-level tier (the 14 anatomical
-# main groups), so it's kept. An override that reintroduces level 1 for a
-# SKS profile is not blocked -- it takes effect exactly as configured.
+# See README.md ("Custom MEDS stages") for why level 1 is excluded from the
+# SKS profiles here but kept for ATC.
 hierarchies:
   sks_diagnosis:
     levels: [4, 3, 2]

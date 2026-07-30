@@ -76,7 +76,18 @@ Adaptive truncation uses raw training-event counts, not distinct-subject
 counts. Its normal configuration is deliberately small: set `minimum_count`
 and map each MEDS namespace to one of `sks_diagnosis`, `sks_operation`,
 `sks_other_procedure`, or `atc` under `namespaces`. Built-in definitions hold
-the character-position level widths for each code system.
+the character-position level widths for each code system, in
+`configs/MEDS/default_adaptive_code_mapping.yaml`.
+
+The built-in SKS profiles (`sks_diagnosis`, `sks_operation`,
+`sks_other_procedure`) deliberately exclude level 1 (the bare chapter
+letter): ICD-10/SKS chapter boundaries don't align with the leading letter
+(e.g. `D` spans both the tail of chapter II, neoplasms, and all of chapter
+III, blood disorders), so truncating to it would merge clinically unrelated
+codes. ATC's level 1 is kept because it's a real, official top-level tier
+(the 14 anatomical main groups), not an artifact of truncation. A pipeline
+override that reintroduces level 1 for a SKS profile is not blocked -- it
+takes effect exactly as configured.
 
 The three adaptive stages correspond to different MEDS-Transforms data flows:
 
