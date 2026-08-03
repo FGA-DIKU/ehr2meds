@@ -82,6 +82,59 @@ def make_record(
     }
 
 
+def resolve_pending_codes(
+    counts: Mapping[str, int],
+    profiles: Mapping[str, HierarchyProfile],
+    pending_by_profile: Mapping[str, set[str]],
+    candidates_by_code: Mapping[str, list[str]],
+    records: Mapping[str, dict[str, object]],
+) -> dict[str, dict[str, object]]:
+    """Resolve below-threshold codes against their candidate ancestors."""
+    resolved_records = {code: record.copy() for code, record in records.items()}
+
+    for profile_name, profile_pending in pending_by_profile.items():
+        profile = profiles[profile_name]
+        pending = set(profile_pending)
+
+        by_candidate: dict[str, list[str]] = defaultdict(list)
+        for code in sorted(pending):
+            for candidate in candidates_by_code[code]:
+                by_candidate[candidate].append(code)
+
+        # Try candidates most-specific (longest) first. A code already
+        # resolved by a longer candidate is skipped once a shorter one comes up.
+        for candidate in sorted(by_candidate, key=lambda c: (-len(c), c)):
+            members = [code for code in by_candidate[candidate] if code in pending]
+            # If the target itself is observed, its events belong to the
+            # target's denominator. Claim it too so it can't later move
+            # farther upward.
+            candidate_is_pending = candidate in pending
+            if candidate_is_pending:
+                members.append(candidate)
+
+            mapped_count = sum(int(counts[code]) for code in members)
+            candidate_needs_own_count = candidate in counts and not candidate_is_pending
+            if candidate_needs_own_count:
+                mapped_count += int(counts[candidate])
+
+            if mapped_count < profile.minimum_count:
+                continue
+            for code in members:
+                resolved_records[code] = make_record(
+                    code, int(counts[code]), profile_name, "grouped", mapped_code=candidate, mapped_count=mapped_count
+                )
+                pending.remove(code)
+            if candidate_needs_own_count:
+                resolved_records[candidate][MAPPED_COUNT_COLUMN] = mapped_count
+
+        for code in sorted(pending):
+            resolved_records[code] = make_record(
+                code, int(counts[code]), profile_name, "below_threshold"
+            )
+
+    return resolved_records
+
+
 def fit_mapping(
     counts: Mapping[str, int],
     profiles: Mapping[str, HierarchyProfile],
@@ -113,42 +166,7 @@ def fit_mapping(
         candidates_by_code[code] = ancestors
         pending_by_profile[profile_name].add(code)
 
-    for profile_name, pending in pending_by_profile.items():
-        profile = profiles[profile_name]
-
-        by_candidate: dict[str, list[str]] = defaultdict(list)
-        for code in sorted(pending):
-            for candidate in candidates_by_code[code]:
-                by_candidate[candidate].append(code)
-
-        # Try candidates most-specific (longest) first. A code already
-        # resolved by a longer candidate is skipped once a shorter one comes up.
-        for candidate in sorted(by_candidate, key=lambda c: (-len(c), c)):
-            members = [code for code in by_candidate[candidate] if code in pending]
-            # If the target itself is observed, its events belong to the
-            # target's denominator. Claim it too so it can't later move
-            # farther upward.
-            candidate_is_pending = candidate in pending
-            if candidate_is_pending:
-                members.append(candidate)
-
-            mapped_count = sum(int(counts[code]) for code in members)
-            candidate_needs_own_count = candidate in counts and not candidate_is_pending
-            if candidate_needs_own_count:
-                mapped_count += int(counts[candidate])
-
-            if mapped_count < profile.minimum_count:
-                continue
-            for code in members:
-                records[code] = make_record(
-                    code, int(counts[code]), profile_name, "grouped", mapped_code=candidate, mapped_count=mapped_count
-                )
-                pending.remove(code)
-            if candidate_needs_own_count:
-                records[candidate][MAPPED_COUNT_COLUMN] = mapped_count
-
-        for code in sorted(pending):
-            records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold")
+    records = resolve_pending_codes(counts, profiles, pending_by_profile, candidates_by_code, records)
 
     schema = {
         DataSchema.code_name: pl.String,
