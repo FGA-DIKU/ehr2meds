@@ -8,28 +8,23 @@ mapping_summary_output_filepath: null
 # takes precedence over this.
 mapping_filepath: null
 
-# Only namespace routing normally needs configuration; the level widths for
-# each profile are defined below under `hierarchies`.
-namespaces:
-  RD: sks_diagnosis
-  RC: sks_diagnosis
-  RC_ADM: sks_diagnosis
-  RPS: sks_operation
-  RPO: sks_other_procedure
-  RM: atc
-  RMA: atc
-
-# Character-position level widths per code system. A pipeline config can
-# override any single field of a profile (e.g. `hierarchies: {atc: {levels:
-# [...]}}`) without repeating the rest, or add a wholly new profile name.
+# Character-position level widths per MEDS namespace. A pipeline config can
+# override any single field of a hierarchy (e.g. `hierarchies: {RM: {levels:
+# [...]}}`) without repeating the rest, or add a wholly new namespace.
 # See README.md ("Custom MEDS stages") for why level 1 is excluded from the
-# SKS profiles here but kept for ATC.
+# SKS hierarchies here but kept for ATC.
 hierarchies:
-  sks_diagnosis:
+  RD:
     levels: [4, 3, 2]
-  sks_operation:
+  RC:
+    levels: [4, 3, 2]
+  RC_ADM:
+    levels: [4, 3, 2]
+  RPS:
     levels: [7, 6, 5, 4, 3, 2]
-  sks_other_procedure:
+  RPO:
     levels: [8, 7, 6, 5, 4, 3, 2]
-  atc:
+  RM:
+    levels: [1, 3, 4, 5, 7]
+  RMA:
     levels: [1, 3, 4, 5, 7]

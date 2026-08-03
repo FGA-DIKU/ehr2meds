@@ -28,28 +28,26 @@ class HierarchyProfile:
     levels: tuple[int, ...]
 
 
-def read_profiles(stage_cfg: DictConfig) -> tuple[dict[str, HierarchyProfile], dict[str, str]]:
-    """Build the configured hierarchy profiles and namespace routing.
+def read_profiles(stage_cfg: DictConfig) -> dict[str, HierarchyProfile]:
+    """Build the configured hierarchy profile for each MEDS namespace.
 
-    ``hierarchies`` supplies every profile's character-position levels (see
+    ``hierarchies`` supplies every namespace's character-position levels (see
     ``configs/MEDS/default_adaptive_code_mapping.yaml`` for the built-in ATC
-    and SKS definitions). A pipeline config can override a single field of
-    one profile, or add a new profile, without repeating the rest --
+    and SKS definitions). A pipeline config can override a single field for
+    one namespace, or add a new namespace, without repeating the rest --
     Hydra/OmegaConf merges the pipeline's ``hierarchies`` onto the stage
     default field by field.
     """
     cfg = OmegaConf.to_container(stage_cfg, resolve=True)
-    namespaces = {str(namespace): str(profile) for namespace, profile in cfg["namespaces"].items()}
     hierarchies = cfg["hierarchies"]
     default_minimum = int(cfg["minimum_count"])
-    profiles = {
-        name: HierarchyProfile(
-            minimum_count=int(hierarchies[name].get("minimum_count", default_minimum)),
-            levels=tuple(sorted({int(level) for level in hierarchies[name]["levels"]}, reverse=True)),
+    return {
+        str(namespace): HierarchyProfile(
+            minimum_count=int(hierarchy.get("minimum_count", default_minimum)),
+            levels=tuple(sorted({int(level) for level in hierarchy["levels"]}, reverse=True)),
         )
-        for name in sorted(set(namespaces.values()))
+        for namespace, hierarchy in sorted(hierarchies.items())
     }
-    return profiles, namespaces
 
 
 def split_code(code: str) -> tuple[str, str] | None:
@@ -87,7 +85,6 @@ def make_record(
 def fit_mapping(
     counts: Mapping[str, int],
     profiles: Mapping[str, HierarchyProfile],
-    namespaces: Mapping[str, str],
 ) -> pl.DataFrame:
     """Fit a deterministic, disjoint adaptive hierarchy mapping."""
     records: dict[str, dict[str, object]] = {}
@@ -97,7 +94,7 @@ def fit_mapping(
     for code in sorted(counts):
         count = int(counts[code])
         parsed = split_code(code)
-        profile_name = namespaces.get(parsed[0]) if parsed else None
+        profile_name = parsed[0] if parsed and parsed[0] in profiles else None
         if profile_name is None:
             records[code] = make_record(code, count, None, "unconfigured")
             continue
@@ -254,7 +251,7 @@ def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]
 
 def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
     """Fit one global mapping and write its reusable mapping and audit files."""
-    profiles, namespaces = read_profiles(stage_cfg)
+    profiles = read_profiles(stage_cfg)
     configured_output = stage_cfg.get("mapping_output_filepath")
     output_filepath = (
         Path(str(configured_output))
@@ -275,7 +272,7 @@ def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
 
     def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.LazyFrame:
         counts = combine_count_frames(*dfs)
-        mapping = fit_mapping(counts, profiles=profiles, namespaces=namespaces)
+        mapping = fit_mapping(counts, profiles=profiles)
         mapping = add_unseen_metadata_codes(mapping, code_metadata)
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
         mapping.write_parquet(output_filepath)
