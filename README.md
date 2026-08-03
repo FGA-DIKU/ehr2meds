@@ -74,13 +74,11 @@ The package includes the following stages to be used in MEDS pipeline configurat
 
 Adaptive truncation uses raw training-event counts, not distinct-subject
 counts. Its normal configuration is deliberately small: set `minimum_count`
-and map each MEDS namespace to one of `sks_diagnosis`, `sks_operation`,
-`sks_other_procedure`, or `atc` under `namespaces`. Built-in definitions hold
-the character-position level widths for each code system, in
+and configure the character-position level widths for each MEDS namespace
+under `hierarchies`. Built-in definitions for the ATC and SKS namespaces live in
 `configs/MEDS/default_adaptive_code_mapping.yaml`.
 
-The built-in SKS profiles (`sks_diagnosis`, `sks_operation`,
-`sks_other_procedure`) deliberately exclude level 1 (the bare chapter
+The built-in SKS hierarchies deliberately exclude level 1 (the bare chapter
 letter): ICD-10/SKS chapter boundaries don't align with the leading letter
 (e.g. `D` spans both the tail of chapter II, neoplasms, and all of chapter
 III, blood disorders), so truncating to it would merge clinically unrelated
@@ -104,11 +102,10 @@ Parquet and a compact `*.summary.json` audit containing vocabulary sizes,
 affected event counts, and decisions by hierarchy and reason. Later per-code
 metadata stages must follow metadata reconciliation.
 
-Custom profiles remain available through the optional `hierarchies` mapping.
+Custom namespaces can be added through the optional `hierarchies` mapping.
 For example, a fixed-length hierarchy can be defined as
-`my_codes: {levels: [2, 4, 6]}` and selected with
-`namespaces: {MY_NAMESPACE: my_codes}`. An entry named like a built-in profile
-overrides only the specified built-in fields.
+`hierarchies: {MY_NAMESPACE: {levels: [2, 4, 6]}}`. An entry named like a
+built-in namespace overrides only the specified built-in fields.
 
 `mapping_filepath` can point to a frozen JSON or Parquet mapping with `code`
 and `adaptive/mapped_code` columns, sourced from an external collaborator.
