@@ -117,9 +117,7 @@ def resolve_pending_codes(
                 resolved_records[candidate][MAPPED_COUNT_COLUMN] = mapped_count
 
         for code in sorted(pending):
-            resolved_records[code] = make_record(
-                code, int(counts[code]), profile_name, "below_threshold"
-            )
+            resolved_records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold")
 
     return resolved_records
 
