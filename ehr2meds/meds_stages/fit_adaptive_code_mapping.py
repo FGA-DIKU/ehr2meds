@@ -176,12 +176,12 @@ def summarize_mapping(mapping: pl.DataFrame) -> dict[str, object]:
     changed = pl.col(DataSchema.code_name) != pl.col(MAPPED_CODE_COLUMN)
     training_rows = pl.col(COUNT_COLUMN) > 0
     totals = mapping.select(
-        pl.len().alias("metadata_source_codes"),
-        training_rows.sum().alias("training_source_codes"),
-        pl.col(MAPPED_CODE_COLUMN).n_unique().alias("output_codes"),
-        changed.sum().alias("changed_source_codes"),
-        pl.col(COUNT_COLUMN).sum().alias("training_events"),
-        pl.col(COUNT_COLUMN).filter(changed).sum().alias("remapped_training_events"),
+        metadata_source_codes=pl.len(),
+        training_source_codes=training_rows.sum(),
+        output_codes=pl.col(MAPPED_CODE_COLUMN).n_unique(),
+        changed_source_codes=changed.sum(),
+        training_events=pl.col(COUNT_COLUMN).sum(),
+        remapped_training_events=pl.col(COUNT_COLUMN).filter(changed).sum(),
     ).to_dicts()[0]
     decisions = (
         mapping.group_by(
