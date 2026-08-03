@@ -22,22 +22,14 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class HierarchyProfile:
-    """How coarse a code is allowed to grow (``levels``), and by how much at a time."""
+    """Adaptive truncation settings for one MEDS namespace."""
 
     minimum_count: int
     levels: tuple[int, ...]
 
 
 def read_profiles(stage_cfg: DictConfig) -> dict[str, HierarchyProfile]:
-    """Build the configured hierarchy profile for each MEDS namespace.
-
-    ``hierarchies`` supplies every namespace's character-position levels (see
-    ``configs/MEDS/default_adaptive_code_mapping.yaml`` for the built-in ATC
-    and SKS definitions). A pipeline config can override a single field for
-    one namespace, or add a new namespace, without repeating the rest --
-    Hydra/OmegaConf merges the pipeline's ``hierarchies`` onto the stage
-    default field by field.
-    """
+    """Read hierarchy profiles keyed by MEDS namespace."""
     cfg = OmegaConf.to_container(stage_cfg, resolve=True)
     hierarchies = cfg["hierarchies"]
     default_minimum = int(cfg["minimum_count"])
@@ -101,13 +93,10 @@ def resolve_pending_codes(
             for candidate in candidates_by_code[code]:
                 by_candidate[candidate].append(code)
 
-        # Try candidates most-specific (longest) first. A code already
-        # resolved by a longer candidate is skipped once a shorter one comes up.
+        # Resolve longest candidates first so codes cannot later move to broader ancestors.
         for candidate in sorted(by_candidate, key=lambda c: (-len(c), c)):
             members = [code for code in by_candidate[candidate] if code in pending]
-            # If the target itself is observed, its events belong to the
-            # target's denominator. Claim it too so it can't later move
-            # farther upward.
+            # Include an observed target in its own aggregate and prevent further truncation.
             candidate_is_pending = candidate in pending
             if candidate_is_pending:
                 members.append(candidate)
@@ -298,8 +287,7 @@ def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
             json.dumps(summarize_mapping(mapping), indent=2, sort_keys=True),
             encoding="utf-8",
         )
-        # MEDS-Transforms scans prior code metadata lazily, and its merge helper
-        # requires both sides of the join to use the same eager/lazy type.
+        # Match the lazy type expected by MEDS-Transforms' metadata merge.
         return mapping.lazy()
 
     return reducer

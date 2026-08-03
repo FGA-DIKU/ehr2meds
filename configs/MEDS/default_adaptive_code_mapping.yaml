@@ -2,17 +2,12 @@ minimum_count: 100
 mapping_output_filepath: null
 # Defaults to <mapping_output_filepath>.summary.json.
 mapping_summary_output_filepath: null
-# A frozen mapping (JSON or Parquet, with `code` and `adaptive/mapped_code`
-# columns) from an external collaborator. Only used as a fallback when
-# `fit_adaptive_code_mapping` did not run locally -- a local fit always
-# takes precedence over this.
+# Optional external JSON or Parquet mapping with `code` and
+# `adaptive/mapped_code` columns. A local fit takes precedence.
 mapping_filepath: null
 
-# Character-position level widths per MEDS namespace. A pipeline config can
-# override any single field of a hierarchy (e.g. `hierarchies: {RM: {levels:
-# [...]}}`) without repeating the rest, or add a wholly new namespace.
-# See README.md ("Custom MEDS stages") for why level 1 is excluded from the
-# SKS hierarchies here but kept for ATC.
+# Character-position widths by MEDS namespace. Entries can override defaults
+# or add namespaces. See README.md for the SKS and ATC level-1 rationale.
 hierarchies:
   RD:
     levels: [4, 3, 2]
