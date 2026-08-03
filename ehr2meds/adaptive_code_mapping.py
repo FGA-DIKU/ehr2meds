@@ -18,7 +18,10 @@ def prepare_mapping(local_metadata: pl.DataFrame, external_mapping_filepath: str
     """Use the local fitted mapping if one exists; otherwise fall back to an external mapping."""
     required_local = {DataSchema.code_name, MAPPED_CODE_COLUMN}
     if required_local.issubset(local_metadata.columns):
-        return local_metadata.select(DataSchema.code_name, MAPPED_CODE_COLUMN)
+        local = local_metadata.select(DataSchema.code_name, MAPPED_CODE_COLUMN)
+        if local.get_column(DataSchema.code_name).n_unique() != local.height:
+            raise ValueError("local adaptive mapping must contain at most one row per code")
+        return local
 
     if not external_mapping_filepath:
         missing = sorted(required_local - set(local_metadata.columns))
