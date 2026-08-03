@@ -91,8 +91,8 @@ def fit_mapping(
     pending_by_profile: dict[str, set[str]] = defaultdict(set)
     candidates_by_code: dict[str, list[str]] = {}
 
-    for code in sorted(counts):
-        count = int(counts[code])
+    for code, count in counts.items():
+        count = int(count)
         parsed = split_code(code)
         profile_name = parsed[0] if parsed and parsed[0] in profiles else None
         if profile_name is None:
@@ -113,9 +113,8 @@ def fit_mapping(
         candidates_by_code[code] = ancestors
         pending_by_profile[profile_name].add(code)
 
-    for profile_name in sorted(pending_by_profile):
+    for profile_name, pending in pending_by_profile.items():
         profile = profiles[profile_name]
-        pending = pending_by_profile[profile_name]
 
         by_candidate: dict[str, list[str]] = defaultdict(list)
         for code in sorted(pending):
