@@ -42,7 +42,7 @@ def collapse_code_metadata(metadata: pl.DataFrame, mapping: pl.DataFrame) -> pl.
         MEMBER_COUNT_COLUMN,
     }
     preserved = [column for column in metadata.columns if column not in technical]
-    aggregations = [pl.col(column).drop_nulls().first().alias(column) for column in preserved]
+    aggregations = [pl.col(column).drop_nulls().first() for column in preserved]
     if COUNT_COLUMN in metadata.columns:
         aggregations.append(pl.col(COUNT_COLUMN).fill_null(0).sum().alias(COUNT_COLUMN))
     aggregations.append(pl.len().cast(pl.UInt32).alias(MEMBER_COUNT_COLUMN))
