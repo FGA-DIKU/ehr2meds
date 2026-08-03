@@ -211,7 +211,7 @@ def fit_numeric_metadata(
     return pl.DataFrame(records).sort(key)
 
 
-def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[..., pl.DataFrame]:
+def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) -> Callable[..., pl.LazyFrame]:
     """Build the global metadata reducer."""
     key = [DataSchema.code_name] + list(code_modifiers or [])
     columns = stage_cfg.numeric_value_columns
@@ -234,7 +234,7 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
     else:
         output_filepath = Path(str(stage_cfg.reducer_output_dir)) / "numeric_metadata.json"
 
-    def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.DataFrame:
+    def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.LazyFrame:
         metadata = fit_numeric_metadata(
             *dfs,
             key=key,
@@ -252,7 +252,7 @@ def reducer_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None)
             metadata = metadata.join(bounds, on=DataSchema.code_name, how="left")
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
         metadata.write_json(output_filepath)
-        return metadata
+        return metadata.lazy()
 
     return reducer
 
