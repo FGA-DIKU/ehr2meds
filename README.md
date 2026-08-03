@@ -72,64 +72,60 @@ The package includes the following stages to be used in MEDS pipeline configurat
 | `join_numeric_bins` | Optionally creates the "joined representation" of numeric values, such as `LAB_CODE//bin_3`, from the numeric bin index. |
 | `bin_numeric_values_fast` | A faster, memory-efficient replacement for the standard MEDS-Transforms discrete binning stage. It rewrites codes using bin indices or interval labels. |
 
-Adaptive truncation uses raw training-event counts, not distinct-subject
-counts. Its normal configuration is deliberately small: set `minimum_count`
-and configure the character-position level widths for each MEDS namespace
-under `hierarchies`. Built-in definitions for the ATC and SKS namespaces live in
-`configs/MEDS/default_adaptive_code_mapping.yaml`.
+### Adaptive code mapping
 
-The built-in SKS hierarchies deliberately exclude level 1 (the bare chapter
-letter): ICD-10/SKS chapter boundaries don't align with the leading letter
-(e.g. `D` spans both the tail of chapter II, neoplasms, and all of chapter
-III, blood disorders), so truncating to it would merge clinically unrelated
-codes. ATC's level 1 is kept because it's a real, official top-level tier
-(the 14 anatomical main groups), not an artifact of truncation. A pipeline
-override that reintroduces level 1 for a SKS profile is not blocked -- it
-takes effect exactly as configured.
+Adaptive mapping uses raw training-event counts, not distinct-subject counts:
 
-The three adaptive stages correspond to different MEDS-Transforms data flows:
+1. `fit_adaptive_code_mapping` creates a frozen Parquet mapping and
+   `*.summary.json` audit from all training shards.
+2. `apply_adaptive_code_mapping` maps every data shard.
+3. `finalize_adaptive_code_metadata` reconciles `codes.parquet` with the mapped
+   vocabulary.
 
-1. `fit_adaptive_code_mapping` globally reduces **training shards** into one
-   frozen mapping.
-2. `apply_adaptive_code_mapping` maps **every data shard** without learning
-   from tuning or test data.
-3. `finalize_adaptive_code_metadata` reconciles **code metadata** after the
-   transformed data vocabulary is known.
+Run the standard `extract_code_metadata` stage before these stages. Run later
+per-code metadata stages after `finalize_adaptive_code_metadata`.
 
-`extract_code_metadata` is the standard upstream MEDS stage, not part of the
-adaptive implementation. The fit stage writes the full reviewable mapping as
-Parquet and a compact `*.summary.json` audit containing vocabulary sizes,
-affected event counts, and decisions by hierarchy and reason. Later per-code
-metadata stages must follow metadata reconciliation.
+#### Hierarchy configuration
 
-Custom namespaces can be added through the optional `hierarchies` mapping.
-For example, a fixed-length hierarchy can be defined as
-`hierarchies: {MY_NAMESPACE: {levels: [2, 4, 6]}}`. An entry named like a
-built-in namespace overrides only the specified built-in fields.
+Set `minimum_count` and character-position widths under `hierarchies`. ATC and
+SKS defaults are in
+[`default_adaptive_code_mapping.yaml`](./configs/MEDS/default_adaptive_code_mapping.yaml).
 
-`mapping_filepath` can point to a frozen JSON or Parquet mapping with `code`
-and `adaptive/mapped_code` columns, sourced from an external collaborator.
-It's a fallback, not an override: whenever `fit_adaptive_code_mapping` ran
-locally, that mapping is used and `mapping_filepath` is ignored. Set it
-(and drop `fit_adaptive_code_mapping` from `stages`) to run `apply_adaptive_code_mapping`
-and `finalize_adaptive_code_metadata` purely off an externally-supplied
-mapping -- see `configs/MEDS/lymphoma_pipeline_external_mapping.yaml` for a
-worked example of this pattern (e.g. adopting a mapping produced by a
-consortium such as PHAIR instead of fitting one locally).
+Override a built-in namespace or add a new one as needed:
 
-For combined numeric encoding, use `aggregate_numeric_metadata` followed by
-`annotate_numeric_values`. Add `join_numeric_bins` afterwards only when the final
-model input should contain joined lab-and-bin codes.
+```yaml
+hierarchies:
+  MY_NAMESPACE:
+    levels: [2, 4, 6]
+```
 
-`annotate_numeric_values`'s `numeric_metadata_filepath` follows the same
-fallback rule as `mapping_filepath` above: it's only used when
-`aggregate_numeric_metadata` did not run locally. See
-`configs/MEDS/lymphoma_pipeline_external_mapping.yaml`, which uses this for
-both numeric metadata and code mapping together.
+SKS defaults exclude level 1 because an ICD-10/SKS leading letter can span
+clinical chapters; for example, `D` covers parts of both neoplasm and blood
+disorder chapters. ATC keeps level 1 because it represents the 14 official
+anatomical groups. Either default can be overridden.
 
-Shared numeric column names and stage defaults are defined in
-`configs/MEDS/default_numeric_values.yaml`; pipeline configurations only
-need to specify dataset- or run-specific overrides. Any setting can be overridden
-under the relevant pipeline stage. The `numeric_value_column_groups` lists control
-which transform, optional bound, and derived columns are used; column names and
-derived outputs are configured through `numeric_value_columns`.
+### Numeric-value encoding
+
+Use `aggregate_numeric_metadata` followed by `annotate_numeric_values`. Add
+`join_numeric_bins` only for joined lab-and-bin model inputs.
+
+Defaults are defined in
+[`default_numeric_values.yaml`](./configs/MEDS/default_numeric_values.yaml).
+
+- `numeric_value_columns` names the source and derived columns.
+- `numeric_value_column_groups` selects transforms, bounds, and derived columns.
+
+### Using externally fitted metadata
+
+External files are fallbacks, not overrides. A local fit always takes
+precedence.
+
+| Artifact | Configuration | Used when |
+| --- | --- | --- |
+| Adaptive code mapping | `mapping_filepath` on the apply and finalize stages | `fit_adaptive_code_mapping` is omitted |
+| Numeric metadata | `numeric_metadata_filepath` on `annotate_numeric_values` | `aggregate_numeric_metadata` is omitted |
+
+External code mappings may be JSON or Parquet and must contain `code` and
+`adaptive/mapped_code`. See
+[`lymphoma_pipeline_external_mapping.yaml`](./configs/MEDS/lymphoma_pipeline_external_mapping.yaml)
+for an example using both external artifacts.
