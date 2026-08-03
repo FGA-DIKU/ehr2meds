@@ -117,15 +117,19 @@ Defaults are defined in
 
 ### Using externally fitted metadata
 
-External files are fallbacks, not overrides. A local fit always takes
-precedence.
+To use externally fitted artifacts, omit `fit_adaptive_code_mapping` and/or
+`aggregate_numeric_metadata`, then configure their consumers:
 
-| Artifact | Configuration | Used when |
-| --- | --- | --- |
-| Adaptive code mapping | `mapping_filepath` on the apply and finalize stages | `fit_adaptive_code_mapping` is omitted |
-| Numeric metadata | `numeric_metadata_filepath` on `annotate_numeric_values` | `aggregate_numeric_metadata` is omitted |
+```yaml
+- extract_code_metadata
+- apply_adaptive_code_mapping:
+    mapping_filepath: ${oc.env:EXTERNAL_MAPPING_FP}
+- finalize_adaptive_code_metadata:
+    mapping_filepath: ${oc.env:EXTERNAL_MAPPING_FP}
+- annotate_numeric_values:
+    numeric_metadata_filepath: ${oc.env:EXTERNAL_NUMERIC_METADATA_FP}
+```
 
-External code mappings may be JSON or Parquet and must contain `code` and
-`adaptive/mapped_code`. See
-[`lymphoma_pipeline_external_mapping.yaml`](./configs/MEDS/lymphoma_pipeline_external_mapping.yaml)
-for an example using both external artifacts.
+External files are fallbacks; a local fit takes precedence if its fit stage is
+present. Code mappings may be JSON or Parquet and must contain `code` and
+`adaptive/mapped_code`.
