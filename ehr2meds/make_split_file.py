@@ -87,7 +87,8 @@ def main(
                 f"Examples: {examples}"
             )
 
-    def _check_mapped_overlap(splits: dict[str, list]) -> None:
+    def _warn_mapped_overlap(splits: dict[str, list]) -> None:
+        """Warn on shared mothers across splits (expected with multiple pregnancies)."""
         seen: dict[int, str] = {}
         overlaps: list[tuple[int, str, str]] = []
         for split_name, mapped_ids in splits.items():
@@ -100,8 +101,9 @@ def main(
             examples = ", ".join(
                 f"{mid} in {a} and {b}" for mid, a, b in overlaps[:5]
             )
-            raise ValueError(
-                f"Overlapping mapped subject IDs across splits ({len(overlaps)} total). "
+            print(
+                f"Warning: overlapping mapped subject IDs across splits "
+                f"({len(overlaps)} total; same mother, multiple pregnancies). "
                 f"Examples: {examples}"
             )
 
@@ -128,7 +130,7 @@ def main(
     _check_b_cpr_overlap(
         {"test": test_b_cprs, "train": train_b_cprs, "val": val_b_cprs}
     )
-    _check_mapped_overlap(
+    _warn_mapped_overlap(
         {"test": test_ids, "train": train_ids, "val": val_ids}
     )
 
