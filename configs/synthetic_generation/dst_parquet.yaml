@@ -4,7 +4,9 @@ defaults:
   - _self_
   
 paths:
-  output: ${oc.env:EHR2MEDS_DATA}/raw/DST
+  output: ${oc.env:EHR2MEDS_DATA}/raw/DST_parquet
+
+save_file_type: parquet
 
 data:
   LPR3_kontakter: 

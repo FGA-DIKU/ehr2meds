@@ -1,0 +1,10 @@
+# @package _global_
+defaults: 
+  - /root_config@
+  - fetal_ngc_full@
+  - _self_
+
+subject_id_mapping:
+  file: ${paths.SP_tables_dir}/Mor - CPMI - Patientinfo.csv # Table to derive mapping from (can be None)
+  subject_id_col: MOR_CPR # Column to use as the subject_id mapping
+  mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)

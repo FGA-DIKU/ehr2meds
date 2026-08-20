@@ -99,17 +99,21 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
     return row, unused_idxs
 
 
-def save_df(df, output_dir, table_name, saving_cfg):
-    ext = saving_cfg.get("file_type", "csv")
-    assert ext in ["csv", "asc"]
-    sep = saving_cfg.get("sep", ",")
-    encoding = saving_cfg.get("encoding", None)
-    df.to_csv(
-        output_dir / f"{table_name}.{ext}",
-        index=False,
-        sep=sep,
-        encoding=encoding,
-    )
+def save_df(df, output_dir, table_name, ext, saving_cfg):
+    if saving_cfg.get("file_type"):
+        ext = saving_cfg["file_type"]
+    assert ext in ["csv", "asc", "parquet"]
+    if ext == "parquet":
+        df.to_parquet(output_dir / f"{table_name}.{ext}", index=False)
+    else:
+        sep = saving_cfg.get("sep", ",")
+        encoding = saving_cfg.get("encoding", None)
+        df.to_csv(
+            output_dir / f"{table_name}.{ext}",
+            index=False,
+            sep=sep,
+            encoding=encoding,
+        )
 
 
 def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
@@ -123,7 +127,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
             rows.append(row)
 
         df = pd.DataFrame(rows).convert_dtypes()
-        save_df(df, output_dir, table_name, saving_cfg=table_cfg.get("save_info", {}))
+        save_df(df, output_dir, table_name, ext=cfg.get("save_file_type", "csv"), saving_cfg=table_cfg.get("save_info", {}))
 
     for table_name, table_cfg in cfg.get("linked_data", {}).items():
         rows = []
@@ -136,7 +140,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
             rows.append(row)
 
         df = pd.DataFrame(rows).convert_dtypes()
-        save_df(df, output_dir, table_name, saving_cfg=table_cfg.get("save_info", {}))
+        save_df(df, output_dir, table_name, ext=cfg.get("save_file_type", "csv"), saving_cfg=table_cfg.get("save_info", {}))
 
 
 @hydra.main(

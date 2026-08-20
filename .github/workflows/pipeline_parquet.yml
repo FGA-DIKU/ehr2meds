@@ -1,4 +1,4 @@
-name: 'Pipeline test'
+name: 'Pipeline parquet test'
 
 on:
   push:
@@ -34,18 +34,16 @@ jobs:
 
             - name: Create synthetic data
               run: |
-                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1.yaml N=50 N_population=75
-                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2.yaml N=50
-                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3.yaml N=50
+                python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/dst_parquet.yaml
 
             - name: Convert synthetic data to preMEDS
               run: |
-                python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/DeepFetal/fetal_synth_full
+                python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/dst_parquet
 
             - name: Convert preMEDS to MEDS
               run: |
                 bash ehr2meds/convert_premeds_to_meds.sh \
-                      ${EHR2MEDS_DATA}/preMEDS/DeepFetal/fetal_synth_full \
-                      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
-                      ${EHR2MEDS_CONFIGS}/MEDS/DeepFetal/fetal_ngc_event.yaml \
-                      ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full
+                      ${EHR2MEDS_DATA}/preMEDS/dst_parquet \
+                      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline_wo_vals.yaml \
+                      ${EHR2MEDS_CONFIGS}/MEDS/dst_event.yaml \
+                      ${EHR2MEDS_DATA}/MEDS/DST_parquet
