@@ -9,6 +9,7 @@ def main(
     mapping_file: str | Path,
     population_file: str | Path,
     output: str | Path,
+    mapping_id_col: str = "m_cpr",
 ) -> None:
     test_pts = Path(test_pts)
     train_pts = Path(train_pts)
@@ -23,8 +24,8 @@ def main(
         train_ids = json.load(f)
     mapping = pl.read_csv(mapping_file)
     mapping_dict = {
-        r["m_cpr"]: r["mapping"]
-        for r in mapping.select(["m_cpr", "mapping"]).to_dicts()
+        r[mapping_id_col]: r["mapping"]
+        for r in mapping.select([mapping_id_col, "mapping"]).to_dicts()
     }
     population = pl.read_csv(population_file)
     child_to_parent_mapping = {
@@ -170,7 +171,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mapping-file",
         required=True,
-        help="Path to CSV with columns m_cpr and mapping (old_id -> new_id).",
+        help="Path to CSV with an ID column and mapping (old_id -> new_id).",
+    )
+    parser.add_argument(
+        "--mapping-id-col",
+        default="m_cpr",
+        help="Column in --mapping-file for the old subject ID (default: m_cpr).",
     )
     parser.add_argument(
         "--population-file",
@@ -190,4 +196,5 @@ if __name__ == "__main__":
         mapping_file=args.mapping_file,
         population_file=args.population_file,
         output=args.output,
+        mapping_id_col=args.mapping_id_col,
     )
