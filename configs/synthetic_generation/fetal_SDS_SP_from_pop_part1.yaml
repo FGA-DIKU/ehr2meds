@@ -130,7 +130,6 @@ linked_data:
 
 
   mfr:
-  # MFR2_main
     N: ${N}
     columns:
       ALDER_MODER:
@@ -150,6 +149,14 @@ linked_data:
             args:
               max_length: 10
               probability: 0.05
+      FLERFOLDSGRAVIDITET:
+        type: choice
+        args:
+          options: ["DO30A", "DO30B", "OTHER"]
+      KOEN_BARN:
+        type: choice
+        args:
+          options: ["K", "M"]
       PK_MFR:
         type: person_id
         corruptions:
@@ -157,6 +164,10 @@ linked_data:
             args:
               max_length: 10
               probability: 0.05
+      PPROM:
+        type: choice
+        args:
+          options: ["DO4", "Other", "DO422"]
       VAEGTE_MODER:
         type: rand_float
         args:
@@ -237,6 +248,10 @@ linked_data:
   #MFR3
     N: ${N}
     columns:
+      AntalBoernIFoedslen:
+        type: choice
+        args:
+          options: [0, 1, 2, 3, 4]
       AntalDoedFoedte:
         type: choice
         args:
@@ -293,6 +308,10 @@ linked_data:
         type: choice
         args:
           options: ["Nej", "Ja"]
+      Koen_Barn:
+        type: choice
+        args:
+          options: ["K", "M"]
       Kejsersnit:
         type: medical_code
         args:

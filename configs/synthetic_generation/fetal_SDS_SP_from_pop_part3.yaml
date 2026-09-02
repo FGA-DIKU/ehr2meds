@@ -92,6 +92,58 @@ linked_data:
         file: Population
         linked_on: MOR_CPR
 
+
+  graviditetskomplikation:
+    N: ${N}
+    columns:
+      SKSKODE:
+        type: choice
+        args:
+          options: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+    linked_columns:
+      FK_MFR:
+        type: choice
+        file: mfr
+        linked_on: PK_MFR
+
+  igangsaettelse:
+    N: ${N}
+    columns:
+      SKSKODE:
+        type: choice
+        args:
+          options: ["KMAC", "BKHD", "OTHER"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+    linked_columns:
+      FK_MFR:
+        type: choice
+        file: mfr
+        linked_on: PK_MFR
+
+  kejsersnit:
+    N: ${N}
+    columns:
+      SKSKODE:
+        type: choice
+        args:
+          options: ["KMCA10A", "KMCARANDOM", "KMCAOTHER", "STUFF"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+    linked_columns:
+      FK_MFR:
+        type: choice
+        file: mfr
+        linked_on: PK_MFR
+
   laegemiddeloplysninger:
     N: ${N}
     columns:
@@ -148,7 +200,7 @@ linked_data:
       Diagnosekode:
         type: choice
         args:
-          options: ["DS931H","DO837", "DO847"]
+          options: ["DS931H","DO837", "DO847","DO420", "DO422", "DO424", "DO601"]
         corruptions:
           - type: insert_missing
             args:
@@ -177,7 +229,7 @@ linked_data:
       ProcedureCode:
         type: choice
         args:
-          options: ["KMCA00", "KMCA96", "KMCA10C", "KMCA30", "BRFAO", "BABZ00", "KMAC00", "KMAC96A", "BKHD2", "BKHD20"]
+          options: ["KMCA00", "KMCA96", "KMCA10C", "KMCA30", "BRFAO", "BABZ00", "KMAC00", "KMAC96A", "BKHD2", "BKHD20", "KMCA10D", "KMCA10E"]
         corruptions:
           - type: insert_missing
             args:
@@ -192,9 +244,35 @@ linked_data:
         file: Population
         linked_on: MOR_CPR
 
+
+  Mor - CPMI - Vital parametre:
+    N: ${N}
+    columns:
+      Registreringstidspunkt:
+        type: rand_datetime
+        args:
+          start: 2010
+      Værdi:
+        type: choice
+        args:
+          options: ["101/67", "120/80", "110/70", "130/85"]
+      Vital_parametre:
+        type: choice
+        args:
+          options: ["BT", "NIBP", "BMI"]
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
   Mor - Fødselsresume - DEL 1:
     N: ${N}
     columns:
+      Køn:
+        type: choice
+        args:
+          options: ["Mand", "Kvinde"]
       Måde:
         type: choice
         args:
@@ -246,6 +324,11 @@ linked_data:
           - type: insert_missing
             args:
               probability: 0.15
+      Præterm:
+        type: rand_int
+        args:
+          min_val: 0
+          max_val: 1
     linked_columns:
       MOR_CPR:
         type: choice
@@ -386,7 +469,7 @@ linked_data:
       C_TILOPR:
         type: choice
         args:
-          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KLDD20", "KMAB03"]
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KLDD20", "KMAB03","KMCA10D”, “KMCA10E"]
         corruptions:
           - type: insert_missing
             args:
@@ -407,7 +490,7 @@ linked_data:
       C_DIAG:
         type: choice
         args:
-          options: ["DZ016", "DZ090","DO343C"]
+          options: ["DZ016", "DZ090","DO343C", "DO420", "DO422", "DO424","DO601"]
         corruptions:
           - type: insert_missing
             args:
