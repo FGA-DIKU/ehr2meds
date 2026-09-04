@@ -24,8 +24,10 @@ def collapse_code_metadata(
     mapped = (
         metadata.join(mapping.select(DataSchema.code_name, mapped_code_column), on=DataSchema.code_name, how="left")
         .with_columns(
-            pl.coalesce(mapped_code_column, DataSchema.code_name).alias(mapped_code_column),
-            (pl.col(DataSchema.code_name) == pl.coalesce(mapped_code_column, DataSchema.code_name)).alias(is_exact_match),
+            **{
+                mapped_code_column: pl.coalesce(mapped_code_column, DataSchema.code_name),
+                is_exact_match: pl.col(DataSchema.code_name) == pl.coalesce(mapped_code_column, DataSchema.code_name),
+            }
         )
         .sort(mapped_code_column, is_exact_match, DataSchema.code_name, descending=[False, True, False])
     )
@@ -36,28 +38,27 @@ def collapse_code_metadata(
         *columns.values(),
     }
     preserved = [column for column in metadata.columns if column not in technical]
-    aggregations = [pl.col(column).drop_nulls().first() for column in preserved]
+    aggregations = {column: pl.col(column).drop_nulls().first() for column in preserved}
     if count_column in metadata.columns:
-        aggregations.append(pl.col(count_column).fill_null(0).sum().alias(count_column))
-    aggregations.append(pl.len().cast(pl.UInt32).alias(member_count_column))
+        aggregations[count_column] = pl.col(count_column).fill_null(0).sum()
+    aggregations[member_count_column] = pl.len().cast(pl.UInt32)
 
     collapsed = (
         mapped.group_by(mapped_code_column, maintain_order=True)
-        .agg(*aggregations)
+        .agg(**aggregations)
         .rename({mapped_code_column: DataSchema.code_name})
     )
 
     if "description" in collapsed.columns:
         generic = pl.format("Adaptive aggregation {} ({} source codes)", DataSchema.code_name, member_count_column)
         collapsed = collapsed.with_columns(
-            pl.when(pl.col(member_count_column) > 1).then(generic).otherwise(pl.col("description")).alias("description")
+            description=pl.when(pl.col(member_count_column) > 1).then(generic).otherwise(pl.col("description"))
         )
     if "parent_codes" in collapsed.columns:
         collapsed = collapsed.with_columns(
-            pl.when(pl.col(member_count_column) > 1)
+            parent_codes=pl.when(pl.col(member_count_column) > 1)
             .then(pl.lit(None, dtype=pl.List(pl.String)))
             .otherwise(pl.col("parent_codes"))
-            .alias("parent_codes")
         )
     return collapsed.sort(DataSchema.code_name)
 

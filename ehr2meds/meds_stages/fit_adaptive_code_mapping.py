@@ -196,12 +196,12 @@ def summarize_mapping(mapping: pl.DataFrame, columns: Mapping[str, str]) -> dict
     ).to_dicts()[0]
     decisions = (
         mapping.group_by(
-            pl.col(columns["profile"]).alias("profile"),
-            pl.col(columns["reason"]).alias("reason"),
+            profile=pl.col(columns["profile"]),
+            reason=pl.col(columns["reason"]),
         )
         .agg(
-            pl.len().alias("source_codes"),
-            pl.col(columns["count"]).sum().alias("training_events"),
+            source_codes=pl.len(),
+            training_events=pl.col(columns["count"]).sum(),
         )
         .sort("profile", "reason", nulls_last=True)
         .to_dicts()
@@ -256,7 +256,7 @@ def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]
             .len()
             .select(
                 pl.col(DataSchema.code_name),
-                pl.col("len").cast(pl.UInt64).alias(count_column),
+                **{count_column: pl.col("len").cast(pl.UInt64)},
             )
             .sort(DataSchema.code_name)
         )

@@ -24,7 +24,7 @@ def join_numeric_bins(data: pl.LazyFrame, bin_column: str, separator: str) -> pl
 
     has_bin = pl.col(bin_column).is_not_null()
     code = pl.when(has_bin).then(joined_code).otherwise(pl.col(DataSchema.code_name))
-    return data.with_columns(code.alias(DataSchema.code_name))
+    return data.with_columns(**{DataSchema.code_name: code})
 
 
 def join_numeric_bins_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]:

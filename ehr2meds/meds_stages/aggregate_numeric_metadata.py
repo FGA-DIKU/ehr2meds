@@ -157,8 +157,8 @@ def mapper_fntr(stage_cfg: DictConfig, code_modifiers: list[str] | None = None) 
             hard_minimum_column=columns.hard_minimum,
             hard_maximum_column=columns.hard_maximum,
         )
-        values = pl.col(DataSchema.numeric_value_name).cast(pl.Float64).alias(columns.training_values)
-        return df.group_by(key).agg(values).sort(key)
+        values = pl.col(DataSchema.numeric_value_name).cast(pl.Float64)
+        return df.group_by(key).agg(**{columns.training_values: values}).sort(key)
 
     return mapper
 
