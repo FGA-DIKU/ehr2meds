@@ -21,6 +21,9 @@ class HierarchyProfile:
     levels: tuple[int, ...]
 
 
+MappingRecord = dict[str, object]
+
+
 def read_profiles(stage_cfg: DictConfig) -> dict[str, HierarchyProfile]:
     """Read hierarchy profiles keyed by MEDS namespace."""
     cfg = OmegaConf.to_container(stage_cfg, resolve=True)
@@ -69,73 +72,18 @@ def make_record(
     }
 
 
-def resolve_pending_codes(
-    counts: Mapping[str, int],
-    profiles: Mapping[str, HierarchyProfile],
-    pending_by_profile: Mapping[str, set[str]],
-    candidates_by_code: Mapping[str, list[str]],
-    records: Mapping[str, dict[str, object]],
-    columns: Mapping[str, str],
-) -> dict[str, dict[str, object]]:
-    """Resolve below-threshold codes against their candidate ancestors."""
-    resolved_records = {code: record.copy() for code, record in records.items()}
-
-    for profile_name, profile_pending in pending_by_profile.items():
-        profile = profiles[profile_name]
-        pending = set(profile_pending)
-
-        by_candidate: dict[str, list[str]] = defaultdict(list)
-        for code in sorted(pending):
-            for candidate in candidates_by_code[code]:
-                by_candidate[candidate].append(code)
-
-        # Resolve longest candidates first so codes cannot later move to broader ancestors.
-        for candidate in sorted(by_candidate, key=lambda c: (-len(c), c)):
-            members = [code for code in by_candidate[candidate] if code in pending]
-            # Include an observed target in its own aggregate and prevent further truncation.
-            candidate_is_pending = candidate in pending
-            if candidate_is_pending:
-                members.append(candidate)
-
-            mapped_count = sum(int(counts[code]) for code in members)
-            candidate_needs_own_count = candidate in counts and not candidate_is_pending
-            if candidate_needs_own_count:
-                mapped_count += int(counts[candidate])
-
-            if mapped_count < profile.minimum_count:
-                continue
-            for code in members:
-                resolved_records[code] = make_record(
-                    code,
-                    int(counts[code]),
-                    profile_name,
-                    "grouped",
-                    mapped_code=candidate,
-                    mapped_count=mapped_count,
-                    columns=columns,
-                )
-                pending.remove(code)
-            if candidate_needs_own_count:
-                resolved_records[candidate][columns["mapped_count"]] = mapped_count
-
-        for code in sorted(pending):
-            resolved_records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold", columns=columns)
-
-    return resolved_records
-
-
-def fit_mapping(
+def classify_codes(
     counts: Mapping[str, int],
     profiles: Mapping[str, HierarchyProfile],
     columns: Mapping[str, str],
-) -> pl.DataFrame:
-    """Fit a deterministic, disjoint adaptive hierarchy mapping."""
-    records: dict[str, dict[str, object]] = {}
+) -> tuple[dict[str, MappingRecord], dict[str, set[str]], dict[str, list[str]]]:
+    """Classify codes that need no grouping and collect candidates for the rest."""
+    records: dict[str, MappingRecord] = {}
     pending_by_profile: dict[str, set[str]] = defaultdict(set)
     candidates_by_code: dict[str, list[str]] = {}
 
-    for code, count in counts.items():
-        count = int(count)
+    for code, raw_count in counts.items():
+        count = int(raw_count)
         parsed = split_code(code)
         profile_name = parsed[0] if parsed and parsed[0] in profiles else None
         if profile_name is None:
@@ -156,7 +104,87 @@ def fit_mapping(
         candidates_by_code[code] = ancestors
         pending_by_profile[profile_name].add(code)
 
-    records = resolve_pending_codes(counts, profiles, pending_by_profile, candidates_by_code, records, columns)
+    return records, pending_by_profile, candidates_by_code
+
+
+def resolve_profile_codes(
+    *,
+    profile_name: str,
+    profile: HierarchyProfile,
+    pending_codes: set[str],
+    counts: Mapping[str, int],
+    candidates_by_code: Mapping[str, list[str]],
+    records: dict[str, MappingRecord],
+    columns: Mapping[str, str],
+) -> None:
+    """Resolve one profile's pending codes in place, nearest ancestors first.
+
+    Once a code joins a qualifying ancestor it is removed from ``pending``, so
+    it cannot also contribute to a broader group. An observed ancestor counts
+    toward its own group and is claimed alongside its descendants.
+    """
+    pending = set(pending_codes)
+    by_candidate: dict[str, list[str]] = defaultdict(list)
+    for code in sorted(pending):
+        for candidate in candidates_by_code[code]:
+            by_candidate[candidate].append(code)
+
+    # Resolve longest candidates first so codes cannot later move to broader ancestors.
+    for candidate in sorted(by_candidate, key=lambda code: (-len(code), code)):
+        members = [code for code in by_candidate[candidate] if code in pending]
+
+        candidate_is_pending = candidate in pending
+        if candidate_is_pending:
+            members.append(candidate)
+
+        mapped_count = sum(int(counts[code]) for code in members)
+        candidate_has_own_record = candidate in counts and not candidate_is_pending
+        if candidate_has_own_record:
+            mapped_count += int(counts[candidate])
+
+        if mapped_count < profile.minimum_count:
+            continue
+        for code in members:
+            records[code] = make_record(
+                code,
+                int(counts[code]),
+                profile_name,
+                "grouped",
+                mapped_code=candidate,
+                mapped_count=mapped_count,
+                columns=columns,
+            )
+            pending.remove(code)
+        if candidate_has_own_record:
+            records[candidate][columns["mapped_count"]] = mapped_count
+
+    for code in sorted(pending):
+        records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold", columns=columns)
+
+
+def fit_mapping(
+    counts: Mapping[str, int],
+    profiles: Mapping[str, HierarchyProfile],
+    columns: Mapping[str, str],
+) -> pl.DataFrame:
+    """Fit a deterministic, disjoint adaptive hierarchy mapping.
+
+    Codes that need no grouping are recorded immediately. Remaining codes are
+    resolved independently per hierarchy profile, from their nearest candidate
+    ancestor to their broadest one, and are finally materialized in code order.
+    """
+    records, pending_by_profile, candidates_by_code = classify_codes(counts, profiles, columns)
+
+    for profile_name, pending_codes in pending_by_profile.items():
+        resolve_profile_codes(
+            profile_name=profile_name,
+            profile=profiles[profile_name],
+            pending_codes=pending_codes,
+            counts=counts,
+            candidates_by_code=candidates_by_code,
+            records=records,
+            columns=columns,
+        )
 
     schema = {
         DataSchema.code_name: pl.String,
@@ -275,10 +303,7 @@ def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
         else Path(str(stage_cfg.reducer_output_dir)) / "adaptive_code_mapping.parquet"
     )
     configured_summary = stage_cfg.get("mapping_summary_output_filepath")
-    if configured_summary:
-        summary_filepath = Path(str(configured_summary))
-    else:
-        summary_filepath = output_filepath.with_suffix(".summary.json")
+    summary_filepath = Path(str(configured_summary)) if configured_summary else output_filepath.with_suffix(".summary.json")
     code_metadata_filepath = Path(str(stage_cfg.metadata_input_dir)) / "codes.parquet"
     code_metadata = (
         pl.read_parquet(code_metadata_filepath)
