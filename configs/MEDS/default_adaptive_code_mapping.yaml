@@ -11,10 +11,6 @@ mapping_filepath: null
 hierarchies:
   RD:
     levels: [4, 3, 2]
-  RC:
-    levels: [4, 3, 2]
-  RC_ADM:
-    levels: [4, 3, 2]
   RPS:
     levels: [7, 6, 5, 4, 3, 2]
   RPO:

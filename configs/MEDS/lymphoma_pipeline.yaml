@@ -47,7 +47,7 @@ stages:
   - extract_code_metadata
   - fit_adaptive_code_mapping:
       train_only: true
-      minimum_count: 100
+      minimum_count: ${oc.env:ADAPTIVE_MINIMUM_COUNT,100}
       mapping_output_filepath: ${output_dir}/adaptive_code_mapping.parquet
       mapping_summary_output_filepath: ${output_dir}/adaptive_code_mapping.summary.json
 

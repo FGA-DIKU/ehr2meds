@@ -44,7 +44,7 @@ SDS_t_diag:
 # contact starts remain at the start timestamp.
 SDS_kontakter:
   SDS_kontakter:
-    code: f"RC//{$aktionsdiagnose}"
+    code: f"RD//{$aktionsdiagnose}"
     time: set_time($date_end, $time_end as '%H:%M:%S%.f')
   contact_reason:
     code: f"RC_REASON//{$kontaktaarsag}"
@@ -66,7 +66,7 @@ SDS_kontakter:
 # at the admission start timestamp.
 SDS_t_adm:
   SDS_t_adm:
-    code: f"RC_ADM//{$c_adiag}"
+    code: f"RD//{$c_adiag}"
     time: $date_end
   contact_reason:
     code: f"RC_REASON//{$c_kontaars}"
