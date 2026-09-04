@@ -6,6 +6,15 @@ mapping_summary_output_filepath: null
 # `adaptive/mapped_code` columns. A local fit takes precedence.
 mapping_filepath: null
 
+# Column names used by the fitted mapping artifact and its audit metadata.
+columns:
+  mapped_code: adaptive/mapped_code
+  count: adaptive/count
+  mapped_count: adaptive/mapped_count
+  profile: adaptive/profile
+  reason: adaptive/reason
+  member_count: adaptive/member_count
+
 # Character-position widths by MEDS namespace. Entries can override defaults
 # or add namespaces. See README.md for the SKS and ATC level-1 rationale.
 hierarchies:
