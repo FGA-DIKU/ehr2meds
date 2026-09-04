@@ -41,7 +41,7 @@ def prepare_metadata(
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
 
     missing_bounds = [column for column in bound_columns if column not in metadata.columns]
-    metadata = metadata.with_columns([pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds])
+    metadata = metadata.with_columns(**{column: pl.lit(None, dtype=pl.Float64) for column in missing_bounds})
     return metadata.select(key + transform_columns + bound_columns)
 
 
@@ -90,7 +90,7 @@ def calculate_bin_index(normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
     """Find each normalized value's right-sided quantile bin."""
     # Polars cannot reference the row's normalized scalar inside list.eval.
     # The edge lists are small and bounded, so a row-local struct is clear and safe.
-    row = pl.struct(edges.alias("edges"), normalized.alias("normalized"))
+    row = pl.struct(edges=edges, normalized=normalized)
     return row.map_elements(
         find_bin,
         return_dtype=pl.Int32,
@@ -153,9 +153,9 @@ def annotate_numeric_values(
         "bin_index": bin_index_column,
         "binned": binned_column,
     }
-    derived_columns = [pl.when(usable).then(derived_values[role]).alias(derived_names[role]) for role in derived_roles]
+    derived_columns = {derived_names[role]: pl.when(usable).then(derived_values[role]) for role in derived_roles}
 
-    annotated = annotated.with_columns(derived_columns)
+    annotated = annotated.with_columns(**derived_columns)
     return annotated.drop(transform_columns + bound_columns)
 
 

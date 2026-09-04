@@ -17,7 +17,7 @@ def apply_mapping(data: pl.LazyFrame, mapping: pl.DataFrame, columns: Mapping[st
     lookup = mapping.select(DataSchema.code_name, mapped_code_column).lazy()
     return (
         data.join(lookup, on=DataSchema.code_name, how="left", maintain_order="left")
-        .with_columns(pl.coalesce(mapped_code_column, DataSchema.code_name).alias(DataSchema.code_name))
+        .with_columns(**{DataSchema.code_name: pl.coalesce(mapped_code_column, DataSchema.code_name)})
         .drop(mapped_code_column)
     )
 
