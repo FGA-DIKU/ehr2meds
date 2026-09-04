@@ -110,6 +110,45 @@ tables:
       hovedspeciale_ans: 
       region_ans: 
       dw_ek_kontakt: contact_id
+    value_map:
+      # LPR3 and legacy LPR share RC_REASON downstream. Normalize only the
+      # documented ALCC equivalents; leave unfamiliar values untouched.
+      kontaktaarsag:
+        1: "ALCC01"
+        "1": "ALCC01"
+        "1.0": "ALCC01"
+        2: "ALCC02"
+        "2": "ALCC02"
+        "2.0": "ALCC02"
+        3: "ALCC03"
+        "3": "ALCC03"
+        "3.0": "ALCC03"
+        4: "ALCC04"
+        "4": "ALCC04"
+        "4.0": "ALCC04"
+        6: "ALCC90"
+        "6": "ALCC90"
+        "6.0": "ALCC90"
+        7: "ALCC90"
+        "7": "ALCC90"
+        "7.0": "ALCC90"
+        8: "ALCC90"
+        "8": "ALCC90"
+        "8.0": "ALCC90"
+        9: "ALCC90"
+        "9": "ALCC90"
+        "9.0": "ALCC90"
+        "UNK": "UNK"
+        "Ukendt": "UNK"
+      # RC_PRIO has the same cross-generation issue for the two documented
+      # legacy urgency values. Value 3 is not guessed or collapsed.
+      prioritet:
+        1: "ATA1"
+        "1": "ATA1"
+        "1.0": "ATA1"
+        2: "ATA3"
+        "2": "ATA3"
+        "2.0": "ATA3"
 
   SDS_t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
@@ -171,17 +210,39 @@ tables:
         "90": "almen medicin"
         "91": "samfundsmedicin"
       priority: # map emergency vs planned visits to LPR3
+        1: "ATA1"
         "1": "ATA1"
+        "1.0": "ATA1"
+        2: "ATA3"
         "2": "ATA3"
+        "2.0": "ATA3"
       c_kontaars:
+        1: "ALCC01"
         "1": "ALCC01"
+        "1.0": "ALCC01"
+        2: "ALCC02"
         "2": "ALCC02"
+        "2.0": "ALCC02"
+        3: "ALCC03"
         "3": "ALCC03"
+        "3.0": "ALCC03"
+        4: "ALCC04"
         "4": "ALCC04"
+        "4.0": "ALCC04"
+        6: "ALCC90"
         "6": "ALCC90"
+        "6.0": "ALCC90"
+        7: "ALCC90"
         "7": "ALCC90"
+        "7.0": "ALCC90"
+        8: "ALCC90"
         "8": "ALCC90"
+        "8.0": "ALCC90"
+        9: "ALCC90"
         "9": "ALCC90"
+        "9.0": "ALCC90"
+        "UNK": "UNK"
+        "Ukendt": "UNK"
     mappings:
     - source_column: c_sgh   
       via_file: ${paths.tables_dir}/shak_to_region.parquet # using resources

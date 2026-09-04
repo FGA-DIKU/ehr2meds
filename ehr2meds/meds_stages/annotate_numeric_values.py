@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import polars as pl
 from collections.abc import Callable
+from ehr2meds.io_utils import load_frame, resolve_resource_path
 from meds import CodeMetadataSchema, DataSchema
 from MEDS_transforms.stages import Stage
-from MEDS_transforms.utils import PKG_PFX, resolve_pkg_path
 from omegaconf import DictConfig
 from pathlib import Path
 
@@ -22,20 +22,10 @@ def find_bin(row: dict[str, object]) -> int | None:
 
 def load_external_metadata(filepath: str) -> pl.DataFrame:
     """Load frozen numeric metadata from JSON, Parquet, or a MEDS metadata directory."""
-    path = resolve_pkg_path(filepath) if filepath.startswith(PKG_PFX) else Path(filepath)
+    path = resolve_resource_path(filepath)
     if path.is_dir():
         path = path / "codes.parquet"
-    if not path.is_file():
-        raise FileNotFoundError(f"numeric_metadata_filepath '{filepath}' does not exist")
-    match path.suffix.lower():
-        case ".parquet":
-            return pl.read_parquet(path)
-        case ".json":
-            return pl.read_json(path)
-        case _:
-            raise ValueError(
-                "numeric_metadata_filepath must be a JSON or Parquet file, or a directory containing codes.parquet"
-            )
+    return load_frame(str(path), "numeric_metadata_filepath")
 
 
 def prepare_metadata(
@@ -51,37 +41,28 @@ def prepare_metadata(
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
 
     missing_bounds = [column for column in bound_columns if column not in metadata.columns]
-    metadata = metadata.with_columns([pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds])
+    metadata = metadata.with_columns(**{column: pl.lit(None, dtype=pl.Float64) for column in missing_bounds})
     return metadata.select(key + transform_columns + bound_columns)
 
 
-def combine_numeric_metadata(
+def prepare_numeric_metadata(
     fitted_metadata: pl.DataFrame,
-    external_metadata: pl.DataFrame,
+    external_filepath: str | None,
     key: list[str],
     transform_columns: list[str],
     bound_columns: list[str],
 ) -> pl.DataFrame:
-    """Overlay external transforms on local transforms, matching by code key."""
-    external_metadata = prepare_metadata(
-        external_metadata,
-        key=key,
-        transform_columns=transform_columns,
-        bound_columns=bound_columns,
-        label="external",
-    )
-    fitted_metadata = prepare_metadata(
-        fitted_metadata,
-        key=key,
-        transform_columns=transform_columns,
-        bound_columns=bound_columns,
-        label="fitted",
-    )
+    """Use the locally fitted numeric metadata if it exists; otherwise fall back to an external source."""
+    if set(key + transform_columns).issubset(fitted_metadata.columns):
+        return prepare_metadata(fitted_metadata, key=key, transform_columns=transform_columns, bound_columns=bound_columns)
 
-    # External rows come first, so they take precedence for matching codes.
-    combined = pl.concat([external_metadata, fitted_metadata], how="vertical_relaxed")
-    combined = combined.unique(subset=key, keep="first", maintain_order=True)
-    return combined.sort(key)
+    if not external_filepath:
+        missing = sorted(set(key + transform_columns) - set(fitted_metadata.columns))
+        raise ValueError(f"fitted numeric metadata is missing columns: {missing}")
+    external_metadata = load_external_metadata(str(external_filepath))
+    return prepare_metadata(
+        external_metadata, key=key, transform_columns=transform_columns, bound_columns=bound_columns, label="external"
+    )
 
 
 def is_usable(
@@ -109,7 +90,7 @@ def calculate_bin_index(normalized: pl.Expr, edges: pl.Expr) -> pl.Expr:
     """Find each normalized value's right-sided quantile bin."""
     # Polars cannot reference the row's normalized scalar inside list.eval.
     # The edge lists are small and bounded, so a row-local struct is clear and safe.
-    row = pl.struct(edges.alias("edges"), normalized.alias("normalized"))
+    row = pl.struct(edges=edges, normalized=normalized)
     return row.map_elements(
         find_bin,
         return_dtype=pl.Int32,
@@ -172,9 +153,9 @@ def annotate_numeric_values(
         "bin_index": bin_index_column,
         "binned": binned_column,
     }
-    derived_columns = [pl.when(usable).then(derived_values[role]).alias(derived_names[role]) for role in derived_roles]
+    derived_columns = {derived_names[role]: pl.when(usable).then(derived_values[role]) for role in derived_roles}
 
-    annotated = annotated.with_columns(derived_columns)
+    annotated = annotated.with_columns(**derived_columns)
     return annotated.drop(transform_columns + bound_columns)
 
 
@@ -186,11 +167,13 @@ def annotate_numeric_values_fntr(
     code_metadata: pl.DataFrame,
     code_modifiers: list[str] | None = None,
 ) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
-    """Build the shard annotator from local and optional external metadata.
+    """Build the shard annotator from the locally fitted metadata, or an external source if none was fitted.
 
     ``numeric_metadata_filepath`` may point to a fitted numeric-metadata JSON,
     another dataset's ``metadata/codes.parquet``, or its ``metadata`` directory.
-    External transforms override locally fitted transforms for matching keys.
+    It's a fallback, not an override: whenever ``aggregate_numeric_metadata``
+    ran locally, that metadata is used and ``numeric_metadata_filepath`` is
+    ignored.
     """
     key = [CodeMetadataSchema.code_name] + list(code_modifiers or [])
     columns = stage_cfg.numeric_value_columns
@@ -198,17 +181,13 @@ def annotate_numeric_values_fntr(
     transform_columns = [columns[role] for role in groups.transform]
     bound_columns = [columns[role] for role in groups.bounds]
     derived_roles = list(groups.derived)
-    metadata = code_metadata
-    external_filepath = stage_cfg.get("numeric_metadata_filepath")
-    if external_filepath:
-        external_metadata = load_external_metadata(str(external_filepath))
-        metadata = combine_numeric_metadata(
-            code_metadata,
-            external_metadata,
-            key=key,
-            transform_columns=transform_columns,
-            bound_columns=bound_columns,
-        )
+    metadata = prepare_numeric_metadata(
+        code_metadata,
+        stage_cfg.get("numeric_metadata_filepath"),
+        key=key,
+        transform_columns=transform_columns,
+        bound_columns=bound_columns,
+    )
 
     def annotate(df: pl.LazyFrame) -> pl.LazyFrame:
         return annotate_numeric_values(

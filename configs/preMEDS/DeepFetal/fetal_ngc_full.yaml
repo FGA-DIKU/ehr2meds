@@ -76,7 +76,41 @@ tables:
     filename: ${paths.SDS_tables_dir}/kontakter_all.csv      
     value_map: 
       tidspunkt_start:
-        ".": null         
+        ".": null
+      kontaktaarsag:
+        1: "ALCC01"
+        "1": "ALCC01"
+        "1.0": "ALCC01"
+        2: "ALCC02"
+        "2": "ALCC02"
+        "2.0": "ALCC02"
+        3: "ALCC03"
+        "3": "ALCC03"
+        "3.0": "ALCC03"
+        4: "ALCC04"
+        "4": "ALCC04"
+        "4.0": "ALCC04"
+        6: "ALCC90"
+        "6": "ALCC90"
+        "6.0": "ALCC90"
+        7: "ALCC90"
+        "7": "ALCC90"
+        "7.0": "ALCC90"
+        8: "ALCC90"
+        "8": "ALCC90"
+        "8.0": "ALCC90"
+        9: "ALCC90"
+        "9": "ALCC90"
+        "9.0": "ALCC90"
+        "UNK": "UNK"
+        "Ukendt": "UNK"
+      prioritet:
+        1: "ATA1"
+        "1": "ATA1"
+        "1.0": "ATA1"
+        2: "ATA3"
+        "2": "ATA3"
+        "2.0": "ATA3"
     columns:
       cpr: subject_id
       dato_start: 
@@ -150,7 +184,41 @@ tables:
       V_UDTIME:
         ".": null
       D_INDDTO:
-        ".": null  
+        ".": null
+      C_KONTAARS:
+        1: "ALCC01"
+        "1": "ALCC01"
+        "1.0": "ALCC01"
+        2: "ALCC02"
+        "2": "ALCC02"
+        "2.0": "ALCC02"
+        3: "ALCC03"
+        "3": "ALCC03"
+        "3.0": "ALCC03"
+        4: "ALCC04"
+        "4": "ALCC04"
+        "4.0": "ALCC04"
+        6: "ALCC90"
+        "6": "ALCC90"
+        "6.0": "ALCC90"
+        7: "ALCC90"
+        "7": "ALCC90"
+        "7.0": "ALCC90"
+        8: "ALCC90"
+        "8": "ALCC90"
+        "8.0": "ALCC90"
+        9: "ALCC90"
+        "9": "ALCC90"
+        "9.0": "ALCC90"
+        "UNK": "UNK"
+        "Ukendt": "UNK"
+      priority:
+        1: "ATA1"
+        "1": "ATA1"
+        "1.0": "ATA1"
+        2: "ATA3"
+        "2": "ATA3"
+        "2.0": "ATA3"
 
   SDS_t_diag:
     filename: ${paths.SDS_tables_dir}/t_diag.csv               

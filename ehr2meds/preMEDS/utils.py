@@ -125,7 +125,16 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
     """Replace specific column values; other values are left unchanged"""
     for col, mapping in value_map_cfg.items():
+        if col not in df.columns:
+            continue
         df.replace({col: mapping}, inplace=True)
+        # Some columns contain both numerics and strings (e.g., 5.0 and ALCC01).
+        # Arrow cannot serialize that mixture consistently.
+        # If a mapping introduces string codes,
+        # represent every non-null value as a string;
+        # unfamiliar values retain their literal value instead of being guessed.
+        if any(isinstance(value, str) for value in mapping.values()):
+            df[col] = df[col].astype("string")
     return df
 
 

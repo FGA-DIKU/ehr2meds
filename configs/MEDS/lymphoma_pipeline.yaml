@@ -41,7 +41,22 @@ stages:
   - merge_to_MEDS_cohort:
       # row_idx provides deterministic ordering for simultaneous events.
       additional_sort_by: [row_idx]
+
+  # Adaptive truncation has three explicit boundaries:
+  # 1. LEARN once from training counts (also writes a readable audit summary).
   - extract_code_metadata
+  - fit_adaptive_code_mapping:
+      train_only: true
+      minimum_count: ${oc.env:ADAPTIVE_MINIMUM_COUNT,100}
+      mapping_output_filepath: ${output_dir}/adaptive_code_mapping.parquet
+      mapping_summary_output_filepath: ${output_dir}/adaptive_code_mapping.summary.json
+
+  # 2. APPLY the frozen mapping to all train/tuning/test event shards.
+  - apply_adaptive_code_mapping
+
+  # 3. RECONCILE codes.parquet with the vocabulary now present in the data.
+  - finalize_adaptive_code_metadata
+
   - aggregate_numeric_metadata:
       train_only: true
       # Fit normalization and bins only on pre-cutoff events from training subjects.
@@ -54,9 +69,9 @@ stages:
       #   "L//NPU01566": {min: 0, max: 250}
       numeric_metadata_output_filepath: ${output_dir}/numeric_metadata.json
   - annotate_numeric_values:
-      # Optional: a fitted numeric_metadata.json, MEDS metadata directory, or codes.parquet.
-      # Matching external code transforms override the locally fitted ones.
-      # numeric_metadata_filepath: /path/to/numeric_metadata.json
+      # Optional fallback (JSON, MEDS metadata directory, or codes.parquet)
+      # used only if aggregate_numeric_metadata did not run locally.
+      numeric_metadata_filepath: null
   # Final model representation: valid lab values become LAB_CODE//BIN.
   - join_numeric_bins
   - finalize_MEDS_metadata

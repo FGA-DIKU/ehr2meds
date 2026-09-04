@@ -1,0 +1,30 @@
+minimum_count: 100
+mapping_output_filepath: null
+# Defaults to <mapping_output_filepath>.summary.json.
+mapping_summary_output_filepath: null
+# Optional external JSON or Parquet mapping with `code` and
+# `adaptive/mapped_code` columns. A local fit takes precedence.
+mapping_filepath: null
+
+# Column names used by the fitted mapping artifact and its audit metadata.
+columns:
+  mapped_code: adaptive/mapped_code
+  count: adaptive/count
+  mapped_count: adaptive/mapped_count
+  profile: adaptive/profile
+  reason: adaptive/reason
+  member_count: adaptive/member_count
+
+# Character-position widths by MEDS namespace. Entries can override defaults
+# or add namespaces. See README.md for the SKS and ATC level-1 rationale.
+hierarchies:
+  RD:
+    levels: [4, 3, 2]
+  RPS:
+    levels: [7, 6, 5, 4, 3, 2]
+  RPO:
+    levels: [8, 7, 6, 5, 4, 3, 2]
+  RM:
+    levels: [1, 3, 4, 5, 7]
+  RMA:
+    levels: [1, 3, 4, 5, 7]

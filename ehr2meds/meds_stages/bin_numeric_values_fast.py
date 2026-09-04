@@ -21,11 +21,10 @@ verified equal to the built-in stage on v0.6.7 across both code templates,
 import polars as pl
 import re
 from collections.abc import Callable
+from ehr2meds.io_utils import resolve_resource_path
 from meds import CodeMetadataSchema, DataSchema
 from MEDS_transforms.stages import Stage
-from MEDS_transforms.utils import PKG_PFX, resolve_pkg_path
 from omegaconf import DictConfig, OmegaConf
-from pathlib import Path
 
 CODE = DataSchema.code_name
 VALUE = DataSchema.numeric_value_name
@@ -42,7 +41,7 @@ def edges_per_code(code_metadata: pl.DataFrame, bin_columns: list[str], key: lis
     edge_list = pl.coalesce(
         [pl.when(pl.col(c).is_not_null()).then(pl.concat_list(pl.col(c).struct.unnest())) for c in bin_columns]
     )
-    return code_metadata.lazy().select(*key, edge_list.alias("edges")).filter(pl.col("edges").is_not_null())
+    return code_metadata.lazy().select(*key, edges=edge_list).filter(pl.col("edges").is_not_null())
 
 
 def bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str], value_dtype: pl.DataType) -> pl.LazyFrame:
@@ -64,9 +63,7 @@ def bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str
     # Pad edges with -inf/+inf so all bins are pairs of boundaries.
     padded = edges.select(
         *key,
-        pl.concat_list([pl.lit(float("-inf")), pl.col("edges"), pl.lit(float("inf"))])
-        .cast(pl.List(value_dtype))
-        .alias("boundaries"),
+        boundaries=pl.concat_list([pl.lit(float("-inf")), pl.col("edges"), pl.lit(float("inf"))]).cast(pl.List(value_dtype)),
     )
 
     # Bin k spans [boundaries[k], boundaries[k+1]).
@@ -173,9 +170,9 @@ def assign_value_bins(
 
     # A matched row (bin is not null) gets its rewritten code
     was_binned = pl.col("bin").is_not_null()
-    labelled = labelled.with_columns(pl.when(was_binned).then(render_code(code_template)).otherwise(pl.col(CODE)).alias(CODE))
+    labelled = labelled.with_columns(**{CODE: pl.when(was_binned).then(render_code(code_template)).otherwise(pl.col(CODE))})
     if drop_numeric_value:
-        labelled = labelled.with_columns(pl.when(was_binned).then(None).otherwise(pl.col(VALUE)).alias(VALUE))
+        labelled = labelled.with_columns(**{VALUE: pl.when(was_binned).then(None).otherwise(pl.col(VALUE))})
 
     working = ["_row", "bin", "left", "right"]
     return labelled.sort("_row").drop([c for c in working if c in labelled.collect_schema().names()])
@@ -192,7 +189,7 @@ def load_custom_bins(stage_cfg: DictConfig) -> dict:
     if not fp:
         return inline or {}
 
-    path = resolve_pkg_path(fp) if fp.startswith(PKG_PFX) else Path(fp)
+    path = resolve_resource_path(fp)
     if not path.is_file():
         raise FileNotFoundError(f"custom_bins_filepath '{fp}' does not exist.")
     from_file = OmegaConf.load(path)
@@ -231,7 +228,7 @@ def bin_numeric_values_fast_fntr(
     if custom_bins:
         struct_dtype = pl.Struct(dict.fromkeys(next(iter(custom_bins.values())).keys(), pl.Float32))
         custom_series = pl.Series([custom_bins.get(c) for c in metadata[CodeMetadataSchema.code_name]], dtype=struct_dtype)
-        metadata = metadata.with_columns(custom_series.alias("__custom_bins"))
+        metadata = metadata.with_columns(__custom_bins=custom_series)
         bin_columns = ["__custom_bins", *bin_columns]
 
     bin_columns = [c for c in bin_columns if c in metadata.columns]
