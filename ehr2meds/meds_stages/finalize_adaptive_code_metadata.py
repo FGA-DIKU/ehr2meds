@@ -76,16 +76,19 @@ def add_missing_observed_metadata(
     if not missing_codes:
         return metadata
 
-    output_columns: dict[str, pl.Series] = {}
-    for name, dtype in metadata.schema.items():
-        if name == DataSchema.code_name:
-            output_columns[name] = pl.Series(name, missing_codes, dtype=pl.String)
-        elif name == columns["count"]:
-            output_columns[name] = pl.Series(name, [0] * len(missing_codes), dtype=dtype)
-        elif name == columns["member_count"]:
-            output_columns[name] = pl.Series(name, [1] * len(missing_codes), dtype=dtype)
-        else:
-            output_columns[name] = pl.Series(name, [None] * len(missing_codes), dtype=dtype)
+    count_column = columns["count"]
+    member_count_column = columns["member_count"]
+    special_values = {
+        DataSchema.code_name: missing_codes,
+        member_count_column: [1] * len(missing_codes),
+    }
+    if count_column in metadata.columns:
+        special_values[count_column] = [0] * len(missing_codes)
+
+    null_values = [None] * len(missing_codes)
+    output_columns = {
+        name: pl.Series(name, special_values.get(name, null_values), dtype=dtype) for name, dtype in metadata.schema.items()
+    }
     return pl.concat([metadata, pl.DataFrame(output_columns)]).sort(DataSchema.code_name)
 
 
