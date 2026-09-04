@@ -77,6 +77,10 @@ data: # Mangler DAR
         args:
           min_val: 18
           max_val: 45
+      Graviditet:
+        type: choice
+        args:
+          options: ["Ja", "Nej"]
       Vaegt:
         type: rand_float
         args:
@@ -107,6 +111,8 @@ data: # Mangler DAR
         args:
           min_val: 150
           max_val: 200
+      Transferering_dato:
+        type: rand_datetimeseconds
 
   epikur:
   #LSR
@@ -437,7 +443,7 @@ linked_data: # Data that needs to be linked to the data above
                 prefix: "DD"
             - type: choice
               args:
-                options: ["BKHA1", "DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341", "DO3414"]
+                options: ["BKHA1", "DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341", "DO3414", "DO420", "DO422", "DO424","DO601"]
           probabilities: [0.7, 0.3]
       StartDato_Kontakt:
         type: rand_datetime
@@ -466,7 +472,7 @@ linked_data: # Data that needs to be linked to the data above
                 prefix: "DD"
             - type: choice
               args:
-                options: ["KLDC00", "KLDC03"]
+                options: ["KLDC00", "KLDC03",“KMCA10D”, “KMCA10E“]
           probabilities: [0.7, 0.3]
       StartDato_Procedure:
         type: rand_date
@@ -538,9 +544,11 @@ linked_data: # Data that needs to be linked to the data above
                 prefix: "NPU"
             - type: choice
               args:
-                options: ["EKG", "KBT", "Blodprøve, UG:2", "Andet", "BT", "COVID", "test;længde", 
+                options: ["EKG", "KBT", "Blodprøve, UG:2", "Andet", "BT", "COVID", "test;længde", "PAPP A (DOUBLETEST);P", "HCG (DOUBLETEST);P",
                           "Trombocytter", "ALBU, H", "KALIUM;P", "LEUKOCYTTER;B", "ALBUMIN;P", "ELEKTROKARDIOGRAFI [EKG12];PT"]
           probabilities: [0.4, 0.6]
+      Resultatdato:
+        type: rand_date
       Resultatværdi:
         type: mix_function
         args:
