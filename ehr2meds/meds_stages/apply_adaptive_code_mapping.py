@@ -14,11 +14,13 @@ from pathlib import Path
 def apply_mapping(data: pl.LazyFrame, mapping: pl.DataFrame, columns: Mapping[str, str]) -> pl.LazyFrame:
     """Rewrite codes through a frozen mapping while preserving row order and schema."""
     mapped_code_column = columns["mapped_code"]
-    lookup = mapping.select(DataSchema.code_name, mapped_code_column).lazy()
-    return (
-        data.join(lookup, on=DataSchema.code_name, how="left", maintain_order="left")
-        .with_columns(**{DataSchema.code_name: pl.coalesce(mapped_code_column, DataSchema.code_name)})
-        .drop(mapped_code_column)
+    return data.with_columns(
+        **{
+            DataSchema.code_name: pl.col(DataSchema.code_name).replace(
+                old=mapping[DataSchema.code_name],
+                new=mapping[mapped_code_column],
+            )
+        }
     )
 
 
