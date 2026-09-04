@@ -7,13 +7,6 @@ import polars as pl
 from collections import defaultdict
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from ehr2meds.adaptive_code_mapping import (
-    COUNT_COLUMN,
-    MAPPED_CODE_COLUMN,
-    MAPPED_COUNT_COLUMN,
-    PROFILE_COLUMN,
-    REASON_COLUMN,
-)
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig, OmegaConf
@@ -63,14 +56,16 @@ def make_record(
     reason: str,
     mapped_code: str | None = None,
     mapped_count: int | None = None,
+    *,
+    columns: Mapping[str, str],
 ) -> dict:
     return {
         DataSchema.code_name: code,
-        MAPPED_CODE_COLUMN: code if mapped_code is None else mapped_code,
-        COUNT_COLUMN: count,
-        MAPPED_COUNT_COLUMN: count if mapped_count is None else mapped_count,
-        PROFILE_COLUMN: profile_name,
-        REASON_COLUMN: reason,
+        columns["mapped_code"]: code if mapped_code is None else mapped_code,
+        columns["count"]: count,
+        columns["mapped_count"]: count if mapped_count is None else mapped_count,
+        columns["profile"]: profile_name,
+        columns["reason"]: reason,
     }
 
 
@@ -80,6 +75,7 @@ def resolve_pending_codes(
     pending_by_profile: Mapping[str, set[str]],
     candidates_by_code: Mapping[str, list[str]],
     records: Mapping[str, dict[str, object]],
+    columns: Mapping[str, str],
 ) -> dict[str, dict[str, object]]:
     """Resolve below-threshold codes against their candidate ancestors."""
     resolved_records = {code: record.copy() for code, record in records.items()}
@@ -110,14 +106,20 @@ def resolve_pending_codes(
                 continue
             for code in members:
                 resolved_records[code] = make_record(
-                    code, int(counts[code]), profile_name, "grouped", mapped_code=candidate, mapped_count=mapped_count
+                    code,
+                    int(counts[code]),
+                    profile_name,
+                    "grouped",
+                    mapped_code=candidate,
+                    mapped_count=mapped_count,
+                    columns=columns,
                 )
                 pending.remove(code)
             if candidate_needs_own_count:
-                resolved_records[candidate][MAPPED_COUNT_COLUMN] = mapped_count
+                resolved_records[candidate][columns["mapped_count"]] = mapped_count
 
         for code in sorted(pending):
-            resolved_records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold")
+            resolved_records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold", columns=columns)
 
     return resolved_records
 
@@ -125,6 +127,7 @@ def resolve_pending_codes(
 def fit_mapping(
     counts: Mapping[str, int],
     profiles: Mapping[str, HierarchyProfile],
+    columns: Mapping[str, str],
 ) -> pl.DataFrame:
     """Fit a deterministic, disjoint adaptive hierarchy mapping."""
     records: dict[str, dict[str, object]] = {}
@@ -136,66 +139,69 @@ def fit_mapping(
         parsed = split_code(code)
         profile_name = parsed[0] if parsed and parsed[0] in profiles else None
         if profile_name is None:
-            records[code] = make_record(code, count, None, "unconfigured")
+            records[code] = make_record(code, count, None, "unconfigured", columns=columns)
             continue
 
         profile = profiles[profile_name]
         if count >= profile.minimum_count:
-            records[code] = make_record(code, count, profile_name, "retained")
+            records[code] = make_record(code, count, profile_name, "retained", columns=columns)
             continue
 
         namespace, payload = parsed
         ancestors = [f"{namespace}//{candidate}" for candidate in candidate_ancestors(payload, profile)]
         if not ancestors:
-            records[code] = make_record(code, count, profile_name, "no_hierarchy")
+            records[code] = make_record(code, count, profile_name, "no_hierarchy", columns=columns)
             continue
 
         candidates_by_code[code] = ancestors
         pending_by_profile[profile_name].add(code)
 
-    records = resolve_pending_codes(counts, profiles, pending_by_profile, candidates_by_code, records)
+    records = resolve_pending_codes(counts, profiles, pending_by_profile, candidates_by_code, records, columns)
 
     schema = {
         DataSchema.code_name: pl.String,
-        MAPPED_CODE_COLUMN: pl.String,
-        COUNT_COLUMN: pl.UInt64,
-        MAPPED_COUNT_COLUMN: pl.UInt64,
-        PROFILE_COLUMN: pl.String,
-        REASON_COLUMN: pl.String,
+        columns["mapped_code"]: pl.String,
+        columns["count"]: pl.UInt64,
+        columns["mapped_count"]: pl.UInt64,
+        columns["profile"]: pl.String,
+        columns["reason"]: pl.String,
     }
     return pl.DataFrame([records[code] for code in sorted(records)], schema=schema)
 
 
-def combine_count_frames(*dfs: pl.DataFrame | pl.LazyFrame) -> dict[str, int]:
+def combine_count_frames(
+    *dfs: pl.DataFrame | pl.LazyFrame,
+    columns: Mapping[str, str],
+) -> dict[str, int]:
     """Sum mapped shard counts."""
     totals: dict[str, int] = defaultdict(int)
     for df in dfs:
         frame = df.collect() if isinstance(df, pl.LazyFrame) else df
-        for code, count in frame.select(DataSchema.code_name, COUNT_COLUMN).iter_rows():
+        for code, count in frame.select(DataSchema.code_name, columns["count"]).iter_rows():
             totals[str(code)] += int(count)
     return dict(totals)
 
 
-def summarize_mapping(mapping: pl.DataFrame) -> dict[str, object]:
+def summarize_mapping(mapping: pl.DataFrame, columns: Mapping[str, str]) -> dict[str, object]:
     """Return a compact, JSON-friendly audit of a fitted mapping."""
-    changed = pl.col(DataSchema.code_name) != pl.col(MAPPED_CODE_COLUMN)
-    training_rows = pl.col(COUNT_COLUMN) > 0
+    changed = pl.col(DataSchema.code_name) != pl.col(columns["mapped_code"])
+    training_rows = pl.col(columns["count"]) > 0
     totals = mapping.select(
         metadata_source_codes=pl.len(),
         training_source_codes=training_rows.sum(),
-        output_codes=pl.col(MAPPED_CODE_COLUMN).n_unique(),
+        output_codes=pl.col(columns["mapped_code"]).n_unique(),
         changed_source_codes=changed.sum(),
-        training_events=pl.col(COUNT_COLUMN).sum(),
-        remapped_training_events=pl.col(COUNT_COLUMN).filter(changed).sum(),
+        training_events=pl.col(columns["count"]).sum(),
+        remapped_training_events=pl.col(columns["count"]).filter(changed).sum(),
     ).to_dicts()[0]
     decisions = (
         mapping.group_by(
-            pl.col(PROFILE_COLUMN).alias("profile"),
-            pl.col(REASON_COLUMN).alias("reason"),
+            pl.col(columns["profile"]).alias("profile"),
+            pl.col(columns["reason"]).alias("reason"),
         )
         .agg(
             pl.len().alias("source_codes"),
-            pl.col(COUNT_COLUMN).sum().alias("training_events"),
+            pl.col(columns["count"]).sum().alias("training_events"),
         )
         .sort("profile", "reason", nulls_last=True)
         .to_dicts()
@@ -205,16 +211,20 @@ def summarize_mapping(mapping: pl.DataFrame) -> dict[str, object]:
         "decisions": decisions,
         "columns": {
             DataSchema.code_name: "original MEDS code",
-            MAPPED_CODE_COLUMN: "code used after adaptive truncation",
-            COUNT_COLUMN: "raw events in training data",
-            MAPPED_COUNT_COLUMN: "training events represented by the mapped code",
-            PROFILE_COLUMN: "hierarchy used",
-            REASON_COLUMN: "mapping decision",
+            columns["mapped_code"]: "code used after adaptive truncation",
+            columns["count"]: "raw events in training data",
+            columns["mapped_count"]: "training events represented by the mapped code",
+            columns["profile"]: "hierarchy used",
+            columns["reason"]: "mapping decision",
         },
     }
 
 
-def add_unseen_metadata_codes(mapping: pl.DataFrame, code_metadata: pl.DataFrame) -> pl.DataFrame:
+def add_unseen_metadata_codes(
+    mapping: pl.DataFrame,
+    code_metadata: pl.DataFrame,
+    columns: Mapping[str, str],
+) -> pl.DataFrame:
     """Carry forward metadata codes absent from training without fitting them."""
     unseen_codes = sorted(
         set(code_metadata.get_column(DataSchema.code_name).to_list()) - set(mapping.get_column(DataSchema.code_name))
@@ -224,11 +234,11 @@ def add_unseen_metadata_codes(mapping: pl.DataFrame, code_metadata: pl.DataFrame
     unseen = pl.DataFrame(
         {
             DataSchema.code_name: unseen_codes,
-            MAPPED_CODE_COLUMN: unseen_codes,
-            COUNT_COLUMN: [0] * len(unseen_codes),
-            MAPPED_COUNT_COLUMN: [0] * len(unseen_codes),
-            PROFILE_COLUMN: [None] * len(unseen_codes),
-            REASON_COLUMN: ["unseen_training"] * len(unseen_codes),
+            columns["mapped_code"]: unseen_codes,
+            columns["count"]: [0] * len(unseen_codes),
+            columns["mapped_count"]: [0] * len(unseen_codes),
+            columns["profile"]: [None] * len(unseen_codes),
+            columns["reason"]: ["unseen_training"] * len(unseen_codes),
         },
         schema=mapping.schema,
     )
@@ -238,6 +248,7 @@ def add_unseen_metadata_codes(mapping: pl.DataFrame, code_metadata: pl.DataFrame
 def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Count training events per code; ``train_only`` selects the shards."""
     read_profiles(stage_cfg)
+    count_column = stage_cfg.columns["count"]
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
         return (
@@ -245,7 +256,7 @@ def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]
             .len()
             .select(
                 pl.col(DataSchema.code_name),
-                pl.col("len").cast(pl.UInt64).alias(COUNT_COLUMN),
+                pl.col("len").cast(pl.UInt64).alias(count_column),
             )
             .sort(DataSchema.code_name)
         )
@@ -256,6 +267,7 @@ def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]
 def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
     """Fit one global mapping and write its reusable mapping and audit files."""
     profiles = read_profiles(stage_cfg)
+    columns = stage_cfg.columns
     configured_output = stage_cfg.get("mapping_output_filepath")
     output_filepath = (
         Path(str(configured_output))
@@ -275,14 +287,14 @@ def reducer_fntr(stage_cfg: DictConfig) -> Callable[..., pl.LazyFrame]:
     )
 
     def reducer(*dfs: pl.DataFrame | pl.LazyFrame) -> pl.LazyFrame:
-        counts = combine_count_frames(*dfs)
-        mapping = fit_mapping(counts, profiles=profiles)
-        mapping = add_unseen_metadata_codes(mapping, code_metadata)
+        counts = combine_count_frames(*dfs, columns=columns)
+        mapping = fit_mapping(counts, profiles=profiles, columns=columns)
+        mapping = add_unseen_metadata_codes(mapping, code_metadata, columns)
         output_filepath.parent.mkdir(parents=True, exist_ok=True)
         mapping.write_parquet(output_filepath)
         summary_filepath.parent.mkdir(parents=True, exist_ok=True)
         summary_filepath.write_text(
-            json.dumps(summarize_mapping(mapping), indent=2, sort_keys=True),
+            json.dumps(summarize_mapping(mapping, columns), indent=2, sort_keys=True),
             encoding="utf-8",
         )
         # Match the lazy type expected by MEDS-Transforms' metadata merge.

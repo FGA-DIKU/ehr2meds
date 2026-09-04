@@ -3,21 +3,22 @@
 from __future__ import annotations
 
 import polars as pl
-from collections.abc import Callable
-from ehr2meds.adaptive_code_mapping import MAPPED_CODE_COLUMN, prepare_mapping
+from collections.abc import Callable, Mapping
+from ehr2meds.adaptive_code_mapping import prepare_mapping
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig
 from pathlib import Path
 
 
-def apply_mapping(data: pl.LazyFrame, mapping: pl.DataFrame) -> pl.LazyFrame:
+def apply_mapping(data: pl.LazyFrame, mapping: pl.DataFrame, columns: Mapping[str, str]) -> pl.LazyFrame:
     """Rewrite codes through a frozen mapping while preserving row order and schema."""
-    lookup = mapping.select(DataSchema.code_name, MAPPED_CODE_COLUMN).lazy()
+    mapped_code_column = columns["mapped_code"]
+    lookup = mapping.select(DataSchema.code_name, mapped_code_column).lazy()
     return (
         data.join(lookup, on=DataSchema.code_name, how="left", maintain_order="left")
-        .with_columns(pl.coalesce(MAPPED_CODE_COLUMN, DataSchema.code_name).alias(DataSchema.code_name))
-        .drop(MAPPED_CODE_COLUMN)
+        .with_columns(pl.coalesce(mapped_code_column, DataSchema.code_name).alias(DataSchema.code_name))
+        .drop(mapped_code_column)
     )
 
 
@@ -30,10 +31,15 @@ def apply_adaptive_code_mapping_fntr(
     code_metadata: pl.DataFrame,
 ) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
     """Build the data transform from the local fitted mapping or an external one."""
-    mapping = prepare_mapping(code_metadata, external_mapping_filepath=stage_cfg.get("mapping_filepath"))
+    columns = stage_cfg.columns
+    mapping = prepare_mapping(
+        code_metadata,
+        external_mapping_filepath=stage_cfg.get("mapping_filepath"),
+        columns=columns,
+    )
 
     def transform(df: pl.LazyFrame) -> pl.LazyFrame:
-        return apply_mapping(df, mapping)
+        return apply_mapping(df, mapping, columns)
 
     return transform
 

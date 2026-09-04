@@ -1,24 +1,23 @@
-"""Column names and mapping I/O shared by the adaptive code-mapping stages."""
+"""Mapping I/O shared by the adaptive code-mapping stages."""
 
 from __future__ import annotations
 
 import polars as pl
+from collections.abc import Mapping
 from ehr2meds.io_utils import load_frame
 from meds import DataSchema
 
-MAPPED_CODE_COLUMN = "adaptive/mapped_code"
-COUNT_COLUMN = "adaptive/count"
-MAPPED_COUNT_COLUMN = "adaptive/mapped_count"
-PROFILE_COLUMN = "adaptive/profile"
-REASON_COLUMN = "adaptive/reason"
-MEMBER_COUNT_COLUMN = "adaptive/member_count"
 
-
-def prepare_mapping(local_metadata: pl.DataFrame, external_mapping_filepath: str | None) -> pl.DataFrame:
+def prepare_mapping(
+    local_metadata: pl.DataFrame,
+    external_mapping_filepath: str | None,
+    columns: Mapping[str, str],
+) -> pl.DataFrame:
     """Use the local fitted mapping if one exists; otherwise fall back to an external mapping."""
-    required_local = {DataSchema.code_name, MAPPED_CODE_COLUMN}
+    mapped_code_column = columns["mapped_code"]
+    required_local = {DataSchema.code_name, mapped_code_column}
     if required_local.issubset(local_metadata.columns):
-        local = local_metadata.select(DataSchema.code_name, MAPPED_CODE_COLUMN)
+        local = local_metadata.select(DataSchema.code_name, mapped_code_column)
         if local.get_column(DataSchema.code_name).n_unique() != local.height:
             raise ValueError("local adaptive mapping must contain at most one row per code")
         return local
@@ -30,7 +29,7 @@ def prepare_mapping(local_metadata: pl.DataFrame, external_mapping_filepath: str
     missing = required_local - set(external.columns)
     if missing:
         raise ValueError(f"external mapping is missing columns: {sorted(missing)}")
-    external = external.select(DataSchema.code_name, MAPPED_CODE_COLUMN)
+    external = external.select(DataSchema.code_name, mapped_code_column)
     if external.get_column(DataSchema.code_name).n_unique() != external.height:
         raise ValueError("external mapping must contain at most one row per code")
     return external
