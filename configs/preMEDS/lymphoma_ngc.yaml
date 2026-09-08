@@ -27,7 +27,7 @@ tables:
       Dødsdato: deathdate
       Køn: gender
   
-  SDS_dimpatologiskdiagnose:
+  dimpatologiskdiagnose:
       filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
       columns:
         dw_ek_rekvisition: contact_id
@@ -51,7 +51,7 @@ tables:
           rename_to: timestamp_fallback
           drop_source: true
 
-  SDS_diagnoser:
+  diagnoser:
     filename: ${paths.tables_dir}/SDS_diagnoser.parquet               
     columns:
       dw_ek_kontakt: contact_id
@@ -75,7 +75,7 @@ tables:
         rename_to: time_end
         drop_source: true
 
-  SDS_t_diag:
+  t_diag:
     filename: ${paths.tables_dir}/SDS_t_diag.parquet               
     columns:
       v_recnum: contact_id
@@ -95,7 +95,7 @@ tables:
         rename_to: date_end
         drop_source: true
 
-  SDS_kontakter:
+  kontakter:
     filename: ${paths.tables_dir}/SDS_kontakter.parquet               
     columns:
       patientid: subject_id
@@ -150,7 +150,7 @@ tables:
         "2": "ATA3"
         "2.0": "ATA3"
 
-  SDS_t_adm:
+  t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
     columns:
       patientid: subject_id
@@ -251,7 +251,7 @@ tables:
       rename_to: c_sgh
       drop_source: true
 
-  SDS_t_sksopr:
+  t_sksopr:
     filename: ${paths.tables_dir}/SDS_t_sksopr.parquet   
     columns:
       v_recnum: contact_id
@@ -267,7 +267,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_t_sksube:
+  t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
     columns:
       v_recnum: contact_id
@@ -284,7 +284,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_procedurer_kirurgi:
+  procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
     columns:
       dw_ek_kontakt: contact_id
@@ -299,7 +299,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_procedurer_andre:
+  procedurer_andre:
     filename: ${paths.tables_dir}/SDS_procedurer_andre.parquet        
     columns:
       dw_ek_kontakt: contact_id
@@ -315,24 +315,25 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_ekokur:
+  ekokur:
     filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
     columns:
       patientid: subject_id
       eksd: timestamp
       atc:
 
-  SDS_indberetningmedpris:
+  indberetningmedpris:
     filename: ${paths.tables_dir}/SDS_indberetningmedpris.parquet
     columns:
       patientid: subject_id
       d_ord_start: timestamp
       c_atc:
       c_patienttype:  #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
+      k_region_id:
       v_adm_dosis: dosage # TODO: Currently not in use
       v_styrke_num: strength # TODO: Currently not in use
 
-  SDS_laboratorieproevesvar:
+  laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
     columns:
       patientid: subject_id
