@@ -245,7 +245,8 @@ tables:
         "Ukendt": "UNK"
     mappings:
     - source_column: c_sgh   
-      via_file: ${paths.tables_dir}/shak_to_region.parquet # using resources
+      via_file: shak_to_region.parquet
+      how: left
       join_on: kode
       target_column: region
       rename_to: c_sgh

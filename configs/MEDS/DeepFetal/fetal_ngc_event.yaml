@@ -80,8 +80,8 @@ t_adm:
   clinical_specialty:
     code: f"CONTACT_SPECIALTY//{$C_SPEC}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
-  hospital_code:
-    code: f"RC_SGH//{$C_SGH}"
+  region_code:
+    code: f"REGION//{$C_SGH}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
 
 t_diag:
