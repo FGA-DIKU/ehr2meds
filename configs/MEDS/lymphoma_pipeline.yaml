@@ -66,14 +66,14 @@ stages:
       # their raw numeric_value but receive null normalized/binned values.
       numeric_value_bounds: {}
       # Example:
-      #   "Laboratory_value//NPU01566": {min: 0, max: 250}
+      #   "LABTEST//NPU01566": {min: 0, max: 250}
       numeric_metadata_output_filepath: ${output_dir}/numeric_metadata.json
   - annotate_numeric_values:
       # Optional fallback (JSON, MEDS metadata directory, or codes.parquet)
       # used only if aggregate_numeric_metadata did not run locally.
       numeric_metadata_filepath: null
   # Final model representation: valid lab values become
-  # Laboratory_value//{code}//bin_{bin_value}.
+  # LABTEST//{code}//BIN_{bin_value}.
   - join_numeric_bins
   - finalize_MEDS_metadata
   - finalize_MEDS_data
