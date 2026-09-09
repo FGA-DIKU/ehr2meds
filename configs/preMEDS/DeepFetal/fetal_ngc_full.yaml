@@ -28,7 +28,7 @@ tables:
       Dødsdato: deathdate
       Køn: gender
 
-  SDS_diagnoser:
+  diagnoser:
     filename: ${paths.SDS_tables_dir}/diagnoser.csv               
     columns:
       dw_ek_kontakt: contact_id
@@ -57,7 +57,7 @@ tables:
         rename_to: 
         drop_source: true
 
-  SDS_ekokur:
+  ekokur:
     filename: ${paths.SDS_tables_dir}/ekokur_all.csv                  
     columns:
       cpr: subject_id
@@ -72,7 +72,7 @@ tables:
         rename_to: code
         drop_source: false
 
-  SDS_kontakter:
+  kontakter:
     filename: ${paths.SDS_tables_dir}/kontakter_all.csv      
     value_map: 
       tidspunkt_start:
@@ -123,7 +123,7 @@ tables:
       region_ans: 
       dw_ek_kontakt: contact_id
 
-  SDS_laboratorieproevesvar:
+  laboratorieproevesvar:
     filename: ${paths.SDS_tables_dir}/lab_dm_forsker_all.csv
     columns:
       PATIENT_CPR: subject_id
@@ -132,7 +132,7 @@ tables:
       ANALYSISCODE:
       VALUE: 
 
-  SDS_procedurer_andre:
+  procedurer_andre:
     filename: ${paths.SDS_tables_dir}/procedurer_andre.csv        
     columns:
       dw_ek_kontakt: contact_id
@@ -148,7 +148,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_procedurer_kirurgi:
+  procedurer_kirurgi:
     filename: ${paths.SDS_tables_dir}/procedurer_kirurgi.csv      
     columns:
       dw_ek_kontakt: contact_id
@@ -163,7 +163,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_t_adm:
+  t_adm:
     filename: ${paths.SDS_tables_dir}/t_adm.csv              
     columns:
       V_CPR: subject_id
@@ -220,7 +220,7 @@ tables:
         "2": "ATA3"
         "2.0": "ATA3"
 
-  SDS_t_diag:
+  t_diag:
     filename: ${paths.SDS_tables_dir}/t_diag.csv               
     columns:
       V_RECNUM: contact_id
@@ -250,7 +250,7 @@ tables:
       V_UDTIME:
         ".": null 
 
-  SDS_t_sksopr:
+  t_sksopr:
     filename: ${paths.SDS_tables_dir}/t_sksopr.csv   
     columns:
       V_RECNUM: contact_id
@@ -273,7 +273,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_t_sksube:
+  t_sksube:
     filename: ${paths.SDS_tables_dir}/t_sksube.csv   
     columns:
       V_RECNUM: contact_id
