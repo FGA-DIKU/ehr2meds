@@ -219,6 +219,14 @@ tables:
         2: "ATA3"
         "2": "ATA3"
         "2.0": "ATA3"
+    mappings:
+      - source_column: C_SGH
+        via_file: shak_to_region.parquet
+        how: left
+        join_on: kode
+        target_column: region
+        rename_to: C_SGH
+        drop_source: true
 
   t_diag:
     filename: ${paths.SDS_tables_dir}/t_diag.csv               
