@@ -9,134 +9,134 @@ patients_info:
     code: "DOD"
     time: $deathdate
   gender:
-    code: f"Sex//{$gender}"
+    code: f"SEX//{$gender}"
     time: null
 
 # Pathology 
 dimpatologiskdiagnose:
   pathology:
-    code: f"Pathology//{$diagnose_snomed_kode}"
+    code: f"PATHOLOGY//{$diagnose_snomed_kode}"
     time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d') as datetime)
 
 # LPR3 diagnoses have no independent timestamp and are conservatively placed
 # at contact end, when the diagnosis is known to have been available.
 diagnoser:
   diagnosis:
-    code: f"Diagnosis//{$diagnosekode}"
+    code: f"DIAGNOSIS//{$diagnosekode}"
     time: set_time($date_end, $time_end as '%H:%M:%S%.f')
   diagnose_type:
-    code: f"Diagnosis_type//{$diagnosetype}"
+    code: f"DIAGNOSIS_TYPE//{$diagnosetype}"
     time: set_time($date_end, $time_end as '%H:%M:%S%.f')
 
 # LPR diagnoses likewise inherit the admission end timestamp.
 t_diag:
   diag:
-    code: f"Diagnosis//{$c_diag}"
+    code: f"DIAGNOSIS//{$c_diag}"
     time: $date_end
   diag_type:
-    code: f"Diagnosis_type//{$c_diagtype}"
+    code: f"DIAGNOSIS_TYPE//{$c_diagtype}"
     time: $date_end
   tildiag:
-    code: f"Diagnosis//{$c_tildiag}"
+    code: f"DIAGNOSIS//{$c_tildiag}"
     time: $date_end
 
 # LPR3 action diagnosis is finalized at contact end. Attributes known when the
 # contact starts remain at the start timestamp.
 kontakter:
   diagnosis:
-    code: f"Diagnosis//{$aktionsdiagnose}"
+    code: f"DIAGNOSIS//{$aktionsdiagnose}"
     time: set_time($date_end, $time_end as '%H:%M:%S%.f')
   contact_reason:
-    code: f"Contact_reason//{$kontaktaarsag}"
+    code: f"CONTACT_REASON//{$kontaktaarsag}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   priority:
-    code: f"Contact_priority//{$prioritet}"
+    code: f"CONTACT_PRIORITY//{$prioritet}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   contact_type:
-    code: f"Contact_type//{$kontakttype}"
+    code: f"CONTACT_TYPE//{$kontakttype}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   clinical_specialty:
-    code: f"Contact_specialty//{$hovedspeciale_ans}"
+    code: f"CONTACT_SPECIALTY//{$hovedspeciale_ans}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   region_code:
-    code: f"Contact_region//{$region_ans}"
+    code: f"REGION//{$region_ans}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
 # LPR action diagnosis is placed at admission end; start-known attributes stay
 # at the admission start timestamp.
 t_adm:
   diagnosis:
-    code: f"Diagnosis//{$c_adiag}"
+    code: f"DIAGNOSIS//{$c_adiag}"
     time: $date_end
   contact_reason:
-    code: f"Contact_reason//{$c_kontaars}"
+    code: f"CONTACT_REASON//{$c_kontaars}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
   patient_type:
-    code: f"Contact_patient_type//{$c_pattype}"
+    code: f"CONTACT_PATIENT_TYPE//{$c_pattype}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
   priority:
-    code: f"Contact_priority//{$priority}"
+    code: f"CONTACT_PRIORITY//{$priority}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
   clinical_specialty:
-    code: f"Contact_specialty//{$c_spec}"
+    code: f"CONTACT_SPECIALTY//{$c_spec}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
   region_code:
-    code: f"Contact_region//{$c_sgh}"
+    code: f"REGION//{$c_sgh}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
 
 # LPR surgical procedures 
 t_sksopr:
   procedure:
-    code: f"Procedure//{$c_opr}"
+    code: f"PROCEDURE//{$c_opr}"
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
 
 # LPR other procedures 
 t_sksube:
   procedure:
-    code: f"Procedure//{$c_opr}"
+    code: f"PROCEDURE//{$c_opr}"
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
   procedure_type:
-    code: f"Procedure_type//{coalesce($c_oprart, 'P')}" # NOTE: default to "P" if missing, as this is LPR3 behavior
+    code: f"PROCEDURE_TYPE//{coalesce($c_oprart, 'P')}" # NOTE: default to "P" if missing, as this is LPR3 behavior
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
 
 # LPR3 surgical procedures 
 procedurer_kirurgi:
   procedure:
-    code: f"Procedure//{$procedurekode}"
+    code: f"PROCEDURE//{$procedurekode}"
     time: set_time($date_start, $time_start)
 
 # LPR3 other procedures
 procedurer_andre:
   procedure:
-    code: f"Procedure//{$procedurekode}"
+    code: f"PROCEDURE//{$procedurekode}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   procedure_type:
-    code: f"Procedure_type//{$proceduretype}" # NOTE: default to "P" if missing, as this is LPR3 behavior
+    code: f"PROCEDURE_TYPE//{$proceduretype}" # NOTE: default to "P" if missing, as this is LPR3 behavior
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
 # Medication from ekokur
 ekokur:
   medication:
-    code: f"Medication//{$atc}"
+    code: f"MEDICATION//{$atc}"
     time: $timestamp
 
 # Administered medication 
 indberetningmedpris:
   medication:
-    code: f"Medication//{$c_atc}"
+    code: f"MEDICATION//{$c_atc}"
     time: $timestamp
   patient_type:
-    code: f"Contact_patient_type//{$c_patienttype}"
+    code: f"CONTACT_PATIENT_TYPE//{$c_patienttype}"
     time: $timestamp
   region_code:
-    code: f"Contact_region//{$k_region_id}"
+    code: f"REGION//{$k_region_id}"
     time: $timestamp
 
 # Keep numeric_value raw here. Split-aware normalization and binning should be
 # performed later by aggregate_numeric_metadata and annotate_numeric_values.
 laboratorieproevesvar:
   laboratory_value:
-    code: f"Laboratory_value//{$analysiscode}"
+    code: f"LABTEST//{$analysiscode}"
     time: set_time($samplingdate as '%Y-%m-%d', $samplingtime as '%H:%M:%S%.f') # sampling time had SQL precision, which is the reason for added x.f
     numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $samplevalue) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
     text_value: "$samplevalue" # the value as string, for cases where the value is not numeric (e.g., "NEG", "POS", "<0.1", etc.). Duplicates where text and numeric are the same are dropped.
