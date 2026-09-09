@@ -32,4 +32,4 @@ event_time_cutoff: null
 numeric_value_bounds: {}
 numeric_metadata_output_filepath: null
 numeric_metadata_filepath: null
-separator: "//bin_"
+separator: "//BIN_"
