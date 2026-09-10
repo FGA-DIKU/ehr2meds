@@ -45,7 +45,7 @@ kontakter:
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
 
 laboratorieproevesvar:
-  laboratory_value:
+  lab_test:
     code: f"LABTEST//{$ANALYSISCODE}"
     time: set_time($SAMPLINGDATE as '%Y-%m-%d', $SAMPLINGTIME as '%H:%M:%S%.f')
     numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $VALUE) as float64'
@@ -127,7 +127,7 @@ SP_diagnosis:
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
 
 SP_labtest:
-  labtest:
+  lab_test:
     code: f"LABTEST//{$BestOrd}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
     numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $sample_value) as float64'
