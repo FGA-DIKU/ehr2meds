@@ -8,8 +8,8 @@ patients_info:
   dod:
     code: "DOD"
     time: $deathdate
-  gender:
-    code: f"SEX//{$gender}"
+  sex:
+    code: f"SEX//{$sex}"
     time: null
 
 # Pathology 

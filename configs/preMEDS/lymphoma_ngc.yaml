@@ -25,7 +25,7 @@ tables:
       patientid: subject_id
       Fødselsdato: birthdate
       Dødsdato: deathdate
-      Køn: gender
+      Køn: sex
   
   dimpatologiskdiagnose:
       filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
