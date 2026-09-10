@@ -26,7 +26,7 @@ tables:
       MOR_CPR: subject_id
       Fødselsdato: birthdate
       Dødsdato: deathdate
-      Køn: gender
+      Køn: sex
 
   diagnoser:
     filename: ${paths.SDS_tables_dir}/diagnoser.csv               
