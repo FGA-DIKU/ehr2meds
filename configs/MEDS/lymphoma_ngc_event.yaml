@@ -135,7 +135,7 @@ indberetningmedpris:
 # Keep numeric_value raw here. Split-aware normalization and binning should be
 # performed later by aggregate_numeric_metadata and annotate_numeric_values.
 laboratorieproevesvar:
-  laboratory_value:
+  lab_test:
     code: f"LABTEST//{$analysiscode}"
     time: set_time($samplingdate as '%Y-%m-%d', $samplingtime as '%H:%M:%S%.f') # sampling time had SQL precision, which is the reason for added x.f
     numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $samplevalue) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
