@@ -72,7 +72,7 @@ t_adm:
     code: f"CONTACT_REASON//{$C_KONTAARS}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
   patient_type:
-    code: f"CONTACT_PATIENT_TYPE//{$C_PATTYPE}"
+    code: f"PATIENT_TYPE//{$C_PATTYPE}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
   priority:
     code: f"CONTACT_PRIORITY//{$priority}"
