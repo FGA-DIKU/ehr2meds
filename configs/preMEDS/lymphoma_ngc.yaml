@@ -114,6 +114,7 @@ tables:
       - hovedspeciale_ans
       - kontaktaarsag
       - prioritet
+      - region_ans
     value_map:
       # LPR3 and legacy LPR share RC_REASON downstream. Normalize only the
       # documented ALCC equivalents; leave unfamiliar values untouched.
@@ -153,6 +154,7 @@ tables:
       - c_kontaars
       - c_pattype
       - c_spec
+      - c_sgh
       - priority
     value_map:
       c_spec:
@@ -304,6 +306,7 @@ tables:
       v_styrke_num: strength # TODO: Currently not in use
     normalize_integer_columns:
       - c_patienttype
+      - k_region_id
 
   laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet

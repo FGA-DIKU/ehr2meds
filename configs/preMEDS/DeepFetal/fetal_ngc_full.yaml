@@ -106,6 +106,7 @@ tables:
       - hovedspeciale_ans
       - kontaktaarsag
       - prioritet
+      - region_ans
 
   laboratorieproevesvar:
     filename: ${paths.SDS_tables_dir}/lab_dm_forsker_all.csv
@@ -166,6 +167,7 @@ tables:
       - C_KONTAARS
       - C_PATTYPE
       - C_SPEC
+      - C_SGH
       - priority
     value_map: 
       V_INDTIME:

@@ -59,7 +59,7 @@ kontakter:
     code: f"CONTACT_SPECIALTY//{$hovedspeciale_ans}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   region_code:
-    code: f"REGION//{(($region_ans as float) as int)}"
+    code: f"REGION//{$region_ans}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
 # LPR action diagnosis is placed at admission end; start-known attributes stay
@@ -81,7 +81,7 @@ t_adm:
     code: f"CONTACT_SPECIALTY//{$c_spec}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
   region_code:
-    code: f"REGION//{(($c_sgh as float) as int)}"
+    code: f"REGION//{$c_sgh}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
 
 # LPR surgical procedures 
@@ -129,7 +129,7 @@ indberetningmedpris:
     code: f"PATIENT_TYPE//{$c_patienttype}"
     time: $timestamp
   region_code:
-    code: f"REGION//{(($k_region_id as float) as int)}"
+    code: f"REGION//{$k_region_id}"
     time: $timestamp
 
 # Keep numeric_value raw here. Split-aware normalization and binning should be
