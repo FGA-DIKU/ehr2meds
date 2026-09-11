@@ -41,7 +41,7 @@ kontakter:
     code: f"CONTACT_SPECIALTY//{$hovedspeciale_ans}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
   region_code:
-    code: f"REGION//{(($region_ans as float) as int)}"
+    code: f"REGION//{$region_ans}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
 
 laboratorieproevesvar:
@@ -81,7 +81,7 @@ t_adm:
     code: f"CONTACT_SPECIALTY//{$C_SPEC}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
   region_code:
-    code: f"REGION//{(($C_SGH as float) as int)}"
+    code: f"REGION//{$C_SGH}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
 
 t_diag:
