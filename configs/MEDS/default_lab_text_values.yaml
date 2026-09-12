@@ -1,0 +1,36 @@
+# Shared Danish and English qualitative result spellings. The malformed
+# PÏ¿½VIST forms occur in source data where Å was replaced during decoding.
+value_map:
+  NEG: NEGATIVE
+  NEGATIV: NEGATIVE
+  NEGATIVE: NEGATIVE
+  POS: POSITIVE
+  POSITIV: POSITIVE
+  POSITIVE: POSITIVE
+  PÅVIST: DETECTED
+  PÏ¿½VIST: DETECTED
+  PÏ¿½VIST.: DETECTED
+  IKKE PÅVIST: NOT_DETECTED
+  IKKE PÅVIST.: NOT_DETECTED
+  IKKE PÏ¿½VIST: NOT_DETECTED
+  IKKE PÏ¿½VIST.: NOT_DETECTED
+  EJ PÅVIST: NOT_DETECTED
+  EJ PÏ¿½VIST: NOT_DETECTED
+  NORMAL: NORMAL
+  NORMALT: NORMAL
+  NORMALT.: NORMAL
+  FORHØJET: ELEVATED
+  INGEN VÆKST: NO_GROWTH
+  A RHD POS: A_RHD_POS
+  A RHD NEG: A_RHD_NEG
+  B RHD POS: B_RHD_POS
+  B RHD NEG: B_RHD_NEG
+  AB RHD POS: AB_RHD_POS
+  AB RHD NEG: AB_RHD_NEG
+  O RHD POS: O_RHD_POS
+  O RHD NEG: O_RHD_NEG
+  0 RHD POS: O_RHD_POS
+  0 RHD NEG: O_RHD_NEG
+encode_comparisons: false
+namespace: LABTEST
+separator: "//RESULT_"
