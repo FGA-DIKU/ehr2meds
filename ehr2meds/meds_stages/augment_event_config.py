@@ -38,6 +38,20 @@ def write_config(config: DictConfig, path: Path) -> None:
     OmegaConf.save(config, path, resolve=False)
 
 
+def merge_event_config(config: DictConfig, additional_path: Path | None) -> DictConfig:
+    """Merge an optional event-config extension without replacing base tables."""
+    if additional_path is None:
+        return config
+
+    additional = read_config(additional_path)
+    duplicate_tables = (set(config) & set(additional)) - {"subject_id_col"}
+    if duplicate_tables:
+        raise ValueError(f"Additional event configuration repeats tables: {sorted(duplicate_tables)}")
+    if additional.get("subject_id_col", config.get("subject_id_col")) != config.get("subject_id_col"):
+        raise ValueError("Base and additional event configurations use different subject_id_col values")
+    return OmegaConf.merge(config, additional)
+
+
 def add_event_columns(config: DictConfig, columns: Mapping[str, str]) -> int:
     """Add shared columns to every event and return the number of events found."""
     event_count = 0
@@ -69,6 +83,7 @@ def augment_event_config(
     out_fp: Path,
     *,
     event_columns: Mapping[str, str] = DEFAULT_EVENT_COLUMNS,
+    additional_src_fp: Path | None = None,
 ) -> Path:
     """Add shared output columns to every event definition.
 
@@ -76,7 +91,7 @@ def augment_event_config(
     structural blocks (i.e., ``subject_id_col``, ``transforms``,``join``).
     """
     columns = validate_event_columns(event_columns)
-    config = read_config(src_fp)
+    config = merge_event_config(read_config(src_fp), additional_src_fp)
 
     event_count = add_event_columns(config, columns)
     if event_count == 0:
@@ -91,9 +106,11 @@ def main(cfg: DictConfig) -> None:
     """Create the augmented config consumed by subsequent extraction stages."""
     stage_cfg = cfg.stage_cfg
     event_columns = stage_cfg.get("event_columns", DEFAULT_EVENT_COLUMNS)
+    additional_src_fp = stage_cfg.get("additional_event_conversion_config_fp")
 
     augment_event_config(
         Path(str(stage_cfg.source_event_conversion_config_fp)),
         Path(str(stage_cfg.output_event_conversion_config_fp)),
         event_columns=event_columns,
+        additional_src_fp=Path(str(additional_src_fp)) if additional_src_fp else None,
     )

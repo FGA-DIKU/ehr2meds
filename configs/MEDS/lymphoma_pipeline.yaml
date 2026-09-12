@@ -22,6 +22,7 @@ stages:
   - augment_event_config:
       source_event_conversion_config_fp: ${source_event_conversion_config_fp}
       output_event_conversion_config_fp: ${event_conversion_config_fp}
+      additional_event_conversion_config_fp: ${oc.env:RKQP_EVENT_CONVERSION_CONFIG_FP,null}
       event_columns:
         row_idx: $row_idx
 

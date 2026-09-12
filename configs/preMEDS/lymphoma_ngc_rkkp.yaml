@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+  - lymphoma_ngc@
+  - _self_
+
+paths:
+  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/lymphoma_ngc_rkkp
+
+tables:
+  quality_registers:
+    filename: ${oc.env:RKQP_EVENTS_FILE}
+    columns:
+      patientid: subject_id
+      timestamp:
+      code:
+      numeric_value:
+      text_value:
+      supertype:
+      source_column:
+      time_source:
+      temporal_confidence:

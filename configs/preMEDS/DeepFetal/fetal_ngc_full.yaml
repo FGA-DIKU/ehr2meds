@@ -77,6 +77,21 @@ tables:
     value_map: 
       tidspunkt_start:
         ".": null
+      # Some LPR3 deliveries contain legacy two-digit specialty codes in the
+      # otherwise textual field. Map them onto the same labels as C_SPEC.
+      hovedspeciale_ans:
+        "0": "blandet medicin og kirurgi"
+        "3": "hepatologi"
+        "4": "hæmatologi"
+        "14": "palliativ medicin"
+        "39": "sexologi"
+        "98": "fysio- og ergoterapi"
+        "99": "UNK"
+        "Ukendt": "UNK"
+        "UNK": "UNK"
+      region_ans:
+        "Ukendt": "UNK"
+        "UNK": "UNK"
       kontaktaarsag:
         "1": "ALCC01"
         "2": "ALCC02"
@@ -190,6 +205,9 @@ tables:
       priority:
         "1": "ATA1"
         "2": "ATA3"
+      C_SGH:
+        "Ukendt": "UNK"
+        "UNK": "UNK"
     mappings:
       - source_column: C_SGH
         via_file: shak_to_region.parquet

@@ -1,0 +1,12 @@
+subject_id_col: subject_id
+
+quality_registers:
+  event:
+    code: $code
+    time: $timestamp
+    numeric_value: $numeric_value
+    text_value: $text_value
+    supertype: $supertype
+    source_column: $source_column
+    time_source: $time_source
+    temporal_confidence: $temporal_confidence
