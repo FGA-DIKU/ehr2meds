@@ -32,6 +32,8 @@ tables:
       columns:
         dw_ek_rekvisition: contact_id
         diagnose_snomed_kode:
+      normalize_code_columns:
+        - diagnose_snomed_kode
       mappings:
         - source_column: contact_id
           via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
@@ -57,6 +59,8 @@ tables:
       dw_ek_kontakt: contact_id
       diagnosekode:
       diagnosetype: 
+    normalize_code_columns:
+      - diagnosekode
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet           
@@ -82,6 +86,9 @@ tables:
       c_diag: 
       c_tildiag: 
       c_diagtype: 
+    normalize_code_columns:
+      - c_diag
+      - c_tildiag
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -116,6 +123,21 @@ tables:
       - prioritet
       - region_ans
     value_map:
+      # Some LPR3 deliveries contain legacy two-digit specialty codes in the
+      # otherwise textual field. Map them onto the same labels as c_spec.
+      hovedspeciale_ans:
+        "0": "blandet medicin og kirurgi"
+        "3": "hepatologi"
+        "4": "hæmatologi"
+        "14": "palliativ medicin"
+        "39": "sexologi"
+        "98": "fysio- og ergoterapi"
+        "99": "UNK"
+        "Ukendt": "UNK"
+        "UNK": "UNK"
+      region_ans:
+        "Ukendt": "UNK"
+        "UNK": "UNK"
       # LPR3 and legacy LPR share RC_REASON downstream. Normalize only the
       # documented ALCC equivalents; leave unfamiliar values untouched.
       kontaktaarsag:
@@ -200,6 +222,9 @@ tables:
         "86": "arbejdsmedicin"
         "90": "almen medicin"
         "91": "samfundsmedicin"
+      c_sgh:
+        "Ukendt": "UNK"
+        "UNK": "UNK"
       priority: # map emergency vs planned visits to LPR3
         "1": "ATA1"
         "2": "ATA3"
@@ -231,6 +256,8 @@ tables:
       v_otime: 
       v_ominut: 
       c_opr:
+    normalize_code_columns:
+      - c_opr
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -248,6 +275,8 @@ tables:
       v_ominut: 
       c_opr:
       c_oprart:
+    normalize_code_columns:
+      - c_opr
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
@@ -263,6 +292,8 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       procedurekode:
+    normalize_code_columns:
+      - procedurekode
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -279,6 +310,8 @@ tables:
       tidspunkt_start: time_start
       procedurekode:
       proceduretype:
+    normalize_code_columns:
+      - procedurekode
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -293,6 +326,8 @@ tables:
       patientid: subject_id
       eksd: timestamp
       atc:
+    normalize_code_columns:
+      - atc
 
   indberetningmedpris:
     filename: ${paths.tables_dir}/SDS_indberetningmedpris.parquet
@@ -304,9 +339,15 @@ tables:
       k_region_id:
       v_adm_dosis: dosage # TODO: Currently not in use
       v_styrke_num: strength # TODO: Currently not in use
+    normalize_code_columns:
+      - c_atc
     normalize_integer_columns:
       - c_patienttype
       - k_region_id
+    value_map:
+      k_region_id:
+        "Ukendt": "UNK"
+        "UNK": "UNK"
 
   laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
