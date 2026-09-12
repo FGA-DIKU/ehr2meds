@@ -103,11 +103,8 @@ hierarchies:
 SKS defaults exclude level 1 because an ICD-10/SKS leading letter can span
 clinical chapters; for example, `D` covers parts of both neoplasm and blood
 disorder chapters. ATC keeps level 1 because it represents the 14 official
-anatomical groups. PATHOLOGY uses payload lengths 5, 4, and 3: this preserves
-the Danish patoSnoMed axis while allowing rare six-character codes to share
-progressively broader prefix groups. These prefixes are model-oriented adaptive
-groups and need not themselves be official patoSnoMed concepts. Any default can
-be overridden.
+anatomical groups. PATHOLOGY uses payload lengths 5, 4, and 3: this preserves the Danish patoSnoMed axis, but allows rare six-character codes to share progressively broader prefix groups. These prefixes are model-oriented adaptive groups and are not necessarily meaningful patoSnoMed concepts. 
+Any default canbe overridden.
 
 ### Numeric-value encoding
 
