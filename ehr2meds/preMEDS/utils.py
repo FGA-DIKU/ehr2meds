@@ -156,6 +156,14 @@ def normalize_integer_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFr
     return df
 
 
+def normalize_code_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Strip and uppercase identifier columns."""
+    for col in columns:
+        if col in df.columns:
+            df[col] = df[col].astype("string").str.strip().str.upper()
+    return df
+
+
 def validate_subject_id(df: pd.DataFrame) -> None:
     """Checks that the subject_id column exists and is an integer"""
     if SUBJECT_ID not in df.columns:
