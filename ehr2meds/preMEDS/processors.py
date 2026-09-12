@@ -6,6 +6,7 @@ from ehr2meds.preMEDS.utils import (
     apply_value_map,
     clean_data,
     map_pids_to_ints,
+    normalize_code_columns,
     normalize_integer_columns,
     remove_timezones,
     validate_subject_id,
@@ -26,15 +27,18 @@ class Processor:
         """Process the table.
         1. Add row index to input tables
         2. OPTIONAL: Apply value mappings
-        3. OPTIONAL: Apply columns map
-        4. OPTIONAL: Apply pid integer mapping
-        5. Remove timezone information from timezone-aware datetime columns
-        6. Clean data
-        7. Validate subject_id column
+        3. OPTIONAL: Normalize integer columns
+        4. OPTIONAL: Normalize code columns
+        5. OPTIONAL: Apply columns map
+        6. OPTIONAL: Apply pid integer mapping
+        7. Remove timezone information from timezone-aware datetime columns
+        8. Clean data
+        9. Validate subject_id column
         """
         df = add_row_idx(df, start=row_index_start)
         df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
+        df = normalize_code_columns(df, table_config.get("normalize_code_columns", []))
         df = apply_value_map(df, table_config.get("value_map", {}))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
