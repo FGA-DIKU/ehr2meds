@@ -269,6 +269,14 @@ linked_data:
   Mor - Fødselsresume - DEL 1:
     N: ${N}
     columns:
+      "Foetus mortuus ":
+        type: choice
+        args:
+          options: ["Levende", "Død"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.2
       Køn:
         type: choice
         args:
@@ -523,7 +531,15 @@ linked_data:
       C_OPR:
         type: choice
         args:
-          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KCKD05B"]
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KCKD05B", "KMCA10A", "KMCARANDOM", "KMCAOTHER", "STUFF"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+      C_TILOPR:
+        type: choice
+        args:
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KCKD05B", "KMCA10A", "KMCARANDOM", "KMCAOTHER", "STUFF"]
         corruptions:
           - type: insert_nan
             args:
