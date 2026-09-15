@@ -82,7 +82,7 @@ tables:
         14: "PALLIATIV MEDICIN"
         39: "SEXOLOGI"
         98: "FYSIO- OG ERGOTERAPI"
-        99: "UNK"
+        99: null
       tidspunkt_start:
         ".": null
       kontaktaarsag:
@@ -109,7 +109,6 @@ tables:
       region_ans: 
       dw_ek_kontakt: contact_id
     normalize_integer_columns:
-      - hovedspeciale_ans
       - kontaktaarsag
       - prioritet
       - region_ans

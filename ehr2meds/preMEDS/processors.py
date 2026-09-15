@@ -9,6 +9,7 @@ from ehr2meds.preMEDS.utils import (
     normalize_code_columns,
     normalize_integer_columns,
     remove_timezones,
+    replace_unknown_values,
     validate_subject_id,
 )
 from pathlib import Path
@@ -42,6 +43,7 @@ class Processor:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = normalize_code_columns(df)
         df = apply_value_map(df, table_config.get("value_map", {}))
+        df = replace_unknown_values(df)
         df = remove_timezones(df)
         df = clean_data(df)
         validate_subject_id(df)

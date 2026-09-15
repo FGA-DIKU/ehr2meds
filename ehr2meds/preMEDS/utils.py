@@ -133,6 +133,20 @@ def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
         if maps_to_string and pd.api.types.is_integer_dtype(df[col]):
             df[col] = df[col].astype(object)
 
+        # need to handle integer-like values, so they map cleanly
+        # e.g., 5.0 and "5.0" should map to the same value as 5
+        numeric = pd.to_numeric(df[col], errors="coerce")
+        integer_like = numeric.notna() & (numeric % 1 == 0)
+        if any(isinstance(key, int) for key in mapping):
+            canonical_integers = numeric.loc[integer_like].astype("Int64")
+            if maps_to_string:
+                canonical_integers = canonical_integers.astype("string")
+            df.loc[integer_like, col] = canonical_integers
+
+        for key, value in mapping.items():
+            if isinstance(key, int):
+                df.loc[numeric.eq(key), col] = value
+
         df.replace({col: mapping}, inplace=True)
         # Some columns contain both numerics and strings (e.g., 5.0 and ALCC01).
         # Arrow cannot serialize that mixture consistently.
@@ -165,6 +179,11 @@ def normalize_code_columns(df: pd.DataFrame) -> pd.DataFrame:
         is_string = df[col].map(lambda value: isinstance(value, str))
         df.loc[is_string, col] = df.loc[is_string, col].str.strip().str.upper()
     return df
+
+
+def replace_unknown_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Replace unknown markers with nans."""
+    return df.replace(["UNK", "UKENDT"], pd.NA)
 
 
 def validate_subject_id(df: pd.DataFrame) -> None:
