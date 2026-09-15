@@ -69,7 +69,8 @@ The package includes the following stages to be used in MEDS pipeline configurat
 | `fit_adaptive_code_mapping` | Fits a code mapping from training-event counts by climbing character-position levels (ATC and SKS diagnosis/operation/procedure) only as far as needed to clear a minimum count. |
 | `apply_adaptive_code_mapping` | Applies the frozen local mapping (or, if none was fitted, an external one) to every data split while retaining the MEDS event namespace. |
 | `finalize_adaptive_code_metadata` | Rewrites and collapses `codes.parquet` to match the adaptively transformed data vocabulary. |
-| `join_numeric_bins` | Optionally creates the "joined representation" of numeric values, such as `LABTEST//NPU01566//BIN_3`, from the numeric bin index. |
+| `join_numeric_bins` | Optionally creates the joined representation of numeric values, such as `LABTEST//NPU01566//BIN_3`, from the numeric bin index. |
+| `join_lab_text_values` | Optionally joins configured "qualitative results" (e.g. PÅVIST, IKKE PÅVIST, etc) or numeric comparison directions onto laboratory codes while preserving raw values. |
 | `bin_numeric_values_fast` | A faster, memory-efficient replacement for the standard MEDS-Transforms discrete binning stage. It rewrites codes using bin indices or interval labels. |
 
 ### Adaptive code mapping
@@ -102,12 +103,18 @@ hierarchies:
 SKS defaults exclude level 1 because an ICD-10/SKS leading letter can span
 clinical chapters; for example, `D` covers parts of both neoplasm and blood
 disorder chapters. ATC keeps level 1 because it represents the 14 official
-anatomical groups. Either default can be overridden.
+anatomical groups. PATHOLOGY uses payload lengths 5, 4, and 3: this preserves the Danish patoSnoMed axis, but allows rare six-character codes to share progressively broader prefix groups. These prefixes are model-oriented adaptive groups and are not necessarily meaningful patoSnoMed concepts. 
+Any default canbe overridden.
 
 ### Numeric-value encoding
 
 Use `aggregate_numeric_metadata` followed by `annotate_numeric_values`. Add
 `join_numeric_bins` only for joined lab-and-bin model inputs.
+
+`join_lab_text_values` is independent of numeric binning. It maps only
+configured qualitative spellings and, when enabled, comparison directions.
+Raw `text_value` values are retained, while unconfigured text and ranges remain
+on the base laboratory code.
 
 Defaults are defined in
 [`default_numeric_values.yaml`](./configs/MEDS/default_numeric_values.yaml).

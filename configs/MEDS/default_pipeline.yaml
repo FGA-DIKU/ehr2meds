@@ -44,7 +44,8 @@ stages:
       # Optional: a fitted numeric_metadata.json, MEDS metadata directory, or codes.parquet.
       # Matching external code transforms override the locally fitted ones.
       numeric_metadata_filepath: null
-  - join_numeric_bins:
-      separator: "//bin_"
+  - join_numeric_bins
+  - join_lab_text_values:
+      encode_comparisons: true
   - finalize_MEDS_metadata
   - finalize_MEDS_data
