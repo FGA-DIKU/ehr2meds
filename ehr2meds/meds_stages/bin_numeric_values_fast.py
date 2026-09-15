@@ -176,11 +176,11 @@ def assign_value_bins(
 
     # A matched row (bin is not null) gets its rewritten code
     was_binned = pl.col("bin").is_not_null()
-    code = pl.when(was_binned).then(render_code(code_template)).otherwise(pl.col(CODE))
-    labelled = labelled.with_columns(code.alias(CODE))
+    updated_code = pl.when(was_binned).then(render_code(code_template)).otherwise(pl.col(CODE))
+    labelled = labelled.with_columns(code=updated_code)
     if drop_numeric_value:
-        value = pl.when(was_binned).then(None).otherwise(pl.col(VALUE))
-        labelled = labelled.with_columns(value.alias(VALUE))
+        updated_value = pl.when(was_binned).then(None).otherwise(pl.col(VALUE))
+        labelled = labelled.with_columns(numeric_value=updated_value)
 
     working = ["_row", "bin", "left", "right"]
     labelled = labelled.sort("_row")

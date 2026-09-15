@@ -17,7 +17,7 @@ def apply_mapping(data: pl.LazyFrame, mapping: pl.DataFrame, mapped_code_column:
         old=mapping.get_column(DataSchema.code_name),
         new=mapping.get_column(mapped_code_column),
     )
-    return data.with_columns(mapped_code.alias(DataSchema.code_name))
+    return data.with_columns(code=mapped_code)
 
 
 @Stage.register(

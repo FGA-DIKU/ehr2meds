@@ -153,9 +153,9 @@ def annotate_numeric_values(
         "bin_index": bin_index_column,
         "binned": binned_column,
     }
-    derived_columns = {derived_names[role]: pl.when(usable).then(derived_values[role]) for role in derived_roles}
+    derived_columns = [pl.when(usable).then(derived_values[role]).alias(derived_names[role]) for role in derived_roles]
 
-    annotated = annotated.with_columns(**derived_columns)
+    annotated = annotated.with_columns(derived_columns)
     return annotated.drop(transform_columns + bound_columns)
 
 

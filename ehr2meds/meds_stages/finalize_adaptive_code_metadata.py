@@ -30,7 +30,7 @@ def collapse_code_metadata(
     )
     mapped = metadata.with_columns(
         mapped_code.alias(mapped_code_column),
-        (pl.col(DataSchema.code_name) == mapped_code).alias(exact_match_column),
+        is_exact_match=pl.col(DataSchema.code_name) == mapped_code,
     )
     mapped = mapped.sort(
         mapped_code_column,
@@ -47,9 +47,11 @@ def collapse_code_metadata(
     }
     preserved_columns = [column for column in metadata.columns if column not in technical_columns]
     aggregations = [pl.col(column).drop_nulls().first() for column in preserved_columns]
-    aggregations.append(pl.len().cast(pl.UInt32).alias(member_count_column))
 
-    collapsed = mapped.group_by(mapped_code_column, maintain_order=True).agg(aggregations)
+    collapsed = mapped.group_by(mapped_code_column, maintain_order=True).agg(
+        aggregations,
+        member_count=pl.len().cast(pl.UInt32),
+    )
     collapsed = collapsed.rename({mapped_code_column: DataSchema.code_name})
 
     if "description" in collapsed.columns:
