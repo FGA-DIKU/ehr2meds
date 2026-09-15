@@ -16,13 +16,11 @@ columns:
 # Character-position widths by MEDS namespace. Entries can override defaults
 # or add namespaces. See README.md for the SKS and ATC level-1 rationale.
 hierarchies:
-  RD:
+  DIAGNOSIS:
     levels: [4, 3, 2]
-  RPS:
-    levels: [7, 6, 5, 4, 3, 2]
-  RPO:
+  PROCEDURE:
     levels: [8, 7, 6, 5, 4, 3, 2]
-  RM:
+  MEDICATION:
     levels: [1, 3, 4, 5, 7]
-  RMA:
-    levels: [1, 3, 4, 5, 7]
+  PATHOLOGY:
+    levels: [5, 4, 3]

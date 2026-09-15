@@ -6,6 +6,7 @@ from ehr2meds.preMEDS.utils import (
     apply_value_map,
     clean_data,
     map_pids_to_ints,
+    normalize_integer_columns,
     remove_timezones,
     validate_subject_id,
 )
@@ -33,6 +34,7 @@ class Processor:
         """
         df = add_row_idx(df, start=row_index_start)
         df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
+        df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
         df = apply_value_map(df, table_config.get("value_map", {}))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
@@ -59,12 +61,10 @@ class Processor:
 
     @staticmethod
     def get_mapping_table(data_handler, mapping: dict):
-        "Find path and relevant columns in either registry or the resources folder."
-        filename = mapping["via_file"]
+        "Find a mapping table in the configured location or a resources folder."
+        filename = Path(mapping["via_file"])
+        if not filename.exists():
+            filename = Path(__file__).parents[2] / "resources" / filename
         cols = dict.fromkeys([mapping["join_on"], mapping["target_column"]])
 
-        register_path = Path(filename)
-        if not register_path.exists():
-            filename = str(Path(__file__).parent.parent / "resources" / filename)  # TODO: Seems very hacky
-
-        return data_handler.load(filename, cols=cols)
+        return data_handler.load(str(filename), cols=cols)

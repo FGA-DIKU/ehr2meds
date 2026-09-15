@@ -69,7 +69,7 @@ The package includes the following stages to be used in MEDS pipeline configurat
 | `fit_adaptive_code_mapping` | Fits a code mapping from training-event counts by climbing character-position levels (ATC and SKS diagnosis/operation/procedure) only as far as needed to clear a minimum count. |
 | `apply_adaptive_code_mapping` | Applies the frozen local mapping (or, if none was fitted, an external one) to every data split while retaining the MEDS event namespace. |
 | `finalize_adaptive_code_metadata` | Rewrites and collapses `codes.parquet` to match the adaptively transformed data vocabulary. |
-| `join_numeric_bins` | Optionally creates the "joined representation" of numeric values, such as `LAB_CODE//bin_3`, from the numeric bin index. |
+| `join_numeric_bins` | Optionally creates the "joined representation" of numeric values, such as `LABTEST//NPU01566//BIN_3`, from the numeric bin index. |
 | `bin_numeric_values_fast` | A faster, memory-efficient replacement for the standard MEDS-Transforms discrete binning stage. It rewrites codes using bin indices or interval labels. |
 
 ### Adaptive code mapping
