@@ -75,22 +75,28 @@ tables:
   kontakter:
     filename: ${paths.SDS_tables_dir}/kontakter_all.csv      
     value_map: 
+      hovedspeciale_ans:
+        0: "BLANDET MEDICIN OG KIRURGI"
+        3: "HEPATOLOGI"
+        4: "HÆMATOLOGI"
+        14: "PALLIATIV MEDICIN"
+        39: "SEXOLOGI"
+        98: "FYSIO- OG ERGOTERAPI"
+        99: "UNK"
       tidspunkt_start:
         ".": null
       kontaktaarsag:
-        "1": "ALCC01"
-        "2": "ALCC02"
-        "3": "ALCC03"
-        "4": "ALCC04"
-        "6": "ALCC90"
-        "7": "ALCC90"
-        "8": "ALCC90"
-        "9": "ALCC90"
-        "UNK": "UNK"
-        "Ukendt": "UNK"
+        1: "ALCC01"
+        2: "ALCC02"
+        3: "ALCC03"
+        4: "ALCC04"
+        6: "ALCC90"
+        7: "ALCC90"
+        8: "ALCC90"
+        9: "ALCC90"
       prioritet:
-        "1": "ATA1"
-        "2": "ATA3"
+        1: "ATA1"
+        2: "ATA3"
     columns:
       cpr: subject_id
       dato_start: 
@@ -170,6 +176,49 @@ tables:
       - C_SGH
       - priority
     value_map: 
+      C_SPEC:
+        1: "INTERN MEDICIN"
+        2: "GERIATRI"
+        4: "HÆMATOLOGI"
+        5: "INFEKTIONSMEDICIN"
+        6: "KARDIOLOGI"
+        7: "MEDICINSK ALLERGOLOGI"
+        8: "ENDOKRINOLOGI"
+        9: "MEDICINSK GASTROENTEROLOGI"
+        10: "LUNGESYGDOMME"
+        11: "NEFROLOGI"
+        12: "REUMATOLOGI"
+        15: "AKUTMEDICIN"
+        18: "DERMATO-VENEROLOGI"
+        20: "NEUROLOGI"
+        22: "KLINISK ONKOLOGI"
+        30: "KIRURGI"
+        31: "KARKIRURGI"
+        32: "KIRURGISK GASTROENTEROLOGI"
+        33: "PLASTIKKIRURGI"
+        34: "THORAXKIRURGI"
+        35: "UROLOGI"
+        38: "GYNÆKOLOGI OG OBSTETRIK"
+        40: "NEUROKIRURGI"
+        42: "ORTOPÆDISK KIRURGI"
+        44: "OFTALMOLOGI"
+        46: "OTO-RHINO-LARYNGOLOGI"
+        48: "TAND-, MUND- OG KÆBEKIRURGI"
+        50: "PSYKIATRI"
+        52: "BØRNE- OG UNGDOMSPSYKIATRI"
+        60: "KLINISK BIOKEMI"
+        61: "KLINISK FYSIOLOGI OG NUKLEARMEDICIN"
+        62: "KLINISK IMMUNOLOGI"
+        63: "KLINISK MIKROBIOLOGI"
+        64: "KLINISK NEUROFYSIOLOGI"
+        66: "RADIOLOGI"
+        67: "KLINISK FARMAKOLOGI"
+        68: "KLINISK GENETIK"
+        80: "PÆDIATRI"
+        84: "ANÆSTESIOLOGI"
+        86: "ARBEJDSMEDICIN"
+        90: "ALMEN MEDICIN"
+        91: "SAMFUNDSMEDICIN"
       V_INDTIME:
         ".": null
       V_UDTIME:
@@ -177,19 +226,17 @@ tables:
       D_INDDTO:
         ".": null
       C_KONTAARS:
-        "1": "ALCC01"
-        "2": "ALCC02"
-        "3": "ALCC03"
-        "4": "ALCC04"
-        "6": "ALCC90"
-        "7": "ALCC90"
-        "8": "ALCC90"
-        "9": "ALCC90"
-        "UNK": "UNK"
-        "Ukendt": "UNK"
+        1: "ALCC01"
+        2: "ALCC02"
+        3: "ALCC03"
+        4: "ALCC04"
+        6: "ALCC90"
+        7: "ALCC90"
+        8: "ALCC90"
+        9: "ALCC90"
       priority:
-        "1": "ATA1"
-        "2": "ATA3"
+        1: "ATA1"
+        2: "ATA3"
     mappings:
       - source_column: C_SGH
         via_file: shak_to_region.parquet
