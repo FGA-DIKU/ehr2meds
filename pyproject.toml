@@ -55,6 +55,7 @@ augment_event_config = "ehr2meds.meds_stages.augment_event_config:main"
 bin_numeric_values_fast = "ehr2meds.meds_stages.bin_numeric_values_fast:stage"
 finalize_adaptive_code_metadata = "ehr2meds.meds_stages.finalize_adaptive_code_metadata:stage"
 fit_adaptive_code_mapping = "ehr2meds.meds_stages.fit_adaptive_code_mapping:stage"
+filter_unknown_codes = "ehr2meds.meds_stages.filter_unknown_codes:stage"
 join_numeric_bins = "ehr2meds.meds_stages.join_numeric_bins:stage"
 
 [tool.setuptools.package-data]
