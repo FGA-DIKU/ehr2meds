@@ -160,9 +160,10 @@ def normalize_integer_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFr
 
 
 def normalize_code_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Strip and uppercase all string-like columns."""
+    """Strip and uppercase string values without changing other object values."""
     for col in df.select_dtypes(include=["object", "string"]).columns:
-        df[col] = df[col].astype("string").str.strip().str.upper()
+        is_string = df[col].map(lambda value: isinstance(value, str))
+        df.loc[is_string, col] = df.loc[is_string, col].str.strip().str.upper()
     return df
 
 
