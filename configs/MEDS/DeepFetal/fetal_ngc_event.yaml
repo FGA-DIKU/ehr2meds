@@ -26,7 +26,7 @@ SDS_ekokur:
 
 SDS_kontakter:
   SDS_kontakter:
-    code: f"RC//{$aktionsdiagnose}"
+    code: f"RD//{$aktionsdiagnose}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
   contact_reason:
     code: f"RC_REASON//{$kontaktaarsag}"
@@ -66,7 +66,7 @@ SDS_procedurer_kirurgi:
 
 SDS_t_adm:
   SDS_t_adm:
-    code: f"RC_ADM//{$C_ADIAG}"
+    code: f"RD//{$C_ADIAG}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
   contact_reason:
     code: f"RC_REASON//{$C_KONTAARS}"

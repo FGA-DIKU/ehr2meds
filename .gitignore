@@ -130,3 +130,7 @@ dmypy.json
 */data/*
 data/*
 *.DS*
+
+.claude/
+
+tests/
