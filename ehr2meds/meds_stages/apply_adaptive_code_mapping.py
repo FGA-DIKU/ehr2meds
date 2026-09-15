@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import polars as pl
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from ehr2meds.adaptive_code_mapping import prepare_mapping
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
@@ -11,17 +11,13 @@ from omegaconf import DictConfig
 from pathlib import Path
 
 
-def apply_mapping(data: pl.LazyFrame, mapping: pl.DataFrame, columns: Mapping[str, str]) -> pl.LazyFrame:
+def apply_mapping(data: pl.LazyFrame, mapping: pl.DataFrame, mapped_code_column: str) -> pl.LazyFrame:
     """Rewrite codes through a frozen mapping while preserving row order and schema."""
-    mapped_code_column = columns["mapped_code"]
-    return data.with_columns(
-        **{
-            DataSchema.code_name: pl.col(DataSchema.code_name).replace(
-                old=mapping[DataSchema.code_name],
-                new=mapping[mapped_code_column],
-            )
-        }
+    mapped_code = pl.col(DataSchema.code_name).replace(
+        old=mapping.get_column(DataSchema.code_name),
+        new=mapping.get_column(mapped_code_column),
     )
+    return data.with_columns(mapped_code.alias(DataSchema.code_name))
 
 
 @Stage.register(
@@ -39,9 +35,10 @@ def apply_adaptive_code_mapping_fntr(
         external_mapping_filepath=stage_cfg.get("mapping_filepath"),
         columns=columns,
     )
+    mapped_code_column = columns["mapped_code"]
 
-    def transform(df: pl.LazyFrame) -> pl.LazyFrame:
-        return apply_mapping(df, mapping, columns)
+    def transform(data: pl.LazyFrame) -> pl.LazyFrame:
+        return apply_mapping(data, mapping, mapped_code_column)
 
     return transform
 

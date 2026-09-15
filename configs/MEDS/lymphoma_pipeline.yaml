@@ -42,8 +42,8 @@ stages:
       # row_idx provides deterministic ordering for simultaneous events.
       additional_sort_by: [row_idx]
 
-  # Adaptive truncation has three explicit boundaries:
-  # 1. LEARN once from training counts (also writes a readable audit summary).
+  # Adaptive truncation has three stages:
+  # 1. Learn counts from data
   - extract_code_metadata
   - fit_adaptive_code_mapping:
       train_only: true
@@ -51,10 +51,10 @@ stages:
       mapping_output_filepath: ${output_dir}/adaptive_code_mapping.parquet
       mapping_summary_output_filepath: ${output_dir}/adaptive_code_mapping.summary.json
 
-  # 2. APPLY the frozen mapping to all train/tuning/test event shards.
+  # 2. Apply frozen mapping
   - apply_adaptive_code_mapping
 
-  # 3. RECONCILE codes.parquet with the vocabulary now present in the data.
+  # 3. Reconcile codes.parquet with the vocabulary now present in the data.
   - finalize_adaptive_code_metadata
 
   - aggregate_numeric_metadata:

@@ -26,9 +26,9 @@ MappingRecord = dict[str, object]
 
 def read_profiles(stage_cfg: DictConfig) -> dict[str, HierarchyProfile]:
     """Read hierarchy profiles keyed by MEDS namespace."""
-    cfg = OmegaConf.to_container(stage_cfg, resolve=True)
-    hierarchies = cfg["hierarchies"]
-    default_minimum = int(cfg["minimum_count"])
+    config = OmegaConf.to_container(stage_cfg, resolve=True)
+    hierarchies = config["hierarchies"]
+    default_minimum = int(config["minimum_count"])
     return {
         str(namespace): HierarchyProfile(
             minimum_count=int(hierarchy.get("minimum_count", default_minimum)),
@@ -58,15 +58,13 @@ def make_record(
     profile_name: str | None,
     reason: str,
     mapped_code: str | None = None,
-    mapped_count: int | None = None,
     *,
     columns: Mapping[str, str],
-) -> dict:
+) -> MappingRecord:
     return {
         DataSchema.code_name: code,
         columns["mapped_code"]: code if mapped_code is None else mapped_code,
         columns["count"]: count,
-        columns["mapped_count"]: count if mapped_count is None else mapped_count,
         columns["profile"]: profile_name,
         columns["reason"]: reason,
     }
@@ -137,12 +135,11 @@ def resolve_profile_codes(
         if candidate_is_pending:
             members.append(candidate)
 
-        mapped_count = sum(int(counts[code]) for code in members)
-        candidate_has_own_record = candidate in counts and not candidate_is_pending
-        if candidate_has_own_record:
-            mapped_count += int(counts[candidate])
+        group_count = sum(int(counts[code]) for code in members)
+        if candidate in counts and not candidate_is_pending:
+            group_count += int(counts[candidate])
 
-        if mapped_count < profile.minimum_count:
+        if group_count < profile.minimum_count:
             continue
         for code in members:
             records[code] = make_record(
@@ -151,12 +148,9 @@ def resolve_profile_codes(
                 profile_name,
                 "grouped",
                 mapped_code=candidate,
-                mapped_count=mapped_count,
                 columns=columns,
             )
             pending.remove(code)
-        if candidate_has_own_record:
-            records[candidate][columns["mapped_count"]] = mapped_count
 
     for code in sorted(pending):
         records[code] = make_record(code, int(counts[code]), profile_name, "below_threshold", columns=columns)
@@ -190,7 +184,6 @@ def fit_mapping(
         DataSchema.code_name: pl.String,
         columns["mapped_code"]: pl.String,
         columns["count"]: pl.UInt64,
-        columns["mapped_count"]: pl.UInt64,
         columns["profile"]: pl.String,
         columns["reason"]: pl.String,
     }
@@ -201,7 +194,7 @@ def combine_count_frames(
     *dfs: pl.DataFrame | pl.LazyFrame,
     columns: Mapping[str, str],
 ) -> dict[str, int]:
-    """Sum mapped shard counts."""
+    """Sum per-code counts across mapped shards."""
     totals: dict[str, int] = defaultdict(int)
     for df in dfs:
         frame = df.collect() if isinstance(df, pl.LazyFrame) else df
@@ -222,18 +215,15 @@ def summarize_mapping(mapping: pl.DataFrame, columns: Mapping[str, str]) -> dict
         training_events=pl.col(columns["count"]).sum(),
         remapped_training_events=pl.col(columns["count"]).filter(changed).sum(),
     ).to_dicts()[0]
-    decisions = (
-        mapping.group_by(
-            profile=pl.col(columns["profile"]),
-            reason=pl.col(columns["reason"]),
-        )
-        .agg(
-            source_codes=pl.len(),
-            training_events=pl.col(columns["count"]).sum(),
-        )
-        .sort("profile", "reason", nulls_last=True)
-        .to_dicts()
+    decisions = mapping.group_by(
+        profile=pl.col(columns["profile"]),
+        reason=pl.col(columns["reason"]),
     )
+    decisions = decisions.agg(
+        source_codes=pl.len(),
+        training_events=pl.col(columns["count"]).sum(),
+    )
+    decisions = decisions.sort("profile", "reason", nulls_last=True).to_dicts()
     return {
         "summary": totals,
         "decisions": decisions,
@@ -241,7 +231,6 @@ def summarize_mapping(mapping: pl.DataFrame, columns: Mapping[str, str]) -> dict
             DataSchema.code_name: "original MEDS code",
             columns["mapped_code"]: "code used after adaptive truncation",
             columns["count"]: "raw events in training data",
-            columns["mapped_count"]: "training events represented by the mapped code",
             columns["profile"]: "hierarchy used",
             columns["reason"]: "mapping decision",
         },
@@ -264,7 +253,6 @@ def add_unseen_metadata_codes(
             DataSchema.code_name: unseen_codes,
             columns["mapped_code"]: unseen_codes,
             columns["count"]: [0] * len(unseen_codes),
-            columns["mapped_count"]: [0] * len(unseen_codes),
             columns["profile"]: [None] * len(unseen_codes),
             columns["reason"]: ["unseen_training"] * len(unseen_codes),
         },
@@ -279,15 +267,9 @@ def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]
     count_column = stage_cfg.columns["count"]
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
-        return (
-            df.group_by(DataSchema.code_name)
-            .len()
-            .select(
-                pl.col(DataSchema.code_name),
-                **{count_column: pl.col("len").cast(pl.UInt64)},
-            )
-            .sort(DataSchema.code_name)
-        )
+        counts = df.group_by(DataSchema.code_name).len(count_column)
+        counts = counts.with_columns(pl.col(count_column).cast(pl.UInt64))
+        return counts.sort(DataSchema.code_name)
 
     return mapper
 

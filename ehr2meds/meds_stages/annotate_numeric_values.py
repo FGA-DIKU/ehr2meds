@@ -41,7 +41,7 @@ def prepare_metadata(
         raise ValueError(f"{label} metadata is missing columns: {sorted(missing)}")
 
     missing_bounds = [column for column in bound_columns if column not in metadata.columns]
-    metadata = metadata.with_columns(**{column: pl.lit(None, dtype=pl.Float64) for column in missing_bounds})
+    metadata = metadata.with_columns(pl.lit(None, dtype=pl.Float64).alias(column) for column in missing_bounds)
     return metadata.select(key + transform_columns + bound_columns)
 
 

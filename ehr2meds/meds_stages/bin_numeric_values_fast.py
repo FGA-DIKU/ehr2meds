@@ -41,7 +41,8 @@ def edges_per_code(code_metadata: pl.DataFrame, bin_columns: list[str], key: lis
     edge_list = pl.coalesce(
         [pl.when(pl.col(c).is_not_null()).then(pl.concat_list(pl.col(c).struct.unnest())) for c in bin_columns]
     )
-    return code_metadata.lazy().select(*key, edges=edge_list).filter(pl.col("edges").is_not_null())
+    edges = code_metadata.lazy().select(*key, edges=edge_list)
+    return edges.filter(pl.col("edges").is_not_null())
 
 
 def bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str], value_dtype: pl.DataType) -> pl.LazyFrame:
@@ -74,7 +75,8 @@ def bin_table(code_metadata: pl.DataFrame, bin_columns: list[str], key: list[str
         left_edge=pl.col("boundaries").list.slice(0, pl.col("boundaries").list.len() - 1),
         right_edge=pl.col("boundaries").list.slice(1),
     )
-    return interval_ends.explode(["left_edge", "right_edge"]).select(
+    bins = interval_ends.explode(["left_edge", "right_edge"])
+    return bins.select(
         *key,
         bin=pl.int_range(0, pl.len()).over(key),  # 0-based bin index within the code
         edge=pl.col("left_edge"),  # values are matched against the bin's left edge
@@ -159,23 +161,30 @@ def assign_value_bins(
     # Do one as-of join instead of the built-in per-row explode + window.
     # This is the whole speedup. Codes with no bins are absent from
     # `bins`, so their rows get no match and pass through unchanged.
-    matches = (
-        rows.select("_row", *key, VALUE)
-        .filter(pl.col(VALUE).is_not_null())
-        .sort(VALUE)
-        .join_asof(bins.sort(["edge", "bin"]), left_on=VALUE, right_on="edge", by=key, strategy="backward")
-        .select("_row", "bin", "left", "right")
+    values = rows.select("_row", *key, VALUE)
+    values = values.filter(pl.col(VALUE).is_not_null()).sort(VALUE)
+    sorted_bins = bins.sort(["edge", "bin"])
+    matches = values.join_asof(
+        sorted_bins,
+        left_on=VALUE,
+        right_on="edge",
+        by=key,
+        strategy="backward",
     )
+    matches = matches.select("_row", "bin", "left", "right")
     labelled = rows.join(matches, on="_row", how="left")
 
     # A matched row (bin is not null) gets its rewritten code
     was_binned = pl.col("bin").is_not_null()
-    labelled = labelled.with_columns(**{CODE: pl.when(was_binned).then(render_code(code_template)).otherwise(pl.col(CODE))})
+    code = pl.when(was_binned).then(render_code(code_template)).otherwise(pl.col(CODE))
+    labelled = labelled.with_columns(code.alias(CODE))
     if drop_numeric_value:
-        labelled = labelled.with_columns(**{VALUE: pl.when(was_binned).then(None).otherwise(pl.col(VALUE))})
+        value = pl.when(was_binned).then(None).otherwise(pl.col(VALUE))
+        labelled = labelled.with_columns(value.alias(VALUE))
 
     working = ["_row", "bin", "left", "right"]
-    return labelled.sort("_row").drop([c for c in working if c in labelled.collect_schema().names()])
+    labelled = labelled.sort("_row")
+    return labelled.drop([column for column in working if column in labelled.collect_schema().names()])
 
 
 def load_custom_bins(stage_cfg: DictConfig) -> dict:
