@@ -21,15 +21,12 @@ def collapse_code_metadata(
     member_count_column = "member_count"
     mapped_code_column = columns["mapped_code"]
 
-    mapped_code = pl.coalesce(
-        pl.col(DataSchema.code_name).replace(
-            old=mapping.get_column(DataSchema.code_name),
-            new=mapping.get_column(mapped_code_column),
-        ),
-        pl.col(DataSchema.code_name),
+    mapped_code = pl.col(DataSchema.code_name).replace(
+        old=mapping.get_column(DataSchema.code_name),
+        new=mapping.get_column(mapped_code_column),
     )
     mapped = metadata.with_columns(
-        mapped_code.alias(mapped_code_column),
+        mapped_code=mapped_code_column,
         is_exact_match=pl.col(DataSchema.code_name) == mapped_code,
     )
     mapped = mapped.sort(
