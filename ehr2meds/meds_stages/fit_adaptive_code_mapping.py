@@ -57,9 +57,8 @@ def make_record(
     count: int,
     profile_name: str | None,
     reason: str,
-    mapped_code: str | None = None,
-    *,
     columns: Mapping[str, str],
+    mapped_code: str | None = None,
 ) -> MappingRecord:
     return {
         DataSchema.code_name: code,
@@ -106,7 +105,6 @@ def classify_codes(
 
 
 def resolve_profile_codes(
-    *,
     profile_name: str,
     profile: HierarchyProfile,
     pending_codes: set[str],
