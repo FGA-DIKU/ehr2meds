@@ -4,6 +4,12 @@ central_patient:
   dob:
     code: "DOB"
     time: $birthdate
+  dod:
+    code: "DOD"
+    time: $deathdate
+  sex:
+    code: f"SEX//{$sex}"
+    time: null
 
 epikur:
   epikur:

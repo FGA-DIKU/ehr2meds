@@ -282,3 +282,10 @@ tables:
     columns:
       v_pnr: subject_id
       d_foddato: birthdate
+      c_kon: sex
+    mappings:
+      - source_column: subject_id
+        via_file: ${paths.tables_dir}/schemamortality.parquet
+        join_on: k_cpr
+        target_column: deathdate
+        rename_to: deathdate
