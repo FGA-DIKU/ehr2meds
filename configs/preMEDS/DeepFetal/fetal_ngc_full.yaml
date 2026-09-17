@@ -103,9 +103,6 @@ tables:
       region_ans: 
       dw_ek_kontakt: contact_id
     normalize_integer_columns:
-      - hovedspeciale_ans
-      - kontaktaarsag
-      - prioritet
       - region_ans
 
   laboratorieproevesvar:

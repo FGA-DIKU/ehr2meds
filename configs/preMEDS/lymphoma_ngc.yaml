@@ -111,9 +111,6 @@ tables:
       region_ans: 
       dw_ek_kontakt: contact_id
     normalize_integer_columns:
-      - hovedspeciale_ans
-      - kontaktaarsag
-      - prioritet
       - region_ans
     value_map:
       # LPR3 and legacy LPR share RC_REASON downstream. Normalize only the
