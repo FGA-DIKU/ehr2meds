@@ -138,6 +138,24 @@ def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
     return df
 
 
+def normalize_integer_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Canonicalize integer-like values while preserving text and nulls.
+
+    This makes values such as ``0``, ``0.0``, and ``"0.0"`` identical before
+    value mapping and preMEDS serialization.
+    """
+    for col in columns:
+        if col not in df.columns:
+            continue
+        original = df[col]
+        numeric = pd.to_numeric(original, errors="coerce")
+        integer_like = numeric.notna() & numeric.mod(1).eq(0)
+        normalized = original.astype("string")
+        normalized.loc[integer_like] = numeric.loc[integer_like].astype("Int64").astype("string")
+        df[col] = normalized
+    return df
+
+
 def validate_subject_id(df: pd.DataFrame) -> None:
     """Checks that the subject_id column exists and is an integer"""
     if SUBJECT_ID not in df.columns:

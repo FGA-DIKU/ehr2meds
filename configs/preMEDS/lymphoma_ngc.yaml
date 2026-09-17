@@ -25,9 +25,9 @@ tables:
       patientid: subject_id
       Fødselsdato: birthdate
       Dødsdato: deathdate
-      Køn: gender
+      Køn: sex
   
-  SDS_dimpatologiskdiagnose:
+  dimpatologiskdiagnose:
       filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
       columns:
         dw_ek_rekvisition: contact_id
@@ -51,7 +51,7 @@ tables:
           rename_to: timestamp_fallback
           drop_source: true
 
-  SDS_diagnoser:
+  diagnoser:
     filename: ${paths.tables_dir}/SDS_diagnoser.parquet               
     columns:
       dw_ek_kontakt: contact_id
@@ -75,7 +75,7 @@ tables:
         rename_to: time_end
         drop_source: true
 
-  SDS_t_diag:
+  t_diag:
     filename: ${paths.tables_dir}/SDS_t_diag.parquet               
     columns:
       v_recnum: contact_id
@@ -95,7 +95,7 @@ tables:
         rename_to: date_end
         drop_source: true
 
-  SDS_kontakter:
+  kontakter:
     filename: ${paths.tables_dir}/SDS_kontakter.parquet               
     columns:
       patientid: subject_id
@@ -110,47 +110,16 @@ tables:
       hovedspeciale_ans: 
       region_ans: 
       dw_ek_kontakt: contact_id
+    normalize_integer_columns:
+      - region_ans
     value_map:
-      # LPR3 and legacy LPR share RC_REASON downstream. Normalize only the
-      # documented ALCC equivalents; leave unfamiliar values untouched.
-      kontaktaarsag:
-        1: "ALCC01"
-        "1": "ALCC01"
-        "1.0": "ALCC01"
-        2: "ALCC02"
-        "2": "ALCC02"
-        "2.0": "ALCC02"
-        3: "ALCC03"
-        "3": "ALCC03"
-        "3.0": "ALCC03"
-        4: "ALCC04"
-        "4": "ALCC04"
-        "4.0": "ALCC04"
-        6: "ALCC90"
-        "6": "ALCC90"
-        "6.0": "ALCC90"
-        7: "ALCC90"
-        "7": "ALCC90"
-        "7.0": "ALCC90"
-        8: "ALCC90"
-        "8": "ALCC90"
-        "8.0": "ALCC90"
-        9: "ALCC90"
-        "9": "ALCC90"
-        "9.0": "ALCC90"
-        "UNK": "UNK"
-        "Ukendt": "UNK"
       # RC_PRIO has the same cross-generation issue for the two documented
       # legacy urgency values. Value 3 is not guessed or collapsed.
       prioritet:
-        1: "ATA1"
         "1": "ATA1"
-        "1.0": "ATA1"
-        2: "ATA3"
         "2": "ATA3"
-        "2.0": "ATA3"
 
-  SDS_t_adm:
+  t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
     columns:
       patientid: subject_id
@@ -165,16 +134,22 @@ tables:
       c_spec: 
       c_sgh: 
       k_recnum: contact_id
+    normalize_integer_columns:
+      - c_kontaars
+      - c_pattype
+      - c_spec
+      - c_sgh
+      - priority
     value_map:
       c_spec:
-        "01": "intern medicin"
-        "02": "geriatri"
-        "04": "hæmatologi"
-        "05": "infektionsmedicin"
-        "06": "kardiologi"
-        "07": "medicinsk allergologi"
-        "08": "endokrinologi"
-        "09": "medicinsk gastroenterologi"
+        "1": "intern medicin"
+        "2": "geriatri"
+        "4": "hæmatologi"
+        "5": "infektionsmedicin"
+        "6": "kardiologi"
+        "7": "medicinsk allergologi"
+        "8": "endokrinologi"
+        "9": "medicinsk gastroenterologi"
         "10": "lungesygdomme"
         "11": "nefrologi"
         "12": "reumatologi"
@@ -210,48 +185,29 @@ tables:
         "90": "almen medicin"
         "91": "samfundsmedicin"
       priority: # map emergency vs planned visits to LPR3
-        1: "ATA1"
         "1": "ATA1"
-        "1.0": "ATA1"
-        2: "ATA3"
         "2": "ATA3"
-        "2.0": "ATA3"
       c_kontaars:
-        1: "ALCC01"
         "1": "ALCC01"
-        "1.0": "ALCC01"
-        2: "ALCC02"
         "2": "ALCC02"
-        "2.0": "ALCC02"
-        3: "ALCC03"
         "3": "ALCC03"
-        "3.0": "ALCC03"
-        4: "ALCC04"
         "4": "ALCC04"
-        "4.0": "ALCC04"
-        6: "ALCC90"
         "6": "ALCC90"
-        "6.0": "ALCC90"
-        7: "ALCC90"
         "7": "ALCC90"
-        "7.0": "ALCC90"
-        8: "ALCC90"
         "8": "ALCC90"
-        "8.0": "ALCC90"
-        9: "ALCC90"
         "9": "ALCC90"
-        "9.0": "ALCC90"
         "UNK": "UNK"
         "Ukendt": "UNK"
     mappings:
     - source_column: c_sgh   
-      via_file: ${paths.tables_dir}/shak_to_region.parquet # using resources
+      via_file: shak_to_region.parquet
+      how: left
       join_on: kode
       target_column: region
       rename_to: c_sgh
       drop_source: true
 
-  SDS_t_sksopr:
+  t_sksopr:
     filename: ${paths.tables_dir}/SDS_t_sksopr.parquet   
     columns:
       v_recnum: contact_id
@@ -267,7 +223,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_t_sksube:
+  t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
     columns:
       v_recnum: contact_id
@@ -284,7 +240,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_procedurer_kirurgi:
+  procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
     columns:
       dw_ek_kontakt: contact_id
@@ -299,7 +255,7 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_procedurer_andre:
+  procedurer_andre:
     filename: ${paths.tables_dir}/SDS_procedurer_andre.parquet        
     columns:
       dw_ek_kontakt: contact_id
@@ -315,24 +271,28 @@ tables:
         rename_to: subject_id
         drop_source: true
 
-  SDS_ekokur:
+  ekokur:
     filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
     columns:
       patientid: subject_id
       eksd: timestamp
       atc:
 
-  SDS_indberetningmedpris:
+  indberetningmedpris:
     filename: ${paths.tables_dir}/SDS_indberetningmedpris.parquet
     columns:
       patientid: subject_id
       d_ord_start: timestamp
       c_atc:
       c_patienttype:  #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
+      k_region_id:
       v_adm_dosis: dosage # TODO: Currently not in use
       v_styrke_num: strength # TODO: Currently not in use
+    normalize_integer_columns:
+      - c_patienttype
+      - k_region_id
 
-  SDS_laboratorieproevesvar:
+  laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
     columns:
       patientid: subject_id

@@ -7,105 +7,105 @@ patients_info:
   dod:
     code: "DOD"
     time: $deathdate as "%Y-%m-%d %H:%M:%S.%f"
-  gender:
-    code: f"GENDER//{$gender}"
+  sex:
+    code: f"SEX//{$sex}"
     time: null
 
-SDS_diagnoser:
+diagnoser:
   diagnosekode:
-    code: f"RD//{$diagnosekode}"
+    code: f"DIAGNOSIS//{$diagnosekode}"
     time: set_time($dato_slut as '%Y-%m-%d', $tidspunkt_slut as '%H:%M:%S%.f')
   diagnose_type:
-    code: f"RD_TYPE//{$diagnosetype}"
+    code: f"DIAGNOSIS_TYPE//{$diagnosetype}"
     time: set_time($dato_slut as '%Y-%m-%d', $tidspunkt_slut as '%H:%M:%S%.f')
 
-SDS_ekokur:
-  SDS_ekokur:
-    code: f"RM//{$code}"
+ekokur:
+  medication:
+    code: f"MEDICATION//{$code}"
     time: $timestamp as "%Y-%m-%d"
 
-SDS_kontakter:
-  SDS_kontakter:
-    code: f"RD//{$aktionsdiagnose}"
+kontakter:
+  diagnosis:
+    code: f"DIAGNOSIS//{$aktionsdiagnose}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
   contact_reason:
-    code: f"RC_REASON//{$kontaktaarsag}"
+    code: f"CONTACT_REASON//{$kontaktaarsag}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
   priority:
-    code: f"RC_PRIO//{$prioritet}"
+    code: f"CONTACT_PRIORITY//{$prioritet}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
   contact_type:
-    code: f"RC_TYPE//{$kontakttype}"
+    code: f"CONTACT_TYPE//{$kontakttype}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
   clinical_specialty:
-    code: f"RC_SPEC//{$hovedspeciale_ans}"
+    code: f"CONTACT_SPECIALTY//{$hovedspeciale_ans}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
   region_code:
-    code: f"RC_REG//{$region_ans}"
+    code: f"REGION//{$region_ans}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
 
-SDS_laboratorieproevesvar:
-  SDS_laboratorieproevesvar:
-    code: f"L//{$ANALYSISCODE}"
+laboratorieproevesvar:
+  lab_test:
+    code: f"LABTEST//{$ANALYSISCODE}"
     time: set_time($SAMPLINGDATE as '%Y-%m-%d', $SAMPLINGTIME as '%H:%M:%S%.f')
     numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $VALUE) as float64'
     text_value: "$VALUE"
 
-SDS_procedurer_andre:
-  SDS_procedurer_andre:
-    code: f"RPO//{$procedurekode}"
+procedurer_andre:
+  procedure:
+    code: f"PROCEDURE//{$procedurekode}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
   procedure_type:
-    code: f"RPO_TYPE//{$proceduretype}"
+    code: f"PROCEDURE_TYPE//{$proceduretype}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S%.f')
 
-SDS_procedurer_kirurgi:
-  SDS_procedurer_kirurgi:
-    code: f"RPS//{$procedurekode}"
+procedurer_kirurgi:
+  procedure:
+    code: f"PROCEDURE//{$procedurekode}"
     time: set_time($dato_start as '%Y-%m-%d', $tidspunkt_start as '%H:%M:%S.%f')
 
-SDS_t_adm:
-  SDS_t_adm:
-    code: f"RD//{$C_ADIAG}"
+t_adm:
+  diagnosis:
+    code: f"DIAGNOSIS//{$C_ADIAG}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
   contact_reason:
-    code: f"RC_REASON//{$C_KONTAARS}"
+    code: f"CONTACT_REASON//{$C_KONTAARS}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
   patient_type:
-    code: f"RC_ADM_TYPE//{$C_PATTYPE}"
+    code: f"PATIENT_TYPE//{$C_PATTYPE}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
   priority:
-    code: f"RC_PRIO//{$priority}"
+    code: f"CONTACT_PRIORITY//{$priority}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
   clinical_specialty:
-    code: f"RC_SPEC//{$C_SPEC}"
+    code: f"CONTACT_SPECIALTY//{$C_SPEC}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
-  hospital_code:
-    code: f"RC_SGH//{$C_SGH}"
+  region_code:
+    code: f"REGION//{$C_SGH}"
     time: set_time($D_INDDTO as '%Y-%m-%d', f"{($V_INDTIME as int)}:{($V_INDMINUT as int)}" as '%H:%M')
 
-SDS_t_diag:
+t_diag:
   diag:
-    code: f"RD//{$C_DIAG}"
+    code: f"DIAGNOSIS//{$C_DIAG}"
     time: set_time($D_UDDTO as '%Y-%m-%d', f"{($V_UDTIME as int)}:00" as '%H:%M')
   diag_type:
-    code: f"RD_TYPE//{$C_DIAGTYPE}"
+    code: f"DIAGNOSIS_TYPE//{$C_DIAGTYPE}"
     time: set_time($D_UDDTO as '%Y-%m-%d', f"{($V_UDTIME as int)}:00" as '%H:%M')
   tildiag:
-    code: f"RD//{$C_TILDIAG}"
+    code: f"DIAGNOSIS//{$C_TILDIAG}"
     time: set_time($D_UDDTO as '%Y-%m-%d', f"{($V_UDTIME as int)}:00" as '%H:%M')
 
-SDS_t_sksopr:
-  SDS_t_sksopr:
-    code: f"RPS//{$C_OPR}"
+t_sksopr:
+  procedure:
+    code: f"PROCEDURE//{$C_OPR}"
     time: set_time($D_ODTO as '%Y-%m-%d', f"{(($V_OTIME as float) as int)}:{(($V_OMINUT as float) as int)}" as '%H:%M')
 
-SDS_t_sksube:
-  SDS_t_sksube:
-    code: f"RPO//{$C_OPR}"
+t_sksube:
+  procedure:
+    code: f"PROCEDURE//{$C_OPR}"
     time: set_time($D_ODTO as '%Y-%m-%d', f"{(($V_OTIME as float) as int)}:{(($V_OMINUT as float) as int)}" as '%H:%M')
   procedure_type:
-    code: f"RPO_TYPE//{coalesce($procedure_type, 'P')}"
+    code: f"PROCEDURE_TYPE//{coalesce($procedure_type, 'P')}"
     time: set_time($D_ODTO as '%Y-%m-%d', f"{(($V_OTIME as float) as int)}:{(($V_OMINUT as float) as int)}" as '%H:%M')
 
 SP_admissions:
@@ -123,24 +123,24 @@ SP_alcohol_info:
 
 SP_diagnosis:
   diagnosis:
-    code: f"D//{$Diagnosekode}"
+    code: f"DIAGNOSIS//{$Diagnosekode}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
 
 SP_labtest:
-  labtest:
-    code: f"LAB//{$BestOrd}"
+  lab_test:
+    code: f"LABTEST//{$BestOrd}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
     numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $sample_value) as float64'
     text_value: "$sample_value"
 
 SP_medication:
   medication:
-    code: f"M//{$ATC}"
+    code: f"MEDICATION//{$ATC}"
     time: coalesce($timestamp as '%Y-%m-%d %H:%M:%S.%f', $fill_timestamp as '%Y-%m-%d %H:%M:%S.%f')
 
 SP_procedure:
   procedure:
-    code: f"P//{$ProcedureCode}"
+    code: f"PROCEDURE//{$ProcedureCode}"
     time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
 
 SP_smoking_info:
