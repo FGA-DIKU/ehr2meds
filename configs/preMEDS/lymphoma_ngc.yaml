@@ -113,19 +113,6 @@ tables:
     normalize_integer_columns:
       - region_ans
     value_map:
-      # LPR3 and legacy LPR share RC_REASON downstream. Normalize only the
-      # documented ALCC equivalents; leave unfamiliar values untouched.
-      kontaktaarsag:
-        "1": "ALCC01"
-        "2": "ALCC02"
-        "3": "ALCC03"
-        "4": "ALCC04"
-        "6": "ALCC90"
-        "7": "ALCC90"
-        "8": "ALCC90"
-        "9": "ALCC90"
-        "UNK": "UNK"
-        "Ukendt": "UNK"
       # RC_PRIO has the same cross-generation issue for the two documented
       # legacy urgency values. Value 3 is not guessed or collapsed.
       prioritet:

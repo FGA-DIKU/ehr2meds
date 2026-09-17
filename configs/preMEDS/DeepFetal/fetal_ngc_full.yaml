@@ -77,17 +77,6 @@ tables:
     value_map: 
       tidspunkt_start:
         ".": null
-      kontaktaarsag:
-        "1": "ALCC01"
-        "2": "ALCC02"
-        "3": "ALCC03"
-        "4": "ALCC04"
-        "6": "ALCC90"
-        "7": "ALCC90"
-        "8": "ALCC90"
-        "9": "ALCC90"
-        "UNK": "UNK"
-        "Ukendt": "UNK"
       prioritet:
         "1": "ATA1"
         "2": "ATA3"
