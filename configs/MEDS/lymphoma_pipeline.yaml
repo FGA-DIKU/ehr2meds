@@ -38,6 +38,7 @@ stages:
   - convert_to_subject_sharded
   - convert_to_MEDS_events:
       do_dedup_text_and_numeric: true
+  - filter_unknown_codes
   - merge_to_MEDS_cohort:
       # row_idx provides deterministic ordering for simultaneous events.
       additional_sort_by: [row_idx]
