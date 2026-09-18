@@ -127,32 +127,58 @@ def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
     for col, mapping in value_map_cfg.items():
         if col not in df.columns:
             continue
+
+        # Integer columns cannot hold string replacements. Object dtype permits
+        # those replacements without changing the existing integer values.
+        maps_to_string = any(isinstance(value, str) for value in mapping.values())
+        if maps_to_string and pd.api.types.is_integer_dtype(df[col]):
+            df[col] = df[col].astype(object)
+
+        # need to handle integer-like values, so they map cleanly
+        # e.g., 5.0 and "5.0" should map to the same value as 5
+        numeric = pd.to_numeric(df[col], errors="coerce")
+        integer_like = numeric.notna() & (numeric % 1 == 0)
+        if any(isinstance(key, int) for key in mapping):
+            canonical_integers = numeric.loc[integer_like].astype("Int64")
+            if maps_to_string:
+                canonical_integers = canonical_integers.astype("string")
+            df.loc[integer_like, col] = canonical_integers
+
+        for key, value in mapping.items():
+            if isinstance(key, int):
+                df.loc[numeric.eq(key), col] = value
+
         df.replace({col: mapping}, inplace=True)
         # Some columns contain both numerics and strings (e.g., 5.0 and ALCC01).
         # Arrow cannot serialize that mixture consistently.
         # If a mapping introduces string codes,
         # represent every non-null value as a string;
         # unfamiliar values retain their literal value instead of being guessed.
-        if any(isinstance(value, str) for value in mapping.values()):
+        if maps_to_string:
             df[col] = df[col].astype("string")
     return df
 
 
 def normalize_integer_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-    """Canonicalize integer-like values while preserving text and nulls.
+    """Convert integer-like values to nullable integers.
 
-    This makes values such as ``0``, ``0.0``, and ``"0.0"`` identical before
-    value mapping and preMEDS serialization.
+    Values such as ``0``, ``0.0``, and ``"0.0"`` become the integer ``0``.
+    Nonnumeric and non-integral values become null.
     """
     for col in columns:
         if col not in df.columns:
             continue
-        original = df[col]
-        numeric = pd.to_numeric(original, errors="coerce")
-        integer_like = numeric.notna() & numeric.mod(1).eq(0)
-        normalized = original.astype("string")
-        normalized.loc[integer_like] = numeric.loc[integer_like].astype("Int64").astype("string")
-        df[col] = normalized
+        numeric = pd.to_numeric(df[col], errors="coerce")
+        integers = numeric.where(numeric % 1 == 0)
+        df[col] = integers.astype("Int64")
+    return df
+
+
+def normalize_code_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Strip and uppercase string values without changing other object values."""
+    for col in df.select_dtypes(include=["object", "string"]).columns:
+        is_string = df[col].map(lambda value: isinstance(value, str))
+        df.loc[is_string, col] = df.loc[is_string, col].str.strip().str.upper()
     return df
 
 
