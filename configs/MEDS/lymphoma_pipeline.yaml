@@ -76,5 +76,6 @@ stages:
   # Final model representation: valid lab values become
   # LABTEST//{code}//BIN_{bin_value}.
   - join_numeric_bins
+  - join_lab_text_values
   - finalize_MEDS_metadata
   - finalize_MEDS_data
