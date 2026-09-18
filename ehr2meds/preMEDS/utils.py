@@ -128,10 +128,10 @@ def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
         if col not in df.columns:
             continue
 
-        # Integer columns cannot hold string replacements. Object dtype permits
-        # those replacements without changing the existing integer values.
+        # Numeric columns cannot hold string replacements. Object dtype permits
+        # those replacements without changing the existing values.
         maps_to_string = any(isinstance(value, str) for value in mapping.values())
-        if maps_to_string and pd.api.types.is_integer_dtype(df[col]):
+        if maps_to_string and pd.api.types.is_numeric_dtype(df[col]):
             df[col] = df[col].astype(object)
 
         # need to handle integer-like values, so they map cleanly
