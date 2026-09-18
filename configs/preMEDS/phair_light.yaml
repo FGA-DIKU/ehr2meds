@@ -289,3 +289,4 @@ tables:
         join_on: k_cpr
         target_column: deathdate
         rename_to: deathdate
+        how: left
