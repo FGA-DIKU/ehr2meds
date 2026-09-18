@@ -57,6 +57,7 @@ finalize_adaptive_code_metadata = "ehr2meds.meds_stages.finalize_adaptive_code_m
 fit_adaptive_code_mapping = "ehr2meds.meds_stages.fit_adaptive_code_mapping:stage"
 filter_unknown_codes = "ehr2meds.meds_stages.filter_unknown_codes:stage"
 join_numeric_bins = "ehr2meds.meds_stages.join_numeric_bins:stage"
+join_lab_text_values = "ehr2meds.meds_stages.join_lab_text_values:stage"
 
 [tool.setuptools.package-data]
 ehr2meds = ["resources/*.parquet"]
