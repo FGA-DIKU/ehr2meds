@@ -12,12 +12,19 @@ event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
 input_dir: ${oc.env:PREMEDS_INPUT_DIR}
 output_dir: ${oc.env:MEDS_OUTPUT_DIR}
 shards_map_fp: ${output_dir}/metadata/.shards.json
+source_event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
+event_conversion_config_fp: ${output_dir}/event_conversion_config.augmented.yaml
 
 etl_metadata:
   dataset_name: preMEDS
   dataset_version: 2.0
 
 stages:
+  - augment_event_config:
+      source_event_conversion_config_fp: ${source_event_conversion_config_fp}
+      output_event_conversion_config_fp: ${event_conversion_config_fp}
+      event_columns:
+        row_idx: $row_idx
   - shard_events:
       infer_schema_length: 999999999
       data_input_dir: ${input_dir}/data
