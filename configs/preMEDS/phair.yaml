@@ -1,165 +1,212 @@
 # @package _global_
-# Full PHAIR draft. This extends the validated PHAIR-light source definitions
-# with the fields and tables used by the lymphoma pipeline. Columns marked
-# below must be checked against the PHAIR parquet schemas before the first run.
+# Full standalone PHAIR configuration aligned with the lymphoma pipeline.
+# Keep this file explicit so its complete table and mapping coverage can be
+# reviewed without following inheritance or YAML anchors.
 defaults:
-  - phair_light@
+  - ../root_config@
   - _self_
 
+test: false
+num_workers: 2
+logging:
+  level: INFO
+  path: ./outputs/logs
+env: local
 run_name: preMEDS_phair
-
+chunksize: 10000000
 paths:
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/PHAIR
-
+  tables_dir: /storage/archive/UCPH/PHAIR/dhr/tables/parquet
+write_file_type: parquet
+subject_id_mapping:
+  file: ${paths.tables_dir}/t_person.parquet
+  subject_id_col: v_pnr
+  mapping_id_col: null
 tables:
-  # Extend existing PHAIR-light tables with the event attributes used by the
-  # harmonized lymphoma event configuration.
-  diagnoser:
-    columns:
-      diagnosetype:
-    mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: dato_slut
-        rename_to: date_end
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: tidspunkt_slut
-        rename_to: time_end
-        drop_source: true
-
-  t_diag:
-    columns:
-      c_tildiag:
-      c_diagtype:
-    mappings:
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: d_uddto
-        rename_to: date_end
-        drop_source: true
-
-  t_sksopr:
-    columns:
-      d_odto: date_start
-      v_otime:
-      v_ominut:
-    mappings:
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
-        drop_source: true
-
-  t_sksube:
-    columns:
-      d_odto: date_start
-      v_otime:
-      v_ominut:
-      c_oprart:
-    mappings:
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
-        drop_source: true
-
   t_psyk_diag:
+    filename: ${paths.tables_dir}/t_psyk_diag.parquet
     columns:
-      c_tildiag:
-      c_diagtype:
+      v_recnum: record_number
+      c_diag: null
+      c_tildiag: null
+      c_diagtype: null
     mappings:
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: d_uddto
-        rename_to: date_end
-        drop_source: true
-
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+      join_on: k_recnum
+      target_column: v_cpr
+      rename_to: subject_id
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+      join_on: k_recnum
+      target_column: d_uddto
+      rename_to: date_end
+      drop_source: true
+  t_sksopr:
+    filename: ${paths.tables_dir}/t_sksopr.parquet
+    columns:
+      v_recnum: record_number
+      c_opr: null
+      d_odto: date_start
+      v_otime: null
+      v_ominut: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_adm.parquet
+      join_on: k_recnum
+      target_column: v_cpr
+      rename_to: subject_id
+      drop_source: true
+  t_sksube:
+    filename: ${paths.tables_dir}/t_sksube.parquet
+    columns:
+      v_recnum: record_number
+      c_opr: null
+      d_odto: date_start
+      v_otime: null
+      v_ominut: null
+      c_oprart: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_adm.parquet
+      join_on: k_recnum
+      target_column: v_cpr
+      rename_to: subject_id
+      drop_source: true
   t_psyk_sksopr:
+    filename: ${paths.tables_dir}/t_psyk_sksopr.parquet
     columns:
+      v_recnum: record_number
+      c_opr: null
       d_odto: date_start
-      v_otime:
-      v_ominut:
+      v_otime: null
+      v_ominut: null
     mappings:
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
-        drop_source: true
-
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+      join_on: k_recnum
+      target_column: v_cpr
+      rename_to: subject_id
+      drop_source: true
   t_psyk_sksube:
+    filename: ${paths.tables_dir}/t_psyk_sksube.parquet
     columns:
+      v_recnum: record_number
+      c_opr: null
       d_odto: date_start
-      v_otime:
-      v_ominut:
-      c_oprart:
+      v_otime: null
+      v_ominut: null
+      c_oprart: null
     mappings:
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
-        drop_source: true
-
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+      join_on: k_recnum
+      target_column: v_cpr
+      rename_to: subject_id
+      drop_source: true
   procedurer_andre:
+    filename: ${paths.tables_dir}/procedurer_andre.parquet
     columns:
+      dw_ek_kontakt: contact_id
+      procedurekode: null
       dato_start: date_start
       tidspunkt_start: time_start
-      proceduretype:
+      proceduretype: null
     mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-        drop_source: true
-
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: cpr
+      rename_to: subject_id
+      drop_source: true
   procedurer_kirurgi:
+    filename: ${paths.tables_dir}/procedurer_kirurgi.parquet
     columns:
+      dw_ek_kontakt: contact_id
+      procedurekode: null
       dato_start: date_start
       tidspunkt_start: time_start
     mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-        drop_source: true
-
-  indberetningmedpris:
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: cpr
+      rename_to: subject_id
+      drop_source: true
+  epikur:
+    filename: ${paths.tables_dir}/epikur.parquet
     columns:
+      cpr: subject_id
+      eksd: null
+      atc: null
+  indberetningmedpris:
+    filename: ${paths.tables_dir}/indberetningmedpris.parquet
+    columns:
+      v_cpr: subject_id
       d_ord_start: timestamp
-      c_patienttype:
-      k_region_id:
+      c_atc: null
+      c_patienttype: null
+      k_region_id: null
       v_adm_dosis: dosage
       v_styrke_num: strength
     normalize_integer_columns:
-      - c_patienttype
-      - k_region_id
-
-  # LPR3 contacts. PHAIR uses cpr where the lymphoma extract uses patientid.
+    - c_patienttype
+    - k_region_id
+  t_diag:
+    filename: ${paths.tables_dir}/t_diag.parquet
+    columns:
+      v_recnum: record_number
+      c_diag: null
+      c_tildiag: null
+      c_diagtype: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_adm.parquet
+      join_on: k_recnum
+      target_column: v_cpr
+      rename_to: subject_id
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_adm.parquet
+      join_on: k_recnum
+      target_column: d_uddto
+      rename_to: date_end
+      drop_source: true
+  diagnoser:
+    filename: ${paths.tables_dir}/diagnoser.parquet
+    columns:
+      dw_ek_kontakt: contact_id
+      diagnosekode: null
+      diagnosetype: null
+    mappings:
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: cpr
+      rename_to: subject_id
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: dato_slut
+      rename_to: date_end
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: tidspunkt_slut
+      rename_to: time_end
+      drop_source: true
+  central_patient:
+    filename: ${paths.tables_dir}/t_person.parquet
+    columns:
+      v_pnr: subject_id
+      d_foddato: birthdate
+      c_kon: sex
+    mappings:
+    - source_column: subject_id
+      via_file: ${paths.tables_dir}/schemamortality.parquet
+      join_on: k_cpr
+      target_column: deathdate
+      rename_to: deathdate
+      how: left
   kontakter:
     filename: ${paths.tables_dir}/kontakter.parquet
     columns:
@@ -168,178 +215,229 @@ tables:
       tidspunkt_start: time_start
       dato_slut: date_end
       tidspunkt_slut: time_end
-      aktionsdiagnose:
-      kontaktaarsag:
-      prioritet:
-      kontakttype:
-      hovedspeciale_ans:
-      region_ans:
+      aktionsdiagnose: null
+      kontaktaarsag: null
+      prioritet: null
+      kontakttype: null
+      hovedspeciale_ans: null
+      region_ans: null
       dw_ek_kontakt: contact_id
     normalize_integer_columns:
-      - region_ans
+    - region_ans
     value_map:
       prioritet:
-        1: "ATA1"
-        2: "ATA3"
-
-  # LPR1/2 admissions and their documented cross-generation mappings.
+        1: ATA1
+        2: ATA3
   t_adm:
     filename: ${paths.tables_dir}/t_adm.parquet
     columns:
       v_cpr: subject_id
       d_inddto: date_start
       d_uddto: date_end
-      v_indtime:
-      v_indminut:
-      c_adiag:
-      c_kontaars:
-      c_pattype:
+      v_indtime: null
+      v_indminut: null
+      c_adiag: null
+      c_kontaars: null
+      c_pattype: null
       c_indm: priority
-      c_spec:
-      c_sgh:
+      c_spec: null
+      c_sgh: null
       k_recnum: contact_id
     normalize_integer_columns:
-      - c_kontaars
-      - c_pattype
-      - c_spec
-      - c_sgh
-      - priority
-    value_map: &legacy_contact_value_map
-      c_spec: &specialty_value_map
-        0: "BLANDET MEDICIN OG KIRURGI"
-        1: "INTERN MEDICIN"
-        2: "GERIATRI"
-        3: "HEPATOLOGI"
-        4: "HÆMATOLOGI"
-        5: "INFEKTIONSMEDICIN"
-        6: "KARDIOLOGI"
-        7: "MEDICINSK ALLERGOLOGI"
-        8: "ENDOKRINOLOGI"
-        9: "MEDICINSK GASTROENTEROLOGI"
-        10: "LUNGESYGDOMME"
-        11: "NEFROLOGI"
-        12: "REUMATOLOGI"
-        14: "PALLIATIV MEDICIN"
-        15: "AKUTMEDICIN"
-        18: "DERMATO-VENEROLOGI"
-        20: "NEUROLOGI"
-        22: "KLINISK ONKOLOGI"
-        30: "KIRURGI"
-        31: "KARKIRURGI"
-        32: "KIRURGISK GASTROENTEROLOGI"
-        33: "PLASTIKKIRURGI"
-        34: "THORAXKIRURGI"
-        35: "UROLOGI"
-        38: "GYNÆKOLOGI OG OBSTETRIK"
-        39: "SEXOLOGI"
-        40: "NEUROKIRURGI"
-        42: "ORTOPÆDISK KIRURGI"
-        44: "OFTALMOLOGI"
-        46: "OTO-RHINO-LARYNGOLOGI"
-        48: "TAND-, MUND- OG KÆBEKIRURGI"
-        50: "PSYKIATRI"
-        52: "BØRNE- OG UNGDOMSPSYKIATRI"
-        60: "KLINISK BIOKEMI"
-        61: "KLINISK FYSIOLOGI OG NUKLEARMEDICIN"
-        62: "KLINISK IMMUNOLOGI"
-        63: "KLINISK MIKROBIOLOGI"
-        64: "KLINISK NEUROFYSIOLOGI"
-        66: "RADIOLOGI"
-        67: "KLINISK FARMAKOLOGI"
-        68: "KLINISK GENETIK"
-        80: "PÆDIATRI"
-        84: "ANÆSTESIOLOGI"
-        86: "ARBEJDSMEDICIN"
-        90: "ALMEN MEDICIN"
-        91: "SAMFUNDSMEDICIN"
-        98: "FYSIO- OG ERGOTERAPI"
+    - c_kontaars
+    - c_pattype
+    - c_spec
+    - c_sgh
+    - priority
+    value_map:
+      c_spec:
+        0: BLANDET MEDICIN OG KIRURGI
+        1: INTERN MEDICIN
+        2: GERIATRI
+        3: HEPATOLOGI
+        4: HÆMATOLOGI
+        5: INFEKTIONSMEDICIN
+        6: KARDIOLOGI
+        7: MEDICINSK ALLERGOLOGI
+        8: ENDOKRINOLOGI
+        9: MEDICINSK GASTROENTEROLOGI
+        10: LUNGESYGDOMME
+        11: NEFROLOGI
+        12: REUMATOLOGI
+        14: PALLIATIV MEDICIN
+        15: AKUTMEDICIN
+        18: DERMATO-VENEROLOGI
+        20: NEUROLOGI
+        22: KLINISK ONKOLOGI
+        30: KIRURGI
+        31: KARKIRURGI
+        32: KIRURGISK GASTROENTEROLOGI
+        33: PLASTIKKIRURGI
+        34: THORAXKIRURGI
+        35: UROLOGI
+        38: GYNÆKOLOGI OG OBSTETRIK
+        39: SEXOLOGI
+        40: NEUROKIRURGI
+        42: ORTOPÆDISK KIRURGI
+        44: OFTALMOLOGI
+        46: OTO-RHINO-LARYNGOLOGI
+        48: TAND-, MUND- OG KÆBEKIRURGI
+        50: PSYKIATRI
+        52: BØRNE- OG UNGDOMSPSYKIATRI
+        60: KLINISK BIOKEMI
+        61: KLINISK FYSIOLOGI OG NUKLEARMEDICIN
+        62: KLINISK IMMUNOLOGI
+        63: KLINISK MIKROBIOLOGI
+        64: KLINISK NEUROFYSIOLOGI
+        66: RADIOLOGI
+        67: KLINISK FARMAKOLOGI
+        68: KLINISK GENETIK
+        80: PÆDIATRI
+        84: ANÆSTESIOLOGI
+        86: ARBEJDSMEDICIN
+        90: ALMEN MEDICIN
+        91: SAMFUNDSMEDICIN
+        98: FYSIO- OG ERGOTERAPI
         99: null
       priority:
-        1: "ATA1"
-        2: "ATA3"
+        1: ATA1
+        2: ATA3
       c_kontaars:
-        1: "ALCC01"
-        2: "ALCC02"
-        3: "ALCC03"
-        4: "ALCC04"
-        6: "ALCC90"
-        7: "ALCC90"
-        8: "ALCC90"
-        9: "ALCC90"
+        1: ALCC01
+        2: ALCC02
+        3: ALCC03
+        4: ALCC04
+        6: ALCC90
+        7: ALCC90
+        8: ALCC90
+        9: ALCC90
     mappings:
-      - source_column: c_sgh
-        via_file: shak_to_region.parquet
-        how: left
-        join_on: kode
-        target_column: region
-        rename_to: c_sgh
-        drop_source: true
-
-  # Psychiatric LPR admissions. Verify these optional columns against the
-  # PHAIR t_psyk_adm schema; its linked diagnosis/procedure tables already use
-  # v_cpr, d_inddto, v_indtime, and v_indminut from this file.
+    - source_column: c_sgh
+      via_file: shak_to_region.parquet
+      how: left
+      join_on: kode
+      target_column: region
+      rename_to: c_sgh
+      drop_source: true
   t_psyk_adm:
     filename: ${paths.tables_dir}/t_psyk_adm.parquet
     columns:
       v_cpr: subject_id
       d_inddto: date_start
       d_uddto: date_end
-      v_indtime:
-      v_indminut:
-      c_adiag:
-      c_kontaars:
-      c_pattype:
+      v_indtime: null
+      v_indminut: null
+      c_adiag: null
+      c_kontaars: null
+      c_pattype: null
       c_indm: priority
-      c_spec:
-      c_sgh:
+      c_spec: null
+      c_sgh: null
       k_recnum: contact_id
     normalize_integer_columns:
-      - c_kontaars
-      - c_pattype
-      - c_spec
-      - c_sgh
-      - priority
-    value_map: *legacy_contact_value_map
+    - c_kontaars
+    - c_pattype
+    - c_spec
+    - c_sgh
+    - priority
+    value_map:
+      c_spec:
+        0: BLANDET MEDICIN OG KIRURGI
+        1: INTERN MEDICIN
+        2: GERIATRI
+        3: HEPATOLOGI
+        4: HÆMATOLOGI
+        5: INFEKTIONSMEDICIN
+        6: KARDIOLOGI
+        7: MEDICINSK ALLERGOLOGI
+        8: ENDOKRINOLOGI
+        9: MEDICINSK GASTROENTEROLOGI
+        10: LUNGESYGDOMME
+        11: NEFROLOGI
+        12: REUMATOLOGI
+        14: PALLIATIV MEDICIN
+        15: AKUTMEDICIN
+        18: DERMATO-VENEROLOGI
+        20: NEUROLOGI
+        22: KLINISK ONKOLOGI
+        30: KIRURGI
+        31: KARKIRURGI
+        32: KIRURGISK GASTROENTEROLOGI
+        33: PLASTIKKIRURGI
+        34: THORAXKIRURGI
+        35: UROLOGI
+        38: GYNÆKOLOGI OG OBSTETRIK
+        39: SEXOLOGI
+        40: NEUROKIRURGI
+        42: ORTOPÆDISK KIRURGI
+        44: OFTALMOLOGI
+        46: OTO-RHINO-LARYNGOLOGI
+        48: TAND-, MUND- OG KÆBEKIRURGI
+        50: PSYKIATRI
+        52: BØRNE- OG UNGDOMSPSYKIATRI
+        60: KLINISK BIOKEMI
+        61: KLINISK FYSIOLOGI OG NUKLEARMEDICIN
+        62: KLINISK IMMUNOLOGI
+        63: KLINISK MIKROBIOLOGI
+        64: KLINISK NEUROFYSIOLOGI
+        66: RADIOLOGI
+        67: KLINISK FARMAKOLOGI
+        68: KLINISK GENETIK
+        80: PÆDIATRI
+        84: ANÆSTESIOLOGI
+        86: ARBEJDSMEDICIN
+        90: ALMEN MEDICIN
+        91: SAMFUNDSMEDICIN
+        98: FYSIO- OG ERGOTERAPI
+        99: null
+      priority:
+        1: ATA1
+        2: ATA3
+      c_kontaars:
+        1: ALCC01
+        2: ALCC02
+        3: ALCC03
+        4: ALCC04
+        6: ALCC90
+        7: ALCC90
+        8: ALCC90
+        9: ALCC90
     mappings:
-      - source_column: c_sgh
-        via_file: shak_to_region.parquet
-        how: left
-        join_on: kode
-        target_column: region
-        rename_to: c_sgh
-        drop_source: true
-
-  # Verify the following two table schemas on PHAIR. The names follow the
-  # unprefixed naming convention used by its other register parquet files.
+    - source_column: c_sgh
+      via_file: shak_to_region.parquet
+      how: left
+      join_on: kode
+      target_column: region
+      rename_to: c_sgh
+      drop_source: true
   laboratorieproevesvar:
     filename: ${paths.tables_dir}/laboratorieproevesvar.parquet
     columns:
       cpr: subject_id
-      samplingdate:
-      samplingtime:
-      analysiscode:
-      samplevalue:
-
+      samplingdate: null
+      samplingtime: null
+      analysiscode: null
+      samplevalue: null
   dimpatologiskdiagnose:
     filename: ${paths.tables_dir}/dimpatologiskdiagnose.parquet
     columns:
       dw_ek_rekvisition: contact_id
-      diagnose_snomed_kode:
+      diagnose_snomed_kode: null
     mappings:
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/fctrekvisition.parquet
-        join_on: dw_ek_rekvisition
-        target_column: cpr
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/fctrekvisition.parquet
-        join_on: dw_ek_rekvisition
-        target_column: datotid_modtagelse
-        rename_to: timestamp
-        drop_source: false
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/fctrekvisition.parquet
-        join_on: dw_ek_rekvisition
-        target_column: dato_modtagelse
-        rename_to: timestamp_fallback
-        drop_source: true
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/fctrekvisition.parquet
+      join_on: dw_ek_rekvisition
+      target_column: cpr
+      rename_to: subject_id
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/fctrekvisition.parquet
+      join_on: dw_ek_rekvisition
+      target_column: datotid_modtagelse
+      rename_to: timestamp
+      drop_source: false
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/fctrekvisition.parquet
+      join_on: dw_ek_rekvisition
+      target_column: dato_modtagelse
+      rename_to: timestamp_fallback
+      drop_source: true
