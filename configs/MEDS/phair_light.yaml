@@ -34,8 +34,8 @@ diagnoser:
 t_psyk_diag:
   t_psyk_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_end, f"{($v_otime as int)}:{($v_ominut as int)}" as '%H:%M'))
-
+    time: set_time($date_end, f"{($hour_end as int)}" as '%H'))
+  
 t_sksopr:
   t_sksopr:
     code: f"PROCEDURE//{$c_opr}"
