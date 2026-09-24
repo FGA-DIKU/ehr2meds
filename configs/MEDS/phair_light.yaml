@@ -24,7 +24,7 @@ indberetningmedpris:
 t_diag:
   t_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_end, f"{($hour_end as int)}" as '%H'))
+    time: set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M')
 
 diagnoser:
   diagnoser:
@@ -34,7 +34,7 @@ diagnoser:
 t_psyk_diag:
   t_psyk_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_end, f"{($hour_end as int)}" as '%H'))
+    time: set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M')
   
 t_sksopr:
   t_sksopr:
