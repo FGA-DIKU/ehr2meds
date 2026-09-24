@@ -24,37 +24,37 @@ indberetningmedpris:
 t_diag:
   t_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: set_time($date_end, f"{($hour_end as int)}" as '%H'))
 
 diagnoser:
   diagnoser:
     code: f"DIAGNOSIS//{$diagnosekode}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_end, $time_end)
 
 t_psyk_diag:
   t_psyk_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: set_time($date_end, f"{($v_otime as int)}:{($v_ominut as int)}" as '%H:%M'))
 
 t_sksopr:
   t_sksopr:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: set_time($date_start, f"{($v_otime as int)}:{($v_ominut as int)}" as '%H:%M')
 
 t_sksube:
   t_sksube:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: set_time($date_start, f"{($v_otime as int)}:{($v_ominut as int)}" as '%H:%M')
 
 t_psyk_sksopr:
   t_psyk_sksopr:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: set_time($date_start, f"{($v_otime as int)}:{($v_ominut as int)}" as '%H:%M')
 
 t_psyk_sksube:
   t_psyk_sksube:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: set_time($date_start, f"{($v_otime as int)}:{($v_ominut as int)}" as '%H:%M')
 
 procedurer_andre:
   procedurer_andre:
