@@ -1,7 +1,12 @@
+from pathlib import Path
+from typing import Dict, List, Optional
+
 import pandas as pd
+
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (
     add_row_idx,
+    add_sor_attributes,
     apply_mapping,
     apply_value_map,
     clean_data,
@@ -11,8 +16,6 @@ from ehr2meds.preMEDS.utils import (
     remove_timezones,
     validate_subject_id,
 )
-from pathlib import Path
-from typing import Dict, List, Optional
 
 
 class Processor:
@@ -37,6 +40,8 @@ class Processor:
         """
         df = add_row_idx(df, start=row_index_start)
         df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
+        if table_config.get("sor_mapping"):
+            df = add_sor_attributes(df, table_config["sor_mapping"])
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)

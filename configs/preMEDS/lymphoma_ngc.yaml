@@ -107,11 +107,14 @@ tables:
       kontaktaarsag: 
       prioritet: 
       kontakttype: 
-      hovedspeciale_ans: 
-      region_ans: 
+      sorenhed_ans: sor_id
       dw_ek_kontakt: contact_id
+    sor_mapping:
+      source_id_column: sor_id
+      source_date_column: date_start
+      mapping_id_column: sor_id
     normalize_integer_columns:
-      - region_ans
+      - region
     value_map:
       # RC_PRIO has the same cross-generation issue for the two documented
       # legacy urgency values. Value 3 is not guessed or collapsed.
@@ -160,6 +163,8 @@ tables:
         18: "DERMATO-VENEROLOGI"
         20: "NEUROLOGI"
         22: "KLINISK ONKOLOGI"
+        26: null # obsolete SHAK specialty
+        28: null # obsolete SHAK specialty
         30: "KIRURGI"
         31: "KARKIRURGI"
         32: "KIRURGISK GASTROENTEROLOGI"
@@ -180,14 +185,17 @@ tables:
         62: "KLINISK IMMUNOLOGI"
         63: "KLINISK MIKROBIOLOGI"
         64: "KLINISK NEUROFYSIOLOGI"
+        65: "PATOLOGISK ANATOMI OG CYTOLOGI"
         66: "RADIOLOGI"
         67: "KLINISK FARMAKOLOGI"
         68: "KLINISK GENETIK"
         80: "PÆDIATRI"
         84: "ANÆSTESIOLOGI"
         86: "ARBEJDSMEDICIN"
+        87: "MILJØMEDICIN"
         90: "ALMEN MEDICIN"
         91: "SAMFUNDSMEDICIN"
+        92: "RETSMEDICIN"
         98: "FYSIO- OG ERGOTERAPI"
         99: null
       priority: # map emergency vs planned visits to LPR3

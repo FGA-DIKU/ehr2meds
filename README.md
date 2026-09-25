@@ -34,6 +34,32 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    * Align timestamp inputs to one type
    * Connect visit ids etc with subject ids for the register data
 
+### Date-aware SOR enrichment
+
+We also allow for contact region and primary specialty to be derived directly from SOR 
+codes from `resources/sor2_contact_mapping.parquet`. Note that the mapping 
+is temporal. The mapping selects the SOR record valid on the contact start date 
+and creates the columns `region`
+and `specialty` from the official postal region and prioritized specialty 1.
+Unknown identifiers remain null. If official
+history rows overlap, the row with the latest start date wins.
+
+Each table specifies its source identifier and date columns explicitly:
+
+```yaml
+sor_mapping:
+  source_id_column: sor_id
+  source_date_column: date_start
+  mapping_id_column: sor_id
+```
+
+Do note that since this is a temporal mapping, this can change over time.
+To regenerate a compact version of the official SOR release used in the repo, run the following:
+
+```bash
+python ehr2meds/build_sor2_resource.py /path/to/Sor_complete/SOREntity.csv
+```
+
 2. **PREMEDS → MEDS Conversion:**  
    Transforms preMEDS data into a finalized MEDS cohort format.  
    You need to run [convert_premeds_to_meds.sh](./ehr2meds/convert_premeds_to_meds.sh) to run the MEDS conversion.
