@@ -1,11 +1,7 @@
 description: |-
-  This pipeline extracts the preMEDS dataset in longitudinal, sparse form from an input dataset meeting
-  select criteria and converts them to the flattened MEDS format. You can control the key arguments to this
-  pipeline by setting environment variables:
-
-  export EVENT_CONVERSION_CONFIG_FP=event_configs.yaml      # Path to your event conversion config
-  export PREMEDS_INPUT_DIR=../preMEDS_w_meta                 # Path to the output dir of the pre-MEDS step
-  export MEDS_OUTPUT_DIR=../MEDS_new_data                    # Path to where you want the dataset to live
+  Full PHAIR pipeline aligned with the lymphoma pipeline. It retains PHAIR's
+  registry sources (including psychiatric LPR tables and epikur) while using
+  the same harmonization, adaptive mapping, and value-processing stages.
 
 input_dir: ${oc.env:PREMEDS_INPUT_DIR}
 output_dir: ${oc.env:MEDS_OUTPUT_DIR}
@@ -14,7 +10,7 @@ source_event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
 event_conversion_config_fp: ${output_dir}/event_conversion_config.augmented.yaml
 
 etl_metadata:
-  dataset_name: preMEDS
+  dataset_name: PHAIR
   dataset_version: 2.0
 
 stages:
@@ -27,13 +23,16 @@ stages:
       infer_schema_length: 999999999
       data_input_dir: ${input_dir}/data
   - split_and_shard_subjects:
+      n_subjects_per_shard: 10000
       split_fracs:
         train: 0.9
         tuning: 0.1
   - convert_to_subject_sharded
-  - convert_to_MEDS_events
+  - convert_to_MEDS_events:
+      do_dedup_text_and_numeric: true
   - filter_unknown_codes
-  - merge_to_MEDS_cohort
+  - merge_to_MEDS_cohort:
+      additional_sort_by: [row_idx]
   - extract_code_metadata
   - fit_adaptive_code_mapping:
       train_only: true
@@ -42,5 +41,14 @@ stages:
       mapping_summary_output_filepath: ${output_dir}/adaptive_code_mapping.summary.json
   - apply_adaptive_code_mapping
   - finalize_adaptive_code_metadata
+  - aggregate_numeric_metadata:
+      train_only: true
+      event_time_cutoff: "2022-01-01"
+      numeric_value_bounds: {}
+      numeric_metadata_output_filepath: ${output_dir}/numeric_metadata.json
+  - annotate_numeric_values:
+      numeric_metadata_filepath: null
+  - join_numeric_bins
+  - join_lab_text_values
   - finalize_MEDS_metadata
   - finalize_MEDS_data
