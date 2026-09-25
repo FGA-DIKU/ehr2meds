@@ -2,9 +2,11 @@ import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.utils import (
     add_row_idx,
+    add_sor_attributes,
     apply_mapping,
     apply_value_map,
     clean_data,
+    fill_missing_columns,
     map_pids_to_ints,
     normalize_code_columns,
     normalize_integer_columns,
@@ -37,6 +39,9 @@ class Processor:
         """
         df = add_row_idx(df, start=row_index_start)
         df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
+        df = fill_missing_columns(df, table_config.get("fill_missing", {}))
+        if table_config.get("sor_mapping"):
+            df = add_sor_attributes(df, table_config["sor_mapping"])
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)

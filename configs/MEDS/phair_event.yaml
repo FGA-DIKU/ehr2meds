@@ -1,0 +1,172 @@
+# Full standalone PHAIR event configuration.
+# Definitions are intentionally explicit; no YAML anchors are used.
+subject_id_col: subject_id
+central_patient:
+  dob:
+    code: DOB
+    time: $birthdate
+  dod:
+    code: DOD
+    time: $deathdate
+  sex:
+    code: f"SEX//{$sex}"
+    time: null
+dimpatologiskdiagnose:
+  pathology:
+    code: f"PATHOLOGY//{$diagnose_snomed_kode}"
+    time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d')
+      as datetime)
+diagnoser:
+  diagnosis:
+    code: f"DIAGNOSIS//{$diagnosekode}"
+    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
+  diagnosis_type:
+    code: f"DIAGNOSIS_TYPE//{$diagnosetype}"
+    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
+t_diag:
+  diagnosis:
+    code: f"DIAGNOSIS//{$c_diag}"
+    time: $date_end
+  diagnosis_type:
+    code: f"DIAGNOSIS_TYPE//{$c_diagtype}"
+    time: $date_end
+  additional_diagnosis:
+    code: f"DIAGNOSIS//{$c_tildiag}"
+    time: $date_end
+t_psyk_diag:
+  diagnosis:
+    code: f"DIAGNOSIS//{$c_diag}"
+    time: $date_end
+  diagnosis_type:
+    code: f"DIAGNOSIS_TYPE//{$c_diagtype}"
+    time: $date_end
+  additional_diagnosis:
+    code: f"DIAGNOSIS//{$c_tildiag}"
+    time: $date_end
+kontakter:
+  diagnosis:
+    code: f"DIAGNOSIS//{$aktionsdiagnose}"
+    time: set_time($date_end, $time_end as '%H:%M:%S%.f')
+  contact_reason:
+    code: f"CONTACT_REASON//{$kontaktaarsag}"
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+  priority:
+    code: f"CONTACT_PRIORITY//{$prioritet}"
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+  contact_type:
+    code: f"CONTACT_TYPE//{$kontakttype}"
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+  clinical_specialty:
+    code: f"CONTACT_SPECIALTY//{$specialty}"
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+  region_code:
+    code: f"REGION//{$region}"
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+t_adm:
+  diagnosis:
+    code: f"DIAGNOSIS//{$c_adiag}"
+    time: $date_end
+  contact_reason:
+    code: f"CONTACT_REASON//{$c_kontaars}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+  patient_type:
+    code: f"PATIENT_TYPE//{$c_pattype}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+  priority:
+    code: f"CONTACT_PRIORITY//{$priority}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+  clinical_specialty:
+    code: f"CONTACT_SPECIALTY//{$c_spec}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+  region_code:
+    code: f"REGION//{$c_sgh}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+t_psyk_adm:
+  diagnosis:
+    code: f"DIAGNOSIS//{$c_adiag}"
+    time: $date_end
+  contact_reason:
+    code: f"CONTACT_REASON//{$c_kontaars}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+  patient_type:
+    code: f"PATIENT_TYPE//{$c_pattype}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+  priority:
+    code: f"CONTACT_PRIORITY//{$priority}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+  clinical_specialty:
+    code: f"CONTACT_SPECIALTY//{$c_spec}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+  region_code:
+    code: f"REGION//{$c_sgh}"
+    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
+      '%H:%M')
+t_sksopr:
+  procedure:
+    code: f"PROCEDURE//{$c_opr}"
+    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
+      as int)}" as '%H:%M')
+t_sksube:
+  procedure:
+    code: f"PROCEDURE//{$c_opr}"
+    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
+      as int)}" as '%H:%M')
+  procedure_type:
+    code: f"PROCEDURE_TYPE//{coalesce($c_oprart, 'P')}"
+    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
+      as int)}" as '%H:%M')
+t_psyk_sksopr:
+  procedure:
+    code: f"PROCEDURE//{$c_opr}"
+    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
+      as int)}" as '%H:%M')
+t_psyk_sksube:
+  procedure:
+    code: f"PROCEDURE//{$c_opr}"
+    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
+      as int)}" as '%H:%M')
+  procedure_type:
+    code: f"PROCEDURE_TYPE//{coalesce($c_oprart, 'P')}"
+    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
+      as int)}" as '%H:%M')
+procedurer_kirurgi:
+  procedure:
+    code: f"PROCEDURE//{$procedurekode}"
+    time: set_time($date_start, $time_start)
+procedurer_andre:
+  procedure:
+    code: f"PROCEDURE//{$procedurekode}"
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+  procedure_type:
+    code: f"PROCEDURE_TYPE//{$proceduretype}"
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+epikur:
+  medication:
+    code: f"MEDICATION//{$atc}"
+    time: $eksd
+indberetningmedpris:
+  medication:
+    code: f"MEDICATION//{$c_atc}"
+    time: $timestamp
+  patient_type:
+    code: f"PATIENT_TYPE//{$c_patienttype}"
+    time: $timestamp
+  region_code:
+    code: f"REGION//{$k_region_id}"
+    time: $timestamp
+laboratorieproevesvar:
+  lab_test:
+    code: f"LABTEST//{$analysiscode}"
+    time: set_time($samplingdate as '%Y-%m-%d', $samplingtime as '%H:%M:%S%.f')
+    numeric_value: (extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/
+      from $samplevalue) as float64
+    text_value: $samplevalue

@@ -4,12 +4,66 @@ from ehr2meds.preMEDS.constants import (
     ROW_INDEX,
     SUBJECT_ID,
 )
+from pathlib import Path
 from typing import Dict
+
+SOR_RESOURCE = Path(__file__).parents[2] / "resources" / "sor2_contact_mapping.parquet"
+
+
+def normalize_sor_id(values: pd.Series) -> pd.Series:
+    values = values.astype("string").str.strip()
+    values = values.str.replace(r'^="(.*)"$', r"\1", regex=True)
+    return values.str.replace(r"\.0$", "", regex=True).replace("", pd.NA)
+
+
+def add_sor_attributes(df: pd.DataFrame, config: dict, sor: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Add date-valid ``region`` and primary ``specialty`` to contacts."""
+    source_id = config["source_id_column"]
+    source_date = config["source_date_column"]
+    mapping_id = config["mapping_id_column"]
+    if sor is None:
+        sor = pd.read_parquet(SOR_RESOURCE)
+    sor = sor.rename(columns={mapping_id: "mapping_sor_id"})
+
+    contacts = df[[source_id, source_date]].drop_duplicates().copy()
+    contacts["normalized_sor_id"] = normalize_sor_id(contacts[source_id])
+    contacts["contact_date"] = pd.to_datetime(contacts[source_date], errors="coerce")
+
+    candidates = contacts.merge(sor, left_on="normalized_sor_id", right_on="mapping_sor_id", how="left")
+    valid = (
+        candidates["mapping_sor_id"].notna()
+        & candidates["contact_date"].notna()
+        & (candidates["valid_from"].isna() | candidates["contact_date"].ge(candidates["valid_from"]))
+        & (candidates["valid_to"].isna() | candidates["contact_date"].le(candidates["valid_to"]))
+    )
+    matches = (
+        candidates.loc[valid]
+        .sort_values("valid_from", ascending=False, na_position="last")
+        .drop_duplicates([source_id, source_date], keep="first")
+    )
+    attributes = contacts[[source_id, source_date]].merge(
+        matches[[source_id, source_date, "region", "primary_specialty"]],
+        on=[source_id, source_date],
+        how="left",
+        validate="one_to_one",
+    )
+    attributes = attributes.rename(columns={"primary_specialty": "specialty"})
+    result = df.drop(columns=["region", "specialty"], errors="ignore").merge(
+        attributes, on=[source_id, source_date], how="left", validate="many_to_one", sort=False
+    )
+    return result.sort_values(ROW_INDEX, kind="stable") if ROW_INDEX in result else result
 
 
 def add_row_idx(df: pd.DataFrame, start: int = 0) -> pd.DataFrame:
     """Add a stable, contiguous source-row index to a preMEDS chunk."""
     df[ROW_INDEX] = range(start, start + len(df))
+    return df
+
+
+def fill_missing_columns(df: pd.DataFrame, columns: dict[str, str]) -> pd.DataFrame:
+    """Fill missing target values from their configured fallback columns."""
+    for target, fallback in columns.items():
+        df[target] = df[target].fillna(df[fallback])
     return df
 
 

@@ -56,10 +56,10 @@ kontakter:
     code: f"CONTACT_TYPE//{$kontakttype}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   clinical_specialty:
-    code: f"CONTACT_SPECIALTY//{$hovedspeciale_ans}"
+    code: f"CONTACT_SPECIALTY//{$specialty}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   region_code:
-    code: f"REGION//{$region_ans}"
+    code: f"REGION//{$region}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
 # LPR action diagnosis is placed at admission end; start-known attributes stay
