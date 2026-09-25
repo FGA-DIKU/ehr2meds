@@ -1,14 +1,11 @@
-from pathlib import Path
-from typing import Dict
-
 import pandas as pd
-
 from ehr2meds.preMEDS.constants import (
     MANDATORY_COLUMNS,
     ROW_INDEX,
     SUBJECT_ID,
 )
-
+from pathlib import Path
+from typing import Dict
 
 SOR_RESOURCE = Path(__file__).parents[2] / "resources" / "sor2_contact_mapping.parquet"
 
@@ -60,6 +57,13 @@ def add_sor_attributes(df: pd.DataFrame, config: dict, sor: pd.DataFrame | None 
 def add_row_idx(df: pd.DataFrame, start: int = 0) -> pd.DataFrame:
     """Add a stable, contiguous source-row index to a preMEDS chunk."""
     df[ROW_INDEX] = range(start, start + len(df))
+    return df
+
+
+def fill_missing_columns(df: pd.DataFrame, columns: dict[str, str]) -> pd.DataFrame:
+    """Fill missing target values from their configured fallback columns."""
+    for target, fallback in columns.items():
+        df[target] = df[target].fillna(df[fallback])
     return df
 
 

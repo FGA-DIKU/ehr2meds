@@ -39,9 +39,16 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_psyk_adm.parquet
       join_on: k_recnum
+      target_column: d_inddto
+      rename_to: date_start
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+      join_on: k_recnum
       target_column: d_uddto
       rename_to: date_end
       drop_source: true
+    fill_missing:
+      date_end: date_start
   t_sksopr:
     filename: ${paths.tables_dir}/t_sksopr.parquet
     columns:
@@ -168,9 +175,16 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
+      target_column: d_inddto
+      rename_to: date_start
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_adm.parquet
+      join_on: k_recnum
       target_column: d_uddto
       rename_to: date_end
       drop_source: true
+    fill_missing:
+      date_end: date_start
   diagnoser:
     filename: ${paths.tables_dir}/diagnoser.parquet
     columns:
@@ -186,6 +200,16 @@ tables:
     - source_column: contact_id
       via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
+      target_column: dato_start
+      rename_to: date_start
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_column: tidspunkt_start
+      rename_to: time_start
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
       target_column: dato_slut
       rename_to: date_end
     - source_column: contact_id
@@ -194,6 +218,9 @@ tables:
       target_column: tidspunkt_slut
       rename_to: time_end
       drop_source: true
+    fill_missing:
+      date_end: date_start
+      time_end: time_start
   central_patient:
     filename: ${paths.tables_dir}/t_person.parquet
     columns:
@@ -221,6 +248,9 @@ tables:
       kontakttype: null
       sorenhed_ans: sor_id
       dw_ek_kontakt: contact_id
+    fill_missing:
+      date_end: date_start
+      time_end: time_start
     sor_mapping:
       source_id_column: sor_id
       source_date_column: date_start
@@ -246,6 +276,8 @@ tables:
       c_spec: null
       c_sgh: null
       k_recnum: contact_id
+    fill_missing:
+      date_end: date_start
     normalize_integer_columns:
     - c_kontaars
     - c_pattype
@@ -342,6 +374,8 @@ tables:
       c_spec: null
       c_sgh: null
       k_recnum: contact_id
+    fill_missing:
+      date_end: date_start
     normalize_integer_columns:
     - c_kontaars
     - c_pattype

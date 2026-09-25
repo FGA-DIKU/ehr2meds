@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
-
 import pandas as pd
-
 from ehr2meds.preMEDS.utils import normalize_sor_id
-
+from pathlib import Path
 
 SOURCE_COLUMNS = {
     "SorId": "sor_id",
