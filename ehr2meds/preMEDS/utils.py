@@ -4,10 +4,7 @@ from ehr2meds.preMEDS.constants import (
     ROW_INDEX,
     SUBJECT_ID,
 )
-from pathlib import Path
 from typing import Dict
-
-SOR_RESOURCE = Path(__file__).parents[2] / "resources" / "sor2_contact_mapping.parquet"
 
 
 def normalize_sor_id(values: pd.Series) -> pd.Series:
@@ -16,40 +13,47 @@ def normalize_sor_id(values: pd.Series) -> pd.Series:
     return values.str.replace(r"\.0$", "", regex=True).replace("", pd.NA)
 
 
-def add_sor_attributes(df: pd.DataFrame, config: dict, sor: pd.DataFrame | None = None) -> pd.DataFrame:
-    """Add date-valid ``region`` and primary ``specialty`` to contacts."""
-    source_id = config["source_id_column"]
-    source_date = config["source_date_column"]
-    mapping_id = config["mapping_id_column"]
-    if sor is None:
-        sor = pd.read_parquet(SOR_RESOURCE)
-    sor = sor.rename(columns={mapping_id: "mapping_sor_id"})
+def add_sor_attributes(df: pd.DataFrame, sor_table: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Map each SOR unit and date to its region and primary specialty."""
+    source_id_column = config["source_column"]
+    source_date_column = config["source_date_column"]
+    mapping_id_column = config["join_on"]
+    sor_table = sor_table.rename(columns={mapping_id_column: "mapping_sor_id"})
 
-    contacts = df[[source_id, source_date]].drop_duplicates().copy()
-    contacts["normalized_sor_id"] = normalize_sor_id(contacts[source_id])
-    contacts["contact_date"] = pd.to_datetime(contacts[source_date], errors="coerce")
+    contact_keys = df[[source_id_column, source_date_column]].drop_duplicates().copy()
+    contact_keys["normalized_sor_id"] = normalize_sor_id(contact_keys[source_id_column])
+    contact_keys["contact_date"] = pd.to_datetime(contact_keys[source_date_column], errors="coerce")
 
-    candidates = contacts.merge(sor, left_on="normalized_sor_id", right_on="mapping_sor_id", how="left")
-    valid = (
+    candidates = contact_keys.merge(
+        sor_table,
+        left_on="normalized_sor_id",
+        right_on="mapping_sor_id",
+        how="left",
+    )
+    is_date_valid = (
         candidates["mapping_sor_id"].notna()
         & candidates["contact_date"].notna()
         & (candidates["valid_from"].isna() | candidates["contact_date"].ge(candidates["valid_from"]))
         & (candidates["valid_to"].isna() | candidates["contact_date"].le(candidates["valid_to"]))
     )
-    matches = (
-        candidates.loc[valid]
+    date_valid_matches = (
+        candidates.loc[is_date_valid]
         .sort_values("valid_from", ascending=False, na_position="last")
-        .drop_duplicates([source_id, source_date], keep="first")
+        .drop_duplicates([source_id_column, source_date_column], keep="first")
     )
-    attributes = contacts[[source_id, source_date]].merge(
-        matches[[source_id, source_date, "region", "primary_specialty"]],
-        on=[source_id, source_date],
+    attributes = contact_keys[[source_id_column, source_date_column]].merge(
+        date_valid_matches[[source_id_column, source_date_column, "region", "primary_specialty"]],
+        on=[source_id_column, source_date_column],
         how="left",
         validate="one_to_one",
     )
     attributes = attributes.rename(columns={"primary_specialty": "specialty"})
     result = df.drop(columns=["region", "specialty"], errors="ignore").merge(
-        attributes, on=[source_id, source_date], how="left", validate="many_to_one", sort=False
+        attributes,
+        on=[source_id_column, source_date_column],
+        how="left",
+        validate="many_to_one",
+        sort=False,
     )
     return result.sort_values(ROW_INDEX, kind="stable") if ROW_INDEX in result else result
 
