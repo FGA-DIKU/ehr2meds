@@ -157,8 +157,10 @@ tables:
       - priority
     value_map: 
       C_SPEC:
+        0: "BLANDET MEDICIN OG KIRURGI"
         1: "INTERN MEDICIN"
         2: "GERIATRI"
+        3: "HEPATOLOGI"
         4: "HÆMATOLOGI"
         5: "INFEKTIONSMEDICIN"
         6: "KARDIOLOGI"
@@ -168,6 +170,7 @@ tables:
         10: "LUNGESYGDOMME"
         11: "NEFROLOGI"
         12: "REUMATOLOGI"
+        14: "PALLIATIV MEDICIN"
         15: "AKUTMEDICIN"
         18: "DERMATO-VENEROLOGI"
         20: "NEUROLOGI"
@@ -179,6 +182,7 @@ tables:
         34: "THORAXKIRURGI"
         35: "UROLOGI"
         38: "GYNÆKOLOGI OG OBSTETRIK"
+        39: "SEXOLOGI"
         40: "NEUROKIRURGI"
         42: "ORTOPÆDISK KIRURGI"
         44: "OFTALMOLOGI"
@@ -199,6 +203,8 @@ tables:
         86: "ARBEJDSMEDICIN"
         90: "ALMEN MEDICIN"
         91: "SAMFUNDSMEDICIN"
+        98: "FYSIO- OG ERGOTERAPI"
+        99: null
       V_INDTIME:
         ".": null
       V_UDTIME:
