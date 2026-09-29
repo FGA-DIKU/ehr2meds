@@ -14,28 +14,28 @@ central_patient:
 epikur:
   epikur:
     code: f"MEDICATION//{$atc}"
-    time: $eksd
+    time: $date_start
 
 indberetningmedpris:
   indberetningmedpris:
     code: f"MEDICATION//{$c_atc}"
-    time: $d_ord_start
+    time: $date_start
 
 t_diag:
   t_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M')
 
 diagnoser:
   diagnoser:
     code: f"DIAGNOSIS//{$diagnosekode}"
-    time: set_time($date_start, $time_start)
+    time: set_time($date_end, $time_end)
 
 t_psyk_diag:
   t_psyk_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
-
+    time: set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M')
+  
 t_sksopr:
   t_sksopr:
     code: f"PROCEDURE//{$c_opr}"
