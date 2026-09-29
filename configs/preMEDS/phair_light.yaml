@@ -144,6 +144,9 @@ tables:
         target_column: cpr
         rename_to: subject_id
         drop_source: true
+    value_map:
+      date_end:
+        '.': null
 
   procedurer_kirurgi:
     filename: ${paths.tables_dir}/procedurer_kirurgi.parquet
@@ -161,6 +164,9 @@ tables:
         target_column: cpr
         rename_to: subject_id
         drop_source: true
+    value_map:
+      date_end:
+        '.': null
   
   epikur:
     filename: ${paths.tables_dir}/epikur.parquet
