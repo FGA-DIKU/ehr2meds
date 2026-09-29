@@ -19,22 +19,30 @@ epikur:
 indberetningmedpris:
   indberetningmedpris:
     code: f"MEDICATION//{$c_atc}"
-    time: $date_start
+    time: coalesce($date_start, $date_end)
 
 t_diag:
   t_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M')
+    time: >
+      coalesce(
+        set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'),
+        set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+      )
 
 diagnoser:
   diagnoser:
     code: f"DIAGNOSIS//{$diagnosekode}"
-    time: set_time($date_end, $time_end)
+    time: coalesce(set_time($date_end, $time_end), set_time($date_start, $time_start))
 
 t_psyk_diag:
   t_psyk_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M')
+    time: >
+      coalesce(
+        set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'),
+        set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+      )
   
 t_sksopr:
   t_sksopr:
@@ -59,9 +67,9 @@ t_psyk_sksube:
 procedurer_andre:
   procedurer_andre:
     code: f"PROCEDURE//{$procedurekode}"
-    time: set_time($date_start, $time_start)
+    time: coalesce(set_time($date_start, $time_start), set_time($date_end, $time_end))
 
 procedurer_kirurgi:
   procedurer_kirurgi:
     code: f"PROCEDURE//{$procedurekode}"
-    time: set_time($date_start, $time_start)
+    time: coalesce(set_time($date_start, $time_start), set_time($date_end, $time_end))

@@ -47,6 +47,21 @@ tables:
         join_on: k_recnum
         target_column: v_udtime
         rename_to: hour_end
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
         drop_source: true  
   
   t_sksopr:
@@ -119,6 +134,8 @@ tables:
       dw_ek_kontakt: contact_id
       dato_start: date_start
       tidspunkt_start: time_start
+      dato_slut: date_end
+      tidspunkt_slut: time_end
       procedurekode:
     mappings:
       - source_column: contact_id
@@ -134,6 +151,8 @@ tables:
       dw_ek_kontakt: contact_id
       dato_start: date_start
       tidspunkt_start: time_start
+      dato_slut: date_end
+      tidspunkt_slut: time_end
       procedurekode:
     mappings:
       - source_column: contact_id
@@ -155,6 +174,7 @@ tables:
     columns:
       v_cpr: subject_id
       d_ord_start: date_start
+      d_ord_slut: date_end
       c_atc:
 
   t_diag:
@@ -178,6 +198,21 @@ tables:
         join_on: k_recnum
         target_column: v_udtime
         rename_to: hour_end
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: d_inddto
+        rename_to: date_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indtime
+        rename_to: hour_start
+      - source_column: record_number
+        via_file: ${paths.tables_dir}/t_adm.parquet
+        join_on: k_recnum
+        target_column: v_indminut
+        rename_to: minute_start
         drop_source: true
       
   diagnoser:
@@ -201,6 +236,16 @@ tables:
         join_on: dw_ek_kontakt
         target_column: tidspunkt_slut
         rename_to: time_end
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: dato_start
+        rename_to: date_start
+      - source_column: contact_id
+        via_file: ${paths.tables_dir}/kontakter.parquet
+        join_on: dw_ek_kontakt
+        target_column: tidspunkt_start
+        rename_to: time_start
         drop_source: true
 
   central_patient:
