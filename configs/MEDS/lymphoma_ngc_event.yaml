@@ -17,6 +17,12 @@ dimpatologiskdiagnose:
   pathology:
     code: f"PATHOLOGY//{$diagnose_snomed_kode}"
     time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d') as datetime)
+  clinical_specialty:
+    code: f"CONTACT_SPECIALTY//{$specialty}"
+    time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d') as datetime)
+  region_code:
+    code: f"REGION//{$region}"
+    time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d') as datetime)
 
 # LPR3 diagnoses have no independent timestamp and are conservatively placed
 # at contact end, when the diagnosis is known to have been available.
@@ -120,6 +126,12 @@ procedurer_kirurgi:
   procedure:
     code: f"PROCEDURE//{$procedurekode}"
     time: set_time($date_start, $time_start)
+  clinical_specialty:
+    code: f"CONTACT_SPECIALTY//{$specialty}"
+    time: set_time($date_start, $time_start)
+  region_code:
+    code: f"REGION//{$region}"
+    time: set_time($date_start, $time_start)
 
 # LPR3 other procedures
 procedurer_andre:
@@ -128,6 +140,12 @@ procedurer_andre:
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
   procedure_type:
     code: f"PROCEDURE_TYPE//{$proceduretype}" # NOTE: default to "P" if missing, as this is LPR3 behavior
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+  clinical_specialty:
+    code: f"CONTACT_SPECIALTY//{$specialty}"
+    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+  region_code:
+    code: f"REGION//{$region}"
     time: set_time($date_start, $time_start as '%H:%M:%S%.f')
 
 # Medication from ekokur
@@ -144,8 +162,11 @@ indberetningmedpris:
   patient_type:
     code: f"PATIENT_TYPE//{$c_patienttype}"
     time: $timestamp
+  clinical_specialty:
+    code: f"CONTACT_SPECIALTY//{$specialty}"
+    time: $timestamp
   region_code:
-    code: f"REGION//{$k_region_id}"
+    code: f"REGION//{$region}"
     time: $timestamp
 
 # Keep numeric_value raw here. Split-aware normalization and binning should be

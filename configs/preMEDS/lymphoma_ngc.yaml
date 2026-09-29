@@ -49,7 +49,19 @@ tables:
           join_on: dw_ek_rekvisition
           target_column: dato_modtagelse 
           rename_to: timestamp_fallback
+        - source_column: contact_id
+          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
+          join_on: dw_ek_rekvisition
+          target_column: rekvirerende_afd_sor_kode
+          rename_to: sor_id
           drop_source: true
+        - function: sor
+          source_column: sor_id
+          source_date_column: timestamp_fallback
+          via_file: sor2_contact_mapping.parquet
+          join_on: sor_id
+      normalize_integer_columns:
+        - region
 
   diagnoser:
     filename: ${paths.tables_dir}/SDS_diagnoser.parquet               
@@ -292,6 +304,7 @@ tables:
       dato_start: date_start
       tidspunkt_start: time_start
       procedurekode:
+      sorenhed_pro: sor_id
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -299,6 +312,13 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
+      - function: sor
+        source_column: sor_id
+        source_date_column: date_start
+        via_file: sor2_contact_mapping.parquet
+        join_on: sor_id
+    normalize_integer_columns:
+      - region
 
   procedurer_andre:
     filename: ${paths.tables_dir}/SDS_procedurer_andre.parquet        
@@ -308,6 +328,7 @@ tables:
       tidspunkt_start: time_start
       procedurekode:
       proceduretype:
+      sorenhed_pro: sor_id
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
@@ -315,6 +336,13 @@ tables:
         target_column: patientid
         rename_to: subject_id
         drop_source: true
+      - function: sor
+        source_column: sor_id
+        source_date_column: date_start
+        via_file: sor2_contact_mapping.parquet
+        join_on: sor_id
+    normalize_integer_columns:
+      - region
 
   ekokur:
     filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
@@ -330,12 +358,18 @@ tables:
       d_ord_start: timestamp
       c_atc:
       c_patienttype:  #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
-      k_region_id:
+      c_sor: sor_id
       v_adm_dosis: dosage # TODO: Currently not in use
       v_styrke_num: strength # TODO: Currently not in use
+    mappings:
+      - function: sor
+        source_column: sor_id
+        source_date_column: timestamp
+        via_file: sor2_contact_mapping.parquet
+        join_on: sor_id
     normalize_integer_columns:
       - c_patienttype
-      - k_region_id
+      - region
   laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
     columns:
