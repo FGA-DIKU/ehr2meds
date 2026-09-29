@@ -60,13 +60,6 @@ def add_row_idx(df: pd.DataFrame, start: int = 0) -> pd.DataFrame:
     return df
 
 
-def fill_missing_columns(df: pd.DataFrame, columns: dict[str, str]) -> pd.DataFrame:
-    """Fill missing target values from their configured fallback columns."""
-    for target, fallback in columns.items():
-        df[target] = df[target].fillna(df[fallback])
-    return df
-
-
 def check_columns(df: pd.DataFrame, columns_map: dict):
     """Check if all columns in columns_map are present in df."""
     missing_columns = set(columns_map.keys()) - set(df.columns)
