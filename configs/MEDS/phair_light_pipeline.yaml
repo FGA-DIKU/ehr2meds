@@ -7,8 +7,6 @@ description: |-
   export PREMEDS_INPUT_DIR=../preMEDS_w_meta                 # Path to the output dir of the pre-MEDS step
   export MEDS_OUTPUT_DIR=../MEDS_new_data                    # Path to where you want the dataset to live
 
-event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
-
 input_dir: ${oc.env:PREMEDS_INPUT_DIR}
 output_dir: ${oc.env:MEDS_OUTPUT_DIR}
 shards_map_fp: ${output_dir}/metadata/.shards.json
