@@ -130,70 +130,15 @@ tables:
       c_kontaars: 
       c_pattype:  
       c_indm: priority # NOTE: mapped to priority
-      c_spec: 
+      c_spec:
       c_sgh: 
       k_recnum: contact_id
     normalize_integer_columns:
       - c_kontaars
       - c_pattype
-      - c_spec
       - c_sgh
       - priority
     value_map:
-      c_spec:
-        0: "BLANDET MEDICIN OG KIRURGI"
-        1: "INTERN MEDICIN"
-        2: "GERIATRI"
-        3: "HEPATOLOGI"
-        4: "HÆMATOLOGI"
-        5: "INFEKTIONSMEDICIN"
-        6: "KARDIOLOGI"
-        7: "MEDICINSK ALLERGOLOGI"
-        8: "ENDOKRINOLOGI"
-        9: "MEDICINSK GASTROENTEROLOGI"
-        10: "LUNGESYGDOMME"
-        11: "NEFROLOGI"
-        12: "REUMATOLOGI"
-        14: "PALLIATIV MEDICIN"
-        15: "AKUTMEDICIN"
-        18: "DERMATO-VENEROLOGI"
-        20: "NEUROLOGI"
-        22: "KLINISK ONKOLOGI"
-        26: null # obsolete SHAK specialty
-        28: null # obsolete SHAK specialty
-        30: "KIRURGI"
-        31: "KARKIRURGI"
-        32: "KIRURGISK GASTROENTEROLOGI"
-        33: "PLASTIKKIRURGI"
-        34: "THORAXKIRURGI"
-        35: "UROLOGI"
-        38: "GYNÆKOLOGI OG OBSTETRIK"
-        39: "SEXOLOGI"
-        40: "NEUROKIRURGI"
-        42: "ORTOPÆDISK KIRURGI"
-        44: "OFTALMOLOGI"
-        46: "OTO-RHINO-LARYNGOLOGI"
-        48: "TAND-, MUND- OG KÆBEKIRURGI"
-        50: "PSYKIATRI"
-        52: "BØRNE- OG UNGDOMSPSYKIATRI"
-        60: "KLINISK BIOKEMI"
-        61: "KLINISK FYSIOLOGI OG NUKLEARMEDICIN"
-        62: "KLINISK IMMUNOLOGI"
-        63: "KLINISK MIKROBIOLOGI"
-        64: "KLINISK NEUROFYSIOLOGI"
-        65: "PATOLOGISK ANATOMI OG CYTOLOGI"
-        66: "RADIOLOGI"
-        67: "KLINISK FARMAKOLOGI"
-        68: "KLINISK GENETIK"
-        80: "PÆDIATRI"
-        84: "ANÆSTESIOLOGI"
-        86: "ARBEJDSMEDICIN"
-        87: "MILJØMEDICIN"
-        90: "ALMEN MEDICIN"
-        91: "SAMFUNDSMEDICIN"
-        92: "RETSMEDICIN"
-        98: "FYSIO- OG ERGOTERAPI"
-        99: null
       priority: # map emergency vs planned visits to LPR3
         1: "ATA1"
         2: "ATA3"
@@ -207,6 +152,13 @@ tables:
         8: "ALCC90"
         9: "ALCC90"
     mappings:
+    - source_column: c_spec
+      via_file: c_spec_to_specialty.parquet
+      how: left
+      join_on: c_spec
+      target_column: specialty
+      rename_to: c_spec
+      drop_source: true
     - source_column: c_sgh   
       via_file: shak_to_region.parquet
       how: left

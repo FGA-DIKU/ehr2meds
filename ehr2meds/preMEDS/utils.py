@@ -132,10 +132,17 @@ def apply_mapping(
     if len(output_columns) != len(set(output_columns)):
         raise ValueError("Mapped columns must have unique output names")
 
-    # Ensure that join key columns are of the same type
     if df[source_col].dtype != map_table[join_col].dtype:
-        df[source_col] = df[source_col].astype(str)
-        map_table[join_col] = map_table[join_col].astype(str)
+        source_as_numeric = pd.to_numeric(df[source_col], errors="coerce")
+        mapping_as_numeric = pd.to_numeric(map_table[join_col], errors="coerce")
+        mapping_keys_are_numeric = mapping_as_numeric.notna().equals(map_table[join_col].notna())
+        if mapping_keys_are_numeric:
+            # Match equivalent keys such as 5, 5.0, and "5.0".
+            df[source_col] = source_as_numeric
+            map_table[join_col] = mapping_as_numeric
+        else:
+            df[source_col] = df[source_col].astype(str)
+            map_table[join_col] = map_table[join_col].astype(str)
 
     # Perform the mapping
     df = pd.merge(
