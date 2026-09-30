@@ -77,27 +77,32 @@ def check_columns(df: pd.DataFrame, columns_map: dict):
 
 
 def apply_mapping(
-    df,
-    map_table,
-    join_col,
-    source_col,
-    target_col,
-    rename_to=None,
-    how="inner",
-    drop_source=False,
-):
-    """
-    Apply a mapping between two dataframes by joining them and optionally renaming/dropping columns.
+    df: pd.DataFrame,
+    map_table: pd.DataFrame,
+    join_col: str,
+    source_col: str,
+    target_col: str | None = None,
+    rename_to: str | None = None,
+    how: str = "inner",
+    drop_source: bool = False,
+    target_columns: dict[str, str | None] | None = None,
+) -> pd.DataFrame:
+    """Join columns from a mapping table onto a dataframe.
+
+    ``target_col`` and ``rename_to`` are the legacy single-column interface.
+    ``target_columns`` maps one or more source column names to their output names.
 
     Args:
         df (pd.DataFrame): The main dataframe to apply the mapping to
         map_table (pd.DataFrame): The mapping table containing the values to map to
         join_col (str): The column in map_table to join on
         source_col (str): The column in df to join on
-        target_col (str): The column from map_table to keep after joining
+        target_col (str, optional): One column from map_table to keep after joining.
         rename_to (str, optional): New name for the target column after joining. Defaults to None.
         how (str, optional): Type of join to perform ('inner', 'left', etc). Defaults to "inner".
         drop_source (bool, optional): Whether to drop the source column after joining. Defaults to False.
+        target_columns (dict, optional): Map-table columns and their output names. A
+            null output name preserves the source name.
 
     Returns:
         pd.DataFrame: The input dataframe with the mapping applied - joined with map_table
@@ -113,6 +118,20 @@ def apply_mapping(
                          rename_to='patient_id',
                          drop_source=True)
     """
+    if target_columns is not None and (target_col is not None or rename_to is not None):
+        raise ValueError("Use either target_columns or target_col/rename_to, not both")
+
+    if target_columns is None:
+        if target_col is None:
+            raise ValueError("target_col or target_columns is required")
+        target_columns = {target_col: rename_to}
+    elif not target_columns:
+        raise ValueError("target_columns must contain at least one column")
+
+    output_columns = [output or source for source, output in target_columns.items()]
+    if len(output_columns) != len(set(output_columns)):
+        raise ValueError("Mapped columns must have unique output names")
+
     # Ensure that join key columns are of the same type
     if df[source_col].dtype != map_table[join_col].dtype:
         df[source_col] = df[source_col].astype(str)
@@ -121,7 +140,7 @@ def apply_mapping(
     # Perform the mapping
     df = pd.merge(
         df,
-        map_table[[join_col, target_col]],  # Only select needed columns
+        map_table[[join_col, *target_columns]],
         left_on=source_col,
         right_on=join_col,
         how=how,
@@ -135,9 +154,9 @@ def apply_mapping(
     if drop_source:
         df = df.drop(columns=[source_col])
 
-    # Rename the target column if requested
-    if rename_to:
-        df = df.rename(columns={target_col: rename_to})
+    rename_columns = {source: output for source, output in target_columns.items() if output}
+    if rename_columns:
+        df = df.rename(columns=rename_columns)
 
     return df
 

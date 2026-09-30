@@ -67,18 +67,31 @@ class Processor:
                 df = mapping_function(df, map_table, mapping)
                 continue
 
-            map_table = Processor.get_mapping_table(data_handler, mapping)
+            target_columns = Processor.get_target_columns(mapping)
+            map_table = Processor.get_mapping_table(data_handler, mapping, tuple(target_columns))
             df = apply_mapping(
                 df,
                 map_table,
                 join_col=mapping["join_on"],
                 source_col=mapping["source_column"],
-                target_col=mapping["target_column"],
-                rename_to=mapping["rename_to"],
+                target_columns=target_columns,
                 how=mapping.get("how", "inner"),
                 drop_source=mapping.get("drop_source", False),
             )
         return df
+
+    @staticmethod
+    def get_target_columns(mapping: dict) -> dict[str, str | None]:
+        """Return source-to-output column names for an ordinary mapping."""
+        if "target_columns" in mapping:
+            if "target_column" in mapping or "rename_to" in mapping:
+                raise ValueError("Use either target_columns or target_column/rename_to, not both")
+            target_columns = mapping["target_columns"]
+            if not target_columns:
+                raise ValueError("target_columns must contain at least one column")
+            return target_columns
+
+        return {mapping["target_column"]: mapping.get("rename_to")}
 
     @staticmethod
     def get_mapping_table(

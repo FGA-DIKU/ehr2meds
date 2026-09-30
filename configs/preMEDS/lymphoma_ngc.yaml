@@ -36,24 +36,11 @@ tables:
         - source_column: contact_id
           via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
           join_on: dw_ek_rekvisition
-          target_column: patientid
-          rename_to: subject_id
-        - source_column: contact_id
-          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
-          join_on: dw_ek_rekvisition
-          target_column: datotid_modtagelse 
-          rename_to: timestamp
-          drop_source: false
-        - source_column: contact_id
-          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
-          join_on: dw_ek_rekvisition
-          target_column: dato_modtagelse 
-          rename_to: timestamp_fallback
-        - source_column: contact_id
-          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
-          join_on: dw_ek_rekvisition
-          target_column: rekvirerende_afd_sor_kode
-          rename_to: sor_id
+          target_columns:
+            patientid: subject_id
+            datotid_modtagelse: timestamp
+            dato_modtagelse: timestamp_fallback
+            rekvirerende_afd_sor_kode: sor_id
           drop_source: true
         - function: sor
           source_column: sor_id
@@ -73,28 +60,12 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet           
         join_on: dw_ek_kontakt
-        target_column: patientid
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: dato_start
-        rename_to: date_start
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: tidspunkt_start
-        rename_to: time_start
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: dato_slut
-        rename_to: date_end
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: tidspunkt_slut
-        rename_to: time_end
+        target_columns:
+          patientid: subject_id
+          dato_start: date_start
+          tidspunkt_start: time_start
+          dato_slut: date_end
+          tidspunkt_slut: time_end
         drop_source: true
 
   t_diag:
@@ -108,33 +79,13 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
-        target_column: patientid
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
-        join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
-        join_on: k_recnum
-        target_column: d_uddto
-        rename_to: date_end
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
-        join_on: k_recnum
-        target_column: v_udtime
-        rename_to: hour_end
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
-        join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
-        join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns:
+          patientid: subject_id
+          d_inddto: date_start
+          d_uddto: date_end
+          v_udtime: hour_end
+          v_indtime: hour_start
+          v_indminut: minute_start
         drop_source: true
 
   kontakter:
