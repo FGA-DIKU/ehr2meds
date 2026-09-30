@@ -62,7 +62,7 @@ class Processor:
                 df = mapping_function(df, map_table, mapping)
                 continue
 
-            target_columns = Processor.get_target_columns(mapping)
+            target_columns = mapping["target_columns"]
             map_table = Processor.get_mapping_table(data_handler, mapping, tuple(target_columns))
             df = apply_mapping(
                 df,
@@ -76,30 +76,16 @@ class Processor:
         return df
 
     @staticmethod
-    def get_target_columns(mapping: dict) -> dict[str, str | None]:
-        """Return source-to-output column names for an ordinary mapping."""
-        if "target_columns" in mapping:
-            if "target_column" in mapping or "rename_to" in mapping:
-                raise ValueError("Use either target_columns or target_column/rename_to, not both")
-            target_columns = mapping["target_columns"]
-            if not target_columns:
-                raise ValueError("target_columns must contain at least one column")
-            return target_columns
-
-        return {mapping["target_column"]: mapping.get("rename_to")}
-
-    @staticmethod
     def get_mapping_table(
         data_handler: DataHandler,
         mapping: dict,
-        target_columns: tuple[str, ...] | None = None,
+        target_columns: tuple[str, ...],
     ):
         """Load the columns required by a standard or specialized mapping."""
         filename = Path(mapping["via_file"])
         if not filename.exists():
             filename = Path(__file__).parents[2] / "resources" / filename
 
-        columns = target_columns or (mapping["target_column"],)
-        cols = dict.fromkeys((mapping["join_on"], *columns))
+        cols = dict.fromkeys((mapping["join_on"], *target_columns))
 
         return data_handler.load(str(filename), cols=cols)

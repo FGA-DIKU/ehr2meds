@@ -156,15 +156,15 @@ tables:
       via_file: c_spec_to_specialty.parquet
       how: left
       join_on: c_spec
-      target_column: specialty
-      rename_to: c_spec
+      target_columns:
+        specialty: c_spec
       drop_source: true
     - source_column: c_sgh   
       via_file: shak_to_region.parquet
       how: left
       join_on: kode
-      target_column: region
-      rename_to: c_sgh
+      target_columns:
+        region: c_sgh
       drop_source: true
 
   t_sksopr:
@@ -179,8 +179,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
-        target_column: patientid
-        rename_to: subject_id
+        target_columns:
+          patientid: subject_id
         drop_source: true
 
   t_sksube:
@@ -196,8 +196,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
-        target_column: patientid
-        rename_to: subject_id
+        target_columns:
+          patientid: subject_id
         drop_source: true
 
   procedurer_kirurgi:
@@ -212,8 +212,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: patientid
-        rename_to: subject_id
+        target_columns:
+          patientid: subject_id
         drop_source: true
       - function: sor
         source_column: sor_id
@@ -236,8 +236,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: patientid
-        rename_to: subject_id
+        target_columns:
+          patientid: subject_id
         drop_source: true
       - function: sor
         source_column: sor_id

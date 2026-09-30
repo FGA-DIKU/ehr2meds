@@ -43,18 +43,18 @@ tables:
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/kontakter_all.csv           
         join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
+        target_columns:
+          cpr: subject_id
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/kontakter_all.csv  
         join_on: dw_ek_kontakt
-        target_column: dato_slut      
-        rename_to: 
+        target_columns:
+          dato_slut: null
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/kontakter_all.csv  
         join_on: dw_ek_kontakt
-        target_column: tidspunkt_slut    
-        rename_to: 
+        target_columns:
+          tidspunkt_slut: null
         drop_source: true
 
   ekokur:
@@ -68,8 +68,8 @@ tables:
         how: left
         via_file: ${paths.SDS_tables_dir}/laegemiddeloplysninger.csv   
         join_on: vnr
-        target_column: pname
-        rename_to: code
+        target_columns:
+          pname: code
         drop_source: false
 
   kontakter:
@@ -115,8 +115,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/kontakter_all.csv
         join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
+        target_columns:
+          cpr: subject_id
         drop_source: true
 
   procedurer_kirurgi:
@@ -130,8 +130,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/kontakter_all.csv
         join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
+        target_columns:
+          cpr: subject_id
         drop_source: true
 
   t_adm:
@@ -228,8 +228,8 @@ tables:
         via_file: shak_to_region.parquet
         how: left
         join_on: kode
-        target_column: region
-        rename_to: C_SGH
+        target_columns:
+          region: C_SGH
         drop_source: true
 
   t_diag:
@@ -243,18 +243,18 @@ tables:
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/t_adm.csv
         join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
+        target_columns:
+          V_CPR: subject_id
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/t_adm.csv
         join_on: K_RECNUM
-        target_column: D_UDDTO
-        rename_to: 
+        target_columns:
+          D_UDDTO: null
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/t_adm.csv
         join_on: K_RECNUM
-        target_column: V_UDTIME
-        rename_to: 
+        target_columns:
+          V_UDTIME: null
         drop_source: true
     value_map: 
       D_UDDTO:
@@ -281,8 +281,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/t_adm.csv
         join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
+        target_columns:
+          V_CPR: subject_id
         drop_source: true
 
   t_sksube:
@@ -303,8 +303,8 @@ tables:
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/t_adm.csv
         join_on: K_RECNUM
-        target_column: V_CPR
-        rename_to: subject_id
+        target_columns:
+          V_CPR: subject_id
         drop_source: true
 
   SP_admissions:

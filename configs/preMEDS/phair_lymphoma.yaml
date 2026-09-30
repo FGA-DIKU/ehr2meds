@@ -39,13 +39,13 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_psyk_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_psyk_adm.parquet
       join_on: k_recnum
-      target_column: d_uddto
-      rename_to: date_end
+      target_columns:
+        d_uddto: date_end
       drop_source: true
   
   t_sksopr:
@@ -60,8 +60,8 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
       drop_source: true
     
   t_sksube:
@@ -77,8 +77,8 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
       drop_source: true
     
   t_psyk_sksopr:
@@ -93,8 +93,8 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_psyk_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
       drop_source: true
 
     
@@ -111,8 +111,8 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_psyk_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
       drop_source: true
     
   procedurer_andre:
@@ -127,8 +127,8 @@ tables:
     - source_column: contact_id
       via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
-      target_column: cpr
-      rename_to: subject_id
+      target_columns:
+        cpr: subject_id
       drop_source: true
   
   procedurer_kirurgi:
@@ -143,8 +143,8 @@ tables:
     - source_column: contact_id
       via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
-      target_column: cpr
-      rename_to: subject_id
+      target_columns:
+        cpr: subject_id
       drop_source: true
   
   epikur:
@@ -179,13 +179,13 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
-      target_column: d_uddto
-      rename_to: date_end
+      target_columns:
+        d_uddto: date_end
       drop_source: true
   
   diagnoser:
@@ -198,18 +198,18 @@ tables:
     - source_column: contact_id
       via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
-      target_column: cpr
-      rename_to: subject_id
+      target_columns:
+        cpr: subject_id
     - source_column: contact_id
       via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
-      target_column: dato_slut
-      rename_to: date_end
+      target_columns:
+        dato_slut: date_end
     - source_column: contact_id
       via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
-      target_column: tidspunkt_slut
-      rename_to: time_end
+      target_columns:
+        tidspunkt_slut: time_end
       drop_source: true
   
   central_patient:
@@ -222,8 +222,8 @@ tables:
     - source_column: subject_id
       via_file: ${paths.tables_dir}/schemamortality.parquet
       join_on: k_cpr
-      target_column: deathdate
-      rename_to: deathdate
+      target_columns:
+        deathdate: deathdate
       how: left
   
   kontakter:
@@ -337,8 +337,8 @@ tables:
       via_file: ${oc.env:PWD}/resources/shak_to_region.parquet
       how: left
       join_on: kode
-      target_column: region
-      rename_to: c_sgh
+      target_columns:
+        region: c_sgh
       drop_source: true
   
   t_psyk_adm:
@@ -430,8 +430,8 @@ tables:
       via_file: ${oc.env:PWD}/resources/shak_to_region.parquet
       how: left
       join_on: kode
-      target_column: region
-      rename_to: c_sgh
+      target_columns:
+        region: c_sgh
       drop_source: true
   
   # This registry will be part of data delivery 2 but not part of the current data delivery 1
@@ -454,18 +454,18 @@ tables:
   #  - source_column: contact_id
   #    via_file: ${paths.tables_dir}/fctrekvisition.parquet
   #    join_on: dw_ek_rekvisition
-  #    target_column: cpr
-  #    rename_to: subject_id
+  #    target_columns:
+  #      cpr: subject_id
     # We dont have this variable in phair data delivery 2 
     #- source_column: contact_id
     #  via_file: ${paths.tables_dir}/fctrekvisition.parquet
     #  join_on: dw_ek_rekvisition
-    #  target_column: datotid_modtagelse
-    #  rename_to: timestamp
+    #  target_columns:
+    #    datotid_modtagelse: null
     #  drop_source: false
   #  - source_column: contact_id
   #    via_file: ${paths.tables_dir}/fctrekvisition.parquet
   #    join_on: dw_ek_rekvisition
-  #    target_column: dato_modtagelse
-  #    rename_to: timestamp_fallback
+  #    target_columns:
+  #      dato_modtagelse: null
   #    drop_source: true

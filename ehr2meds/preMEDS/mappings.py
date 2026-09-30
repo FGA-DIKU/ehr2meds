@@ -7,26 +7,16 @@ def apply_mapping(
     map_table: pd.DataFrame,
     join_col: str,
     source_col: str,
-    target_col: str | None = None,
-    rename_to: str | None = None,
+    target_columns: dict[str, str | None],
     how: str = "inner",
     drop_source: bool = False,
-    target_columns: dict[str, str | None] | None = None,
 ) -> pd.DataFrame:
     """Join one or more columns from a mapping table onto a dataframe.
 
-    ``target_col`` and ``rename_to`` provide the original single-column API.
     ``target_columns`` maps one or more source column names to their output names.
     A null output name preserves the source column name.
     """
-    if target_columns is not None and (target_col is not None or rename_to is not None):
-        raise ValueError("Use either target_columns or target_col/rename_to, not both")
-
-    if target_columns is None:
-        if target_col is None:
-            raise ValueError("target_col or target_columns is required")
-        target_columns = {target_col: rename_to}
-    elif not target_columns:
+    if not target_columns:
         raise ValueError("target_columns must contain at least one column")
 
     output_columns = [output or source for source, output in target_columns.items()]

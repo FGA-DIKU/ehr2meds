@@ -54,8 +54,8 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
       drop_source: true
   t_sksube:
     filename: ${paths.tables_dir}/t_sksube.parquet
@@ -70,8 +70,8 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
       drop_source: true
   t_psyk_sksopr:
     filename: ${paths.tables_dir}/t_psyk_sksopr.parquet
@@ -85,8 +85,8 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_psyk_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
       drop_source: true
   t_psyk_sksube:
     filename: ${paths.tables_dir}/t_psyk_sksube.parquet
@@ -101,8 +101,8 @@ tables:
     - source_column: record_number
       via_file: ${paths.tables_dir}/t_psyk_adm.parquet
       join_on: k_recnum
-      target_column: v_cpr
-      rename_to: subject_id
+      target_columns:
+        v_cpr: subject_id
       drop_source: true
   procedurer_andre:
     filename: ${paths.tables_dir}/procedurer_andre.parquet
@@ -116,8 +116,8 @@ tables:
     - source_column: contact_id
       via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
-      target_column: cpr
-      rename_to: subject_id
+      target_columns:
+        cpr: subject_id
       drop_source: true
   procedurer_kirurgi:
     filename: ${paths.tables_dir}/procedurer_kirurgi.parquet
@@ -130,8 +130,8 @@ tables:
     - source_column: contact_id
       via_file: ${paths.tables_dir}/kontakter.parquet
       join_on: dw_ek_kontakt
-      target_column: cpr
-      rename_to: subject_id
+      target_columns:
+        cpr: subject_id
       drop_source: true
   epikur:
     filename: ${paths.tables_dir}/epikur.parquet
@@ -198,8 +198,8 @@ tables:
     - source_column: subject_id
       via_file: ${paths.tables_dir}/schemamortality.parquet
       join_on: k_cpr
-      target_column: deathdate
-      rename_to: deathdate
+      target_columns:
+        deathdate: deathdate
       how: left
   kontakter:
     filename: ${paths.tables_dir}/kontakter.parquet
@@ -266,15 +266,15 @@ tables:
       via_file: c_spec_to_specialty.parquet
       how: left
       join_on: c_spec
-      target_column: specialty
-      rename_to: c_spec
+      target_columns:
+        specialty: c_spec
       drop_source: true
     - source_column: c_sgh
       via_file: shak_to_region.parquet
       how: left
       join_on: kode
-      target_column: region
-      rename_to: c_sgh
+      target_columns:
+        region: c_sgh
       drop_source: true
   t_psyk_adm:
     filename: ${paths.tables_dir}/t_psyk_adm.parquet
@@ -315,15 +315,15 @@ tables:
       via_file: c_spec_to_specialty.parquet
       how: left
       join_on: c_spec
-      target_column: specialty
-      rename_to: c_spec
+      target_columns:
+        specialty: c_spec
       drop_source: true
     - source_column: c_sgh
       via_file: shak_to_region.parquet
       how: left
       join_on: kode
-      target_column: region
-      rename_to: c_sgh
+      target_columns:
+        region: c_sgh
       drop_source: true
   laboratorieproevesvar:
     filename: ${paths.tables_dir}/laboratorieproevesvar.parquet
