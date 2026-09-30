@@ -19,7 +19,7 @@ def apply_mapping(
     if not target_columns:
         raise ValueError("target_columns must contain at least one column")
 
-    output_columns = [output or source for source, output in target_columns.items()]
+    output_columns = [output if output is not None else source for source, output in target_columns.items()]
     if len(output_columns) != len(set(output_columns)):
         raise ValueError("Mapped columns must have unique output names")
 
@@ -48,7 +48,7 @@ def apply_mapping(
     if drop_source:
         df = df.drop(columns=[source_col])
 
-    rename_columns = {source: output for source, output in target_columns.items() if output}
+    rename_columns = {source: output for source, output in target_columns.items() if output is not None}
     return df.rename(columns=rename_columns) if rename_columns else df
 
 
