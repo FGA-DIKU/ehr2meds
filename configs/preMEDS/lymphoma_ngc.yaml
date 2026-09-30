@@ -38,13 +38,13 @@ tables:
           join_on: dw_ek_rekvisition
           target_columns:
             patientid: subject_id
-            datotid_modtagelse: timestamp
-            dato_modtagelse: timestamp_fallback
+            datotid_modtagelse: null
+            dato_modtagelse: null
             rekvirerende_afd_sor_kode: sor_id
           drop_source: true
         - function: sor
           source_column: sor_id
-          source_date_column: timestamp_fallback
+          source_date_column: dato_modtagelse
           via_file: sor2_contact_mapping.parquet
           join_on: sor_id
       normalize_integer_columns:

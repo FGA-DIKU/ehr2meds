@@ -14,7 +14,7 @@ central_patient:
 dimpatologiskdiagnose:
   pathology:
     code: f"PATHOLOGY//{$diagnose_snomed_kode}"
-    time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d')
+    time: coalesce($datotid_modtagelse as '%Y-%m-%dT%H:%M:%S', ($dato_modtagelse as '%Y-%m-%d')
       as datetime)
 diagnoser:
   diagnosis:

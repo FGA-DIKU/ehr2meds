@@ -344,6 +344,6 @@ tables:
       join_on: dw_ek_rekvisition
       target_columns:
         cpr: subject_id
-        datotid_modtagelse: timestamp
-        dato_modtagelse: timestamp_fallback
+        datotid_modtagelse: null
+        dato_modtagelse: null
       drop_source: true

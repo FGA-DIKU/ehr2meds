@@ -16,13 +16,13 @@ patients_info:
 dimpatologiskdiagnose:
   pathology:
     code: f"PATHOLOGY//{$diagnose_snomed_kode}"
-    time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d') as datetime)
+    time: coalesce($datotid_modtagelse as '%Y-%m-%dT%H:%M:%S', ($dato_modtagelse as '%Y-%m-%d') as datetime)
   clinical_specialty:
     code: f"CONTACT_SPECIALTY//{$specialty}"
-    time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d') as datetime)
+    time: coalesce($datotid_modtagelse as '%Y-%m-%dT%H:%M:%S', ($dato_modtagelse as '%Y-%m-%d') as datetime)
   region_code:
     code: f"REGION//{$region}"
-    time: coalesce($timestamp as '%Y-%m-%dT%H:%M:%S', ($timestamp_fallback as '%Y-%m-%d') as datetime)
+    time: coalesce($datotid_modtagelse as '%Y-%m-%dT%H:%M:%S', ($dato_modtagelse as '%Y-%m-%d') as datetime)
 
 # LPR3 diagnoses have no independent timestamp and are conservatively placed
 # at contact end, when the diagnosis is known to have been available.
