@@ -26,47 +26,23 @@ diagnoser:
 t_diag:
   diagnosis:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: >
-      coalesce(
-        set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'),
-        set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
-      )
+    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
   diagnosis_type:
     code: f"DIAGNOSIS_TYPE//{$c_diagtype}"
-    time: >
-      coalesce(
-        set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'),
-        set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
-      )
+    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
   additional_diagnosis:
     code: f"DIAGNOSIS//{$c_tildiag}"
-    time: >
-      coalesce(
-        set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'),
-        set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
-      )
+    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
 t_psyk_diag:
   diagnosis:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: >
-      coalesce(
-        set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'),
-        set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
-      )
+    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
   diagnosis_type:
     code: f"DIAGNOSIS_TYPE//{$c_diagtype}"
-    time: >
-      coalesce(
-        set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'),
-        set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
-      )
+    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
   additional_diagnosis:
     code: f"DIAGNOSIS//{$c_tildiag}"
-    time: >
-      coalesce(
-        set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'),
-        set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
-      )
+    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
 kontakter:
   diagnosis:
     code: f"DIAGNOSIS//{$aktionsdiagnose}"
@@ -89,11 +65,7 @@ kontakter:
 t_adm:
   diagnosis:
     code: f"DIAGNOSIS//{$c_adiag}"
-    time: >
-      coalesce(
-        set_time($date_end, f"{($v_udtime as int)}:00" as '%H:%M'),
-        set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
-      )
+    time: coalesce(set_time($date_end, f"{($v_udtime as int)}:00" as '%H:%M'), set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M'))
   contact_reason:
     code: f"CONTACT_REASON//{$c_kontaars}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
@@ -117,11 +89,7 @@ t_adm:
 t_psyk_adm:
   diagnosis:
     code: f"DIAGNOSIS//{$c_adiag}"
-    time: >
-      coalesce(
-        set_time($date_end, f"{($v_udtime as int)}:00" as '%H:%M'),
-        set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
-      )
+    time: coalesce(set_time($date_end, f"{($v_udtime as int)}:00" as '%H:%M'), set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M'))
   contact_reason:
     code: f"CONTACT_REASON//{$c_kontaars}"
     time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as
