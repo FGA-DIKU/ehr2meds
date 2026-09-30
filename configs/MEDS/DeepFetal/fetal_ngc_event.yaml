@@ -105,7 +105,7 @@ t_sksube:
     code: f"PROCEDURE//{$C_OPR}"
     time: set_time($D_ODTO as '%Y-%m-%d', f"{(($V_OTIME as float) as int)}:{(($V_OMINUT as float) as int)}" as '%H:%M')
   procedure_type:
-    code: f"PROCEDURE_TYPE//{coalesce($procedure_type, 'P')}"
+    code: f"PROCEDURE_TYPE//{$procedure_type}"
     time: set_time($D_ODTO as '%Y-%m-%d', f"{(($V_OTIME as float) as int)}:{(($V_OMINUT as float) as int)}" as '%H:%M')
 
 SP_admissions:
