@@ -153,7 +153,7 @@ t_sksube:
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
       as int)}" as '%H:%M')
   procedure_type:
-    code: f"PROCEDURE_TYPE//{coalesce($c_oprart, 'P')}"
+    code: f"PROCEDURE_TYPE//{$c_oprart}"
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
       as int)}" as '%H:%M')
 t_psyk_sksopr:
@@ -167,7 +167,7 @@ t_psyk_sksube:
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
       as int)}" as '%H:%M')
   procedure_type:
-    code: f"PROCEDURE_TYPE//{coalesce($c_oprart, 'P')}"
+    code: f"PROCEDURE_TYPE//{$c_oprart}"
     time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float)
       as int)}" as '%H:%M')
 procedurer_kirurgi:
