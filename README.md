@@ -40,7 +40,7 @@ We also allow for contact region and primary specialty to be derived directly fr
 codes from `resources/sor2_contact_mapping.parquet`. Note that the mapping 
 is temporal. The mapping selects the SOR record valid on the contact start date 
 and creates the columns `region`
-and `specialty` from the official postal region and prioritized specialty 1.
+and `specialty` from the official postal region and prioritized specialty.
 Unknown identifiers remain null. If official
 history rows overlap, the row with the latest start date wins.
 
@@ -53,7 +53,8 @@ sor_mapping:
   mapping_id_column: sor_id
 ```
 
-Do note that since this is a temporal mapping, this can change over time.
+Do note that since this is a temporal mapping, this can change over time. However, this is only
+needs to be done when the underlying data is updated. 
 To regenerate a compact version of the official SOR release used in the repo, run the following:
 
 ```bash
