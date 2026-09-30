@@ -1,9 +1,8 @@
 import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
+from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
 from ehr2meds.preMEDS.utils import (
     add_row_idx,
-    add_sor_attributes,
-    apply_mapping,
     apply_value_map,
     clean_data,
     map_pids_to_ints,
@@ -14,10 +13,6 @@ from ehr2meds.preMEDS.utils import (
 )
 from pathlib import Path
 from typing import Dict, List, Optional
-
-MAPPING_STRATEGIES = {
-    "sor": (add_sor_attributes, ("valid_from", "valid_to", "region", "primary_specialty")),
-}
 
 
 class Processor:
