@@ -29,107 +29,107 @@ dimpatologiskdiagnose:
 diagnoser:
   diagnosis:
     code: f"DIAGNOSIS//{$diagnosekode}"
-    time: coalesce(set_time($date_end, $time_end as '%H:%M:%S%.f'), set_time($date_start, $time_start as '%H:%M:%S%.f'))
+    time: coalesce($end_timestamp, $start_timestamp)
   diagnose_type:
     code: f"DIAGNOSIS_TYPE//{$diagnosetype}"
-    time: coalesce(set_time($date_end, $time_end as '%H:%M:%S%.f'), set_time($date_start, $time_start as '%H:%M:%S%.f'))
+    time: coalesce($end_timestamp, $start_timestamp)
 
 # LPR diagnoses likewise inherit the admission end timestamp.
 t_diag:
   diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
+    time: coalesce($end_timestamp, $start_timestamp)
   diag_type:
     code: f"DIAGNOSIS_TYPE//{$c_diagtype}"
-    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
+    time: coalesce($end_timestamp, $start_timestamp)
   tildiag:
     code: f"DIAGNOSIS//{$c_tildiag}"
-    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
+    time: coalesce($end_timestamp, $start_timestamp)
 # LPR3 action diagnosis is finalized at contact end. Attributes known when the
 # contact starts remain at the start timestamp.
 kontakter:
   diagnosis:
     code: f"DIAGNOSIS//{$aktionsdiagnose}"
-    time: coalesce(set_time($date_end, $time_end as '%H:%M:%S%.f'), set_time($date_start, $time_start as '%H:%M:%S%.f'))
+    time: coalesce($end_timestamp, $start_timestamp)
   contact_reason:
     code: f"CONTACT_REASON//{$kontaktaarsag}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
   priority:
     code: f"CONTACT_PRIORITY//{$prioritet}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
   contact_type:
     code: f"CONTACT_TYPE//{$kontakttype}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
   clinical_specialty:
     code: f"CONTACT_SPECIALTY//{$specialty}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
   region_code:
     code: f"REGION//{$region}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
 
 # LPR action diagnosis is placed at admission end; start-known attributes stay
 # at the admission start timestamp.
 t_adm:
   diagnosis:
     code: f"DIAGNOSIS//{$c_adiag}"
-    time: coalesce(set_time($date_end, f"{($v_udtime as int)}:00" as '%H:%M'), set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M'))
+    time: coalesce($end_timestamp, $start_timestamp)
   contact_reason:
     code: f"CONTACT_REASON//{$c_kontaars}"
-    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
+    time: $start_timestamp
   patient_type:
     code: f"PATIENT_TYPE//{$c_pattype}"
-    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
+    time: $start_timestamp
   priority:
     code: f"CONTACT_PRIORITY//{$priority}"
-    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
+    time: $start_timestamp
   clinical_specialty:
     code: f"CONTACT_SPECIALTY//{$c_spec}"
-    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
+    time: $start_timestamp
   region_code:
     code: f"REGION//{$c_sgh}"
-    time: set_time($date_start, f"{($v_indtime as int)}:{($v_indminut as int)}" as '%H:%M')
+    time: $start_timestamp
 
 # LPR surgical procedures 
 t_sksopr:
   procedure:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
+    time: $start_timestamp
 
 # LPR other procedures 
 t_sksube:
   procedure:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
+    time: $start_timestamp
   procedure_type:
     code: f"PROCEDURE_TYPE//{$c_oprart}"
-    time: set_time($date_start, f"{(($v_otime as float) as int)}:{(($v_ominut as float) as int)}" as '%H:%M')
+    time: $start_timestamp
 
 # LPR3 surgical procedures 
 procedurer_kirurgi:
   procedure:
     code: f"PROCEDURE//{$procedurekode}"
-    time: set_time($date_start, $time_start)
+    time: $start_timestamp
   clinical_specialty:
     code: f"CONTACT_SPECIALTY//{$specialty}"
-    time: set_time($date_start, $time_start)
+    time: $start_timestamp
   region_code:
     code: f"REGION//{$region}"
-    time: set_time($date_start, $time_start)
+    time: $start_timestamp
 
 # LPR3 other procedures
 procedurer_andre:
   procedure:
     code: f"PROCEDURE//{$procedurekode}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
   procedure_type:
     code: f"PROCEDURE_TYPE//{$proceduretype}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
   clinical_specialty:
     code: f"CONTACT_SPECIALTY//{$specialty}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
   region_code:
     code: f"REGION//{$region}"
-    time: set_time($date_start, $time_start as '%H:%M:%S%.f')
+    time: $start_timestamp
 
 # Medication from ekokur
 ekokur:
@@ -157,6 +157,6 @@ indberetningmedpris:
 laboratorieproevesvar:
   lab_test:
     code: f"LABTEST//{$analysiscode}"
-    time: set_time($samplingdate as '%Y-%m-%d', $samplingtime as '%H:%M:%S%.f') # sampling time had SQL precision, which is the reason for added x.f
+    time: $sample_timestamp
     numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $samplevalue) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
     text_value: "$samplevalue" # the value as string, for cases where the value is not numeric (e.g., "NEG", "POS", "<0.1", etc.). Duplicates where text and numeric are the same are dropped.
