@@ -42,14 +42,6 @@ tables:
         v_indtime: hour_start
         v_indminut: minute_start
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: hour_start
-        minute: minute_start
-      end_timestamp:
-        date: date_end
-        hour: hour_end
   t_sksopr:
     filename: ${paths.tables_dir}/t_sksopr.parquet
     columns:
@@ -65,11 +57,6 @@ tables:
       target_columns:
         v_cpr: subject_id
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_otime
-        minute: v_ominut
   t_sksube:
     filename: ${paths.tables_dir}/t_sksube.parquet
     columns:
@@ -86,11 +73,6 @@ tables:
       target_columns:
         v_cpr: subject_id
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_otime
-        minute: v_ominut
   t_psyk_sksopr:
     filename: ${paths.tables_dir}/t_psyk_sksopr.parquet
     columns:
@@ -106,11 +88,6 @@ tables:
       target_columns:
         v_cpr: subject_id
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_otime
-        minute: v_ominut
   t_psyk_sksube:
     filename: ${paths.tables_dir}/t_psyk_sksube.parquet
     columns:
@@ -127,11 +104,6 @@ tables:
       target_columns:
         v_cpr: subject_id
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_otime
-        minute: v_ominut
   procedurer_andre:
     filename: ${paths.tables_dir}/procedurer_andre.parquet
     columns:
@@ -147,10 +119,6 @@ tables:
       target_columns:
         cpr: subject_id
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        time: time_start
   procedurer_kirurgi:
     filename: ${paths.tables_dir}/procedurer_kirurgi.parquet
     columns:
@@ -165,10 +133,6 @@ tables:
       target_columns:
         cpr: subject_id
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        time: time_start
   epikur:
     filename: ${paths.tables_dir}/epikur.parquet
     columns:
@@ -207,14 +171,6 @@ tables:
         v_indtime: hour_start
         v_indminut: minute_start
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: hour_start
-        minute: minute_start
-      end_timestamp:
-        date: date_end
-        hour: hour_end
   diagnoser:
     filename: ${paths.tables_dir}/diagnoser.parquet
     columns:
@@ -232,13 +188,6 @@ tables:
         dato_slut: date_end
         tidspunkt_slut: time_end
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        time: time_start
-      end_timestamp:
-        date: date_end
-        time: time_end
   central_patient:
     filename: ${paths.tables_dir}/t_person.parquet
     columns:
@@ -278,13 +227,6 @@ tables:
       prioritet:
         1: ATA1
         2: ATA3
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        time: time_start
-      end_timestamp:
-        date: date_end
-        time: time_end
   t_adm:
     filename: ${paths.tables_dir}/t_adm.parquet
     columns:
@@ -334,14 +276,6 @@ tables:
       target_columns:
         region: c_sgh
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_indtime
-        minute: v_indminut
-      end_timestamp:
-        date: date_end
-        hour: v_udtime
   t_psyk_adm:
     filename: ${paths.tables_dir}/t_psyk_adm.parquet
     columns:
@@ -391,14 +325,6 @@ tables:
       target_columns:
         region: c_sgh
       drop_source: true
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_indtime
-        minute: v_indminut
-      end_timestamp:
-        date: date_end
-        hour: v_udtime
   laboratorieproevesvar:
     filename: ${paths.tables_dir}/laboratorieproevesvar.parquet
     columns:
@@ -407,10 +333,6 @@ tables:
       samplingtime: null
       analysiscode: null
       samplevalue: null
-    timestamp_columns:
-      sample_timestamp:
-        date: samplingdate
-        time: samplingtime
   dimpatologiskdiagnose:
     filename: ${paths.tables_dir}/dimpatologiskdiagnose.parquet
     columns:

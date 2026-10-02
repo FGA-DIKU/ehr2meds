@@ -34,10 +34,6 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    * Align timestamp inputs to one type
    * Connect visit ids etc with subject ids for the register data
 
-When a table stores a date and time in separate columns, `timestamp_columns`
-combines them before MEDS conversion. A valid date with no complete valid time
-is retained as a date-precision timestamp at `00:00:00`. A missing date remains null.
-
 ### Date-aware SOR enrichment
 
 We also allow for contact region and primary specialty to be derived directly from SOR 

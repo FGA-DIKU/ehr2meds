@@ -68,13 +68,6 @@ tables:
           tidspunkt_slut: time_end
         drop_source: true
 
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        time: time_start
-      end_timestamp:
-        date: date_end
-        time: time_end
   t_diag:
     filename: ${paths.tables_dir}/SDS_t_diag.parquet               
     columns:
@@ -95,14 +88,6 @@ tables:
           v_indminut: minute_start
         drop_source: true
 
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: hour_start
-        minute: minute_start
-      end_timestamp:
-        date: date_end
-        hour: hour_end
   kontakter:
     filename: ${paths.tables_dir}/SDS_kontakter.parquet               
     columns:
@@ -132,13 +117,6 @@ tables:
         1: "ATA1"
         2: "ATA3"
 
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        time: time_start
-      end_timestamp:
-        date: date_end
-        time: time_end
   t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
     columns:
@@ -189,14 +167,6 @@ tables:
         region: c_sgh
       drop_source: true
 
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_indtime
-        minute: v_indminut
-      end_timestamp:
-        date: date_end
-        hour: v_udtime
   t_sksopr:
     filename: ${paths.tables_dir}/SDS_t_sksopr.parquet   
     columns:
@@ -213,11 +183,6 @@ tables:
           patientid: subject_id
         drop_source: true
 
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_otime
-        minute: v_ominut
   t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
     columns:
@@ -235,11 +200,6 @@ tables:
           patientid: subject_id
         drop_source: true
 
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        hour: v_otime
-        minute: v_ominut
   procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
     columns:
@@ -263,10 +223,6 @@ tables:
     normalize_integer_columns:
       - region
 
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        time: time_start
   procedurer_andre:
     filename: ${paths.tables_dir}/SDS_procedurer_andre.parquet        
     columns:
@@ -291,10 +247,6 @@ tables:
     normalize_integer_columns:
       - region
 
-    timestamp_columns:
-      start_timestamp:
-        date: date_start
-        time: time_start
   ekokur:
     filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
     columns:
@@ -329,7 +281,3 @@ tables:
       samplingtime: 
       analysiscode:
       samplevalue:
-    timestamp_columns:
-      sample_timestamp:
-        date: samplingdate
-        time: samplingtime

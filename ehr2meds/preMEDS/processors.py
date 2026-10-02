@@ -1,7 +1,6 @@
 import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
-from ehr2meds.preMEDS.timestamps import add_timestamp_columns
 from ehr2meds.preMEDS.utils import (
     add_row_idx,
     apply_value_map,
@@ -28,18 +27,16 @@ class Processor:
         """Process the table.
         1. Add row index to input tables
         2. OPTIONAL: Apply table mappings
-        3. OPTIONAL: Construct timestamps from date and time columns
-        4. OPTIONAL: Normalize integer columns
-        5. OPTIONAL: Apply pid integer mapping
-        6. Normalize string columns
-        7. OPTIONAL: Apply value mappings
-        8. Remove timezone information from timezone-aware datetime columns
-        9. Clean data
-        10. Validate subject_id column
+        3. OPTIONAL: Normalize integer columns
+        4. OPTIONAL: Apply pid integer mapping
+        5. Normalize string columns
+        6. OPTIONAL: Apply value mappings
+        7. Remove timezone information from timezone-aware datetime columns
+        8. Clean data
+        9. Validate subject_id column
         """
         df = add_row_idx(df, start=row_index_start)
         df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
-        df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
