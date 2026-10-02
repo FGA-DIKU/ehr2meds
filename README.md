@@ -22,7 +22,11 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    example:
 
    ```bash
+<<<<<<< HEAD
    python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/fetal_SP_synth   
+=======
+   python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/DeepFetal/fetal_synth_full
+>>>>>>> main
    ```
 
    Example configuration files can be found in the [configs/preMEDS](./configs/preMEDS).
@@ -33,6 +37,37 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    * Fill missing values from different data sources
    * Align timestamp inputs to one type
    * Connect visit ids etc with subject ids for the register data
+
+When a table stores a date and time in separate columns, `timestamp_columns`
+combines them before MEDS conversion. A valid date with no complete valid time
+is retained as a date-precision timestamp at `00:00:00`. A missing date remains null.
+
+### Date-aware SOR enrichment
+
+We also allow for contact region and primary specialty to be derived directly from SOR 
+codes from `resources/sor2_contact_mapping.parquet`. Note that the mapping 
+is temporal. The mapping selects the SOR record valid on the contact start date 
+and creates the columns `region`
+and `specialty` from the official postal region and prioritized specialty.
+Unknown identifiers remain null. If official
+history rows overlap, the row with the latest start date wins.
+
+Each table specifies its source identifier and date columns explicitly:
+
+```yaml
+sor_mapping:
+  source_id_column: sor_id
+  source_date_column: date_start
+  mapping_id_column: sor_id
+```
+
+Do note that since this is a temporal mapping, this can change over time. However, this is only
+needs to be done when the underlying data is updated. 
+To regenerate a compact version of the official SOR release used in the repo, run the following:
+
+```bash
+python ehr2meds/build_sor2_resource.py /path/to/Sor_complete/SOREntity.csv
+```
 
 2. **PREMEDS → MEDS Conversion:**  
    Transforms preMEDS data into a finalized MEDS cohort format.  
@@ -49,11 +84,11 @@ EHR2MEDS is a tool that formats dumps of Electronic Health Records (EHR) and con
    Example:
 
    ```bash
-      source .env && bash ehr2meds/convert_premeds_to_meds.sh \
-      ${EHR2MEDS_DATA}/preMEDS/fetal_data/SP \
-      ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
-      ${EHR2MEDS_CONFIGS}/MEDS/default_event.yaml \
-      ${EHR2MEDS_DATA}/MEDS/SP
+   source .env && bash ehr2meds/convert_premeds_to_meds.sh \
+   ${EHR2MEDS_DATA}/preMEDS/DeepFetal/fetal_synth_full \
+   ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
+   ${EHR2MEDS_CONFIGS}/MEDS/fetal_ngc_event.yaml \
+   ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full
    ```
 
    Example configuration files can be found in the [configs/MEDS](./configs/MEDS).
@@ -65,17 +100,78 @@ The package includes the following stages to be used in MEDS pipeline configurat
 | --- | --- |
 | `augment_event_config` | Adds shared columns, such as `row_idx`, to every event definition so they do not need to be repeated throughout the event configuration. |
 | `aggregate_numeric_metadata` | Fits per-code numeric normalization bounds and adaptive quantile bins. It supports training-only fitting, an optional date cutoff (for OOT settings), hard plausibility limits (filtering values greater or lower than biological limits), and writes reusable numeric metadata. |
-| `annotate_numeric_values` | Applies the fitted metadata (from `aggregate_numeric_metadata`) to create new columns based on the numeric values. It adds normalized values, bin indices, and binned representatives. External numeric metadata can override locally fitted metadata. |
-| `join_numeric_bins` | Optionally creates the "joined representation" of numeric values, such as `LAB_CODE//bin_3`, from the numeric bin index. |
+| `annotate_numeric_values` | Applies the fitted metadata (from `aggregate_numeric_metadata`) to create new columns based on the numeric values. It adds normalized values, bin indices, and binned representatives. If no local fit exists, falls back to external numeric metadata instead. |
+| `fit_adaptive_code_mapping` | Fits a code mapping from training-event counts by climbing character-position levels (ATC and SKS diagnosis/operation/procedure) only as far as needed to clear a minimum count. |
+| `apply_adaptive_code_mapping` | Applies the frozen local mapping (or, if none was fitted, an external one) to every data split while retaining the MEDS event namespace. |
+| `finalize_adaptive_code_metadata` | Rewrites and collapses `codes.parquet` to match the adaptively transformed data vocabulary. |
+| `join_numeric_bins` | Optionally creates the joined representation of numeric values, such as `LABTEST//NPU01566//BIN_3`, from the numeric bin index. |
+| `join_lab_text_values` | Normalizes non-numeric laboratory results, collapses configured synonyms, and joins each remaining text value onto its laboratory code. |
 | `bin_numeric_values_fast` | A faster, memory-efficient replacement for the standard MEDS-Transforms discrete binning stage. It rewrites codes using bin indices or interval labels. |
 
-For combined numeric encoding, use `aggregate_numeric_metadata` followed by
-`annotate_numeric_values`. Add `join_numeric_bins` afterwards only when the final
-model input should contain joined lab-and-bin codes.
+### Adaptive code mapping
 
-Shared numeric column names and stage defaults are defined in
-`configs/MEDS/default_numeric_values.yaml`; pipeline configurations only
-need to specify dataset- or run-specific overrides. Any setting can be overridden
-under the relevant pipeline stage. The `numeric_value_column_groups` lists control
-which transform, optional bound, and derived columns are used; column names and
-derived outputs are configured through `numeric_value_columns`.
+Adaptive mapping uses raw training-event counts, not distinct-subject counts:
+
+1. `fit_adaptive_code_mapping` creates a frozen Parquet mapping and
+   `*.summary.json` audit from all training shards.
+2. `apply_adaptive_code_mapping` maps every data shard.
+3. `finalize_adaptive_code_metadata` reconciles `codes.parquet` with the mapped
+   vocabulary.
+
+Run the standard `extract_code_metadata` stage before these stages. Run later
+per-code metadata stages after `finalize_adaptive_code_metadata`.
+
+#### Hierarchy configuration
+
+Set `minimum_count` and character-position widths under `hierarchies`. ATC and
+SKS defaults are in
+[`default_adaptive_code_mapping.yaml`](./configs/MEDS/default_adaptive_code_mapping.yaml).
+
+Override a built-in namespace or add a new one as needed:
+
+```yaml
+hierarchies:
+  MY_NAMESPACE:
+    levels: [2, 4, 6]
+```
+
+SKS defaults exclude level 1 because an ICD-10/SKS leading letter can span
+clinical chapters; for example, `D` covers parts of both neoplasm and blood
+disorder chapters. ATC keeps level 1 because it represents the 14 official
+anatomical groups. PATHOLOGY uses payload lengths 5, 4, and 3: this preserves the Danish patoSnoMed axis, but allows rare six-character codes to share progressively broader prefix groups. These prefixes are model-oriented adaptive groups and are not necessarily meaningful patoSnoMed concepts.
+Any default canbe overridden.
+
+### Numeric-value encoding
+
+Use `aggregate_numeric_metadata` followed by `annotate_numeric_values`. Add
+`join_numeric_bins` only for joined lab-and-bin model inputs.
+
+`join_lab_text_values` is independent of numeric binning. For laboratory events
+without a `numeric_value`, it normalizes `text_value`, collapses configured
+synonyms, and produces codes such as `LABTEST//NPU12345//NEGATIVE`. The raw
+`text_value` column is retained.
+
+Defaults are defined in
+[`default_numeric_values.yaml`](./configs/MEDS/default_numeric_values.yaml).
+
+- `numeric_value_columns` names the source and derived columns.
+- `numeric_value_column_groups` selects transforms, bounds, and derived columns.
+
+### Using externally fitted metadata
+
+To use externally fitted artifacts, omit `fit_adaptive_code_mapping` and/or
+`aggregate_numeric_metadata`, then configure their consumers:
+
+```yaml
+- extract_code_metadata
+- apply_adaptive_code_mapping:
+    mapping_filepath: ${oc.env:EXTERNAL_MAPPING_FP}
+- finalize_adaptive_code_metadata:
+    mapping_filepath: ${oc.env:EXTERNAL_MAPPING_FP}
+- annotate_numeric_values:
+    numeric_metadata_filepath: ${oc.env:EXTERNAL_NUMERIC_METADATA_FP}
+```
+
+External files are fallbacks; a local fit takes precedence if its fit stage is
+present. Code mappings may be JSON or Parquet and must contain `code` and
+`adaptive/mapped_code`.

@@ -8,48 +8,26 @@ paths:
 
 N: 1000 
 linked_data:
-  admissions:
+  ekokur_all:
     N: ${N}
     columns:
-      Flyt_ind:
+      vnr:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 10
+      eksd:
         type: rand_date
-      Flyt_ud:
-        type: greater_than_date
-        match:
-          min_date: Flyt_ind
-      ADT_haendelse:
+      pname:
         type: choice
         args:
-          options: ["Indlæggelse", "Flyt_ind", "Tilbage fra orlov"]
-      Afsnit:
-        type: choice
-        args:
-          options: ["HGH, AKUTKLINIK GE-GAMMEL", "NOH COAC0821, ØJENAFD. AMBULATORIEAFSNIT", 
-                    "NEURO", "CARDIO", "NEFRO"]
+          options: ["Dulcolax", "Telefonreceptgebyr"]
     linked_columns:
-      CPR:
+      cpr:
         type: choice
         file: Population
         linked_on: MOR_CPR
-  
-  diagnosis:
-    N: ${N}
-    columns:
-      Diagnosekode:
-        type: medical_code
-        args:
-          prefix: "D"
-      Redigeringsdato:
-        type: rand_datetime 
-    linked_columns:
-      CPR:
-        type: choice
-        file: Population
-        linked_on: MOR_CPR
-    save_info:
-      args:
-        sep: "\t"
-        encoding: "iso8859-1"
+      
 
   ekokur_all:
     N: ${N}
@@ -135,54 +113,57 @@ linked_data:
         file: Population
         linked_on: MOR_CPR
 
-  labtest:
+
+  graviditetskomplikation:
     N: ${N}
     columns:
-      BestOrd:
-        type: mix_function
-        args:
-          functions:
-            - type: rand_string
-              args:
-                min_length: 20
-                max_length: 100
-            - type: choice
-              args:
-                options: ["EKG", "KBT", "Blodprøve, UG:2", "Andet", "BT", "COVID", "test;længde", 
-                          "Trombocytter", "ALBU, H", "KALIUM;P", "LEUKOCYTTER;B", "ALBUMIN;P", "ELEKTROKARDIOGRAFI [EKG12];PT"]
-          probabilities: [0.3, 0.7]
-      Bestillingsdato:
-        type: rand_datetimeseconds
-      Enhed:
+      SKSKODE:
         type: choice
         args:
-          options: ["fl", "mmol/l", "10^9/l", "fmol", "U/L"]
-      Resultatværdi:
-        type: mix_function
-        args:
-          functions:
-            - type: rand_float
-              args:
-                min_val: 0.001
-                max_val: 100
-            - type: rand_int
-              args:
-                min_val: 0
-                max_val: 300
-            - type: choice
-              args:
-                options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
-          probabilities: [0.4, 0.4, 0.2]
+          options: ["DZ358Q", "DO144", "DO141", "DO140", "DO139"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
     linked_columns:
-      CPR:
+      FK_MFR:
         type: choice
-        file: Population
-        linked_on: MOR_CPR
-    save_info:
-      file_type: asc
-      args:
-        sep: "|"
-        encoding: "latin1"
+        file: mfr
+        linked_on: PK_MFR
+
+  igangsaettelse:
+    N: ${N}
+    columns:
+      SKSKODE:
+        type: choice
+        args:
+          options: ["KMAC", "BKHD", "OTHER"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+    linked_columns:
+      FK_MFR:
+        type: choice
+        file: mfr
+        linked_on: PK_MFR
+
+  kejsersnit:
+    N: ${N}
+    columns:
+      SKSKODE:
+        type: choice
+        args:
+          options: ["KMCA10A", "KMCARANDOM", "KMCAOTHER", "STUFF"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+    linked_columns:
+      FK_MFR:
+        type: choice
+        file: mfr
+        linked_on: PK_MFR
 
   laegemiddeloplysninger:
     N: ${N}
@@ -209,6 +190,10 @@ linked_data:
         type: choice
         file: Population
         linked_on: MOR_CPR
+    save_info:
+      args:
+        sep: "\t"
+        encoding: "iso8859-1"
 
   Mor - Alkohol: 
     N: ${N}
@@ -236,7 +221,15 @@ linked_data:
       Diagnosekode:
         type: choice
         args:
-          options: ["DS931H","DO837", "DO847"]
+          options: ["DS931H","DO837", "DO847","DO420", "DO422", "DO424", "DO601"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Diagnose:
+        type: choice
+        args:
+          options: ["Normal graviditet, førstegangsfødende (DZ340)", "(kun LPR2) Eet levendefødt barn (DZ370)"]
         corruptions:
           - type: insert_missing
             args:
@@ -265,7 +258,7 @@ linked_data:
       ProcedureCode:
         type: choice
         args:
-          options: ["KMCA00", "KMCA96", "KMCA10C", "KMCA30", "BRFAO", "BABZ00", "KMAC00", "KMAC96A", "BKHD2", "BKHD20"]
+          options: ["KMCA00", "KMCA96", "KMCA10C", "KMCA30", "BRFAO", "BABZ00", "KMAC00", "KMAC96A", "BKHD2", "BKHD20", "KMCA10D", "KMCA10E"]
         corruptions:
           - type: insert_missing
             args:
@@ -280,9 +273,43 @@ linked_data:
         file: Population
         linked_on: MOR_CPR
 
+
+  Mor - CPMI - Vital parametre:
+    N: ${N}
+    columns:
+      Registreringstidspunkt:
+        type: rand_datetime
+        args:
+          start: 2010
+      Værdi:
+        type: choice
+        args:
+          options: ["101/67", "120/80", "110/70", "130/85"]
+      Vital_parametre:
+        type: choice
+        args:
+          options: ["BT", "NIBP", "BMI"]
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
   Mor - Fødselsresume - DEL 1:
     N: ${N}
     columns:
+      "Foetus mortuus ":
+        type: choice
+        args:
+          options: ["Levende", "Død"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.2
+      Køn:
+        type: choice
+        args:
+          options: ["Mand", "Kvinde"]
       Måde:
         type: choice
         args:
@@ -334,6 +361,11 @@ linked_data:
           - type: insert_missing
             args:
               probability: 0.15
+      Præterm:
+        type: rand_int
+        args:
+          min_val: 0
+          max_val: 1
     linked_columns:
       MOR_CPR:
         type: choice
@@ -463,109 +495,10 @@ linked_data:
           min_length: 10
           max_length: 3000
     linked_columns:
-      CPR:
+      MOR_CPR:
         type: choice
         file: Population
         linked_on: MOR_CPR
-
-  procedure:
-    N: ${N}
-    columns:
-      Procedurekode:
-        type: medical_code
-        args:
-          prefix: "P"
-      Redigeringsdato:
-        type: rand_datetime
-    linked_columns:
-      CPR:
-        type: choice
-        file: Population
-        linked_on: MOR_CPR
-
-  t_adm:
-    N: ${N}
-    columns:
-      C_ADIAG:
-        type: medical_code
-        args:
-          prefix: "D"
-      C_KONTAARS:
-        type: rand_int
-        args:
-          min_val: 2010
-          max_val: 2023
-      C_PATTYPE:
-        type: rand_int
-        args:
-          min_val: 1
-          max_val: 3
-      C_INDM:
-        type: choice
-        args:
-          options: ["1", "2", "3"]
-      C_SPEC:
-        type: rand_int
-        args:
-          min_val: 1
-          max_val: 100
-      C_SGH:
-        type: rand_int
-        args:
-          min_val: 1
-          max_val: 10
-      D_INDDTO:
-        type: rand_date
-        args:
-          start: 2010
-      D_UDDTO:
-        type: greater_than_date
-        match:
-          min_date: D_INDDTO
-        corruptions:
-          - type: insert_value
-            args:
-              new_value: "."
-              probability: 0.15
-      V_ALDER:
-        type: rand_int
-        args:
-          min_val: 18
-          max_val: 60
-      V_INDTIME:
-        type: rand_int
-        args:
-          min_val: 0
-          max_val: 23
-        corruptions:
-          - type: insert_value
-            args:
-              new_value: "."
-              probability: 0.15
-      V_UDTIME:
-        type: rand_int
-        args:
-          min_val: 0
-          max_val: 23
-        corruptions:
-          - type: insert_value
-            args:
-              new_value: "."
-              probability: 0.15
-      V_INDMINUT:
-        type: rand_int
-        args:
-          min_val: 0
-          max_val: 59
-    linked_columns:
-      K_RECNUM:
-        type: choice
-        file: Population
-        linked_on: MOR_Fødsel_ID # Not correct, just to take some ID
-      V_CPR:
-        type: choice
-        file: Population
-        linked_on: MOR_CPR 
 
   t_afl:
     N: ${N}
@@ -573,7 +506,7 @@ linked_data:
       C_TILOPR:
         type: choice
         args:
-          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KLDD20", "KMAB03"]
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KLDD20", "KMAB03","KMCA10D”, “KMCA10E"]
         corruptions:
           - type: insert_missing
             args:
@@ -594,7 +527,7 @@ linked_data:
       C_DIAG:
         type: choice
         args:
-          options: ["DZ016", "DZ090","DO343C"]
+          options: ["DZ016", "DZ090","DO343C", "DO420", "DO422", "DO424","DO601"]
         corruptions:
           - type: insert_missing
             args:
@@ -627,7 +560,15 @@ linked_data:
       C_OPR:
         type: choice
         args:
-          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KCKD05B"]
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KCKD05B", "KMCA10A", "KMCARANDOM", "KMCAOTHER", "STUFF"]
+        corruptions:
+          - type: insert_nan
+            args:
+              probability: 0.05
+      C_TILOPR:
+        type: choice
+        args:
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KCKD05B", "KMCA10A", "KMCARANDOM", "KMCAOTHER", "STUFF"]
         corruptions:
           - type: insert_nan
             args:

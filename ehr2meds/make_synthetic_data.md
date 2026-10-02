@@ -17,10 +17,17 @@ Run all commands below from that same directory unless noted.
 Uses `ehr2meds/generate_synthetic_raw_data.py`. YAML configs live under `configs/synthetic_generation/` (pass **only the filename** with `--config`).
 
 ```bash
+<<<<<<< HEAD
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1 N=100 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2 N=100 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3 N=100 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/dst &&
+=======
+python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1 N=1000 &&
+python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2 N=1000 &&
+python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3 N=1000 &&
+python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/dst_parquet &&
+>>>>>>> main
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/skin_cancer
 
 ```
@@ -60,7 +67,7 @@ bash ehr2meds/convert_premeds_to_meds.sh \
 source .env && rm -rf ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full && bash ehr2meds/convert_premeds_to_meds.sh \
   ${EHR2MEDS_DATA}/preMEDS/DeepFetal/fetal_synth_full \
   ${EHR2MEDS_CONFIGS}/MEDS/default_pipeline.yaml \
-  ${EHR2MEDS_CONFIGS}/MEDS/fetal_ngc_event.yaml \
+  ${EHR2MEDS_CONFIGS}/MEDS/DeepFetal/fetal_ngc_event.yaml \
   ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full
 ```
 

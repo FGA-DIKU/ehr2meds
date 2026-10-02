@@ -25,9 +25,9 @@ tables:
       patientid: subject_id
       Fødselsdato: birthdate
       Dødsdato: deathdate
-      Køn: gender
+      Køn: sex
   
-  SDS_dimpatologiskdiagnose:
+  dimpatologiskdiagnose:
       filename: ${paths.tables_dir}/SDS_dimpatologiskdiagnose.parquet
       columns:
         dw_ek_rekvisition: contact_id
@@ -36,22 +36,21 @@ tables:
         - source_column: contact_id
           via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
           join_on: dw_ek_rekvisition
-          target_column: patientid
-          rename_to: subject_id
-        - source_column: contact_id
-          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
-          join_on: dw_ek_rekvisition
-          target_column: datotid_modtagelse 
-          rename_to: timestamp
-          drop_source: false
-        - source_column: contact_id
-          via_file: ${paths.tables_dir}/SDS_fctrekvisition.parquet
-          join_on: dw_ek_rekvisition
-          target_column: dato_modtagelse 
-          rename_to: timestamp_fallback
+          target_columns:
+            patientid: subject_id
+            datotid_modtagelse: null
+            dato_modtagelse: null
+            rekvirerende_afd_sor_kode: sor_id
           drop_source: true
+        - function: sor
+          source_column: sor_id
+          source_date_column: dato_modtagelse
+          via_file: sor2_contact_mapping.parquet
+          join_on: sor_id
+      normalize_integer_columns:
+        - region
 
-  SDS_diagnoser:
+  diagnoser:
     filename: ${paths.tables_dir}/SDS_diagnoser.parquet               
     columns:
       dw_ek_kontakt: contact_id
@@ -61,21 +60,22 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet           
         join_on: dw_ek_kontakt
-        target_column: patientid
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: dato_slut
-        rename_to: date_end
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: tidspunkt_slut
-        rename_to: time_end
+        target_columns:
+          patientid: subject_id
+          dato_start: date_start
+          tidspunkt_start: time_start
+          dato_slut: date_end
+          tidspunkt_slut: time_end
         drop_source: true
 
-  SDS_t_diag:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+      end_timestamp:
+        date: date_end
+        time: time_end
+  t_diag:
     filename: ${paths.tables_dir}/SDS_t_diag.parquet               
     columns:
       v_recnum: contact_id
@@ -86,16 +86,24 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
-        target_column: patientid
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/SDS_t_adm.parquet
-        join_on: k_recnum
-        target_column: d_uddto
-        rename_to: date_end
+        target_columns:
+          patientid: subject_id
+          d_inddto: date_start
+          d_uddto: date_end
+          v_udtime: hour_end
+          v_indtime: hour_start
+          v_indminut: minute_start
         drop_source: true
 
-  SDS_kontakter:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
+      end_timestamp:
+        date: date_end
+        hour: hour_end
+  kontakter:
     filename: ${paths.tables_dir}/SDS_kontakter.parquet               
     columns:
       patientid: subject_id
@@ -107,11 +115,31 @@ tables:
       kontaktaarsag: 
       prioritet: 
       kontakttype: 
-      hovedspeciale_ans: 
-      region_ans: 
+      sorenhed_ans: sor_id
       dw_ek_kontakt: contact_id
+    mappings:
+      - function: sor
+        source_column: sor_id
+        source_date_column: date_start
+        via_file: sor2_contact_mapping.parquet
+        join_on: sor_id
+    normalize_integer_columns:
+      - region
+    value_map:
+      # RC_PRIO has the same cross-generation issue for the two documented
+      # legacy urgency values. Value 3 is not guessed or collapsed.
+      prioritet:
+        1: "ATA1"
+        2: "ATA3"
 
-  SDS_t_adm:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+      end_timestamp:
+        date: date_end
+        time: time_end
+  t_adm:
     filename: ${paths.tables_dir}/SDS_t_adm.parquet               
     columns:
       patientid: subject_id
@@ -119,78 +147,57 @@ tables:
       d_uddto: date_end
       v_indtime: 
       v_indminut: 
+      v_udtime:
       c_adiag:
       c_kontaars: 
       c_pattype:  
       c_indm: priority # NOTE: mapped to priority
-      c_spec: 
+      c_spec:
       c_sgh: 
       k_recnum: contact_id
+    normalize_integer_columns:
+      - c_kontaars
+      - c_pattype
+      - c_sgh
+      - priority
     value_map:
-      c_spec:
-        "01": "intern medicin"
-        "02": "geriatri"
-        "04": "hæmatologi"
-        "05": "infektionsmedicin"
-        "06": "kardiologi"
-        "07": "medicinsk allergologi"
-        "08": "endokrinologi"
-        "09": "medicinsk gastroenterologi"
-        "10": "lungesygdomme"
-        "11": "nefrologi"
-        "12": "reumatologi"
-        "15": "akutmedicin"
-        "18": "dermato-venerologi"
-        "20": "neurologi"
-        "22": "klinisk onkologi"
-        "30": "kirurgi"
-        "31": "karkirurgi"
-        "32": "kirurgisk gastroenterologi"
-        "33": "plastikkirurgi"
-        "34": "thoraxkirurgi"
-        "35": "urologi"
-        "38": "gynækologi og obstetrik"
-        "40": "neurokirurgi"
-        "42": "ortopædisk kirurgi"
-        "44": "oftalmologi"
-        "46": "oto-rhino-laryngologi"
-        "48": "tand-, mund- og kæbekirurgi"
-        "50": "psykiatri"
-        "52": "børne- og ungdomspsykiatri"
-        "60": "klinisk biokemi"
-        "61": "klinisk fysiologi og nuklearmedicin"
-        "62": "klinisk immunologi"
-        "63": "klinisk mikrobiologi"
-        "64": "klinisk neurofysiologi"
-        "66": "radiologi"
-        "67": "klinisk farmakologi"
-        "68": "klinisk genetik"
-        "80": "pædiatri"
-        "84": "anæstesiologi"
-        "86": "arbejdsmedicin"
-        "90": "almen medicin"
-        "91": "samfundsmedicin"
       priority: # map emergency vs planned visits to LPR3
-        "1": "ATA1"
-        "2": "ATA3"
+        1: "ATA1"
+        2: "ATA3"
       c_kontaars:
-        "1": "ALCC01"
-        "2": "ALCC02"
-        "3": "ALCC03"
-        "4": "ALCC04"
-        "6": "ALCC90"
-        "7": "ALCC90"
-        "8": "ALCC90"
-        "9": "ALCC90"
+        1: "ALCC01"
+        2: "ALCC02"
+        3: "ALCC03"
+        4: "ALCC04"
+        6: "ALCC90"
+        7: "ALCC90"
+        8: "ALCC90"
+        9: "ALCC90"
     mappings:
+    - source_column: c_spec
+      via_file: c_spec_to_specialty.parquet
+      how: left
+      join_on: c_spec
+      target_columns:
+        specialty: c_spec
+      drop_source: true
     - source_column: c_sgh   
-      via_file: ${paths.tables_dir}/shak_to_region.parquet # using resources
+      via_file: shak_to_region.parquet
+      how: left
       join_on: kode
-      target_column: region
-      rename_to: c_sgh
+      target_columns:
+        region: c_sgh
       drop_source: true
 
-  SDS_t_sksopr:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_indtime
+        minute: v_indminut
+      end_timestamp:
+        date: date_end
+        hour: v_udtime
+  t_sksopr:
     filename: ${paths.tables_dir}/SDS_t_sksopr.parquet   
     columns:
       v_recnum: contact_id
@@ -202,11 +209,16 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
-        target_column: patientid
-        rename_to: subject_id
+        target_columns:
+          patientid: subject_id
         drop_source: true
 
-  SDS_t_sksube:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_otime
+        minute: v_ominut
+  t_sksube:
     filename: ${paths.tables_dir}/SDS_t_sksube.parquet   
     columns:
       v_recnum: contact_id
@@ -219,26 +231,43 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_t_adm.parquet
         join_on: k_recnum
-        target_column: patientid
-        rename_to: subject_id
+        target_columns:
+          patientid: subject_id
         drop_source: true
 
-  SDS_procedurer_kirurgi:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_otime
+        minute: v_ominut
+  procedurer_kirurgi:
     filename: ${paths.tables_dir}/SDS_procedurer_kirurgi.parquet      
     columns:
       dw_ek_kontakt: contact_id
       dato_start: date_start
       tidspunkt_start: time_start
       procedurekode:
+      sorenhed_pro: sor_id
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: patientid
-        rename_to: subject_id
+        target_columns:
+          patientid: subject_id
         drop_source: true
+      - function: sor
+        source_column: sor_id
+        source_date_column: date_start
+        via_file: sor2_contact_mapping.parquet
+        join_on: sor_id
+    normalize_integer_columns:
+      - region
 
-  SDS_procedurer_andre:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+  procedurer_andre:
     filename: ${paths.tables_dir}/SDS_procedurer_andre.parquet        
     columns:
       dw_ek_kontakt: contact_id
@@ -246,32 +275,53 @@ tables:
       tidspunkt_start: time_start
       procedurekode:
       proceduretype:
+      sorenhed_pro: sor_id
     mappings:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/SDS_kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: patientid
-        rename_to: subject_id
+        target_columns:
+          patientid: subject_id
         drop_source: true
+      - function: sor
+        source_column: sor_id
+        source_date_column: date_start
+        via_file: sor2_contact_mapping.parquet
+        join_on: sor_id
+    normalize_integer_columns:
+      - region
 
-  SDS_ekokur:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+  ekokur:
     filename: ${paths.tables_dir}/SDS_ekokur.parquet                  
     columns:
       patientid: subject_id
       eksd: timestamp
       atc:
 
-  SDS_indberetningmedpris:
+  indberetningmedpris:
     filename: ${paths.tables_dir}/SDS_indberetningmedpris.parquet
     columns:
       patientid: subject_id
       d_ord_start: timestamp
       c_atc:
       c_patienttype:  #NOTE; this overlaps with patienttype in LPR (contacts and t_adm)
+      c_sor: sor_id
       v_adm_dosis: dosage # TODO: Currently not in use
       v_styrke_num: strength # TODO: Currently not in use
-
-  SDS_laboratorieproevesvar:
+    mappings:
+      - function: sor
+        source_column: sor_id
+        source_date_column: timestamp
+        via_file: sor2_contact_mapping.parquet
+        join_on: sor_id
+    normalize_integer_columns:
+      - c_patienttype
+      - region
+  laboratorieproevesvar:
     filename: ${paths.tables_dir}/SDS_laboratorieproevesvar.parquet
     columns:
       patientid: subject_id
@@ -279,3 +329,7 @@ tables:
       samplingtime: 
       analysiscode:
       samplevalue:
+    timestamp_columns:
+      sample_timestamp:
+        date: samplingdate
+        time: samplingtime

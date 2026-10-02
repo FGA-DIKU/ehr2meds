@@ -1,0 +1,427 @@
+# @package _global_
+# Full standalone PHAIR configuration aligned with the lymphoma pipeline.
+# Keep this file explicit so its complete table and mapping coverage can be
+# reviewed without following inheritance or YAML anchors.
+defaults:
+  - ../root_config@
+  - _self_
+
+test: false
+num_workers: 2
+logging:
+  level: INFO
+  path: ./outputs/logs
+env: local
+run_name: preMEDS_phair
+chunksize: 10000000
+paths:
+  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/PHAIR
+  tables_dir: /storage/archive/UCPH/PHAIR/dhr/tables/parquet
+write_file_type: parquet
+subject_id_mapping:
+  file: ${paths.tables_dir}/t_person.parquet
+  subject_id_col: v_pnr
+  mapping_id_col: null
+tables:
+  t_psyk_diag:
+    filename: ${paths.tables_dir}/t_psyk_diag.parquet
+    columns:
+      v_recnum: record_number
+      c_diag: null
+      c_tildiag: null
+      c_diagtype: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+      join_on: k_recnum
+      target_columns:
+        v_cpr: subject_id
+        d_inddto: date_start
+        d_uddto: date_end
+        v_udtime: hour_end
+        v_indtime: hour_start
+        v_indminut: minute_start
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
+      end_timestamp:
+        date: date_end
+        hour: hour_end
+  t_sksopr:
+    filename: ${paths.tables_dir}/t_sksopr.parquet
+    columns:
+      v_recnum: record_number
+      c_opr: null
+      d_odto: date_start
+      v_otime: null
+      v_ominut: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_adm.parquet
+      join_on: k_recnum
+      target_columns:
+        v_cpr: subject_id
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_otime
+        minute: v_ominut
+  t_sksube:
+    filename: ${paths.tables_dir}/t_sksube.parquet
+    columns:
+      v_recnum: record_number
+      c_opr: null
+      d_odto: date_start
+      v_otime: null
+      v_ominut: null
+      c_oprart: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_adm.parquet
+      join_on: k_recnum
+      target_columns:
+        v_cpr: subject_id
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_otime
+        minute: v_ominut
+  t_psyk_sksopr:
+    filename: ${paths.tables_dir}/t_psyk_sksopr.parquet
+    columns:
+      v_recnum: record_number
+      c_opr: null
+      d_odto: date_start
+      v_otime: null
+      v_ominut: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+      join_on: k_recnum
+      target_columns:
+        v_cpr: subject_id
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_otime
+        minute: v_ominut
+  t_psyk_sksube:
+    filename: ${paths.tables_dir}/t_psyk_sksube.parquet
+    columns:
+      v_recnum: record_number
+      c_opr: null
+      d_odto: date_start
+      v_otime: null
+      v_ominut: null
+      c_oprart: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_psyk_adm.parquet
+      join_on: k_recnum
+      target_columns:
+        v_cpr: subject_id
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_otime
+        minute: v_ominut
+  procedurer_andre:
+    filename: ${paths.tables_dir}/procedurer_andre.parquet
+    columns:
+      dw_ek_kontakt: contact_id
+      procedurekode: null
+      dato_start: date_start
+      tidspunkt_start: time_start
+      proceduretype: null
+    mappings:
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_columns:
+        cpr: subject_id
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+  procedurer_kirurgi:
+    filename: ${paths.tables_dir}/procedurer_kirurgi.parquet
+    columns:
+      dw_ek_kontakt: contact_id
+      procedurekode: null
+      dato_start: date_start
+      tidspunkt_start: time_start
+    mappings:
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_columns:
+        cpr: subject_id
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+  epikur:
+    filename: ${paths.tables_dir}/epikur.parquet
+    columns:
+      cpr: subject_id
+      eksd: null
+      atc: null
+  indberetningmedpris:
+    filename: ${paths.tables_dir}/indberetningmedpris.parquet
+    columns:
+      v_cpr: subject_id
+      d_ord_start: timestamp
+      c_atc: null
+      c_patienttype: null
+      k_region_id: null
+      v_adm_dosis: dosage
+      v_styrke_num: strength
+    normalize_integer_columns:
+    - c_patienttype
+    - k_region_id
+  t_diag:
+    filename: ${paths.tables_dir}/t_diag.parquet
+    columns:
+      v_recnum: record_number
+      c_diag: null
+      c_tildiag: null
+      c_diagtype: null
+    mappings:
+    - source_column: record_number
+      via_file: ${paths.tables_dir}/t_adm.parquet
+      join_on: k_recnum
+      target_columns:
+        v_cpr: subject_id
+        d_inddto: date_start
+        d_uddto: date_end
+        v_udtime: hour_end
+        v_indtime: hour_start
+        v_indminut: minute_start
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
+      end_timestamp:
+        date: date_end
+        hour: hour_end
+  diagnoser:
+    filename: ${paths.tables_dir}/diagnoser.parquet
+    columns:
+      dw_ek_kontakt: contact_id
+      diagnosekode: null
+      diagnosetype: null
+    mappings:
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/kontakter.parquet
+      join_on: dw_ek_kontakt
+      target_columns:
+        cpr: subject_id
+        dato_start: date_start
+        tidspunkt_start: time_start
+        dato_slut: date_end
+        tidspunkt_slut: time_end
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+      end_timestamp:
+        date: date_end
+        time: time_end
+  central_patient:
+    filename: ${paths.tables_dir}/t_person.parquet
+    columns:
+      v_pnr: subject_id
+      d_foddato: birthdate
+      c_kon: sex
+    mappings:
+    - source_column: subject_id
+      via_file: ${paths.tables_dir}/schemamortality.parquet
+      join_on: k_cpr
+      target_columns:
+        deathdate: deathdate
+      how: left
+  kontakter:
+    filename: ${paths.tables_dir}/kontakter.parquet
+    columns:
+      cpr: subject_id
+      dato_start: date_start
+      tidspunkt_start: time_start
+      dato_slut: date_end
+      tidspunkt_slut: time_end
+      aktionsdiagnose: null
+      kontaktaarsag: null
+      prioritet: null
+      kontakttype: null
+      sorenhed_ans: sor_id
+      dw_ek_kontakt: contact_id
+    mappings:
+    - function: sor
+      source_column: sor_id
+      source_date_column: date_start
+      via_file: sor2_contact_mapping.parquet
+      join_on: sor_id
+    normalize_integer_columns:
+    - region
+    value_map:
+      prioritet:
+        1: ATA1
+        2: ATA3
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+      end_timestamp:
+        date: date_end
+        time: time_end
+  t_adm:
+    filename: ${paths.tables_dir}/t_adm.parquet
+    columns:
+      v_cpr: subject_id
+      d_inddto: date_start
+      d_uddto: date_end
+      v_indtime: null
+      v_indminut: null
+      v_udtime: null
+      c_adiag: null
+      c_kontaars: null
+      c_pattype: null
+      c_indm: priority
+      c_spec: null
+      c_sgh: null
+      k_recnum: contact_id
+    normalize_integer_columns:
+    - c_kontaars
+    - c_pattype
+    - c_sgh
+    - priority
+    value_map:
+      priority:
+        1: ATA1
+        2: ATA3
+      c_kontaars:
+        1: ALCC01
+        2: ALCC02
+        3: ALCC03
+        4: ALCC04
+        6: ALCC90
+        7: ALCC90
+        8: ALCC90
+        9: ALCC90
+    mappings:
+    - source_column: c_spec
+      via_file: c_spec_to_specialty.parquet
+      how: left
+      join_on: c_spec
+      target_columns:
+        specialty: c_spec
+      drop_source: true
+    - source_column: c_sgh
+      via_file: shak_to_region.parquet
+      how: left
+      join_on: kode
+      target_columns:
+        region: c_sgh
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_indtime
+        minute: v_indminut
+      end_timestamp:
+        date: date_end
+        hour: v_udtime
+  t_psyk_adm:
+    filename: ${paths.tables_dir}/t_psyk_adm.parquet
+    columns:
+      v_cpr: subject_id
+      d_inddto: date_start
+      d_uddto: date_end
+      v_indtime: null
+      v_indminut: null
+      v_udtime: null
+      c_adiag: null
+      c_kontaars: null
+      c_pattype: null
+      c_indm: priority
+      c_spec: null
+      c_sgh: null
+      k_recnum: contact_id
+    normalize_integer_columns:
+    - c_kontaars
+    - c_pattype
+    - c_sgh
+    - priority
+    value_map:
+      priority:
+        1: ATA1
+        2: ATA3
+      c_kontaars:
+        1: ALCC01
+        2: ALCC02
+        3: ALCC03
+        4: ALCC04
+        6: ALCC90
+        7: ALCC90
+        8: ALCC90
+        9: ALCC90
+    mappings:
+    - source_column: c_spec
+      via_file: c_spec_to_specialty.parquet
+      how: left
+      join_on: c_spec
+      target_columns:
+        specialty: c_spec
+      drop_source: true
+    - source_column: c_sgh
+      via_file: shak_to_region.parquet
+      how: left
+      join_on: kode
+      target_columns:
+        region: c_sgh
+      drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: v_indtime
+        minute: v_indminut
+      end_timestamp:
+        date: date_end
+        hour: v_udtime
+  laboratorieproevesvar:
+    filename: ${paths.tables_dir}/laboratorieproevesvar.parquet
+    columns:
+      cpr: subject_id
+      samplingdate: null
+      samplingtime: null
+      analysiscode: null
+      samplevalue: null
+    timestamp_columns:
+      sample_timestamp:
+        date: samplingdate
+        time: samplingtime
+  dimpatologiskdiagnose:
+    filename: ${paths.tables_dir}/dimpatologiskdiagnose.parquet
+    columns:
+      dw_ek_rekvisition: contact_id
+      diagnose_snomed_kode: null
+    mappings:
+    - source_column: contact_id
+      via_file: ${paths.tables_dir}/fctrekvisition.parquet
+      join_on: dw_ek_rekvisition
+      target_columns:
+        cpr: subject_id
+        datotid_modtagelse: null
+        dato_modtagelse: null
+      drop_source: true
