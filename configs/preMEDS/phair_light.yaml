@@ -35,23 +35,23 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns:
+          v_cpr: subject_id
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
+        target_columns:
+          d_inddto: date_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
+        target_columns:
+          v_indtime: hour_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns:
+          v_indminut: minute_start
         drop_source: true  
   
   t_sksopr:
@@ -63,23 +63,23 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns:
+          v_cpr: subject_id
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
+        target_columns:
+          d_inddto: date_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
+        target_columns:
+          v_indtime: hour_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns:
+          v_indminut: minute_start
         drop_source: true
       
   t_sksube:
@@ -91,23 +91,23 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns:
+          v_cpr: subject_id
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
+        target_columns:
+          d_inddto: date_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
+        target_columns:
+          v_indtime: hour_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns:
+          v_indminut: minute_start
         drop_source: true
 
   t_psyk_sksopr:
@@ -119,23 +119,23 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns:
+          v_cpr: subject_id
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
+        target_columns:
+          d_inddto: date_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
+        target_columns:
+          v_indtime: hour_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns:
+          v_indminut: minute_start
         drop_source: true
 
   t_psyk_sksube:
@@ -147,23 +147,23 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns:
+          v_cpr: subject_id
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
+        target_columns:
+          d_inddto: date_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
+        target_columns:
+          v_indtime: hour_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns:
+          v_indminut: minute_start
         drop_source: true
   
   procedurer_andre:
@@ -175,18 +175,18 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
+        target_columns:
+          cpr: subject_id
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: dato_start
-        rename_to: date_start
+        target_columns:
+          dato_start: date_start
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: tidspunkt_start
-        rename_to: time_start
+        target_columns:
+          tidspunkt_start: time_start
         drop_source: true
 
   procedurer_kirurgi:
@@ -198,18 +198,18 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
+        target_columns:
+          cpr: subject_id
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: dato_start
-        rename_to: date_start
+        target_columns:
+          dato_start: date_start
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: tidspunkt_start
-        rename_to: time_start
+        target_columns:
+          tidspunkt_start: time_start
         drop_source: true
   
   epikur:
@@ -235,23 +235,23 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns:
+          v_cpr: subject_id
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
+        target_columns:
+          d_inddto: date_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
+        target_columns:
+          v_indtime: hour_start
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns:
+          v_indminut: minute_start
         drop_source: true
       
   diagnoser:
@@ -263,18 +263,18 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
+        target_columns:
+          cpr: subject_id
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: dato_start
-        rename_to: date_start
+        target_columns:
+          dato_start: date_start
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: tidspunkt_start
-        rename_to: time_start
+        target_columns:
+          tidspunkt_start: time_start
         drop_source: true
 
   central_patient:
@@ -287,6 +287,6 @@ tables:
       - source_column: subject_id
         via_file: ${paths.tables_dir}/schemamortality.parquet
         join_on: k_cpr
-        target_column: deathdate
-        rename_to: deathdate
+        target_columns:
+          deathdate: deathdate
         how: left

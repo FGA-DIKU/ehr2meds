@@ -1,8 +1,8 @@
 import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
+from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
 from ehr2meds.preMEDS.utils import (
     add_row_idx,
-    apply_mapping,
     apply_value_map,
     clean_data,
     map_pids_to_ints,
@@ -50,25 +50,42 @@ class Processor:
     @staticmethod
     def apply_mappings(df: pd.DataFrame, mapping_cfg: List[dict], data_handler: DataHandler) -> pd.DataFrame:
         for mapping in mapping_cfg:
-            map_table = Processor.get_mapping_table(data_handler, mapping)
+            strategy_name = mapping.get("function")
+            strategy = MAPPING_STRATEGIES.get(strategy_name)
+            if strategy_name is not None and strategy is None:
+                available = ", ".join(sorted(MAPPING_STRATEGIES))
+                raise ValueError(f"Unknown mapping function {strategy_name!r}. Available functions: {available}")
+
+            if strategy is not None:
+                mapping_function, mapping_columns = strategy
+                map_table = Processor.get_mapping_table(data_handler, mapping, mapping_columns)
+                df = mapping_function(df, map_table, mapping)
+                continue
+
+            target_columns = mapping["target_columns"]
+            map_table = Processor.get_mapping_table(data_handler, mapping, tuple(target_columns))
             df = apply_mapping(
                 df,
                 map_table,
                 join_col=mapping["join_on"],
                 source_col=mapping["source_column"],
-                target_col=mapping["target_column"],
-                rename_to=mapping["rename_to"],
+                target_columns=target_columns,
                 how=mapping.get("how", "inner"),
                 drop_source=mapping.get("drop_source", False),
             )
         return df
 
     @staticmethod
-    def get_mapping_table(data_handler, mapping: dict):
-        "Find a mapping table in the configured location or a resources folder."
+    def get_mapping_table(
+        data_handler: DataHandler,
+        mapping: dict,
+        target_columns: tuple[str, ...],
+    ):
+        """Load the columns required by a standard or specialized mapping."""
         filename = Path(mapping["via_file"])
         if not filename.exists():
             filename = Path(__file__).parents[2] / "resources" / filename
-        cols = dict.fromkeys([mapping["join_on"], mapping["target_column"]])
+
+        cols = dict.fromkeys((mapping["join_on"], *target_columns))
 
         return data_handler.load(str(filename), cols=cols)
