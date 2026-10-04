@@ -1,0 +1,66 @@
+# @package _global_
+defaults: 
+  - ../root_config@
+  - _self_
+
+paths:
+  output: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population
+
+N: 1500
+
+correlated_data:
+  correlated_lab_cohort:
+    N: ${N}
+    linked_columns:
+      CPR:
+        type: choice_unique
+        file: Population
+        linked_on: MOR_CPR
+    tables:
+      synthetic_diagnostic_data:
+        columns:
+          diagnostic_label:
+            type: mix_function
+            args:
+              functions:
+                - type: choice
+                  args:
+                    options: ["SYN_POS_DIAG"]
+                - type: choice
+                  args:
+                    options: ["SYN_NEG_DIAG"]
+              probabilities: [0.5, 0.5]
+          timestamp:
+            type: rand_datetime
+            args:
+              start: 2020
+              end: 2023
+      synthetic_co_diagnosis:
+        columns:
+          diagnostic_label:
+            type: mix_function
+            by: diagnostic_label
+            args:
+              "SYN_POS_DIAG":
+                functions:
+                  - type: choice
+                    args:
+                      options: ["SYN_ASSOC_DIAG"]
+                  - type: choice
+                    args:
+                      options: ["SYN_OTHER"]
+                probabilities: [0.95, 0.05]
+              "SYN_NEG_DIAG":
+                functions:
+                  - type: choice
+                    args:
+                      options: ["SYN_ASSOC_DIAG"]
+                  - type: choice
+                    args:
+                      options: ["SYN_OTHER"]
+                probabilities: [0.05, 0.95]
+          timestamp:
+            type: rand_datetime
+            args:
+              start: 2018
+              end: 2019

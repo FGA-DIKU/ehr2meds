@@ -29,8 +29,9 @@ stages:
       data_input_dir: ${input_dir}/data
   - split_and_shard_subjects:
       split_fracs:
-          train: 0.9
+          train: 0.8
           tuning: 0.1
+          held_out: 0.1
   - convert_to_subject_sharded
   - convert_to_MEDS_events
   - filter_unknown_codes

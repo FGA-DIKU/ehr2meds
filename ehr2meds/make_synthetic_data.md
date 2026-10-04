@@ -17,17 +17,10 @@ Run all commands below from that same directory unless noted.
 Uses `ehr2meds/generate_synthetic_raw_data.py`. YAML configs live under `configs/synthetic_generation/` (pass **only the filename** with `--config`).
 
 ```bash
-<<<<<<< HEAD
-python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1 N=100 &&
-python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2 N=100 &&
-python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3 N=100 &&
-python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/dst &&
-=======
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part1 N=1000 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part2 N=1000 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/fetal_SDS_SP_from_pop_part3 N=1000 &&
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/dst_parquet &&
->>>>>>> main
 python ehr2meds/generate_synthetic_raw_data.py --config-name synthetic_generation/skin_cancer
 
 ```
@@ -41,7 +34,7 @@ Output paths are set inside each YAML (for example `paths.output` in `fetal_SP.y
 Run the PREMEDS conversion with a config that points at your synthetic raw data and desired PREMEDS output:
 
 ```bash
-python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/DeepFetal/fetal_synth_full
+python ehr2meds/convert_raw_to_premeds.py --config-name preMEDS/DeepFetal/fetal_synth_full_correlated
 ```
 
 Adjust `--config-name` if you use a different PREMEDS profile.
@@ -74,10 +67,10 @@ source .env && rm -rf ${EHR2MEDS_DATA}/MEDS/DeepFetal/fetal_synth_full && bash e
 **Example using relative paths:**
 ```bash
 bash ehr2meds/convert_premeds_to_meds.sh \
-  data/preMEDS/DeepFetal/fetal_synth_full \
+  data/preMEDS/DeepFetal/fetal_synth_full_correlated \
   configs/MEDS/default_pipeline.yaml \
   configs/MEDS/fetal_ngc_event.yaml \
-  data/MEDS/DeepFetal/fetal_synth_full
+  data/MEDS/DeepFetal/fetal_synth_full_correlated
 ```
 ---
 
