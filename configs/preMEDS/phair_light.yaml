@@ -16,7 +16,6 @@ test: false
 paths:
   output: ${oc.env:EHR2MEDS_DATA}/preMEDS/PHAIR_light
   tables_dir: /storage/archive/UCPH/PHAIR/dhr/tables/parquet
-  #file_type: parquet
 
 write_file_type: parquet
 
@@ -35,33 +34,13 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: d_uddto
-        rename_to: date_end
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: v_udtime
-        rename_to: hour_end
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_psyk_adm.parquet
-        join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns: 
+          v_cpr: subject_id
+          d_uddto: date_end
+          v_udtime: hour_end
+          d_inddto: date_start
+          v_indtime: hour_start
+          v_indminut: minute_start
         drop_source: true  
   
   t_sksopr:
@@ -192,33 +171,13 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: d_uddto
-        rename_to: date_end
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: v_udtime
-        rename_to: hour_end
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: d_inddto
-        rename_to: date_start
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: v_indtime
-        rename_to: hour_start
-      - source_column: record_number
-        via_file: ${paths.tables_dir}/t_adm.parquet
-        join_on: k_recnum
-        target_column: v_indminut
-        rename_to: minute_start
+        target_columns: 
+          v_cpr: subject_id
+          d_uddto: date_end
+          v_udtime: hour_end
+          d_inddto: date_start
+          v_indtime: hour_start
+          v_indminut: minute_start
         drop_source: true
       
   diagnoser:
@@ -230,28 +189,12 @@ tables:
       - source_column: contact_id
         via_file: ${paths.tables_dir}/kontakter.parquet
         join_on: dw_ek_kontakt
-        target_column: cpr
-        rename_to: subject_id
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: dato_slut
-        rename_to: date_end
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: tidspunkt_slut
-        rename_to: time_end
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: dato_start
-        rename_to: date_start
-      - source_column: contact_id
-        via_file: ${paths.tables_dir}/kontakter.parquet
-        join_on: dw_ek_kontakt
-        target_column: tidspunkt_start
-        rename_to: time_start
+        target_columns: 
+          cpr: subject_id 
+          dato_slut: date_end
+          tidspunkt_slut: time_end
+          dato_start: date_start
+          tidspunkt_start: time_start
         drop_source: true
 
   central_patient:
