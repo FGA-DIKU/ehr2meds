@@ -63,8 +63,8 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns: 
+          v_cpr: subject_id
         drop_source: true
     timestamp_columns:
       start_timestamp:
@@ -84,8 +84,8 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns: 
+          v_cpr: subject_id
         drop_source: true
     timestamp_columns:
       start_timestamp:
@@ -105,8 +105,8 @@ tables:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
         join_on: k_recnum
-        target_column: v_cpr
-        rename_to: subject_id
+        target_columns: 
+          v_cpr: subject_id
         drop_source: true
     timestamp_columns:
       start_timestamp:
