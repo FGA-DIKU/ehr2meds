@@ -42,6 +42,14 @@ tables:
           v_indtime: hour_start
           v_indminut: minute_start
         drop_source: true  
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
+      end_timestamp:
+        date: date_end
+        hour: hour_end
   
   t_sksopr:
     filename: ${paths.tables_dir}/t_sksopr.parquet
@@ -58,6 +66,11 @@ tables:
         target_column: v_cpr
         rename_to: subject_id
         drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
 
   t_sksube:
     filename: ${paths.tables_dir}/t_sksube.parquet
@@ -74,6 +87,11 @@ tables:
         target_column: v_cpr
         rename_to: subject_id
         drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
 
   t_psyk_sksopr:
     filename: ${paths.tables_dir}/t_psyk_sksopr.parquet
@@ -90,6 +108,11 @@ tables:
         target_column: v_cpr
         rename_to: subject_id
         drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
 
   t_psyk_sksube:
     filename: ${paths.tables_dir}/t_psyk_sksube.parquet
@@ -106,6 +129,11 @@ tables:
         target_column: v_cpr
         rename_to: subject_id
         drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
   
   procedurer_andre:
     filename: ${paths.tables_dir}/procedurer_andre.parquet
@@ -126,6 +154,13 @@ tables:
     value_map:
       date_end:
         '.': null
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+      end_timestamp:
+        date: date_end
+        time: time_end
 
   procedurer_kirurgi:
     filename: ${paths.tables_dir}/procedurer_kirurgi.parquet
@@ -146,6 +181,13 @@ tables:
     value_map:
       date_end:
         '.': null
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+      end_timestamp:
+        date: date_end
+        time: time_end
   
   epikur:
     filename: ${paths.tables_dir}/epikur.parquet
@@ -153,6 +195,9 @@ tables:
       cpr: subject_id
       eksd: date_start
       atc:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
 
   indberetningmedpris:
     filename: ${paths.tables_dir}/indberetningmedpris.parquet
@@ -161,6 +206,11 @@ tables:
       d_ord_start: date_start
       d_ord_slut: date_end
       c_atc:
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+      end_timestamp:
+        date: date_end
 
   t_diag:
     filename: ${paths.tables_dir}/t_diag.parquet
@@ -179,6 +229,14 @@ tables:
           v_indtime: hour_start
           v_indminut: minute_start
         drop_source: true
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        hour: hour_start
+        minute: minute_start
+      end_timestamp:
+        date: date_end
+        hour: hour_end
       
   diagnoser:
     filename: ${paths.tables_dir}/diagnoser.parquet
@@ -195,7 +253,14 @@ tables:
           tidspunkt_slut: time_end
           dato_start: date_start
           tidspunkt_start: time_start
-        drop_source: true
+        drop_source: true  
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
+        time: time_start
+      end_timestamp:
+        date: date_end
+        time: time_end
 
   central_patient:
     filename: ${paths.tables_dir}/t_person.parquet
