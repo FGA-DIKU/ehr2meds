@@ -14,54 +14,54 @@ central_patient:
 epikur:
   epikur:
     code: f"MEDICATION//{$atc}"
-    time: $date_start
+    time: $start_timestamp
 
 indberetningmedpris:
   indberetningmedpris:
     code: f"MEDICATION//{$c_atc}"
-    time: coalesce($date_start, $date_end)
+    time: coalesce($start_timestamp, $end_timestamp)
 
 t_diag:
   t_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
+    time: coalesce($end_timestamp, $start_timestamp)
 
 diagnoser:
   diagnoser:
     code: f"DIAGNOSIS//{$diagnosekode}"
-    time: coalesce(set_time($date_end, $time_end), set_time($date_start, $time_start))
+    time: coalesce($end_timestamp, $start_timestamp)
 
 t_psyk_diag:
   t_psyk_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: coalesce(set_time($date_end, f"{($hour_end as int)}:00" as '%H:%M'), set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M'))
+    time: coalesce($end_timestamp, $start_timestamp)
   
 t_sksopr:
   t_sksopr:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $start_timestamp
 
 t_sksube:
   t_sksube:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $start_timestamp
 
 t_psyk_sksopr:
   t_psyk_sksopr:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $start_timestamp
 
 t_psyk_sksube:
   t_psyk_sksube:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $start_timestamp
 
 procedurer_andre:
   procedurer_andre:
     code: f"PROCEDURE//{$procedurekode}"
-    time: coalesce(set_time($date_start, $time_start), set_time($date_end as '%Y-%m-%d', $time_end))
+    time: coalesce($start_timestamp, $end_timestamp)
 
 procedurer_kirurgi:
   procedurer_kirurgi:
     code: f"PROCEDURE//{$procedurekode}"
-    time: coalesce(set_time($date_start, $time_start), set_time($date_end as '%Y-%m-%d', $time_end))
+    time: coalesce($start_timestamp, $end_timestamp)
