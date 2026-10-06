@@ -14,54 +14,54 @@ central_patient:
 epikur:
   epikur:
     code: f"MEDICATION//{$atc}"
-    time: $eksd
+    time: $start_timestamp
 
 indberetningmedpris:
   indberetningmedpris:
     code: f"MEDICATION//{$c_atc}"
-    time: $d_ord_start
+    time: coalesce($start_timestamp, $end_timestamp)
 
 t_diag:
   t_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: coalesce($end_timestamp, $start_timestamp)
 
 diagnoser:
   diagnoser:
     code: f"DIAGNOSIS//{$diagnosekode}"
-    time: set_time($date_start, $time_start)
+    time: coalesce($end_timestamp, $start_timestamp)
 
 t_psyk_diag:
   t_psyk_diag:
     code: f"DIAGNOSIS//{$c_diag}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
-
+    time: coalesce($end_timestamp, $start_timestamp)
+  
 t_sksopr:
   t_sksopr:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $start_timestamp
 
 t_sksube:
   t_sksube:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $start_timestamp
 
 t_psyk_sksopr:
   t_psyk_sksopr:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $start_timestamp
 
 t_psyk_sksube:
   t_psyk_sksube:
     code: f"PROCEDURE//{$c_opr}"
-    time: set_time($date_start, f"{($hour_start as int)}:{($minute_start as int)}" as '%H:%M')
+    time: $start_timestamp
 
 procedurer_andre:
   procedurer_andre:
     code: f"PROCEDURE//{$procedurekode}"
-    time: set_time($date_start, $time_start)
+    time: coalesce($start_timestamp, $end_timestamp)
 
 procedurer_kirurgi:
   procedurer_kirurgi:
     code: f"PROCEDURE//{$procedurekode}"
-    time: set_time($date_start, $time_start)
+    time: coalesce($start_timestamp, $end_timestamp)

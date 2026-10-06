@@ -39,13 +39,13 @@ class Processor:
         """
         df = add_row_idx(df, start=row_index_start)
         df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
-        df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = normalize_code_columns(df)
         df = apply_value_map(df, table_config.get("value_map", {}))
         df = remove_timezones(df)
+        df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
         df = clean_data(df)
         validate_subject_id(df)
         return df
