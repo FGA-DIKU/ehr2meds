@@ -107,7 +107,6 @@ tables:
       v_otime: hour_start
       v_ominut: minute_start
       c_opr:
-      c_oprart:
     mappings:
       - source_column: record_number
         via_file: ${paths.tables_dir}/t_psyk_adm.parquet
@@ -470,7 +469,7 @@ tables:
     filename: ${paths.tables_dir}/pato.parquet
     columns:
       v_cprnr: subject_id
-      d_modtdato: timestamp
+      d_modtdato: date_start
       c_snomedkode:
       c_rekvafdsor: 
     mappings:
@@ -481,6 +480,9 @@ tables:
         join_on: sor_id
     normalize_integer_columns:
       - region
+    timestamp_columns:
+      start_timestamp:
+        date: date_start
 
   # This registry is part of data dilevery 1 and should be switched out for laboratorieproevesvar when data delivery 2 is available
   lab_forsker:
