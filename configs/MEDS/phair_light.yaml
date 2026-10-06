@@ -19,7 +19,7 @@ epikur:
 indberetningmedpris:
   indberetningmedpris:
     code: f"MEDICATION//{$c_atc}"
-    time: coalesce($start_timestamp, $end_timestamp)
+    time: $start_timestamp
 
 t_diag:
   t_diag:
