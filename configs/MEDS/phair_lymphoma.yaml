@@ -82,16 +82,16 @@ epikur:
 indberetningmedpris:
   medication:
     code: f"MEDICATION//{$c_atc}"
-    time: coalesce($start_timestamp, $end_timestamp)
+    time: $start_timestamp
   patient_type:
     code: f"PATIENT_TYPE//{$c_patienttype}"
-    time: coalesce($start_timestamp, $end_timestamp)
+    time: $start_timestamp
   clinical_specialty:
     code: f"CONTACT_SPECIALTY//{$specialty}"
-    time: coalesce($start_timestamp, $end_timestamp)
+    time: $start_timestamp
   region_code:
     code: f"REGION//{$region}"
-    time: coalesce($start_timestamp, $end_timestamp)
+    time: $start_timestamp
 
 t_diag:
   diag:
