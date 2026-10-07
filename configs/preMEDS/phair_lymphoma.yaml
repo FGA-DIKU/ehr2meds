@@ -182,7 +182,7 @@ tables:
     filename: ${paths.tables_dir}/procedurer_kirurgi.parquet
     columns:
       dw_ek_kontakt: contact_id
-      ddato_start: date_start
+      dato_start: date_start
       tidspunkt_start: time_start
       dato_slut: date_end
       tidspunkt_slut: time_end
@@ -232,7 +232,7 @@ tables:
     mappings:
       - function: sor
         source_column: sor_id
-        source_date_column: timestamp
+        source_date_column: date_start
         via_file: sor2_contact_mapping.parquet
         join_on: sor_id
     normalize_integer_columns:
@@ -468,11 +468,11 @@ tables:
       v_cprnr: subject_id
       d_modtdato: date_start
       c_snomedkode:
-      c_rekvafdsor: 
+      c_rekvafdsor: sor_id
     mappings:
       - function: sor
         source_column: sor_id
-        source_date_column: dato_modtagelse
+        source_date_column: date_start
         via_file: sor2_contact_mapping.parquet
         join_on: sor_id
     normalize_integer_columns:
@@ -492,8 +492,8 @@ tables:
       value:
     timestamp_columns:
       sample_timestamp:
-        date: samplingdate
-        time: samplingtime
+        date: date_start
+        time: time_start
 
 
   # This registry will be part of data delivery 2 but not part of the current data delivery 1
