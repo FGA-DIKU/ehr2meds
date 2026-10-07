@@ -17,7 +17,7 @@ chunksize: 10_000_000
 test: false
 
 paths:
-  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/PHAIR
+  output: ${oc.env:EHR2MEDS_DATA}/preMEDS/PHAIR_lymphoma
   tables_dir: /storage/archive/UCPH/PHAIR/dhr/tables/parquet
 
 write_file_type: parquet
