@@ -27,24 +27,24 @@ class Processor:
     ) -> pd.DataFrame:
         """Process the table.
         1. Add row index to input tables
-        2. OPTIONAL: Apply table mappings
-        3. OPTIONAL: Construct timestamps from date and time columns
+        2. Remove timezone information from timezone-aware datetime columns
+        3. OPTIONAL: Apply table mappings
         4. OPTIONAL: Normalize integer columns
         5. OPTIONAL: Apply pid integer mapping
         6. Normalize string columns
         7. OPTIONAL: Apply value mappings
-        8. Remove timezone information from timezone-aware datetime columns
+        8. OPTIONAL: Construct timestamps from date and time columns
         9. Clean data
         10. Validate subject_id column
         """
         df = add_row_idx(df, start=row_index_start)
+        df = remove_timezones(df)
         df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
         df = normalize_code_columns(df)
         df = apply_value_map(df, table_config.get("value_map", {}))
-        df = remove_timezones(df)
         df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
         df = clean_data(df)
         validate_subject_id(df)
