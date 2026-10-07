@@ -196,6 +196,11 @@ tables:
         target_columns:
           cpr: subject_id
         drop_source: true
+      - function: sor
+        source_column: sor_id
+        source_date_column: date_start
+        via_file: sor2_contact_mapping.parquet
+        join_on: sor_id
     normalize_integer_columns:
       - region
     value_map:
