@@ -1,5 +1,6 @@
 import pandas as pd
 from ehr2meds.preMEDS.constants import ROW_INDEX
+from ehr2meds.preMEDS.timestamps import parse_date_column
 
 
 def apply_mapping(
@@ -68,8 +69,7 @@ def add_sor_attributes(df: pd.DataFrame, sor_table: pd.DataFrame, config: dict) 
 
     contact_keys = df[[source_id_column, source_date_column]].drop_duplicates().copy()
     contact_keys["normalized_sor_id"] = normalize_sor_id(contact_keys[source_id_column])
-    contact_keys["contact_date"] = pd.to_datetime(contact_keys[source_date_column], errors="coerce")
-
+    contact_keys["contact_date"] = parse_date_column(contact_keys[source_date_column])
     candidates = contact_keys.merge(
         sor_table,
         left_on="normalized_sor_id",
