@@ -2,7 +2,6 @@
 
 import pandas as pd
 
-
 # Pandas timedelta unit and largest valid value, ordered from coarsest to finest.
 TIME_COMPONENTS = {
     "hour": ("h", 23),
@@ -49,11 +48,7 @@ def parse_date_column(values: pd.Series) -> pd.Series:
 
         best_score = max(scores.values())
 
-        best_formats = [
-            fmt
-            for fmt, score in scores.items()
-            if score == best_score
-        ]
+        best_formats = [fmt for fmt, score in scores.items() if score == best_score]
 
         # Only infer the format if exactly one format successfully
         # parses every value in the sample.
@@ -77,9 +72,7 @@ def add_timestamp_columns(
 ) -> pd.DataFrame:
     """Combine each date with as much valid time information as is available."""
     for output_column, config in timestamp_config.items():
-        date = parse_date_column(
-            df[config["date"]]
-        ).dt.normalize()
+        date = parse_date_column(df[config["date"]]).dt.normalize()
 
         timestamp = date + create_time_delta(df, config)
 
@@ -94,9 +87,7 @@ def create_time_delta(
 ) -> pd.Series:
     if "time" in config:
         if any(name in config for name in TIME_COMPONENTS):
-            raise ValueError(
-                "Configure either time or hour/minute/second columns, not both"
-            )
+            raise ValueError("Configure either time or hour/minute/second columns, not both")
 
         values = df[config["time"]]
 
