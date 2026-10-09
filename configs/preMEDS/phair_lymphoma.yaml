@@ -485,6 +485,7 @@ tables:
     timestamp_columns:
       start_timestamp:
         date: date_start
+        format: "%d%m%Y"
 
   # This registry is part of data dilevery 1 and should be switched out for laboratorieproevesvar when data delivery 2 is available
   lab_forsker:

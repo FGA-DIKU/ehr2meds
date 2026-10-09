@@ -23,14 +23,13 @@ def process_single_table_worker(args):
             chunksize=chunksize,
         )
         processor = Processor()
-        summary = RowSummary()  # NEW: Collect row statistics for this table
-
+        summary = RowSummary()  
         next_row_idx = 0
 
         for chunk in tqdm(
             data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
             desc=f"Chunks {table_name}",
-            position=0,  # Helps prevent progress bars from overlapping wildly
+            position=0,  
             leave=True,
         ):
             processed_chunk, row_result = processor.process(
@@ -39,14 +38,14 @@ def process_single_table_worker(args):
                 data_handler,
                 subject_id_mapping,
                 row_index_start=next_row_idx,
-                track_rows=True,  # NEW: Enable row tracking
+                track_rows=True,  
             )
 
             next_row_idx += len(chunk)
 
             data_handler.save(processed_chunk, table_name)
 
-            # NEW: Add statistics after the chunk has been saved
+            # Add statistics after the chunk has been saved
             summary.add(table_config["filename"], row_result)
 
             if test:
@@ -54,7 +53,7 @@ def process_single_table_worker(args):
 
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
 
-        return summary.to_dict()  # NEW: Return statistics to the parent process
+        return summary.to_dict() 
 
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
