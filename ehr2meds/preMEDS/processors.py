@@ -23,9 +23,9 @@ class Processor:
         df,
         table_config,
         data_handler,
-        subject_id_mapping=None,
-        row_index_start=0,
-        track_rows=False,
+        subject_id_mapping: Optional[dict] = None,
+        row_index_start: int = 0,
+        track_rows: bool = False,
     ):
         """Process the table.
 
