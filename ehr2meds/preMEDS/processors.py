@@ -105,7 +105,7 @@ class Processor:
 
                 # Reuse the date format from timestamp_columns for SOR mappings.
                 if strategy_name == "sor":
-                    mapping = mapping.copy()
+                    mapping = dict(mapping)
                     date_column = mapping.get("source_date_column")
 
                     for timestamp in (timestamp_cfg or {}).values():
