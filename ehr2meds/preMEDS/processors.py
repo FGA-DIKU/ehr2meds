@@ -129,7 +129,6 @@ class Processor:
             )
         return df
 
-
     @staticmethod
     def get_mapping_table(
         data_handler: DataHandler,

@@ -129,29 +129,21 @@ def format_final_summary(results: dict) -> str:
         total_change = premeds - raw
         loss_pct = 100 * (raw - premeds) / raw if raw else 0.0
 
-        rows.append([
-            Path(table).name,
-            f"{raw:,}",
-            f"{premeds:,}",
-            *[
-                format_contribution(stages.get(stage, 0), total_change)
-                for stage in STAGES
-            ],
-            format_change(total_change),
-            f"{loss_pct:.2f}%",
-        ])
+        rows.append(
+            [
+                Path(table).name,
+                f"{raw:,}",
+                f"{premeds:,}",
+                *[format_contribution(stages.get(stage, 0), total_change) for stage in STAGES],
+                format_change(total_change),
+                f"{loss_pct:.2f}%",
+            ]
+        )
 
-    widths = [
-        max(len(str(value)) for value in [header] + [row[i] for row in rows])
-        for i, header in enumerate(headers)
-    ]
+    widths = [max(len(str(value)) for value in [header] + [row[i] for row in rows]) for i, header in enumerate(headers)]
 
     def format_row(row):
-        return "  ".join(
-            f"{value:<{widths[i]}}" if i == 0
-            else f"{value:>{widths[i]}}"
-            for i, value in enumerate(row)
-        )
+        return "  ".join(f"{value:<{widths[i]}}" if i == 0 else f"{value:>{widths[i]}}" for i, value in enumerate(row))
 
     table_width = sum(widths) + 2 * (len(headers) - 1)
 

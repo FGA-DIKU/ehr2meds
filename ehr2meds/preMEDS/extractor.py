@@ -8,6 +8,7 @@ from ehr2meds.preMEDS.row_tracking import RowSummary, format_final_summary
 
 logger = logging.getLogger(__name__)
 
+
 def process_single_table_worker(args):
     """
     Standalone worker function to process a single table in a separate process.
@@ -23,13 +24,13 @@ def process_single_table_worker(args):
             chunksize=chunksize,
         )
         processor = Processor()
-        summary = RowSummary()  
+        summary = RowSummary()
         next_row_idx = 0
 
         for chunk in tqdm(
             data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
             desc=f"Chunks {table_name}",
-            position=0,  
+            position=0,
             leave=True,
         ):
             processed_chunk, row_result = processor.process(
@@ -38,7 +39,7 @@ def process_single_table_worker(args):
                 data_handler,
                 subject_id_mapping,
                 row_index_start=next_row_idx,
-                track_rows=True,  
+                track_rows=True,
             )
 
             next_row_idx += len(chunk)
@@ -53,7 +54,7 @@ def process_single_table_worker(args):
 
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
 
-        return summary.to_dict() 
+        return summary.to_dict()
 
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
@@ -133,11 +134,7 @@ class PREMEDSExtractor:
             for table_name, table_config in self.cfg["tables"].items()
         ]
 
-        
-        logger.info(
-            f"Starting multiprocessing pool with {self.cfg.num_workers} workers. "
-            f"Test enabled: {self.cfg.test}"
-        )
+        logger.info(f"Starting multiprocessing pool with {self.cfg.num_workers} workers. Test enabled: {self.cfg.test}")
 
         with Pool(processes=self.cfg.num_workers) as pool:
             worker_results = pool.map(
@@ -151,4 +148,3 @@ class PREMEDSExtractor:
             summary.merge(worker_result)
 
         print(format_final_summary(summary.to_dict()))
-

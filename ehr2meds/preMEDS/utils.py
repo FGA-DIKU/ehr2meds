@@ -65,6 +65,7 @@ def clean_data(df: pd.DataFrame, tracker=None) -> pd.DataFrame:
 
     return df
 
+
 def apply_value_map(df: pd.DataFrame, value_map_cfg: dict) -> pd.DataFrame:
     """Replace specific column values; other values are left unchanged"""
     for col, mapping in value_map_cfg.items():
