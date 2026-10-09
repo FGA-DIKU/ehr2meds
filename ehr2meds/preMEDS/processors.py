@@ -49,6 +49,7 @@ class Processor:
             df,
             table_config.get("mappings", []),
             data_handler,
+            table_config.get("timestamp_columns", {}),
         )
         if tracker is not None:
             tracker.checkpoint("Table mappings", df)
@@ -85,7 +86,12 @@ class Processor:
         return df
 
     @staticmethod
-    def apply_mappings(df: pd.DataFrame, mapping_cfg: List[dict], data_handler: DataHandler) -> pd.DataFrame:
+    def apply_mappings(
+        df: pd.DataFrame,
+        mapping_cfg: List[dict],
+        data_handler: DataHandler,
+        timestamp_cfg: Optional[dict] = None,
+    ) -> pd.DataFrame:
         for mapping in mapping_cfg:
             strategy_name = mapping.get("function")
             strategy = MAPPING_STRATEGIES.get(strategy_name)
@@ -96,6 +102,17 @@ class Processor:
             if strategy is not None:
                 mapping_function, mapping_columns = strategy
                 map_table = Processor.get_mapping_table(data_handler, mapping, mapping_columns)
+
+                # Reuse the date format from timestamp_columns for SOR mappings.
+                if strategy_name == "sor":
+                    mapping = mapping.copy()
+                    date_column = mapping.get("source_date_column")
+
+                    for timestamp in (timestamp_cfg or {}).values():
+                        if timestamp.get("date") == date_column:
+                            mapping["date_format"] = timestamp.get("format")
+                            break
+
                 df = mapping_function(df, map_table, mapping)
                 continue
 
@@ -111,6 +128,7 @@ class Processor:
                 drop_source=mapping.get("drop_source", False),
             )
         return df
+
 
     @staticmethod
     def get_mapping_table(
