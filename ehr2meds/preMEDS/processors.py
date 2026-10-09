@@ -14,18 +14,21 @@ from ehr2meds.preMEDS.utils import (
 )
 from pathlib import Path
 from typing import Dict, List, Optional
+from ehr2meds.preMEDS.row_tracking import RowTracker
 
 
 class Processor:
     @staticmethod
     def process(
-        df: pd.DataFrame,
-        table_config: dict,
-        data_handler: DataHandler,
-        subject_id_mapping: Optional[Dict[str, int]] = None,
-        row_index_start: int = 0,
-    ) -> pd.DataFrame:
+        df,
+        table_config,
+        data_handler,
+        subject_id_mapping=None,
+        row_index_start=0,
+        track_rows=False,
+    ):
         """Process the table.
+
         1. Add row index to input tables
         2. Remove timezone information from timezone-aware datetime columns
         3. OPTIONAL: Apply table mappings
@@ -37,17 +40,48 @@ class Processor:
         9. Clean data
         10. Validate subject_id column
         """
+        tracker = RowTracker(initial_rows=len(df)) if track_rows else None
+
         df = add_row_idx(df, start=row_index_start)
         df = remove_timezones(df)
-        df = Processor.apply_mappings(df, table_config.get("mappings", []), data_handler)
-        df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
+
+        df = Processor.apply_mappings(
+            df,
+            table_config.get("mappings", []),
+            data_handler,
+        )
+        if tracker is not None:
+            tracker.checkpoint("Table mappings", df)
+
+        df = normalize_integer_columns(
+            df,
+            table_config.get("normalize_integer_columns", []),
+        )
+
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
+            if tracker is not None:
+                tracker.checkpoint("Subject ID mapping", df)
+
         df = normalize_code_columns(df)
-        df = apply_value_map(df, table_config.get("value_map", {}))
-        df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
-        df = clean_data(df)
+
+        df = apply_value_map(
+            df,
+            table_config.get("value_map", {}),
+        )
+
+        df = add_timestamp_columns(
+            df,
+            table_config.get("timestamp_columns", {}),
+        )
+
+        df = clean_data(df, tracker=tracker)
+
         validate_subject_id(df)
+
+        if tracker is not None:
+            return df, tracker.result()
+
         return df
 
     @staticmethod
