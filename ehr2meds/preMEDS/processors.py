@@ -1,6 +1,7 @@
 import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
+from ehr2meds.preMEDS.row_tracking import RowTracker
 from ehr2meds.preMEDS.timestamps import add_timestamp_columns
 from ehr2meds.preMEDS.utils import (
     add_row_idx,
@@ -13,8 +14,7 @@ from ehr2meds.preMEDS.utils import (
     validate_subject_id,
 )
 from pathlib import Path
-from typing import Dict, List, Optional
-from ehr2meds.preMEDS.row_tracking import RowTracker
+from typing import List, Optional
 
 
 class Processor:
