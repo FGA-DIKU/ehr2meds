@@ -30,9 +30,7 @@ class QualitySummary:
 def format_quality_summary(results):
     """Format columns containing null values."""
     rows = [
-        (Path(table).name, column, nulls, total)
-        for (table, column), (nulls, total) in sorted(results.items())
-        if nulls > 0
+        (Path(table).name, column, nulls, total) for (table, column), (nulls, total) in sorted(results.items()) if nulls > 0
     ]
 
     if not rows:
@@ -47,9 +45,6 @@ def format_quality_summary(results):
     for table, column, nulls, total in rows:
         percentage = 100 * nulls / total if total else 0
 
-        lines.append(
-            f"{table:<30} {column:<25} "
-            f"{nulls:>12,} {percentage:>11.2f}%"
-        )
+        lines.append(f"{table:<30} {column:<25} {nulls:>12,} {percentage:>11.2f}%")
 
     return "\n".join(lines)

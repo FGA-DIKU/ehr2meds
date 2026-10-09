@@ -1,8 +1,8 @@
 import logging
 from ehr2meds.preMEDS.data_handler import DataHandler
+from ehr2meds.preMEDS.data_quality import QualitySummary, format_quality_summary
 from ehr2meds.preMEDS.processors import Processor
 from ehr2meds.preMEDS.row_tracking import RowSummary, format_final_summary
-from ehr2meds.preMEDS.data_quality import QualitySummary, format_quality_summary
 from multiprocessing import Pool
 from tqdm import tqdm
 from typing import Dict, Optional, Union
