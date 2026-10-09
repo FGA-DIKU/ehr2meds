@@ -154,6 +154,8 @@ tables:
     value_map:
       date_end:
         '.': null
+      time_end:
+        '.': null
     timestamp_columns:
       start_timestamp:
         date: date_start
@@ -180,6 +182,8 @@ tables:
         drop_source: true
     value_map:
       date_end:
+        '.': null
+      time_end:
         '.': null
     timestamp_columns:
       start_timestamp:
