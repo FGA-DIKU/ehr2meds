@@ -166,7 +166,6 @@ def format_final_summary(results: dict) -> str:
         "",
         "Stage percentages show contributions to net row loss.",
         "Positive changes add rows; negative changes remove rows.",
-        "A dash (—) means the contribution percentage is not applicable.",
         "",
         format_row(headers),
         "-" * table_width,
