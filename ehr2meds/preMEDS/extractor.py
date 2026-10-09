@@ -1,6 +1,8 @@
 import logging
 from ehr2meds.preMEDS.data_handler import DataHandler
+from ehr2meds.preMEDS.data_quality import QualitySummary, format_quality_summary
 from ehr2meds.preMEDS.processors import Processor
+from ehr2meds.preMEDS.row_tracking import RowSummary, format_final_summary
 from multiprocessing import Pool
 from tqdm import tqdm
 from typing import Dict, Optional, Union
@@ -23,31 +25,40 @@ def process_single_table_worker(args):
             chunksize=chunksize,
         )
         processor = Processor()
-
+        summary = RowSummary()
+        quality_summary = QualitySummary()
         next_row_idx = 0
 
         for chunk in tqdm(
             data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
             desc=f"Chunks {table_name}",
-            position=0,  # Helps prevent progress bars from overlapping wildly
+            position=0,
             leave=True,
         ):
-            processed_chunk = processor.process(
+            processed_chunk, row_result = processor.process(
                 chunk,
                 table_config,
                 data_handler,
                 subject_id_mapping,
                 row_index_start=next_row_idx,
+                track_rows=True,
             )
 
             next_row_idx += len(chunk)
 
             data_handler.save(processed_chunk, table_name)
 
+            # Add statistics after the chunk has been saved
+            summary.add(table_config["filename"], row_result)
+            quality_summary.add(table_config["filename"], processed_chunk)
+
             if test:
                 break
 
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
+
+        return summary.to_dict(), quality_summary.to_dict()
+
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
         raise
@@ -128,7 +139,18 @@ class PREMEDSExtractor:
 
         logger.info(f"Starting multiprocessing pool with {self.cfg.num_workers} workers. Test enabled: {self.cfg.test}")
 
-        # Use a Pool to manage the N concurrent table workers
         with Pool(processes=self.cfg.num_workers) as pool:
-            # map will block until all tables are processed and raise exceptions if any fail
-            pool.map(process_single_table_worker, worker_tasks)
+            worker_results = pool.map(
+                process_single_table_worker,
+                worker_tasks,
+            )
+
+        summary = RowSummary()
+        quality_summary = QualitySummary()
+
+        for row_result, quality_result in worker_results:
+            summary.merge(row_result)
+            quality_summary.merge(quality_result)
+
+        print(format_final_summary(summary.to_dict()))
+        print(format_quality_summary(quality_summary.to_dict()))

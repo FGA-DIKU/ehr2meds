@@ -38,21 +38,31 @@ def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd
     return df
 
 
-def clean_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean the data."""
+def clean_data(df: pd.DataFrame, tracker=None) -> pd.DataFrame:
+    """Remove rows with missing mandatory values and duplicate records."""
     # Clean data
     if all(col in df.columns for col in MANDATORY_COLUMNS):
+        before = len(df)
         df = df.dropna(subset=MANDATORY_COLUMNS, how="any")
 
+        if tracker is not None:
+            tracker.record_change(
+                "Mandatory-column filtering",
+                len(df) - before,
+            )
     # row_idx is always unique, so don't consider that column
     columns_to_check = [col for col in df.columns if col != ROW_INDEX]
 
     # Remove duplicates
-    n_before = len(df)
-    df = df.drop_duplicates(columns_to_check)
-    n_after = len(df)
-    if n_before > n_after:
-        print(f"Dropped {n_before - n_after} rows from {columns_to_check} due to duplicates")
+    before = len(df)
+    df = df.drop_duplicates(subset=columns_to_check)
+
+    if tracker is not None:
+        tracker.record_change(
+            "Deduplication",
+            len(df) - before,
+        )
+
     return df
 
 
