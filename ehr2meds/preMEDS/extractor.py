@@ -2,6 +2,7 @@ import logging
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.processors import Processor
 from ehr2meds.preMEDS.row_tracking import RowSummary, format_final_summary
+from ehr2meds.preMEDS.data_quality import QualitySummary, format_quality_summary
 from multiprocessing import Pool
 from tqdm import tqdm
 from typing import Dict, Optional, Union
@@ -25,6 +26,7 @@ def process_single_table_worker(args):
         )
         processor = Processor()
         summary = RowSummary()
+        quality_summary = QualitySummary()
         next_row_idx = 0
 
         for chunk in tqdm(
@@ -48,13 +50,14 @@ def process_single_table_worker(args):
 
             # Add statistics after the chunk has been saved
             summary.add(table_config["filename"], row_result)
+            quality_summary.add(table_config["filename"], processed_chunk)
 
             if test:
                 break
 
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
 
-        return summary.to_dict()
+        return summary.to_dict(), quality_summary.to_dict()
 
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
@@ -143,8 +146,11 @@ class PREMEDSExtractor:
             )
 
         summary = RowSummary()
+        quality_summary = QualitySummary()
 
-        for worker_result in worker_results:
-            summary.merge(worker_result)
+        for row_result, quality_result in worker_results:
+            summary.merge(row_result)
+            quality_summary.merge(quality_result)
 
         print(format_final_summary(summary.to_dict()))
+        print(format_quality_summary(quality_summary.to_dict()))
