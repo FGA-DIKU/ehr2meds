@@ -54,10 +54,7 @@ class Processor:
         if tracker is not None:
             tracker.checkpoint("Table mappings", df)
 
-        df = normalize_integer_columns(
-            df,
-            table_config.get("normalize_integer_columns", []),
-        )
+        df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
 
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
@@ -66,15 +63,9 @@ class Processor:
 
         df = normalize_code_columns(df)
 
-        df = apply_value_map(
-            df,
-            table_config.get("value_map", {}),
-        )
+        df = apply_value_map(df,table_config.get("value_map", {}))
 
-        df = add_timestamp_columns(
-            df,
-            table_config.get("timestamp_columns", {}),
-        )
+        df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
 
         df = clean_data(df, tracker=tracker)
 
