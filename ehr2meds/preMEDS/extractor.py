@@ -4,11 +4,7 @@ from ehr2meds.preMEDS.processors import Processor
 from multiprocessing import Pool
 from tqdm import tqdm
 from typing import Dict, Optional, Union
-from ehr2meds.preMEDS.data_quality import (
-    DataQualitySummary,
-    format_final_summary,
-    format_quality_summary,
-)
+from ehr2meds.preMEDS.data_quality import DataQualitySummary, format_data_quality_summary
 
 logger = logging.getLogger(__name__)
 
@@ -152,5 +148,4 @@ class PREMEDSExtractor:
 
         results = summary.to_dict()
 
-        print(format_final_summary(results["rows"]))
-        print(format_quality_summary(results["nulls"]))
+        print(format_data_quality_summary(results))

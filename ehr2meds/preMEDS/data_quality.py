@@ -123,10 +123,40 @@ def format_contribution(delta, total_change):
     return f"{formatted_delta} ({percentage:.1f}%)"
 
 
+def format_table(headers, rows):
+    """Format table columns with consistent spacing and alignment."""
+    widths = [
+        max(
+            len(str(header)),
+            *(len(str(row[i])) for row in rows),
+        )
+        for i, header in enumerate(headers)
+    ]
+
+    def format_row(row):
+        return "  ".join(
+            f"{str(value):<{widths[i]}}"
+            if i == 0
+            else f"{str(value):>{widths[i]}}"
+            for i, value in enumerate(row)
+        )
+
+    table_width = sum(widths) + 2 * (len(headers) - 1)
+
+    lines = [
+        format_row(headers),
+        "-" * table_width,
+    ]
+
+    lines.extend(format_row(row) for row in rows)
+
+    return "\n".join(lines)
+
+
 def format_final_summary(results: dict) -> str:
-    """Build the final raw-to-preMEDS summary as a string."""
+    """Build the final raw-to-preMEDS row summary."""
     if not results:
-        return "No processing results recorded."
+        return "1. ROW SUMMARY\n--------------\nNo processing results recorded."
 
     headers = [
         "Table",
@@ -156,7 +186,9 @@ def format_final_summary(results: dict) -> str:
                 f"{raw:,}",
                 f"{premeds:,}",
                 *[
-                    format_contribution(stages.get(stage, 0), total_change)
+                    format_contribution(
+                        stages.get(stage, 0), total_change
+                    )
                     for stage in STAGES
                 ],
                 format_change(total_change),
@@ -164,23 +196,9 @@ def format_final_summary(results: dict) -> str:
             ]
         )
 
-    widths = [
-        max(len(str(value)) for value in [header] + [row[i] for row in rows])
-        for i, header in enumerate(headers)
-    ]
-
-    def format_row(row):
-        return "  ".join(
-            f"{value:<{widths[i]}}" if i == 0 else f"{value:>{widths[i]}}"
-            for i, value in enumerate(row)
-        )
-
-    table_width = sum(widths) + 2 * (len(headers) - 1)
-
     lines = [
-        "=" * table_width,
-        "RAW → preMEDS SUMMARY",
-        "=" * table_width,
+        "1. ROW SUMMARY",
+        "--------------",
         "",
         "COLUMN EXPLANATIONS",
         "-------------------",
@@ -197,12 +215,8 @@ def format_final_summary(results: dict) -> str:
         "Stage percentages show contributions to net row loss.",
         "Positive changes add rows; negative changes remove rows.",
         "",
-        format_row(headers),
-        "-" * table_width,
+        format_table(headers, rows),
     ]
-
-    lines.extend(format_row(row) for row in rows)
-    lines.append("=" * table_width)
 
     return "\n".join(lines)
 
@@ -210,26 +224,65 @@ def format_final_summary(results: dict) -> str:
 def format_quality_summary(results: dict) -> str:
     """Format columns containing null values."""
     rows = [
-        (Path(table).name, column, nulls, total)
+        [
+            Path(table).name,
+            column,
+            f"{nulls:,}",
+            f"{100 * nulls / total if total else 0:.2f}%",
+        ]
         for (table, column), (nulls, total) in sorted(results.items())
         if nulls > 0
     ]
 
-    if not rows:
-        return "\nDATA QUALITY CHECK: No null values detected."
-
     lines = [
-        "\nDATA QUALITY SUMMARY — preMEDS null values",
-        f"{'Table':<30} {'Column':<25} {'Nulls':>12} {'Null %':>12}",
-        "-" * 82,
+        "2. NULL SUMMARY",
+        "---------------",
+        "",
     ]
 
-    for table, column, nulls, total in rows:
-        percentage = 100 * nulls / total if total else 0
-
-        lines.append(
-            f"{table:<30} {column:<25} "
-            f"{nulls:>12,} {percentage:>11.2f}%"
-        )
+    if not rows:
+        lines.append("No null values detected.")
+    else:
+        headers = [
+            "Table",
+            "Column",
+            "Nulls",
+            "Null %",
+        ]
+        lines.append(format_table(headers, rows))
 
     return "\n".join(lines)
+
+
+def format_data_quality_summary(results: dict) -> str:
+    """Combine row and null summaries into one final report."""
+    row_summary = format_final_summary(results["rows"])
+    null_summary = format_quality_summary(results["nulls"])
+
+    table_width = max(
+        80,
+        max(
+            (len(line) for line in row_summary.splitlines()),
+            default=0,
+        ),
+        max(
+            (len(line) for line in null_summary.splitlines()),
+            default=0,
+        ),
+    )
+
+    separator = "=" * table_width
+
+    return "\n".join(
+        [
+            separator,
+            "RAW → preMEDS DATA QUALITY SUMMARY",
+            separator,
+            "",
+            row_summary,
+            "",
+            null_summary,
+            "",
+            separator,
+        ]
+    )
