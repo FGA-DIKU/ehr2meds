@@ -1,11 +1,14 @@
 import logging
 from ehr2meds.preMEDS.data_handler import DataHandler
-from ehr2meds.preMEDS.data_quality import QualitySummary, format_quality_summary
 from ehr2meds.preMEDS.processors import Processor
-from ehr2meds.preMEDS.row_tracking import RowSummary, format_final_summary
 from multiprocessing import Pool
 from tqdm import tqdm
 from typing import Dict, Optional, Union
+from ehr2meds.preMEDS.data_quality import (
+    DataQualitySummary,
+    format_final_summary,
+    format_quality_summary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +28,7 @@ def process_single_table_worker(args):
             chunksize=chunksize,
         )
         processor = Processor()
-        summary = RowSummary()
-        quality_summary = QualitySummary()
+        summary = DataQualitySummary()
         next_row_idx = 0
 
         for chunk in tqdm(
@@ -41,7 +43,6 @@ def process_single_table_worker(args):
                 data_handler,
                 subject_id_mapping,
                 row_index_start=next_row_idx,
-                track_rows=True,
             )
 
             next_row_idx += len(chunk)
@@ -49,15 +50,14 @@ def process_single_table_worker(args):
             data_handler.save(processed_chunk, table_name)
 
             # Add statistics after the chunk has been saved
-            summary.add(table_config["filename"], row_result)
-            quality_summary.add(table_config["filename"], processed_chunk)
+            summary.add(table_config["filename"], row_result, processed_chunk)
 
             if test:
                 break
 
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
 
-        return summary.to_dict(), quality_summary.to_dict()
+        return summary.to_dict()
 
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
@@ -145,12 +145,12 @@ class PREMEDSExtractor:
                 worker_tasks,
             )
 
-        summary = RowSummary()
-        quality_summary = QualitySummary()
+        summary = DataQualitySummary()
 
-        for row_result, quality_result in worker_results:
-            summary.merge(row_result)
-            quality_summary.merge(quality_result)
+        for worker_result in worker_results:
+            summary.merge(worker_result)
 
-        print(format_final_summary(summary.to_dict()))
-        print(format_quality_summary(quality_summary.to_dict()))
+        results = summary.to_dict()
+
+        print(format_final_summary(results["rows"]))
+        print(format_quality_summary(results["nulls"]))

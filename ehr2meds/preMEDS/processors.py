@@ -1,7 +1,7 @@
 import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
-from ehr2meds.preMEDS.row_tracking import RowTracker
+from ehr2meds.preMEDS.data_quality import DataQualityTracker
 from ehr2meds.preMEDS.timestamps import add_timestamp_columns
 from ehr2meds.preMEDS.utils import (
     add_row_idx,
@@ -25,7 +25,6 @@ class Processor:
         data_handler,
         subject_id_mapping: Optional[dict] = None,
         row_index_start: int = 0,
-        track_rows: bool = False,
     ):
         """Process the table.
 
@@ -40,7 +39,7 @@ class Processor:
         9. Clean data
         10. Validate subject_id column
         """
-        tracker = RowTracker(initial_rows=len(df)) if track_rows else None
+        tracker = DataQualityTracker(initial_rows=len(df))
 
         df = add_row_idx(df, start=row_index_start)
         df = remove_timezones(df)
@@ -51,15 +50,13 @@ class Processor:
             data_handler,
             table_config.get("timestamp_columns", {}),
         )
-        if tracker is not None:
-            tracker.checkpoint("Table mappings", df)
+        tracker.checkpoint("Table mappings", df)
 
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
 
         if subject_id_mapping is not None:
             df = map_pids_to_ints(df, subject_id_mapping)
-            if tracker is not None:
-                tracker.checkpoint("Subject ID mapping", df)
+            tracker.checkpoint("Subject ID mapping", df)
 
         df = normalize_code_columns(df)
 
@@ -71,10 +68,7 @@ class Processor:
 
         validate_subject_id(df)
 
-        if tracker is not None:
-            return df, tracker.result()
-
-        return df
+        return df, tracker.result()
 
     @staticmethod
     def apply_mappings(
