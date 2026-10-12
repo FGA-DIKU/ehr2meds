@@ -342,8 +342,8 @@ tables:
       - region
     value_map:
       prioritet:
-        1: "ATA1"
-        2: "ATA3"
+        1: ATA1
+        2: ATA3
     timestamp_columns:
       start_timestamp:
         date: date_start
@@ -376,17 +376,17 @@ tables:
       - priority
     value_map:
       priority: # map emergency vs planned visits to LPR3
-        1: "ATA1"
-        2: "ATA3"
+        1: ATA1
+        2: ATA3
       c_kontaars:
-        1: "ALCC01"
-        2: "ALCC02"
-        3: "ALCC03"
-        4: "ALCC04"
-        6: "ALCC90"
-        7: "ALCC90"
-        8: "ALCC90"
-        9: "ALCC90"
+        1: ALCC01
+        2: ALCC02
+        3: ALCC03
+        4: ALCC04
+        6: ALCC90
+        7: ALCC90
+        8: ALCC90
+        9: ALCC90
     mappings:
       - source_column: c_spec
         via_file: c_spec_to_specialty.parquet
@@ -435,17 +435,17 @@ tables:
       - priority
     value_map:
       priority: # map emergency vs planned visits to LPR3
-        1: "ATA1"
-        2: "ATA3"
+        1: ATA1
+        2: ATA3
       c_kontaars:
-        1: "ALCC01"
-        2: "ALCC02"
-        3: "ALCC03"
-        4: "ALCC04"
-        6: "ALCC90"
-        7: "ALCC90"
-        8: "ALCC90"
-        9: "ALCC90"
+        1: ALCC01
+        2: ALCC02
+        3: ALCC03
+        4: ALCC04
+        6: ALCC90
+        7: ALCC90
+        8: ALCC90
+        9: ALCC90
     mappings:
       - source_column: c_spec
         via_file: c_spec_to_specialty.parquet
