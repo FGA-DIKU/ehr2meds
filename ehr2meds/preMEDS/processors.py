@@ -1,7 +1,7 @@
 import pandas as pd
 from ehr2meds.preMEDS.data_handler import DataHandler
-from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
 from ehr2meds.preMEDS.data_quality import DataQualityTracker
+from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
 from ehr2meds.preMEDS.timestamps import add_timestamp_columns
 from ehr2meds.preMEDS.utils import (
     add_row_idx,

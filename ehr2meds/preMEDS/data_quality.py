@@ -4,7 +4,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-
 STAGES = {
     "Table mappings": "Mappings",
     "Subject ID mapping": "Subject ID",
