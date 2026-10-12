@@ -60,7 +60,7 @@ class Processor:
 
         df = normalize_code_columns(df)
 
-        df = apply_value_map(df,table_config.get("value_map", {}))
+        df = apply_value_map(df, table_config.get("value_map", {}))
 
         df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
 
