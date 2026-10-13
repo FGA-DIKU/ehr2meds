@@ -30,7 +30,7 @@ stages:
       split_fracs:
         train: 0.7
         tuning: 0.1
-        test: 0.2
+        held_out: 0.2
   - convert_to_subject_sharded
   - convert_to_MEDS_events
   - filter_unknown_codes
