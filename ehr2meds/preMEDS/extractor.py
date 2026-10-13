@@ -141,11 +141,6 @@ class PREMEDSExtractor:
                 worker_tasks,
             )
 
-        summary = DataQualitySummary()
-
-        for worker_result in worker_results:
-            summary.merge(worker_result)
-
-        results = summary.to_dict()
+        results = DataQualitySummary.get_worker_summaries(worker_results)
 
         print(format_data_quality_summary(results))

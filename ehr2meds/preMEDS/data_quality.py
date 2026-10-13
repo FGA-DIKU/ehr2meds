@@ -97,6 +97,16 @@ class DataQualitySummary:
             },
             "nulls": dict(self.nulls),
         }
+    
+    @classmethod
+    def get_worker_summaries(cls, worker_results):
+        """Combine worker summaries into one final result."""
+        summary = cls()
+
+        for worker_result in worker_results:
+            summary.merge(worker_result)
+
+        return summary.to_dict()
 
 
 def format_change(value):
