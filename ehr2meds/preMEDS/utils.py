@@ -45,11 +45,11 @@ def clean_data(df: pd.DataFrame, tracker=None) -> pd.DataFrame:
         before = len(df)
         df = df.dropna(subset=MANDATORY_COLUMNS, how="any")
 
-        if tracker is not None:
-            tracker.record_change(
-                "Mandatory-column filtering",
-                len(df) - before,
-            )
+        
+        tracker.record_change(
+            "Mandatory-column filtering",
+            len(df) - before,
+        )
     # row_idx is always unique, so don't consider that column
     columns_to_check = [col for col in df.columns if col != ROW_INDEX]
 
@@ -57,11 +57,11 @@ def clean_data(df: pd.DataFrame, tracker=None) -> pd.DataFrame:
     before = len(df)
     df = df.drop_duplicates(subset=columns_to_check)
 
-    if tracker is not None:
-        tracker.record_change(
-            "Deduplication",
-            len(df) - before,
-        )
+    
+    tracker.record_change(
+        "Deduplication",
+        len(df) - before,
+    )
 
     return df
 
