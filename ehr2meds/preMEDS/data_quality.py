@@ -1,9 +1,9 @@
 """Track row changes and missing values during preMEDS processing."""
 
+import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +13,7 @@ STAGES = (
     "Mandatory-column filtering",
     "Deduplication",
 )
+
 
 @dataclass
 class DataQualityTracker:
@@ -36,9 +37,7 @@ class DataQualityTracker:
             self.record_change(stage, new_count - self.current_rows)
         except Exception:
             self.failed = True
-            logger.exception(
-                "Data-quality tracking failed at stage '%s'.", stage
-            )
+            logger.exception("Data-quality tracking failed at stage '%s'.", stage)
 
     def record_change(self, stage: str, delta: int):
         """Record a known row-count change."""
@@ -70,6 +69,7 @@ class DataQualityTracker:
             self.failed = True
             logger.exception("Could not retrieve data-quality tracking results.")
             return None
+
 
 class DataQualitySummary:
     """Aggregate row changes and null counts across chunks and workers."""
@@ -126,7 +126,7 @@ class DataQualitySummary:
             },
             "nulls": dict(self.nulls),
         }
-    
+
     @classmethod
     def get_worker_summaries(cls, worker_results):
         """Combine worker summaries into one final result."""
@@ -250,16 +250,19 @@ def format_final_summary(results: dict) -> str:
 
     return "\n".join(lines)
 
+
 def format_quality_summary(results: dict) -> str:
     """Format null statistics for all columns, grouped by table."""
     tables = defaultdict(list)
 
     for (table, column), (nulls, total) in sorted(results.items()):
-        tables[table].append([
-            column,
-            f"{nulls:,}",
-            f"{100 * nulls / total if total else 0:.2f}%",
-        ])
+        tables[table].append(
+            [
+                column,
+                f"{nulls:,}",
+                f"{100 * nulls / total if total else 0:.2f}%",
+            ]
+        )
 
     lines = [
         "2. NULL SUMMARY",
@@ -270,12 +273,14 @@ def format_quality_summary(results: dict) -> str:
         lines.extend(["", "No columns recorded."])
     else:
         for table, rows in tables.items():
-            lines.extend([
-                "",
-                Path(table).name,
-                "-" * len(Path(table).name),
-                format_table(["Column", "Nulls", "Null %"], rows),
-            ])
+            lines.extend(
+                [
+                    "",
+                    Path(table).name,
+                    "-" * len(Path(table).name),
+                    format_table(["Column", "Nulls", "Null %"], rows),
+                ]
+            )
 
     return "\n".join(lines)
 

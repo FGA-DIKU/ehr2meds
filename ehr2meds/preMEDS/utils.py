@@ -56,11 +56,8 @@ def clean_data(df: pd.DataFrame, tracker) -> pd.DataFrame:
     # Remove duplicates
     before = len(df)
     df = df.drop_duplicates(subset=columns_to_check)
-    
-    tracker.record_change(
-        "Deduplication",
-        len(df) - before
-    )
+
+    tracker.record_change("Deduplication", len(df) - before)
 
     return df
 
