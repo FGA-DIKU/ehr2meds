@@ -3,6 +3,9 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 STAGES = (
     "Table mappings",
@@ -11,7 +14,6 @@ STAGES = (
     "Deduplication",
 )
 
-
 @dataclass
 class DataQualityTracker:
     """Track row-count changes for one processed chunk."""
@@ -19,28 +21,55 @@ class DataQualityTracker:
     initial_rows: int
     current_rows: int = field(init=False)
     stage_changes: dict = field(default_factory=lambda: defaultdict(int))
+    failed: bool = False
 
     def __post_init__(self):
         self.current_rows = self.initial_rows
 
     def checkpoint(self, stage: str, df):
         """Record the net change since the previous checkpoint."""
-        new_count = len(df)
-        self.record_change(stage, new_count - self.current_rows)
+        if self.failed:
+            return
+
+        try:
+            new_count = len(df)
+            self.record_change(stage, new_count - self.current_rows)
+        except Exception:
+            self.failed = True
+            logger.exception(
+                "Data-quality tracking failed at stage '%s'.", stage
+            )
 
     def record_change(self, stage: str, delta: int):
         """Record a known row-count change."""
-        self.stage_changes[stage] += delta
-        self.current_rows += delta
+        if self.failed:
+            return
+
+        try:
+            self.stage_changes[stage] += delta
+            self.current_rows += delta
+        except Exception:
+            self.failed = True
+            logger.exception(
+                "Data-quality tracking failed while recording stage '%s'.",
+                stage,
+            )
 
     def result(self):
-        """Return serializable statistics for this chunk."""
-        return {
-            "input": self.initial_rows,
-            "output": self.current_rows,
-            "stages": dict(self.stage_changes),
-        }
+        """Return statistics, or None if tracking failed."""
+        if self.failed:
+            return None
 
+        try:
+            return {
+                "input": self.initial_rows,
+                "output": self.current_rows,
+                "stages": dict(self.stage_changes),
+            }
+        except Exception:
+            self.failed = True
+            logger.exception("Could not retrieve data-quality tracking results.")
+            return None
 
 class DataQualitySummary:
     """Aggregate row changes and null counts across chunks and workers."""

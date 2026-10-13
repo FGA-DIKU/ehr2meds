@@ -25,6 +25,7 @@ def process_single_table_worker(args):
         )
         processor = Processor()
         summary = DataQualitySummary()
+        tracking_failed = False
         next_row_idx = 0
 
         for chunk in tqdm(
@@ -42,18 +43,31 @@ def process_single_table_worker(args):
             )
 
             next_row_idx += len(chunk)
-
             data_handler.save(processed_chunk, table_name)
 
-            # Add statistics after the chunk has been saved
-            summary.add(table_config["filename"], row_result, processed_chunk)
+            # Track data quality without interrupting processing
+            if not tracking_failed:
+                try:
+                    if row_result is None:
+                        raise ValueError("Row tracking failed")
+                    summary.add(table_config["filename"], row_result, processed_chunk)
+                except Exception:
+                    tracking_failed = True
+                    logger.exception("Data-quality tracking failed for %s", table_name)
 
             if test:
                 break
 
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
 
-        return summary.to_dict()
+        if tracking_failed:
+            return None
+
+        try:
+            return summary.to_dict()
+        except Exception:
+            logger.exception("Data-quality summary failed for %s", table_name)
+            return None
 
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
@@ -141,6 +155,11 @@ class PREMEDSExtractor:
                 worker_tasks,
             )
 
-        results = DataQualitySummary.get_worker_summaries(worker_results)
-
-        print(format_data_quality_summary(results))
+        if any(result is None for result in worker_results):
+            logger.warning("Data-quality summary skipped due to tracking failure.")
+        else:
+            try:
+                results = DataQualitySummary.get_worker_summaries(worker_results)
+                print(format_data_quality_summary(results))
+            except Exception:
+                logger.exception("Data-quality summary failed and was skipped.")
