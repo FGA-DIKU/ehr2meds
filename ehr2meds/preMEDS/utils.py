@@ -38,7 +38,7 @@ def map_pids_to_ints(df: pd.DataFrame, subject_id_mapping: Dict[str, int]) -> pd
     return df
 
 
-def clean_data(df: pd.DataFrame, tracker=None) -> pd.DataFrame:
+def clean_data(df: pd.DataFrame, tracker) -> pd.DataFrame:
     """Remove rows with missing mandatory values and duplicate records."""
     # Clean data
     if all(col in df.columns for col in MANDATORY_COLUMNS):
