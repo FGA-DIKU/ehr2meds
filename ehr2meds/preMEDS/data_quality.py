@@ -250,36 +250,32 @@ def format_final_summary(results: dict) -> str:
 
     return "\n".join(lines)
 
-
 def format_quality_summary(results: dict) -> str:
-    """Format columns containing null values."""
-    rows = [
-        [
-            Path(table).name,
+    """Format null statistics for all columns, grouped by table."""
+    tables = defaultdict(list)
+
+    for (table, column), (nulls, total) in sorted(results.items()):
+        tables[table].append([
             column,
             f"{nulls:,}",
             f"{100 * nulls / total if total else 0:.2f}%",
-        ]
-        for (table, column), (nulls, total) in sorted(results.items())
-        if nulls > 0
-    ]
+        ])
 
     lines = [
         "2. NULL SUMMARY",
         "---------------",
-        "",
     ]
 
-    if not rows:
-        lines.append("No null values detected.")
+    if not tables:
+        lines.extend(["", "No columns recorded."])
     else:
-        headers = [
-            "Table",
-            "Column",
-            "Nulls",
-            "Null %",
-        ]
-        lines.append(format_table(headers, rows))
+        for table, rows in tables.items():
+            lines.extend([
+                "",
+                Path(table).name,
+                "-" * len(Path(table).name),
+                format_table(["Column", "Nulls", "Null %"], rows),
+            ])
 
     return "\n".join(lines)
 
