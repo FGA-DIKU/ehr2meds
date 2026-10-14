@@ -1,13 +1,15 @@
 import logging
 from ehr2meds.preMEDS.data_handler import DataHandler
-from ehr2meds.preMEDS.data_quality import DataQualitySummary, format_data_quality_summary
 from ehr2meds.preMEDS.processors import Processor
 from multiprocessing import Pool
 from tqdm import tqdm
 from typing import Dict, Optional, Union
+from ehr2meds.preMEDS.data_quality import (
+    get_data_quality_summary,
+    format_data_quality_summary,
+)
 
 logger = logging.getLogger(__name__)
-
 
 def process_single_table_worker(args):
     """
@@ -24,8 +26,7 @@ def process_single_table_worker(args):
             chunksize=chunksize,
         )
         processor = Processor()
-        summary = DataQualitySummary()
-        tracking_failed = False
+        summary = []
         next_row_idx = 0
 
         for chunk in tqdm(
@@ -45,29 +46,14 @@ def process_single_table_worker(args):
             next_row_idx += len(chunk)
             data_handler.save(processed_chunk, table_name)
 
-            # Track data quality without interrupting processing
-            if not tracking_failed:
-                try:
-                    if row_result is None:
-                        raise ValueError("Row tracking failed")
-                    summary.add(table_config["filename"], row_result, processed_chunk)
-                except Exception:
-                    tracking_failed = True
-                    logger.exception("Data-quality tracking failed for %s", table_name)
+            summary.append([table_config["filename"], row_result, processed_chunk])
 
             if test:
                 break
 
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
 
-        if tracking_failed:
-            return None
-
-        try:
-            return summary.to_dict()
-        except Exception:
-            logger.exception("Data-quality summary failed for %s", table_name)
-            return None
+        return summary
 
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
@@ -155,11 +141,9 @@ class PREMEDSExtractor:
                 worker_tasks,
             )
 
-        if any(result is None for result in worker_results):
-            logger.warning("Data-quality summary skipped due to tracking failure.")
+        results = get_data_quality_summary(worker_results)
+
+        if results is not None:
+            print(format_data_quality_summary(results))
         else:
-            try:
-                results = DataQualitySummary.get_worker_summaries(worker_results)
-                print(format_data_quality_summary(results))
-            except Exception:
-                logger.exception("Data-quality summary failed and was skipped.")
+            logger.warning("Data-quality summary skipped due to tracking failure.")

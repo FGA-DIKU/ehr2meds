@@ -71,71 +71,38 @@ class DataQualityTracker:
             return None
 
 
-class DataQualitySummary:
-    """Aggregate row changes and null counts across chunks and workers."""
+def get_data_quality_summary(worker_results):
+    """Aggregate row changes and null counts across workers."""
+    rows = defaultdict(
+        lambda: {
+            "input": 0,
+            "output": 0,
+            "stages": defaultdict(int),
+        }
+    )
+    nulls = defaultdict(lambda: [0, 0])
 
-    def __init__(self):
-        self.rows = defaultdict(
-            lambda: {
-                "input": 0,
-                "output": 0,
-                "stages": defaultdict(int),
-            }
-        )
-        self.nulls = defaultdict(lambda: [0, 0])
+    for worker in worker_results:
+        for table, row_result, df in worker:
+            if row_result is None:
+                return None
 
-    def add(self, table: str, row_result: dict, df):
-        """Add row statistics and null counts from one processed chunk."""
-        entry = self.rows[table]
-        entry["input"] += row_result["input"]
-        entry["output"] += row_result["output"]
+            entry = rows[table]
+            entry["input"] += row_result["input"]
+            entry["output"] += row_result["output"]
 
-        for stage, delta in row_result["stages"].items():
-            entry["stages"][stage] += delta
-
-        for column in df.columns:
-            counts = self.nulls[(table, column)]
-            counts[0] += int(df[column].isna().sum())
-            counts[1] += len(df)
-
-    def merge(self, other_results: dict):
-        """Merge results returned by a multiprocessing worker."""
-        for table, result in other_results["rows"].items():
-            entry = self.rows[table]
-            entry["input"] += result["input"]
-            entry["output"] += result["output"]
-
-            for stage, delta in result["stages"].items():
+            for stage, delta in row_result["stages"].items():
                 entry["stages"][stage] += delta
 
-        for key, (nulls, total) in other_results["nulls"].items():
-            counts = self.nulls[key]
-            counts[0] += nulls
-            counts[1] += total
+            for column in df.columns:
+                counts = nulls[(table, column)]
+                counts[0] += int(df[column].isna().sum())
+                counts[1] += len(df)
 
-    def to_dict(self):
-        """Return serializable copies of the aggregated results."""
-        return {
-            "rows": {
-                table: {
-                    "input": data["input"],
-                    "output": data["output"],
-                    "stages": dict(data["stages"]),
-                }
-                for table, data in self.rows.items()
-            },
-            "nulls": dict(self.nulls),
-        }
-
-    @classmethod
-    def get_worker_summaries(cls, worker_results):
-        """Combine worker summaries into one final result."""
-        summary = cls()
-
-        for worker_result in worker_results:
-            summary.merge(worker_result)
-
-        return summary.to_dict()
+    return {
+        "rows": rows,
+        "nulls": nulls,
+    }
 
 
 def format_change(value):
