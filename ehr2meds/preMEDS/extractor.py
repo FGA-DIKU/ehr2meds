@@ -1,15 +1,16 @@
 import logging
 from ehr2meds.preMEDS.data_handler import DataHandler
+from ehr2meds.preMEDS.data_quality import (
+    format_data_quality_summary,
+    get_data_quality_summary,
+)
 from ehr2meds.preMEDS.processors import Processor
 from multiprocessing import Pool
 from tqdm import tqdm
 from typing import Dict, Optional, Union
-from ehr2meds.preMEDS.data_quality import (
-    get_data_quality_summary,
-    format_data_quality_summary,
-)
 
 logger = logging.getLogger(__name__)
+
 
 def process_single_table_worker(args):
     """
