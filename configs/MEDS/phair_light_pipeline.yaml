@@ -14,7 +14,7 @@ source_event_conversion_config_fp: ${oc.env:EVENT_CONVERSION_CONFIG_FP}
 event_conversion_config_fp: ${output_dir}/event_conversion_config.augmented.yaml
 
 etl_metadata:
-  dataset_name: preMEDS
+  dataset_name: phair_light
   dataset_version: 2.0
 
 stages:
@@ -28,8 +28,9 @@ stages:
       data_input_dir: ${input_dir}/data
   - split_and_shard_subjects:
       split_fracs:
-        train: 0.9
+        train: 0.7
         tuning: 0.1
+        held_out: 0.2
   - convert_to_subject_sharded
   - convert_to_MEDS_events
   - filter_unknown_codes

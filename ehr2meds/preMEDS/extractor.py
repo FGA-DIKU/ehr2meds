@@ -1,5 +1,9 @@
 import logging
 from ehr2meds.preMEDS.data_handler import DataHandler
+from ehr2meds.preMEDS.data_quality import (
+    format_data_quality_summary,
+    get_data_quality_summary,
+)
 from ehr2meds.preMEDS.processors import Processor
 from multiprocessing import Pool
 from tqdm import tqdm
@@ -23,16 +27,16 @@ def process_single_table_worker(args):
             chunksize=chunksize,
         )
         processor = Processor()
-
+        summary = []
         next_row_idx = 0
 
         for chunk in tqdm(
             data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
             desc=f"Chunks {table_name}",
-            position=0,  # Helps prevent progress bars from overlapping wildly
+            position=0,
             leave=True,
         ):
-            processed_chunk = processor.process(
+            processed_chunk, row_result = processor.process(
                 chunk,
                 table_config,
                 data_handler,
@@ -41,13 +45,17 @@ def process_single_table_worker(args):
             )
 
             next_row_idx += len(chunk)
-
             data_handler.save(processed_chunk, table_name)
+
+            summary.append([table_config["filename"], row_result, processed_chunk])
 
             if test:
                 break
 
         logger.info(f"Finished processing table: {table_name}. Save path {output_path}/{table_name}")
+
+        return summary
+
     except Exception as e:
         logger.error(f"Error processing {table_name}: {str(e)}")
         raise
@@ -128,7 +136,15 @@ class PREMEDSExtractor:
 
         logger.info(f"Starting multiprocessing pool with {self.cfg.num_workers} workers. Test enabled: {self.cfg.test}")
 
-        # Use a Pool to manage the N concurrent table workers
         with Pool(processes=self.cfg.num_workers) as pool:
-            # map will block until all tables are processed and raise exceptions if any fail
-            pool.map(process_single_table_worker, worker_tasks)
+            worker_results = pool.map(
+                process_single_table_worker,
+                worker_tasks,
+            )
+
+        results = get_data_quality_summary(worker_results)
+
+        if results is not None:
+            print(format_data_quality_summary(results))
+        else:
+            logger.warning("Data-quality summary skipped due to tracking failure.")

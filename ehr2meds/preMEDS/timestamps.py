@@ -9,9 +9,15 @@ TIME_COMPONENTS = {"hour": ("h", 23), "minute": ("m", 59), "second": ("s", 59)}
 def add_timestamp_columns(df: pd.DataFrame, timestamp_config: dict) -> pd.DataFrame:
     """Combine each date with as much valid time information as is available."""
     for output_column, config in timestamp_config.items():
-        date = pd.to_datetime(df[config["date"]], errors="coerce").dt.normalize()
+        date = pd.to_datetime(
+            df[config["date"]],
+            format=config.get("format"),
+            errors="coerce",
+        ).dt.normalize()
+
         timestamp = date + create_time_delta(df, config)
         df[output_column] = timestamp.astype("datetime64[us]")
+
     return df
 
 

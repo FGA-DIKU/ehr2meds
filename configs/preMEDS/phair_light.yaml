@@ -154,6 +154,8 @@ tables:
     value_map:
       date_end:
         '.': null
+      time_end:
+        '.': null
     timestamp_columns:
       start_timestamp:
         date: date_start
@@ -181,6 +183,8 @@ tables:
     value_map:
       date_end:
         '.': null
+      time_end:
+        '.': null
     timestamp_columns:
       start_timestamp:
         date: date_start
@@ -204,13 +208,10 @@ tables:
     columns:
       v_cpr: subject_id
       d_ord_start: date_start
-      d_ord_slut: date_end
       c_atc:
     timestamp_columns:
       start_timestamp:
         date: date_start
-      end_timestamp:
-        date: date_end
 
   t_diag:
     filename: ${paths.tables_dir}/t_diag.parquet

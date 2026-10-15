@@ -15,7 +15,7 @@ event_conversion_config_fp: ${output_dir}/event_conversion_config.augmented.yaml
 
 
 etl_metadata:
-  dataset_name: preMEDS
+  dataset_name: lymphoma
   dataset_version: 2.0
 
 stages:

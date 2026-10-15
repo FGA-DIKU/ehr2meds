@@ -68,8 +68,9 @@ def add_sor_attributes(df: pd.DataFrame, sor_table: pd.DataFrame, config: dict) 
 
     contact_keys = df[[source_id_column, source_date_column]].drop_duplicates().copy()
     contact_keys["normalized_sor_id"] = normalize_sor_id(contact_keys[source_id_column])
-    contact_keys["contact_date"] = pd.to_datetime(contact_keys[source_date_column], errors="coerce")
-
+    contact_keys["contact_date"] = pd.to_datetime(
+        contact_keys[source_date_column], format=config.get("date_format"), errors="coerce"
+    ).dt.normalize()
     candidates = contact_keys.merge(
         sor_table,
         left_on="normalized_sor_id",
