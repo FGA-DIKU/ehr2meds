@@ -177,13 +177,7 @@ pato:
   pathology:
     code: f"PATHOLOGY//{$c_snomedkode}"
     time: $start_timestamp
-  clinical_specialty:
-    code: f"CONTACT_SPECIALTY//{$specialty}"
-    time: $start_timestamp
-  region_code:
-    code: f"REGION//{$region}"
-    time: $start_timestamp
-  
+    
 # This registry is part of data dilevery 1 and should be switched out for laboratorieproevesvar when data delivery 2 is available
 lab_forsker:
   lab_test:

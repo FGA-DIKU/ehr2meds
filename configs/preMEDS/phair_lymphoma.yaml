@@ -477,15 +477,6 @@ tables:
       v_cprnr: subject_id
       d_modtdato: date_start
       c_snomedkode:
-      c_rekvafdsor: sor_id
-    mappings:
-      - function: sor
-        source_column: sor_id
-        source_date_column: date_start
-        via_file: sor2_contact_mapping.parquet
-        join_on: sor_id
-    normalize_integer_columns:
-      - region
     timestamp_columns:
       start_timestamp:
         date: date_start
