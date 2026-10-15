@@ -371,7 +371,6 @@ tables:
     normalize_integer_columns:
       - c_kontaars
       - c_pattype
-      - c_spec
       - c_sgh
       - priority
     value_map:
@@ -430,7 +429,6 @@ tables:
     normalize_integer_columns:
       - c_kontaars
       - c_pattype
-      - c_spec
       - c_sgh
       - priority
     value_map:
