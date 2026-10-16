@@ -7,6 +7,7 @@ import polars as pl
 from collections import defaultdict
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from ehr2meds.meds_stages.aggregate_numeric_metadata import event_time_filter
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig, OmegaConf
@@ -228,7 +229,7 @@ def summarize_mapping(mapping: pl.DataFrame, columns: Mapping[str, str]) -> dict
         "columns": {
             DataSchema.code_name: "original MEDS code",
             columns["mapped_code"]: "code used after adaptive truncation",
-            columns["count"]: "raw events in training data",
+            columns["count"]: "raw events in training data (before event_time_cutoff, if set)",
             columns["profile"]: "hierarchy used",
             columns["reason"]: "mapping decision",
         },
@@ -260,11 +261,18 @@ def add_unseen_metadata_codes(
 
 
 def mapper_fntr(stage_cfg: DictConfig) -> Callable[[pl.LazyFrame], pl.LazyFrame]:
-    """Count training events per code; ``train_only`` selects the shards."""
+    """Count training events per code; ``train_only`` selects the shards.
+
+    With ``event_time_cutoff``, only events before that date are counted, as in
+    ``aggregate_numeric_metadata``; the fitted mapping still applies to every event.
+    """
     read_profiles(stage_cfg)
     count_column = stage_cfg.columns["count"]
+    time_filter = event_time_filter(stage_cfg.get("event_time_cutoff"))
 
     def mapper(df: pl.LazyFrame) -> pl.LazyFrame:
+        if time_filter is not None:
+            df = df.filter(time_filter)
         counts = df.group_by(DataSchema.code_name).len(count_column)
         counts = counts.with_columns(pl.col(count_column).cast(pl.UInt64))
         return counts.sort(DataSchema.code_name)
