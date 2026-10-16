@@ -1,4 +1,7 @@
 minimum_count: 100
+# Optional first excluded date (YYYY-MM-DD). When set, only events before it are
+# counted, as in aggregate_numeric_metadata; the mapping applies to all events.
+event_time_cutoff: null
 mapping_output_filepath: null
 # Defaults to <mapping_output_filepath>.summary.json.
 mapping_summary_output_filepath: null

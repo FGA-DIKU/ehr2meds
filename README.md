@@ -97,7 +97,7 @@ The package includes the following stages to be used in MEDS pipeline configurat
 | `augment_event_config` | Adds shared columns, such as `row_idx`, to every event definition so they do not need to be repeated throughout the event configuration. |
 | `aggregate_numeric_metadata` | Fits per-code numeric normalization bounds and adaptive quantile bins. It supports training-only fitting, an optional date cutoff (for OOT settings), hard plausibility limits (filtering values greater or lower than biological limits), and writes reusable numeric metadata. |
 | `annotate_numeric_values` | Applies the fitted metadata (from `aggregate_numeric_metadata`) to create new columns based on the numeric values. It adds normalized values, bin indices, and binned representatives. If no local fit exists, falls back to external numeric metadata instead. |
-| `fit_adaptive_code_mapping` | Fits a code mapping from training-event counts by climbing character-position levels (ATC and SKS diagnosis/operation/procedure) only as far as needed to clear a minimum count. |
+| `fit_adaptive_code_mapping` | Fits a code mapping from training-event counts by climbing character-position levels (ATC and SKS diagnosis/operation/procedure) only as far as needed to clear a minimum count. It supports training-only fitting and an optional date cutoff (for OOT settings). |
 | `apply_adaptive_code_mapping` | Applies the frozen local mapping (or, if none was fitted, an external one) to every data split while retaining the MEDS event namespace. |
 | `finalize_adaptive_code_metadata` | Rewrites and collapses `codes.parquet` to match the adaptively transformed data vocabulary. |
 | `join_numeric_bins` | Optionally creates the joined representation of numeric values, such as `LABTEST//NPU01566//BIN_3`, from the numeric bin index. |
@@ -109,7 +109,8 @@ The package includes the following stages to be used in MEDS pipeline configurat
 Adaptive mapping uses raw training-event counts, not distinct-subject counts:
 
 1. `fit_adaptive_code_mapping` creates a frozen Parquet mapping and
-   `*.summary.json` audit from all training shards.
+   `*.summary.json` audit from all training shards. With `event_time_cutoff`,
+   only events before that date are counted, as in `aggregate_numeric_metadata`.
 2. `apply_adaptive_code_mapping` maps every data shard.
 3. `finalize_adaptive_code_metadata` reconciles `codes.parquet` with the mapped
    vocabulary.
