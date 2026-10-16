@@ -7,12 +7,11 @@ import polars as pl
 from collections import defaultdict
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from ehr2meds.meds_stages.aggregate_numeric_metadata import event_time_filter
 from meds import DataSchema
 from MEDS_transforms.stages import Stage
 from omegaconf import DictConfig, OmegaConf
 from pathlib import Path
-
-from ehr2meds.meds_stages.aggregate_numeric_metadata import event_time_filter
 
 
 @dataclass(frozen=True)
