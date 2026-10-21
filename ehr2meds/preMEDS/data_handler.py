@@ -55,9 +55,7 @@ class DataHandler:
         """
 
         if df.empty:
-            logger.warning(
-                f"Empty DataFrame for {filename}, skipping save"
-            )
+            logger.warning(f"Empty DataFrame for {filename}, skipping save")
             return
 
         if self.output_dir is None:
@@ -67,44 +65,25 @@ class DataHandler:
 
         os.makedirs(self.output_dir, exist_ok=True)
 
-        path = os.path.join(
-            self.output_dir,
-            f"{filename}.{self.write_file_type}"
-        )
+        path = os.path.join(self.output_dir, f"{filename}.{self.write_file_type}")
 
         if self.write_file_type == "parquet":
-
-            table = pa.Table.from_pandas(
-                df,
-                preserve_index=False
-            )
+            table = pa.Table.from_pandas(df, preserve_index=False)
 
             if filename not in self._writers:
-                self._writers[filename] = pq.ParquetWriter(
-                    path,
-                    table.schema,
-                    compression="snappy"
-                )
+                self._writers[filename] = pq.ParquetWriter(path, table.schema, compression="snappy")
 
             self._writers[filename].write_table(table)
 
         elif self.write_file_type == "csv":
-
             if not os.path.exists(path):
                 df.to_csv(path, index=False)
             else:
-                df.to_csv(
-                    path,
-                    index=False,
-                    mode="a",
-                    header=False
-                )
+                df.to_csv(path, index=False, mode="a", header=False)
 
         else:
-            raise ValueError(
-                f"Filetype {self.write_file_type} not implemented."
-            )
-        
+            raise ValueError(f"Filetype {self.write_file_type} not implemented.")
+
     def close(self):
         """
         Close all open Parquet writers.

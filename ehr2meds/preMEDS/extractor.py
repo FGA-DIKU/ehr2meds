@@ -64,6 +64,7 @@ def process_single_table_worker(args):
         if "data_handler" in locals():
             data_handler.close()
 
+
 class PREMEDSExtractor:
     """
     Preprocessor for MEDS (Medical Event Data Set) that handles patient data and medical tables.
