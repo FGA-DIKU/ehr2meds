@@ -61,9 +61,7 @@ def process_single_table_worker(args):
         raise
 
     finally:
-        if "data_handler" in locals():
-            data_handler.close()
-
+        data_handler.close()
 
 class PREMEDSExtractor:
     """
