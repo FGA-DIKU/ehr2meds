@@ -26,7 +26,7 @@ class DataHandler:
         self.output_dir = output_dir
         self.write_file_type = write_file_type
         self.chunksize = chunksize
-        self._writers = {}
+        self.writers = {}
 
     def load(self, filename: str, cols: Mapping[str, Optional[str]]) -> pd.DataFrame:
         rename = {k: v for k, v in cols.items() if v is not None}
@@ -70,10 +70,10 @@ class DataHandler:
         if self.write_file_type == "parquet":
             table = pa.Table.from_pandas(df, preserve_index=False)
 
-            if filename not in self._writers:
-                self._writers[filename] = pq.ParquetWriter(path, table.schema, compression="snappy")
+            if filename not in self.writers:
+                self.writers[filename] = pq.ParquetWriter(path, table.schema, compression="snappy")
 
-            self._writers[filename].write_table(table)
+            self.writers[filename].write_table(table)
 
         elif self.write_file_type == "csv":
             if not os.path.exists(path):
@@ -89,7 +89,7 @@ class DataHandler:
         Close all open Parquet writers.
         """
 
-        for writer in self._writers.values():
+        for writer in self.writers.values():
             writer.close()
 
-        self._writers.clear()
+        self.writers.clear()
