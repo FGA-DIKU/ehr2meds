@@ -60,6 +60,9 @@ def process_single_table_worker(args):
         logger.error(f"Error processing {table_name}: {str(e)}")
         raise
 
+    finally:
+        data_handler.close()
+
 
 class PREMEDSExtractor:
     """

@@ -1,6 +1,7 @@
 import logging
 import os
 import pandas as pd
+import pyarrow as pa
 import pyarrow.parquet as pq
 from typing import Mapping, Optional
 
@@ -25,6 +26,7 @@ class DataHandler:
         self.output_dir = output_dir
         self.write_file_type = write_file_type
         self.chunksize = chunksize
+        self.writers = {}
 
     def load(self, filename: str, cols: Mapping[str, Optional[str]]) -> pd.DataFrame:
         rename = {k: v for k, v in cols.items() if v is not None}
@@ -49,38 +51,45 @@ class DataHandler:
 
     def save(self, df: pd.DataFrame, filename: str) -> None:
         """
-        Save the processed data to a file.
-
-        Args:
-            df: DataFrame containing the processed data
-            filename: Name of the file to save
-            mode: Mode for saving the file ("w" for write, "a" for append)
+        Save processed data incrementally to a single Parquet file.
         """
+
         if df.empty:
-            logger.error(f"Empty DataFrame for {filename}, skipping save")
+            logger.warning(f"Empty DataFrame for {filename}, skipping save")
             return
+
         if self.output_dir is None:
-            raise AttributeError("`output_dir` is not set; define `output_dir` for .save calls")
+            raise AttributeError("output_dir is not set")
 
         logger.info(f"Saving {filename} with {len(df):_} rows")
+
         os.makedirs(self.output_dir, exist_ok=True)
 
-        # Decide on filetype
         path = os.path.join(self.output_dir, f"{filename}.{self.write_file_type}")
 
         if self.write_file_type == "parquet":
-            if not os.path.exists(path):
-                df.to_parquet(path, index=False)
-            else:
-                # For append mode with parquet, we need to read, concat, then write
-                existing_df = pd.read_parquet(path)
-                combined_df = pd.concat([existing_df, df], ignore_index=True)
-                combined_df.to_parquet(path, index=False)
+            table = pa.Table.from_pandas(df, preserve_index=False)
+
+            if filename not in self.writers:
+                self.writers[filename] = pq.ParquetWriter(path, table.schema, compression="snappy")
+
+            self.writers[filename].write_table(table)
+
         elif self.write_file_type == "csv":
             if not os.path.exists(path):
-                df.to_csv(path, index=False, mode="w")
+                df.to_csv(path, index=False)
             else:
-                # append without header
                 df.to_csv(path, index=False, mode="a", header=False)
+
         else:
             raise ValueError(f"Filetype {self.write_file_type} not implemented.")
+
+    def close(self):
+        """
+        Close all open Parquet writers.
+        """
+
+        for writer in self.writers.values():
+            writer.close()
+
+        self.writers.clear()
