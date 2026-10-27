@@ -110,8 +110,8 @@ def main(cfg: DictConfig) -> None:
     data_files = sorted(data_input_dir.glob("**/*.parquet"))
     if not data_files:
         raise FileNotFoundError(f"No transformed MEDS data shards found in {data_input_dir}")
-    observed = pl.concat([pl.scan_parquet(path).select(DataSchema.code_name) for path in data_files])
-    observed = observed.select(pl.col(DataSchema.code_name).unique()).collect()
+    observed = pl.concat([pl.read_parquet(path, columns=[DataSchema.code_name]).unique() for path in data_files])
+    observed = observed.unique()
     observed_codes = observed.get_column(DataSchema.code_name).to_list()
     collapsed = add_missing_observed_metadata(collapsed, observed_codes)
 
