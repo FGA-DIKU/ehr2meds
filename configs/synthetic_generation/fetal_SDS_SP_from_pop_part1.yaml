@@ -206,6 +206,15 @@ linked_data:
             args:
               new_value: -1
               probability: 0.5
+      APGARSCORE_EFTER5MINUTTER:
+        type: rand_int
+        args:
+          min_val: 0
+          max_val: 10
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
     linked_columns:
       CPR_BARN:
         type: choice_unique
@@ -260,6 +269,15 @@ linked_data:
         type: choice
         args:
           options: [0, 1, 2]
+      Apgarscore:
+        type: rand_int
+        args:
+          min_val: 0
+          max_val: 10
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
       BMI_Mor:
         type: rand_float
         args:

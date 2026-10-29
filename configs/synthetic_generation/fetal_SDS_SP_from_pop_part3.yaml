@@ -297,6 +297,15 @@ linked_data:
           - type: insert_missing
             args:
               probability: 0.25
+      Apgar 5:
+        type: rand_int
+        args:
+          min_val: 0
+          max_val: 10
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
     linked_columns:
       MOR_CPR:
         type: choice
