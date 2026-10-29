@@ -309,7 +309,7 @@ linked_data:
               probability: 0.05
       FoedselsDato_Barn:
         type: rand_date
-      Foedselsaar:
+      FoedselsAar:
         type: rand_int
         args:
           min_val: 1997
