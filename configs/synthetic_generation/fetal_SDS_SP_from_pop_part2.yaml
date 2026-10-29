@@ -553,7 +553,7 @@ linked_data: # Data that needs to be linked to the data above
         type: mix_function
         args:
           functions:
-            - type: rand_float 
+            - type: rand_float
               args:
                 min_val: 0.001
                 max_val: 100
@@ -565,3 +565,35 @@ linked_data: # Data that needs to be linked to the data above
               args:
                 options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
           probabilities: [0.4, 0.4, 0.2]
+      Enhed:
+        type: choice
+        args:
+          options: ["mmol/L", "g/L", "mg/L", "µg/L", "nmol/L", "pmol/L", "x 10^9/L"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+      Antibiotika:
+        type: choice
+        args:
+          options: ["Ampicillin", "Cefuroxim", "Gentamicin", "Mecillinam", "Nitrofurantoin", "Sulfamethizol"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.8
+      Følsomhed:
+        type: choice
+        args:
+          options: ["S", "I", "R"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.8
+      Organisme:
+        type: choice
+        args:
+          options: ["Escherichia coli", "Streptococcus agalactiae (gruppe B)", "Staphylococcus aureus", "Enterococcus faecalis", "Klebsiella pneumoniae"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.8
