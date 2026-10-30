@@ -179,6 +179,15 @@ linked_data:
           options: [1, 2, 3, 4]
       FOEDSELSDATO:
         type: rand_date
+      FOEDSELSAAR:
+        type: rand_int
+        args:
+          min_val: 1997
+          max_val: 2018
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
       GESTATIONSALDER_DAGE:
         type: rand_int
         args:
@@ -211,10 +220,20 @@ linked_data:
         type: choice_unique
         file: Population
         linked_on: BABY_CPR
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "INVALID"
+              probability: 0.05
       CPR_MODER:
         type: choice
         file: Population
         linked_on: MOR_CPR
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "INVALID"
+              probability: 0.05
       FOEDSELSLOEBENUMMER:
         type: choice
         file: Population
@@ -248,6 +267,15 @@ linked_data:
   #MFR3
     N: ${N}
     columns:
+      Alder_Mor:
+        type: rand_int
+        args:
+          min_val: 18
+          max_val: 45
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
       AntalBoernIFoedslen:
         type: choice
         args:
@@ -281,6 +309,15 @@ linked_data:
               probability: 0.05
       FoedselsDato_Barn:
         type: rand_date
+      FoedselsAar:
+        type: rand_int
+        args:
+          min_val: 1997
+          max_val: 2024
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
       Gestationsalder:
         type: rand_int
         args:
@@ -356,10 +393,20 @@ linked_data:
         type: choice_unique
         file: Population
         linked_on: BABY_CPR
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "INVALID"
+              probability: 0.05
       CPRnummer_Mor:
         type: choice
         file: Population
         linked_on: MOR_CPR
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "INVALID"
+              probability: 0.05
       DW_EK_Foedsel:
         type: choice
         file: Population

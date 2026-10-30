@@ -60,7 +60,7 @@ def generate_corruptions(info, row, row_index, corruptors_dict):
     return row
 
 
-def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
+def generate_linked_columns(table_cfg, row, row_index, output_dir, corruptors_dict, unused_idxs=None):
     for col_name, col_info in table_cfg["linked_columns"].items():
         linked_file = col_info["file"]
         linked_on = col_info["linked_on"]
@@ -94,7 +94,17 @@ def generate_linked_columns(table_cfg, row, output_dir, unused_idxs=None):
         else:
             raise ValueError(f"Unknown linked type: {linked_type}")
 
-        row.update({col_name: selected_row.item()})
+        value = selected_row.item()
+
+        # Apply column-specific corruptions if specified
+        if "corruptions" in col_info:
+            for corruption in col_info["corruptions"]:
+                if corruption["type"] not in corruptors_dict:
+                    raise ValueError(f"Unknown corruption function type: {corruption['type']}")
+                corruption_fn = corruptors_dict[corruption["type"]]
+                value = corruption_fn(value, row_index=row_index, **corruption.get("args", {}))
+
+        row.update({col_name: value})
 
     return row, unused_idxs
 
@@ -135,7 +145,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
         for i in range(table_cfg["N"]):
             row = {}
             row = generate_rows(table_cfg, row, i, generators_dict, corruptors_dict)
-            row, unused_idxs = generate_linked_columns(table_cfg, row, output_dir, unused_idxs=unused_idxs)
+            row, unused_idxs = generate_linked_columns(table_cfg, row, i, output_dir, corruptors_dict, unused_idxs=unused_idxs)
             row = generate_corruptions(table_cfg, row, i, corruptors_dict)
             rows.append(row)
 
