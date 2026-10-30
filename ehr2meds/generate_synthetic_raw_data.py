@@ -145,9 +145,7 @@ def generate_tables(cfg, output_dir, generators_dict, corruptors_dict):
         for i in range(table_cfg["N"]):
             row = {}
             row = generate_rows(table_cfg, row, i, generators_dict, corruptors_dict)
-            row, unused_idxs = generate_linked_columns(
-                table_cfg, row, i, output_dir, corruptors_dict, unused_idxs=unused_idxs
-            )
+            row, unused_idxs = generate_linked_columns(table_cfg, row, i, output_dir, corruptors_dict, unused_idxs=unused_idxs)
             row = generate_corruptions(table_cfg, row, i, corruptors_dict)
             rows.append(row)
 
