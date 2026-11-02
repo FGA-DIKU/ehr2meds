@@ -402,9 +402,16 @@ linked_data: # Data that needs to be linked to the data above
     N: ${N}
     columns:
       Aktionsdiagnose:
-        type: medical_code
+        type: mix_function
         args:
-          prefix: "D"
+          functions:
+            - type: medical_code
+              args:
+                prefix: "D"
+            - type: choice
+              args:
+                options: ["DP77", "DP271", "DP520", "DP521", "DP522", "DP101", "DP072", "DP073"]
+          probabilities: [0.7, 0.3]
       Priority:
         type: choice
         args:
