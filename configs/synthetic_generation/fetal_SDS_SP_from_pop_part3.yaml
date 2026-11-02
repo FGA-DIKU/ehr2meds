@@ -238,6 +238,22 @@ linked_data:
         type: rand_datetimeseconds
       ServiceDatetime:
         type: rand_datetimeseconds
+      ProcedureName:
+        type: choice
+        args:
+          options: ["Kejsersnit", "Akut kejsersnit", "Igangsættelse af fødsel", "Ultralydsscanning", "Amniocentese", "Vakuumekstraktion"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Beskrivelse:
+        type: choice
+        args:
+          options: ["Udført uden komplikationer", "Planlagt", "Akut", "Se journalnotat"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.3
     linked_columns:
       MOR_CPR:
         type: choice
@@ -297,6 +313,14 @@ linked_data:
           - type: insert_missing
             args:
               probability: 0.25
+      Placenta dato:
+        type: rand_datetime
+        args:
+          start: 2010
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
     linked_columns:
       MOR_CPR:
         type: choice
@@ -356,12 +380,20 @@ linked_data:
         type: rand_date
         args:
           start: 2010
+      Udfald:
+        type: choice
+        args:
+          options: ["Levendefødt", "Dødfødt", "Spontan abort", "Provokeret abort", "Ekstrauterin graviditet"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
     linked_columns:
       MOR_CPR:
         type: choice
         file: Mor - CPMI - Patientinfo
         linked_on: MOR_CPR
-  
+
   Mor - Rygning:
     N: ${N}
     columns:
@@ -600,3 +632,216 @@ linked_data:
         type: choice
         file: Population
         linked_on: MOR_Fødsel_ID 
+  Mor - CPMI - Notater:
+    N: ${N}
+    columns:
+      Oprettelsestidspunkt:
+        type: rand_datetimeseconds
+        args:
+          start: 2010
+      Notetype:
+        type: choice
+        args:
+          options: ["Journalnotat", "Ambulant notat", "Fødselsjournal", "Epikrise", "Telefonnotat"]
+      Speciale:
+        type: choice
+        args:
+          options: ["Obstetrik", "Gynækologi", "Anæstesiologi", "Neonatologi"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Note:
+        type: rand_string
+        args:
+          min_length: 20
+          max_length: 300
+          include_digits: False
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  Mor - Terminsberegning:
+    N: ${N}
+    columns:
+      Dato:
+        type: rand_date
+        args:
+          start: 2010
+      Terminsdato:
+        type: greater_than_date
+        match:
+          min_date: Dato
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Metode:
+        type: choice
+        args:
+          options: ["Ultralyd", "Sidste menstruation", "IVF"]
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  Mor - Fødselsresume - DEL 2:
+    N: ${N}
+    columns:
+      Dato:
+        type: rand_date
+        args:
+          start: 2010
+      Blødning (ml):
+        type: rand_int
+        args:
+          min_val: 50
+          max_val: 2500
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+      Bristning:
+        type: choice
+        args:
+          options: ["Ingen", "1. grad", "2. grad", "3. grad", "4. grad"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  Mor - CPMI - Mikrobiologi Del 1:
+    N: ${N}
+    columns:
+      Provetagningstidspunkt:
+        type: rand_datetimeseconds
+        args:
+          start: 2010
+      Materiale:
+        type: choice
+        args:
+          options: ["Urin", "Vaginalpodning", "Cervixpodning", "Blod", "Rektalpodning"]
+      Komponentnavn:
+        type: choice
+        args:
+          options: ["Dyrkning", "GBS dyrkning", "Chlamydia trachomatis DNA", "Mikroskopi"]
+      Proveresultat:
+        type: choice
+        args:
+          options: ["Ikke påvist", "Påvist", "Escherichia coli", "Streptococcus agalactiae (gruppe B)", "Blandingsflora"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  Mor - Histologi og Cytologi:
+    N: ${N}
+    columns:
+      Bestillingstidspunkt:
+        type: rand_datetimeseconds
+        args:
+          start: 2010
+      Materiale:
+        type: choice
+        args:
+          options: ["Placenta", "Cervixcytologi", "Navlesnor"]
+      Diagnose:
+        type: choice
+        args:
+          options: ["Normal placenta", "Chorioamnionitis", "Infarkt", "Normal cytologi"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  Mor - Ordinationer:
+    N: ${N}
+    columns:
+      Ordinationstidspunkt:
+        type: rand_datetimeseconds
+        args:
+          start: 2010
+      Lægemiddel:
+        type: choice
+        args:
+          options: ["Paracetamol", "Betamethason", "Magnesiumsulfat", "Nifedipin", "Atosiban", "Ampicillin"]
+      Dosis:
+        type: choice
+        args:
+          options: ["1 g", "12 mg", "4 g", "20 mg", "6,75 mg", "2 g"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  Mor - Udleveret medicin:
+    N: ${N}
+    columns:
+      Udleveringstidspunkt:
+        type: rand_datetimeseconds
+        args:
+          start: 2010
+      Lægemiddel:
+        type: choice
+        args:
+          options: ["Paracetamol", "Betamethason", "Nifedipin", "Atosiban", "Ampicillin"]
+      Antal:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 10
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
+
+  Mor - Obstetriske kommentarer:
+    N: ${N}
+    columns:
+      Dato:
+        type: rand_date
+        args:
+          start: 2010
+      Kommentar:
+        type: rand_string
+        args:
+          min_length: 20
+          max_length: 200
+          include_digits: False
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: Population
+        linked_on: MOR_CPR
