@@ -28,18 +28,22 @@ class Processor:
     ):
         """Process the table.
 
-        1. Add row index to input tables
-        2. Remove timezone information from timezone-aware datetime columns
-        3. OPTIONAL: Apply table mappings
-        4. OPTIONAL: Normalize integer columns
-        5. OPTIONAL: Apply pid integer mapping
-        6. Normalize string columns
-        7. OPTIONAL: Apply value mappings
-        8. OPTIONAL: Construct timestamps from date and time columns
-        9. Clean data
-        10. Validate subject_id column
+        1. OPTIONAL: Sort rows so ``row_idx`` follows the configured order
+        2. Add row index to input tables
+        3. Remove timezone information from timezone-aware datetime columns
+        4. OPTIONAL: Apply table mappings
+        5. OPTIONAL: Normalize integer columns
+        6. OPTIONAL: Apply pid integer mapping
+        7. Normalize string columns
+        8. OPTIONAL: Apply value mappings
+        9. OPTIONAL: Construct timestamps from date and time columns
+        10. Clean data
+        11. Validate subject_id column
         """
         tracker = DataQualityTracker(initial_rows=len(df))
+
+        if sort_by := table_config.get("sort_by"):
+            df = df.sort_values(by=list(sort_by), kind="mergesort").reset_index(drop=True)
 
         df = add_row_idx(df, start=row_index_start)
         df = remove_timezones(df)

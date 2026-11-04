@@ -3,163 +3,241 @@ subject_id_col: subject_id
 # Patient demographics
 patients_info:
   dob:
-    code: "DOB"
-    time: $birthdate
+    code: DOB
+    time: col(birthdate)
   dod:
-    code: "DOD"
-    time: $deathdate
+    code: DOD
+    time: col(deathdate)
   sex:
-    code: f"SEX//{$sex}"
+    code:
+      - Sex
+      - col(sex)
     time: null
 
 # LPR3 diagnoses have no independent timestamp and are conservatively placed
 # at contact end, when the diagnosis is known to have been available.
 diagnoser:
   diagnosis:
-    code: f"DIAGNOSIS//{$diagnosekode}"
+    code:
+      - Diagnosis
+      - col(diagnosekode)
     time: coalesce($end_timestamp, $start_timestamp)
   diagnose_type:
-    code: f"DIAGNOSIS_TYPE//{$diagnosetype}"
+    code:
+      - Diagnosis Type
+      - col(diagnosetype)
     time: coalesce($end_timestamp, $start_timestamp)
 
 # Medication from ekokur
 ekokur:
   medication:
-    code: f"MEDICATION//{$code}"
-    time: $timestamp
+    code:
+      - Medication
+      - col(code)
+    time: col(timestamp)
 
 # LPR3 action diagnosis is finalized at contact end. Attributes known when the
 # contact starts remain at the start timestamp.
 kontakter:
   diagnosis:
-    code: f"DIAGNOSIS//{$aktionsdiagnose}"
+    code:
+      - Diagnosis
+      - col(aktionsdiagnose)
     time: coalesce($end_timestamp, $start_timestamp)
   contact_reason:
-    code: f"CONTACT_REASON//{$kontaktaarsag}"
-    time: $start_timestamp
+    code:
+      - Contact Reason
+      - col(kontaktaarsag)
+    time: col(start_timestamp)
   priority:
-    code: f"CONTACT_PRIORITY//{$prioritet}"
-    time: $start_timestamp
+    code:
+      - Contact Priority
+      - col(prioritet)
+    time: col(start_timestamp)
   contact_type:
-    code: f"CONTACT_TYPE//{$kontakttype}"
-    time: $start_timestamp
+    code:
+      - Contact Type
+      - col(kontakttype)
+    time: col(start_timestamp)
   clinical_specialty:
-    code: f"CONTACT_SPECIALTY//{$hovedspeciale_ans}"
-    time: $start_timestamp
+    code:
+      - Contact Specialty
+      - col(hovedspeciale_ans)
+    time: col(start_timestamp)
   region_code:
-    code: f"REGION//{$region_ans}"
-    time: $start_timestamp
+    code:
+      - Region
+      - col(region_ans)
+    time: col(start_timestamp)
 
 # Keep numeric_value raw here. Split-aware normalization and binning should be
 # performed later by aggregate_numeric_metadata and annotate_numeric_values.
 laboratorieproevesvar:
   lab_test:
-    code: f"LABTEST//{$analysiscode}"
-    time: $sample_timestamp
-    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $samplevalue) as float64'
-    text_value: "$samplevalue"
+    code:
+      - Lab Test
+      - col(analysiscode)
+    time: col(sample_timestamp)
+    numeric_value: col(samplevalue)
+    text_value: col(samplevalue)
 
 # LPR3 other procedures
 procedurer_andre:
   procedure:
-    code: f"PROCEDURE//{$procedurekode}"
-    time: $start_timestamp
+    code:
+      - Procedure
+      - col(procedurekode)
+    time: col(start_timestamp)
   procedure_type:
-    code: f"PROCEDURE_TYPE//{$proceduretype}"
-    time: $start_timestamp
+    code:
+      - Procedure Type
+      - col(proceduretype)
+    time: col(start_timestamp)
 
 # LPR3 surgical procedures
 procedurer_kirurgi:
   procedure:
-    code: f"PROCEDURE//{$procedurekode}"
-    time: $start_timestamp
+    code:
+      - Procedure
+      - col(procedurekode)
+    time: col(start_timestamp)
 
 # LPR action diagnosis is placed at admission end; start-known attributes stay
 # at the admission start timestamp.
 t_adm:
   diagnosis:
-    code: f"DIAGNOSIS//{$C_ADIAG}"
+    code:
+      - Diagnosis
+      - col(C_ADIAG)
     time: coalesce($end_timestamp, $start_timestamp)
   contact_reason:
-    code: f"CONTACT_REASON//{$C_KONTAARS}"
-    time: $start_timestamp
+    code:
+      - Contact Reason
+      - col(C_KONTAARS)
+    time: col(start_timestamp)
   patient_type:
-    code: f"PATIENT_TYPE//{$C_PATTYPE}"
-    time: $start_timestamp
+    code:
+      - Patient Type
+      - col(C_PATTYPE)
+    time: col(start_timestamp)
   priority:
-    code: f"CONTACT_PRIORITY//{$priority}"
-    time: $start_timestamp
+    code:
+      - Contact Priority
+      - col(priority)
+    time: col(start_timestamp)
   clinical_specialty:
-    code: f"CONTACT_SPECIALTY//{$C_SPEC}"
-    time: $start_timestamp
+    code:
+      - Contact Specialty
+      - col(C_SPEC)
+    time: col(start_timestamp)
   region_code:
-    code: f"REGION//{$C_SGH}"
-    time: $start_timestamp
+    code:
+      - Region
+      - col(C_SGH)
+    time: col(start_timestamp)
 
 # LPR diagnoses likewise inherit the admission end timestamp.
 t_diag:
   diag:
-    code: f"DIAGNOSIS//{$C_DIAG}"
+    code:
+      - Diagnosis
+      - col(C_DIAG)
     time: coalesce($end_timestamp, $start_timestamp)
   diag_type:
-    code: f"DIAGNOSIS_TYPE//{$C_DIAGTYPE}"
+    code:
+      - Diagnosis Type
+      - col(C_DIAGTYPE)
     time: coalesce($end_timestamp, $start_timestamp)
   tildiag:
-    code: f"DIAGNOSIS//{$C_TILDIAG}"
+    code:
+      - Diagnosis
+      - col(C_TILDIAG)
     time: coalesce($end_timestamp, $start_timestamp)
 
 # LPR surgical procedures
 t_sksopr:
   procedure:
-    code: f"PROCEDURE//{$C_OPR}"
-    time: $start_timestamp
+    code:
+      - Procedure
+      - col(C_OPR)
+    time: col(start_timestamp)
 
 # LPR other procedures
 t_sksube:
   procedure:
-    code: f"PROCEDURE//{$C_OPR}"
-    time: $start_timestamp
+    code:
+      - Procedure
+      - col(C_OPR)
+    time: col(start_timestamp)
   procedure_type:
-    code: f"PROCEDURE_TYPE//{$procedure_type}"
-    time: $start_timestamp
+    code:
+      - Procedure Type
+      - col(procedure_type)
+    time: col(start_timestamp)
 
 SP_admissions:
   in:
-    code: f"IN//{$Afsnit}"
-    time: $Flyt_ind as "%Y-%m-%d %H:%M:%S%.f"
+    code:
+      - IN
+      - col(Afsnit)
+    time: col(Flyt_ind)
   out:
-    code: f"OUT//{$Afsnit}"
-    time: $Flyt_ud as "%Y-%m-%d %H:%M:%S%.f"
+    code:
+      - OUT
+      - col(Afsnit)
+    time: col(Flyt_ud)
 
 SP_alcohol_info:
   weekly_drinks:
-    code: f"ALCOHOL//{$weekly_drinks}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    code:
+      - Alcohol
+      - col(weekly_drinks)
+    time: col(timestamp)
 
 SP_diagnosis:
   diagnosis:
-    code: f"DIAGNOSIS//{$Diagnosekode}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    code:
+      - Diagnosis
+      - col(Diagnosekode)
+    time: col(timestamp)
 
 SP_labtest:
   lab_test:
-    code: f"LABTEST//{$BestOrd}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
-    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $sample_value) as float64'
-    text_value: "$sample_value"
+    code:
+      - Lab Test
+      - col(BestOrd)
+    time: col(timestamp)
+    numeric_value: col(sample_value)
+    text_value: col(sample_value)
 
 SP_medication:
   medication:
-    code: f"MEDICATION//{$ATC}"
-    time: coalesce($timestamp as '%Y-%m-%d %H:%M:%S.%f', $fill_timestamp as '%Y-%m-%d %H:%M:%S.%f')
+    code:
+      - Medication
+      - col(ATC)
+    time: coalesce($timestamp, $fill_timestamp)
 
 SP_procedure:
   procedure:
-    code: f"PROCEDURE//{$ProcedureCode}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    code:
+      - Procedure
+      - col(ProcedureCode)
+    time: col(timestamp)
 
 SP_smoking_info:
   smoking_status:
-    code: f"SMOKING//{$Rygestatus}"
-    time: $timestamp as "%Y-%m-%d %H:%M:%S.%f"
+    code:
+      - Smoking
+      - col(Rygestatus)
+    time: col(timestamp)
 
+# Line order is fixed in preMEDS via sort_by: [id, line_number] -> row_idx.
+SP_notes:
+  note:
+    code:
+      - "Note: NoteType // Specialty // LineNumber"
+      - col(note_type)
+      - col(specialty)
+      - col(line_number)
+    time: col(timestamp)
+    text_value: col(text)

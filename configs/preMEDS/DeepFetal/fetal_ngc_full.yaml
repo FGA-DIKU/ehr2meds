@@ -3,16 +3,16 @@ defaults:
   - /root_config@
   - _self_
 
-chunksize: 500000
+chunksize: 5000
 
-test: false
+test: true
 
 paths:
   output: ${hydra:run.dir}
   SDS_tables_dir: /storage/archive/UCPH/DeepFetal/SDS/registers_pseudonymized
   SP_tables_dir: /storage/archive/UCPH/DeepFetal/SP/tables
 
-write_file_type: csv 
+write_file_type: parquet
 
 subject_id_mapping:
   file: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_population.csv # Table to derive mapping from (can be None)
@@ -27,6 +27,11 @@ tables:
       Fødselsdato: birthdate
       Dødsdato: deathdate
       Køn: sex
+    timestamp_columns:
+      birthdate:
+        datetime: birthdate
+      deathdate:
+        datetime: deathdate
 
   diagnoser:
     filename: ${paths.SDS_tables_dir}/diagnoser.csv               
@@ -67,6 +72,9 @@ tables:
         target_columns:
           pname: code
         drop_source: false
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
 
   kontakter:
     filename: ${paths.SDS_tables_dir}/kontakter_all.csv      
@@ -286,6 +294,11 @@ tables:
       Flyt_ind: 
       Flyt_ud: 
       Afsnit: 
+    timestamp_columns:
+      Flyt_ind:
+        datetime: Flyt_ind
+      Flyt_ud:
+        datetime: Flyt_ud
 
   SP_alcohol_info:
     filename: ${paths.SP_tables_dir}/Mor - Alkohol.csv
@@ -293,6 +306,9 @@ tables:
       MOR_CPR: subject_id
       "Alkohol - Antal ugentlige genstande": weekly_drinks
       "Kontakt dato": timestamp
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
   
   SP_diagnosis:
     filename: ${paths.SP_tables_dir}/Mor - CPMI - Diagnoseliste.csv
@@ -301,6 +317,9 @@ tables:
       Redigeringsdato: timestamp
       Diagnosekode:
       Diagnose:
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
 
   SP_labtest:
     filename: ${paths.SP_tables_dir}/Mor - CPMI - Prøvesvar.csv
@@ -309,6 +328,9 @@ tables:
       Prøvetagningstidspunkt: timestamp
       BestOrd:
       Resultatværdi: sample_value
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
 
   SP_medication:
     filename: ${paths.SP_tables_dir}/Mor - CPMI - Medicin.csv
@@ -317,6 +339,11 @@ tables:
       Administrationstidspunkt: timestamp
       Bestillingsdato: fill_timestamp
       ATC:
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
+      fill_timestamp:
+        datetime: fill_timestamp
 
   SP_procedure:
     filename: ${paths.SP_tables_dir}/Mor - CPMI - Procedurer.csv
@@ -324,6 +351,9 @@ tables:
       MOR_CPR: subject_id
       ServiceDate: timestamp
       ProcedureCode:
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
 
   SP_smoking_info:
     filename: ${paths.SP_tables_dir}/Mor - Rygning.csv
@@ -331,3 +361,23 @@ tables:
       MOR_CPR: subject_id
       Rygestatus: 
       "Kontakt dato": timestamp
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
+
+  SP_notes: 
+    filename: ${paths.SP_tables_dir}/Mor - CPMI - Notater.csv
+    columns:
+      MOR_CPR: subject_id
+      Note: text
+      NoteTtpe: note_type 
+      Speciale: specialty
+      ID: id 
+      Linjenummer: line_number
+      Redigeringstidspunkt: timestamp
+    # Keep note lines in document order; row_idx is assigned after this sort
+    # so merge_to_MEDS_cohort additional_sort_by: [row_idx] preserves it.
+    sort_by: timestamp, id, line_number]
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp

@@ -30,8 +30,14 @@ def process_single_table_worker(args):
         summary = []
         next_row_idx = 0
 
+        # Tables with sort_by must be ordered globally before row_idx is assigned.
+        if table_config.get("sort_by"):
+            chunks = [data_handler.load(table_config["filename"], cols=table_config["columns"])]
+        else:
+            chunks = data_handler.load_chunks(table_config["filename"], cols=table_config["columns"])
+
         for chunk in tqdm(
-            data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
+            chunks,
             desc=f"Chunks {table_name}",
             position=0,
             leave=True,
@@ -44,7 +50,7 @@ def process_single_table_worker(args):
                 row_index_start=next_row_idx,
             )
 
-            next_row_idx += len(chunk)
+            next_row_idx += len(processed_chunk)
             data_handler.save(processed_chunk, table_name)
 
             summary.append([table_config["filename"], row_result, processed_chunk])
