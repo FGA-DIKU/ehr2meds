@@ -15,13 +15,13 @@ paths:
 write_file_type: parquet
 
 subject_id_mapping:
-  file: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_population.csv # Table to derive mapping from (can be None)
-  subject_id_col: m_cpr # Column to use as the subject_id mapping
+  file: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_pop_patient_info.csv # Table to derive mapping from (can be None)
+  subject_id_col: MOR_CPR # Column to use as the subject_id mapping
   mapping_id_col: # Column to use as the mapping (can be None, then auto-generated)
 
 tables:
   patients_info:
-    filename: ${paths.SP_tables_dir}/Mor - CPMI - Patientinfo.csv
+    filename: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_pop_patient_info.csv  #${paths.SP_tables_dir}/Mor - CPMI - Patientinfo.csv
     columns:
       MOR_CPR: subject_id
       Fødselsdato: birthdate
