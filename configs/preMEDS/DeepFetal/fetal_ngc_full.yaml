@@ -370,7 +370,7 @@ tables:
     columns:
       MOR_CPR: subject_id
       Note: text
-      NoteTtpe: note_type 
+      NoteType: note_type 
       Speciale: specialty
       ID: id 
       Linjenummer: line_number
