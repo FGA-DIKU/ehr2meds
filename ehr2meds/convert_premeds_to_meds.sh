@@ -138,9 +138,19 @@ export EVENT_CONVERSION_CONFIG_FP
 export PIPELINE_CONFIG_FP
 
 echo "Running extraction pipeline."
-# Execute the PREMEDS transform runner with the pipeline configuration.
-# Any additional arguments are forwarded.
-MEDS_transform-pipeline "${PIPELINE_CONFIG_FP}" "$@"
+# meds-transforms 0.5.x: Hydra override pipeline_config_fp=...
+# meds-transforms 0.6+: positional path (absolute paths as bare args are invalid overrides on 0.5.x)
+_MEDS_TRANSFORMS_VERSION="$(
+  python -c "from importlib.metadata import version; print(version('meds-transforms'))" 2>/dev/null || echo "0.0.0"
+)"
+_MEDS_MAJOR="$(echo "${_MEDS_TRANSFORMS_VERSION}" | cut -d. -f1)"
+_MEDS_MINOR="$(echo "${_MEDS_TRANSFORMS_VERSION}" | cut -d. -f2)"
+echo "Detected meds-transforms ${_MEDS_TRANSFORMS_VERSION}"
+if [ "${_MEDS_MAJOR}" -eq 0 ] && [ "${_MEDS_MINOR}" -le 5 ]; then
+  MEDS_transform-pipeline "pipeline_config_fp=${PIPELINE_CONFIG_FP}" "$@"
+else
+  MEDS_transform-pipeline "${PIPELINE_CONFIG_FP}" "$@"
+fi
 
 echo "Starting cleanup..."
 # Example cleanup: List any empty files or directories.

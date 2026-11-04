@@ -370,14 +370,14 @@ tables:
     columns:
       MOR_CPR: subject_id
       Note: text
-      NoteType: note_type 
+      Notetype: note_type 
       Speciale: specialty
       ID: id 
       Linjenummer: line_number
       Redigeringstidspunkt: timestamp
     # Keep note lines in document order; row_idx is assigned after this sort
     # so merge_to_MEDS_cohort additional_sort_by: [row_idx] preserves it.
-    sort_by: timestamp, id, line_number]
+    sort_by: [timestamp, id, line_number]
     timestamp_columns:
       timestamp:
         datetime: timestamp
