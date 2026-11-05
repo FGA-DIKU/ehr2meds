@@ -22,10 +22,18 @@ diagnoser:
     code: f"Diagnosis Type//{$diagnosetype}"
     time: coalesce($end_timestamp, $start_timestamp)
 
-# Medication from ekokur
-ekokur:
+# Medication from epikur (ATC codes; table names must match preMEDS shards)
+epikur_1:
   medication:
-    code: f"General Medication//{$code}"
+    code: f"General Medication//{$atc}"
+    time: $timestamp
+epikur_2:
+  medication:
+    code: f"General Medication//{$atc}"
+    time: $timestamp
+epikur_3:
+  medication:
+    code: f"General Medication//{$atc}"
     time: $timestamp
 
 # LPR3 action diagnosis is finalized at contact end. Attributes known when the

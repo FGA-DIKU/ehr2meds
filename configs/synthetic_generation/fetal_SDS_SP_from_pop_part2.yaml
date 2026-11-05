@@ -114,31 +114,6 @@ data: # Mangler DAR
       Transferering_dato:
         type: rand_datetimeseconds
 
-  epikur:
-  #LSR
-    N: ${N}
-    columns:
-      cpr:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
-      eksd:
-        type: rand_datetime
-        args:
-          start: 2000
-      ATC:
-        type: medical_code
-        args:
-          prefix: ""
-      vnr:
-        type: rand_int
-        args:
-          min_val: 100000
-          max_val: 999999
-
   SSR_GP:
   # Dont know what this is on NGC
     N: ${N}
@@ -220,9 +195,16 @@ linked_data: # Data that needs to be linked to the data above
     N: ${N}
     columns:
       diagnosekode:
-        type: medical_code
+        type: mix_function
         args:
-          prefix: "D"
+          functions:
+            - type: medical_code
+              args:
+                prefix: "D"
+            - type: choice
+              args:
+                options: ["DK092", "DQ503", "DQ458C", "DH368D", "DD720", "DC312", "DI741", "DO601"]
+          probabilities: [0.5, 0.5]
       diagnosetype:
         type: choice
         args:
@@ -242,9 +224,18 @@ linked_data: # Data that needs to be linked to the data above
       SAMPLINGTIME:
         type: rand_timemicroseconds
       ANALYSISCODE:
-        type: medical_code
+        type: mix_function
         args:
-          prefix: "NPU"
+          functions:
+            - type: medical_code
+              args:
+                prefix: "NPU"
+            - type: choice
+              args:
+                options: ["NPU28008", "NPU28540", "NPU56394", "NPU10543", "NPU27633", "NPU10479", 
+                          "NPU08821", "NPU02936", "NPU13029", "NPU10475", "NPU03354", "NPU13060", 
+                          "NPU27617", "NPU20466", "NPU03520", "NPU13416"]
+          probabilities: [0.4, 0.6]
       UNIT:
         type: choice
         args:

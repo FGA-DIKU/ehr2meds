@@ -1,0 +1,179 @@
+subject_id_col: subject_id
+
+# Patient demographics
+patients_info:
+  dob:
+    code: '"Date of birth"'
+    time: $birthdate
+  dod:
+    code: '"Date of death"'
+    time: $deathdate
+  sex:
+    code: f"Sex//{$sex}"
+    time: null
+
+# LPR3 diagnoses have no independent timestamp and are conservatively placed
+# at contact end, when the diagnosis is known to have been available.
+diagnoser:
+  diagnosis:
+    code: f"Diagnosis//{$diagnosekode}"
+    time: coalesce($end_timestamp, $start_timestamp)
+  diagnose_type:
+    code: f"Diagnosis Type//{$diagnosetype}"
+    time: coalesce($end_timestamp, $start_timestamp)
+
+# Medication from epikur (ATC text after preMEDS code mapping)
+epikur_1:
+  medication:
+    code: f"General Medication//{$atc}"
+    time: $timestamp
+epikur_2:
+  medication:
+    code: f"General Medication//{$atc}"
+    time: $timestamp
+epikur_3:
+  medication:
+    code: f"General Medication//{$atc}"
+    time: $timestamp
+
+# LPR3 action diagnosis is finalized at contact end. Attributes known when the
+# contact starts remain at the start timestamp.
+kontakter:
+  diagnosis:
+    code: f"Diagnosis//{$aktionsdiagnose}"
+    time: coalesce($end_timestamp, $start_timestamp)
+  contact_reason:
+    code: f"Contact Reason//{$kontaktaarsag}"
+    time: $start_timestamp
+  priority:
+    code: f"Contact Priority//{$prioritet}"
+    time: $start_timestamp
+  contact_type:
+    code: f"Contact Type//{$kontakttype}"
+    time: $start_timestamp
+  clinical_specialty:
+    code: f"Contact Specialty//{$hovedspeciale_ans}"
+    time: $start_timestamp
+  region_code:
+    code: f"Region//{$region_ans}"
+    time: $start_timestamp
+
+# Keep numeric_value raw here. Split-aware normalization and binning should be
+# performed later by aggregate_numeric_metadata and annotate_numeric_values.
+laboratorieproevesvar:
+  lab_test:
+    code: 'f"Lab Result: Test, Value, Unit//{$analysiscode}//VALUE_PLACEHOLDER//{$sampleunit}"'
+    time: $sample_timestamp
+    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $samplevalue) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
+    text_value: "$samplevalue" # the value as string, for cases where the value is not numeric (e.g., "NEG", "POS", "<0.1", etc.). Duplicates where text and numeric are the same are dropped.
+
+# LPR3 other procedures
+procedurer_andre:
+  procedure:
+    code: f"Procedure//{$procedurekode}"
+    time: $start_timestamp
+  procedure_type:
+    code: f"Procedure Type//{$proceduretype}"
+    time: $start_timestamp
+
+# LPR3 surgical procedures
+procedurer_kirurgi:
+  procedure:
+    code: f"Procedure//{$procedurekode}"
+    time: $start_timestamp
+
+# LPR action diagnosis is placed at admission end; start-known attributes stay
+# at the admission start timestamp.
+t_adm:
+  diagnosis:
+    code: f"Diagnosis//{$C_ADIAG}"
+    time: coalesce($end_timestamp, $start_timestamp)
+  contact_reason:
+    code: f"Contact Reason//{$C_KONTAARS}"
+    time: $start_timestamp
+  patient_type:
+    code: f"Patient Type//{$C_PATTYPE}"
+    time: $start_timestamp
+  priority:
+    code: f"Contact Priority//{$priority}"
+    time: $start_timestamp
+  clinical_specialty:
+    code: f"Contact Specialty//{$C_SPEC}"
+    time: $start_timestamp
+  region_code:
+    code: f"Region//{$C_SGH}"
+    time: $start_timestamp
+
+# LPR diagnoses likewise inherit the admission end timestamp.
+t_diag:
+  diag:
+    code: f"Diagnosis//{$C_DIAG}"
+    time: coalesce($end_timestamp, $start_timestamp)
+  diag_type:
+    code: f"Diagnosis Type//{$C_DIAGTYPE}"
+    time: coalesce($end_timestamp, $start_timestamp)
+  tildiag:
+    code: f"Diagnosis//{$C_TILDIAG}"
+    time: coalesce($end_timestamp, $start_timestamp)
+
+# LPR surgical procedures
+t_sksopr:
+  procedure:
+    code: f"Procedure//{$C_OPR}"
+    time: $start_timestamp
+
+# LPR other procedures
+t_sksube:
+  procedure:
+    code: f"Procedure//{$C_OPR}"
+    time: $start_timestamp
+  procedure_type:
+    code: f"Procedure Type//{$procedure_type}"
+    time: $start_timestamp
+
+SP_admissions:
+  in:
+    code: f"Hospital Admission//{$Afsnit}"
+    time: $Flyt_ind
+  out:
+    code: f"Hospital Discharge//{$Afsnit}"
+    time: $Flyt_ud
+
+SP_alcohol_info:
+  weekly_drinks:
+    code: f"Alcohol Consumption//{$weekly_drinks}"
+    time: $timestamp
+
+SP_diagnosis:
+  diagnosis:
+    code: f"Diagnosis//{$Diagnosekode}"
+    time: $timestamp
+
+SP_labtest:
+  lab_test:
+    code: 'f"Lab Result: Test, Value, Unit//{$BestOrd}//VALUE_PLACEHOLDER//{$sample_unit}"'
+    time: $timestamp
+    numeric_value: '(extract group 1 of /^\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)\s*$/ from $sample_value) as float64'  # Regex to extract numeric value from string, allowing for scientific notation and whitespace
+    text_value: "$sample_value" # the value as string, for cases where the value is not numeric (e.g., "NEG", "POS", "<0.1", etc.). Duplicates where text and numeric are the same are dropped.
+
+SP_medication:
+  medication:
+    code: f"Hospital Medication//{$ATC}"
+    time: coalesce($timestamp, $fill_timestamp)
+
+SP_procedure:
+  procedure:
+    code: f"Procedure//{$ProcedureCode}"
+    time: $timestamp
+
+SP_smoking_info:
+  smoking_status:
+    code: f"Smoking//{$Rygestatus}"
+    time: $timestamp
+
+# Line order is fixed in preMEDS via sort_by: [timestamp, id, line_number] -> row_idx.
+SP_notes:
+  note:
+    code: 'f"Note: NoteType // Specialty // LineNumber//{$note_type}//{$specialty}//{$line_number}"'
+    time: $timestamp
+    text_value: $text

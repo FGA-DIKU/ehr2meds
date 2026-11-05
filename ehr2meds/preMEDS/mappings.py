@@ -45,7 +45,15 @@ def apply_mapping(
 
     if join_col != source_col:
         df = df.drop(columns=[join_col])
+
+    # When replacing the join key with a mapped column of the same output name,
+    # keep the original value if the lookup missed (null or empty string).
     if drop_source:
+        for map_col, out_name in target_columns.items():
+            if out_name == source_col:
+                mapped = df[map_col].replace("", pd.NA)
+                original = df[source_col].replace("", pd.NA)
+                df[map_col] = mapped.fillna(original)
         df = df.drop(columns=[source_col])
 
     rename_columns = {source: output for source, output in target_columns.items() if output is not None}

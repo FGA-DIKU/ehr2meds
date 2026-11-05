@@ -58,20 +58,32 @@ tables:
         date: date_end
         time: time_end
 
-  ekokur:
-    filename: ${paths.SDS_tables_dir}/ekokur_all.csv                  
+  epikur_1:
+    filename: ${paths.SDS_tables_dir}/epikur_1.csv
     columns:
       cpr: subject_id
-      vnr: vnr_code
+      atc: atc
       eksd: timestamp
-    mappings:
-      - source_column: vnr_code
-        how: left
-        via_file: ${paths.SDS_tables_dir}/laegemiddeloplysninger.csv   
-        join_on: vnr
-        target_columns:
-          pname: code
-        drop_source: false
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
+
+  epikur_2:
+    filename: ${paths.SDS_tables_dir}/epikur_2.csv
+    columns:
+      cpr: subject_id
+      atc: atc
+      eksd: timestamp
+    timestamp_columns:
+      timestamp:
+        datetime: timestamp
+
+  epikur_3:
+    filename: ${paths.SDS_tables_dir}/epikur_3.csv
+    columns:
+      cpr: subject_id
+      atc: atc
+      eksd: timestamp
     timestamp_columns:
       timestamp:
         datetime: timestamp
