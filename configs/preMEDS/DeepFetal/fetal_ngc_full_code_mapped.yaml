@@ -67,7 +67,7 @@ tables:
         time: time_end
 
   epikur_1:
-    filename: ${paths.SDS_tables_dir}/epikur_1.csv
+    filename: ${paths.SP_tables_dir}/epikur_1.csv
     columns:
       cpr: subject_id
       atc: atc
@@ -85,7 +85,7 @@ tables:
         datetime: timestamp
 
   epikur_2:
-    filename: ${paths.SDS_tables_dir}/epikur_2.csv
+    filename: ${paths.SP_tables_dir}/epikur_2.csv
     columns:
       cpr: subject_id
       atc: atc
@@ -103,7 +103,7 @@ tables:
         datetime: timestamp
 
   epikur_3:
-    filename: ${paths.SDS_tables_dir}/epikur_3.csv
+    filename: ${paths.SP_tables_dir}/epikur_3.csv
     columns:
       cpr: subject_id
       atc: atc
@@ -124,8 +124,8 @@ tables:
     filename: ${paths.SDS_tables_dir}/kontakter_all.csv      
     value_map: 
       prioritet:
-        1: "ATA1"
-        2: "ATA3"
+        1: "Akut"
+        2: "Planlagt"
     columns:
       cpr: subject_id
       dato_start: date_start
