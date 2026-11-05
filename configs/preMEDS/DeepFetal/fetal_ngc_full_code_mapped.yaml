@@ -11,7 +11,7 @@ paths:
   output: ${hydra:run.dir}
   SDS_tables_dir: /storage/archive/UCPH/DeepFetal/SDS/registers_pseudonymized
   SP_tables_dir: /storage/archive/UCPH/DeepFetal/SP/tables
-  mappings_dir: /users/data/UCPH/DeepFetal/projects/preterm_EHR/code/ehr2meds/MEDS_to_text
+  mappings_dir: /users/data/UCPH/DeepFetal/projects/preterm_EHR/code/ehr2meds/ehr2meds/MEDS_to_text
 
 write_file_type: parquet
 
