@@ -1,0 +1,21 @@
+# Literal substring in ``code`` that will be replaced with a bin token or text.
+placeholder: VALUE_PLACEHOLDER
+
+# Prefix used when substituting a numeric bin index (no leading separator;
+# the event code template already has "//" around the placeholder).
+bin_prefix: "Bin "
+
+# Optional: only rewrite codes that start with one of these prefixes.
+# Empty means any code containing the placeholder.
+code_prefixes: []
+
+# No synonym collapsing; text values are inserted as cleaned strings.
+value_map: {}
+
+# Round unbinned numeric fallbacks before inserting into the code.
+# Set to null to keep the full float string.
+numeric_decimal_places: 2
+
+# Inherited from annotate_numeric_values / default_numeric_values.yaml
+numeric_value_columns:
+  bin_index: "numeric_value_bin"

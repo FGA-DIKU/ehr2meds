@@ -565,3 +565,11 @@ linked_data: # Data that needs to be linked to the data above
               args:
                 options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
           probabilities: [0.4, 0.4, 0.2]
+      Enhed:
+        type: choice
+        args:
+          options: ["fl", "mmol/l", "10^9/l", "fmol", "U/L"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.3

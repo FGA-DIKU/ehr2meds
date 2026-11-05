@@ -62,7 +62,7 @@ class Processor:
             df = map_pids_to_ints(df, subject_id_mapping)
             tracker.checkpoint("Subject ID mapping", df)
 
-        df = normalize_code_columns(df)
+        # df = normalize_code_columns(df)
 
         df = apply_value_map(df, table_config.get("value_map", {}))
 

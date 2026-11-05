@@ -438,9 +438,14 @@ linked_data:
         file: Mor - CPMI - Patientinfo
         linked_on: MOR_CPR
 
-  notes:
+  Mor - CPMI - Notater:
     N: ${N}
     columns:
+      ID: 
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 1000
       Linjenummer:
         type: rand_int
         args:
@@ -460,7 +465,7 @@ linked_data:
           - type: insert_nan
             args:
               probability: 0.05
-      note:
+      Note:
         type: rand_string
         args:
           min_length: 10
