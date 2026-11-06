@@ -22,7 +22,7 @@ subject_id_mapping:
 
 tables:
   patients_info:
-    filename: ${paths.SP_tables_dir}/Mor - CPMI - Patientinfo.csv #/users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_pop_patient_info.csv  
+    filename: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_pop_patient_info.csv  #${paths.SP_tables_dir}/Mor - CPMI - Patientinfo.csv #
     columns:
       MOR_CPR: subject_id
       Fødselsdato: birthdate
@@ -66,44 +66,8 @@ tables:
         date: date_end
         time: time_end
 
-  epikur_1:
-    filename: ${paths.SP_tables_dir}/epikur_1.csv
-    columns:
-      cpr: subject_id
-      atc: atc
-      eksd: timestamp
-    mappings:
-      - source_column: atc
-        via_file: ${paths.mappings_dir}/all_atc_mappings.csv
-        how: left
-        join_on: code
-        target_columns:
-          name: atc
-        drop_source: true
-    timestamp_columns:
-      timestamp:
-        datetime: timestamp
-
-  epikur_2:
-    filename: ${paths.SP_tables_dir}/epikur_2.csv
-    columns:
-      cpr: subject_id
-      atc: atc
-      eksd: timestamp
-    mappings:
-      - source_column: atc
-        via_file: ${paths.mappings_dir}/all_atc_mappings.csv
-        how: left
-        join_on: code
-        target_columns:
-          name: atc
-        drop_source: true
-    timestamp_columns:
-      timestamp:
-        datetime: timestamp
-
-  epikur_3:
-    filename: ${paths.SP_tables_dir}/epikur_3.csv
+  epikur_all:
+    filename: ${paths.SDS_tables_dir}/epikur_1.csv
     columns:
       cpr: subject_id
       atc: atc

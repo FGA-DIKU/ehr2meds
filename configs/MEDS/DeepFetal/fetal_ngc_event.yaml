@@ -23,15 +23,7 @@ diagnoser:
     time: coalesce($end_timestamp, $start_timestamp)
 
 # Medication from epikur (ATC codes; table names must match preMEDS shards)
-epikur_1:
-  medication:
-    code: f"General Medication//{$atc}"
-    time: $timestamp
-epikur_2:
-  medication:
-    code: f"General Medication//{$atc}"
-    time: $timestamp
-epikur_3:
+epikur_all:
   medication:
     code: f"General Medication//{$atc}"
     time: $timestamp

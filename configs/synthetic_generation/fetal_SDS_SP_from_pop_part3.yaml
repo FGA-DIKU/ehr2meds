@@ -29,49 +29,7 @@ linked_data:
         linked_on: MOR_CPR
       
 
-  epikur_1:
-    N: ${N}
-    columns:
-      atc:
-        type: choice
-        args:
-          options: ["G03DA04", "A06AB02", "S01AA01", "B03AA07", "D01AE15"]
-        corruptions:
-          - type: insert_missing
-            args:
-              probability: 0.05
-      eksd:
-        type: rand_date
-        args:
-          start: 2010
-    linked_columns:
-      cpr:
-        type: choice
-        file: Population
-        linked_on: MOR_CPR
-
-  epikur_2:
-    N: ${N}
-    columns:
-      atc:
-        type: choice
-        args:
-          options: ["G03DA04", "A06AB02", "S01AA01", "B03AA07", "D01AE15"]
-        corruptions:
-          - type: insert_missing
-            args:
-              probability: 0.05
-      eksd:
-        type: rand_date
-        args:
-          start: 2010
-    linked_columns:
-      cpr:
-        type: choice
-        file: Population
-        linked_on: MOR_CPR
-
-  epikur_3:
+  epikur_all:
     N: ${N}
     columns:
       atc:

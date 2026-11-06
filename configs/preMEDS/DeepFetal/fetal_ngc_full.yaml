@@ -21,7 +21,7 @@ subject_id_mapping:
 
 tables:
   patients_info:
-    filename: ${paths.SP_tables_dir}/Mor - CPMI - Patientinfo.csv #/users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_pop_patient_info.csv  
+    filename: /users/data/UCPH/DeepFetal/projects/preterm_EHR/data/full_pop_patient_info.csv  #${paths.SP_tables_dir}/Mor - CPMI - Patientinfo.csv #
     columns:
       MOR_CPR: subject_id
       Fødselsdato: birthdate
