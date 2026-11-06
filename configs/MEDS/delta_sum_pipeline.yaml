@@ -76,6 +76,42 @@ stages:
       # Optional fallback (JSON, MEDS metadata directory, or codes.parquet)
       # used only if aggregate_numeric_metadata did not run locally.
       numeric_metadata_filepath: null
+  # Tie-break same-timestamp events before structural rows peel prefixes.
+  - order_by_code_prefix:
+      # First = highest priority. Must match code prefixes in fetal_ngc_event*.yaml.
+      prefix_priority:
+        # Must match fetal_ngc_event.yaml code prefixes (longer names before shorter).
+        # Demographics
+        - "Date of birth"
+        - "Sex"
+        # Encounter start
+        - "Hospital Admission"
+        - "Contact Type"
+        - "Contact Priority"
+        - "Contact Reason"
+        - "Contact Specialty"
+        - "Region"
+        - "Patient Type"
+        # Community meds + lifestyle
+        - "General Medication"
+        - "Indication"
+        - "Dose"
+        - "Alcohol Consumption"
+        - "Smoking"
+        # Labs
+        - "Lab Result: Test, Value, Unit"
+        # Hospital meds
+        - "Hospital Medication"
+        # Discharge
+        - "Date of death"
+        - "Hospital Discharge"
+        # Diagnoses / procedures / notes (Contact Diagnosis is end-of-contact)
+        - "Contact Diagnosis"
+        - "Diagnosis Type"
+        - "Diagnosis"
+        - "Procedure Type"
+        - "Procedure"
+        - "Note: NoteType, Specialty, LineNumber"
   # Fill VALUE_PLACEHOLDER before structural rows so code_prefixes still match.
   - insert_placeholder_values:
       code_prefixes:

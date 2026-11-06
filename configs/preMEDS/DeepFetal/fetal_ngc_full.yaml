@@ -58,32 +58,14 @@ tables:
         date: date_end
         time: time_end
 
-  epikur_1:
-    filename: ${paths.SDS_tables_dir}/epikur_1.csv
+  epikur_all:
+    filename: ${paths.SDS_tables_dir}/epikur_all.csv
     columns:
       cpr: subject_id
       atc: atc
       eksd: timestamp
-    timestamp_columns:
-      timestamp:
-        datetime: timestamp
-
-  epikur_2:
-    filename: ${paths.SDS_tables_dir}/epikur_2.csv
-    columns:
-      cpr: subject_id
-      atc: atc
-      eksd: timestamp
-    timestamp_columns:
-      timestamp:
-        datetime: timestamp
-
-  epikur_3:
-    filename: ${paths.SDS_tables_dir}/epikur_3.csv
-    columns:
-      cpr: subject_id
-      atc: atc
-      eksd: timestamp
+      indication: indo
+      dose: doso
     timestamp_columns:
       timestamp:
         datetime: timestamp

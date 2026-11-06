@@ -27,12 +27,18 @@ epikur_all:
   medication:
     code: f"General Medication//{$atc}"
     time: $timestamp
+  indication: 
+    code: f"Indication//{$indication}"
+    time: $timestamp
+  dose: 
+    code: f"Dose//{$dose}"
+    time: $timestamp
 
 # LPR3 action diagnosis is finalized at contact end. Attributes known when the
 # contact starts remain at the start timestamp.
 kontakter:
   diagnosis:
-    code: f"Diagnosis//{$aktionsdiagnose}"
+    code: f"Contact Diagnosis//{$aktionsdiagnose}"
     time: coalesce($end_timestamp, $start_timestamp)
   contact_reason:
     code: f"Contact Reason//{$kontaktaarsag}"
@@ -166,6 +172,6 @@ SP_smoking_info:
 # Line order is fixed in preMEDS via sort_by: [timestamp, id, line_number] -> row_idx.
 SP_notes:
   note:
-    code: 'f"Note: NoteType // Specialty // LineNumber//{$note_type}//{$specialty}//{$line_number}"'
+    code: 'f"Note: NoteType, Specialty, LineNumber//{$note_type}//{$specialty}//{$line_number}"'
     time: $timestamp
     text_value: $text

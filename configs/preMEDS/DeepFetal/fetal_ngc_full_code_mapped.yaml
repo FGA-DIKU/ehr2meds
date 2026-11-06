@@ -72,6 +72,8 @@ tables:
       cpr: subject_id
       atc: atc
       eksd: timestamp
+      indication: indo
+      dose: doso
     mappings:
       - source_column: atc
         via_file: ${paths.mappings_dir}/all_atc_mappings.csv
@@ -80,10 +82,23 @@ tables:
         target_columns:
           name: atc
         drop_source: true
+      - source_column: indication
+        via_file: ${paths.SDS_tables_dir}/indo_tekster.csv
+        how: left
+        join_on: indo
+        target_columns:
+          indikation: indication
+        drop_source: true
+      - source_column: dose
+        via_file: ${paths.SDS_tables_dir}/doso_tekster.csv
+        how: left
+        join_on: doso
+        target_columns:
+          dosis: dose
+        drop_source: true
     timestamp_columns:
       timestamp:
         datetime: timestamp
-
   kontakter:
     filename: ${paths.SDS_tables_dir}/kontakter_all.csv      
     value_map: 
