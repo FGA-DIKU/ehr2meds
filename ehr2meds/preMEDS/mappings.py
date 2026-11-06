@@ -51,9 +51,12 @@ def apply_mapping(
     if drop_source:
         for map_col, out_name in target_columns.items():
             if out_name == source_col:
-                mapped = df[map_col].replace("", pd.NA)
-                original = df[source_col].replace("", pd.NA)
-                df[map_col] = mapped.fillna(original)
+                mapped = df[map_col].replace("", pd.NA).astype("string")
+                original = df[source_col].replace("", pd.NA).astype("string")
+                # Numeric join keys become "462.0" as string; normalize for codes.
+                original = original.str.replace(r"\.0$", "", regex=True)
+                # Force string dtype so parquet/Arrow never sees mixed str+float objects.
+                df[map_col] = mapped.fillna(original).astype("string")
         df = df.drop(columns=[source_col])
 
     rename_columns = {source: output for source, output in target_columns.items() if output is not None}

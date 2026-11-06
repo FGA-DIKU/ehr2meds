@@ -52,7 +52,7 @@ data:
         args:
           min_val: 1
           max_val: 1000
-      dosis:
+      dosering:
         type: rand_string
         args:
           min_length: 8

@@ -3,7 +3,7 @@ defaults:
   - /root_config@
   - _self_
 
-chunksize: 5000
+chunksize: 500
 
 test: true
 
