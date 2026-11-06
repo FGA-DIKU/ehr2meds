@@ -49,7 +49,14 @@ linked_data:
         type: choice
         file: Population
         linked_on: MOR_CPR
-
+      doso:
+        type: choice
+        file: doso_tekster
+        linked_on: doso
+      indo:
+        type: choice
+        file: indo_tekster
+        linked_on: indo
 
   graviditetskomplikation:
     N: ${N}

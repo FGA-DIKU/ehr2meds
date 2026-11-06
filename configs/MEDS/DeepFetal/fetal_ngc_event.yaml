@@ -28,10 +28,10 @@ epikur_all:
     code: f"General Medication//{$atc}"
     time: $timestamp
   indication: 
-    code: f"Indication//{$indication}"
+    code: f"Indication//{$indo}"
     time: $timestamp
   dose: 
-    code: f"Dose//{$dose}"
+    code: f"Dose//{$doso}"
     time: $timestamp
 
 # LPR3 action diagnosis is finalized at contact end. Attributes known when the

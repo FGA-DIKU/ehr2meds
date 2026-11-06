@@ -117,14 +117,18 @@ stages:
       code_prefixes:
         - "Lab Result: Test, Value, Unit"
   - add_prefix_rows:
-      header: "####"
+      header: "#####"
       delimiter: ${delimiter}
   - add_time_rows:
-      header: "### Time"
+      header: "#### Time"
       delimiter: ${delimiter}
       eod_string: "Unspecified"
   - add_delta_rows:
-      header: "## Date"
+      header: "### Date"
       delimiter: ${delimiter}
+  # Marker when a subject's events cross an interval boundary (e.g. calendar month).
+  - add_interval_rows:
+      header: "## New Month"
+      interval: 1mo
   - finalize_MEDS_metadata
   - finalize_MEDS_data

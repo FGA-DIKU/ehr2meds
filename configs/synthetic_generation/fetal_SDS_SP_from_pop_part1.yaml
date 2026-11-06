@@ -43,7 +43,35 @@ data:
               probability: 0.05
       Fødselstidspunkt:
         type: rand_datetimeseconds
-        
+
+  doso_tekster:
+    N: ${N}
+    columns:
+      doso:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 1000
+      dosis:
+        type: rand_string
+        args:
+          min_length: 8
+          max_length: 12
+
+  indo_tekster:
+    N: ${N}
+    columns:
+      indo:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 1000
+      indikation:
+        type: rand_string
+        args:
+          min_length: 8
+          max_length: 12
+
 linked_data:
   Barn - Fødselsinfo:
     N: ${N}

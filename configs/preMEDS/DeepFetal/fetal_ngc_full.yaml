@@ -64,8 +64,8 @@ tables:
       cpr: subject_id
       atc: atc
       eksd: timestamp
-      indication: indo
-      dose: doso
+      indo: 
+      doso: 
     timestamp_columns:
       timestamp:
         datetime: timestamp

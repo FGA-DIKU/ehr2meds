@@ -62,6 +62,7 @@ insert_placeholder_values = "ehr2meds.meds_stages.insert_placeholder_values:stag
 add_prefix_rows = "ehr2meds.meds_stages.add_prefix_rows:add_prefix_rows"
 add_time_rows = "ehr2meds.meds_stages.add_time_rows:add_time_rows"
 add_delta_rows = "ehr2meds.meds_stages.add_delta_rows:add_delta_rows"
+add_interval_rows = "ehr2meds.meds_stages.add_interval_rows:add_interval_rows"
 order_by_code_prefix = "ehr2meds.meds_stages.order_by_code_prefix:order_by_code_prefix"
 
 [tool.setuptools.package-data]
