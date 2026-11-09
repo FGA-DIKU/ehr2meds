@@ -3,7 +3,7 @@ defaults:
   - /root_config@
   - _self_
 
-chunksize: 500
+chunksize: 500_000
 
 test: true
 
@@ -52,7 +52,7 @@ tables:
           tidspunkt_slut: time_end
         drop_source: true
       - source_column: diagnosekode
-        via_file: ${paths.mappings_dir}/all_npu_mappings.csv
+        via_file: ${paths.mappings_dir}/all_sks_mappings.csv
         how: left
         join_on: code
         target_columns:
@@ -186,7 +186,7 @@ tables:
           cpr: subject_id
         drop_source: true
       - source_column: procedurekode
-        via_file: ${paths.mappings_dir}/all_npu_mappings.csv
+        via_file: ${paths.mappings_dir}/all_sks_mappings.csv
         how: left
         join_on: code
         target_columns:
@@ -212,7 +212,7 @@ tables:
           cpr: subject_id
         drop_source: true
       - source_column: procedurekode
-        via_file: ${paths.mappings_dir}/all_npu_mappings.csv
+        via_file: ${paths.mappings_dir}/all_sks_mappings.csv
         how: left
         join_on: code
         target_columns:
