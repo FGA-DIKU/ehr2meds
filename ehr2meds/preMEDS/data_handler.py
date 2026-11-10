@@ -49,6 +49,15 @@ class DataHandler:
         else:
             raise ValueError(f"Unsupported file type: {filename}")
 
+    @staticmethod
+    def _stabilize_object_columns(df: pd.DataFrame) -> pd.DataFrame:
+        """Cast object columns to pandas string so chunk schemas stay Arrow-stable."""
+        df = df.copy()
+        for col in df.columns:
+            if df[col].dtype == object:
+                df[col] = df[col].astype("string")
+        return df
+
     def save(self, df: pd.DataFrame, filename: str) -> None:
         """
         Save processed data incrementally to a single Parquet file.
@@ -68,10 +77,18 @@ class DataHandler:
         path = os.path.join(self.output_dir, f"{filename}.{self.write_file_type}")
 
         if self.write_file_type == "parquet":
+            df = self._stabilize_object_columns(df)
             table = pa.Table.from_pandas(df, preserve_index=False)
 
             if filename not in self.writers:
+                # Fresh writer for this table; drop any partial file from a prior crashed run.
+                if os.path.exists(path):
+                    os.remove(path)
                 self.writers[filename] = pq.ParquetWriter(path, table.schema, compression="snappy")
+            else:
+                # Later chunks can differ (e.g. all-null int -> float); cast to the writer schema.
+                if table.schema != self.writers[filename].schema:
+                    table = table.cast(self.writers[filename].schema)
 
             self.writers[filename].write_table(table)
 
@@ -83,6 +100,7 @@ class DataHandler:
 
         else:
             raise ValueError(f"Filetype {self.write_file_type} not implemented.")
+
 
     def close(self):
         """
