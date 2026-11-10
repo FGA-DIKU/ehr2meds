@@ -65,6 +65,11 @@ tables:
       end_timestamp:
         date: date_end
         time: time_end
+    value_map:
+      date_end:
+        ".": null
+      time_end:
+        ".": null
 
   epikur_all:
     filename: ${paths.SDS_tables_dir}/epikur_all.csv
@@ -106,6 +111,8 @@ tables:
       prioritet:
         1: "Akut"
         2: "Planlagt"
+      time_start:
+        ".": null
     columns:
       cpr: subject_id
       dato_start: date_start
@@ -258,6 +265,12 @@ tables:
       priority:
         1: "Akut"
         2: "Planlagt"
+      V_INDTIME:
+        ".": null
+      V_UDTIME:
+        ".": null
+      date_start:
+        ".": null
     mappings:
       - source_column: C_SPEC
         via_file: c_spec_to_specialty.parquet
@@ -323,6 +336,11 @@ tables:
       end_timestamp:
         date: date_end
         hour: hour_end
+    value_map:
+      date_end:
+        ".": null
+      hour_end:
+        ".": null
 
   t_sksopr:
     filename: ${paths.SDS_tables_dir}/t_sksopr.csv   
@@ -351,6 +369,13 @@ tables:
         date: date_start
         hour: V_OTIME
         minute: V_OMINUT
+    value_map:
+      date_start:
+        ".": null
+      V_OTIME:
+        ".": null
+      V_OMINUT:
+        ".": null
 
   t_sksube:
     filename: ${paths.SDS_tables_dir}/t_sksube.csv   
@@ -365,6 +390,10 @@ tables:
       procedure_type:
         "P": "Procedure"
         "+": "Tillægskode"
+      V_OTIME:
+        ".": null
+      V_OMINUT:
+        ".": null
     mappings:
       - source_column: contact_id
         via_file: ${paths.SDS_tables_dir}/t_adm.csv
