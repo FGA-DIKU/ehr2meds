@@ -57,6 +57,11 @@ tables:
       end_timestamp:
         date: date_end
         time: time_end
+    value_map: 
+      dato_slut:
+        ".": null
+      tidspunkt_slut:
+        ".": null
 
   epikur_all:
     filename: ${paths.SDS_tables_dir}/epikur_all.csv
@@ -76,6 +81,8 @@ tables:
       prioritet:
         1: "ATA1"
         2: "ATA3"
+      tidspunkt_start:
+        ".": null
     columns:
       cpr: subject_id
       dato_start: date_start
@@ -187,6 +194,12 @@ tables:
       priority:
         1: "ATA1"
         2: "ATA3"
+      V_INDTIME:
+        ".": null
+      V_UDTIME:
+        ".": null
+      D_INDDTO:
+        ".": null
     mappings:
       - source_column: C_SPEC
         via_file: c_spec_to_specialty.parquet
@@ -238,6 +251,11 @@ tables:
       end_timestamp:
         date: date_end
         hour: hour_end
+    value_map: 
+      D_UDDTO:
+        ".": null 
+      V_UDTIME:
+        ".": null 
 
   t_sksopr:
     filename: ${paths.SDS_tables_dir}/t_sksopr.csv   
@@ -259,6 +277,13 @@ tables:
         date: date_start
         hour: V_OTIME
         minute: V_OMINUT
+    value_map: 
+      D_ODTO:
+        ".": null 
+      V_OTIME:
+        ".": null
+      V_OMINUT:
+        ".": null
 
   t_sksube:
     filename: ${paths.SDS_tables_dir}/t_sksube.csv   
@@ -281,6 +306,11 @@ tables:
         date: date_start
         hour: V_OTIME
         minute: V_OMINUT
+    value_map: 
+      V_OTIME:
+        ".": null
+      V_OMINUT:
+        ".": null
 
   SP_admissions:
     filename: ${paths.SP_tables_dir}/Mor - CPMI - ADT hændelser.csv
