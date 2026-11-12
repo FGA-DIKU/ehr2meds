@@ -1,12 +1,13 @@
-"""Pin intended raw -> preMEDS outputs so a rewrite of the preMEDS stage can be checked against them.
+"""End-to-end tests of the raw -> preMEDS stage.
 
-Known bugs are excluded from these inputs and tracked in test_known_bugs.py, so fixing one does not
-break the baseline. Regenerate the baseline only from a known-good implementation:
+The baseline pins the full output for inputs in inputs.py. Regenerate it only from a known-good run:
 
     UPDATE_PREMEDS_BASELINE=1 pytest tests/premeds_parity
 """
 
+import datetime as dt
 import os
+import polars as pl
 import pytest
 import shutil
 from ehr2meds.preMEDS.extractor import PREMEDSExtractor
@@ -34,13 +35,16 @@ def run_premeds(output: Path, tables: dict, population: Path, write_file_type="p
     PREMEDSExtractor(cfg)()
 
 
-# Single chunk: chunked output currently depends on chunksize (see test_known_bugs.py).
 @pytest.mark.parametrize("write_file_type", ["csv", "parquet"])
 def test_premeds_output_matches_baseline(tmp_path, capsys, write_file_type):
     raw_dir, output = tmp_path / "raw", tmp_path / "out"
     write_inputs(raw_dir)
     run_premeds(output, table_configs(raw_dir), raw_dir / "population.csv", write_file_type)
-    (output / "data_quality_summary.txt").write_text(capsys.readouterr().out)
+    # The summary and subject mapping don't depend on the output format, so only the parquet baseline keeps them.
+    if write_file_type == "parquet":
+        (output / "data_quality_summary.txt").write_text(capsys.readouterr().out)
+    else:
+        (output / "subject_id_mapping.csv").unlink()
 
     expected = BASELINE / write_file_type
     if os.environ.get("UPDATE_PREMEDS_BASELINE"):
@@ -50,3 +54,67 @@ def test_premeds_output_matches_baseline(tmp_path, capsys, write_file_type):
 
     problems = compare_dirs(expected, output)
     assert not problems, "\n\n".join(problems)
+
+
+def run_csv_table(tmp_path: Path, population_csv: str, table_csv: str, table_cfg: dict) -> pl.DataFrame:
+    """Run one CSV table through preMEDS and return its parquet output."""
+    (tmp_path / "population.csv").write_text(population_csv)
+    (tmp_path / "table.csv").write_text(table_csv)
+    tables = {"table": {"filename": str(tmp_path / "table.csv"), **table_cfg}}
+    run_premeds(tmp_path / "out", tables, tmp_path / "population.csv")
+    return pl.read_parquet(tmp_path / "out" / "table.parquet")
+
+
+SIMPLE_TABLE = {
+    "columns": {"pid": "subject_id", "diag": "code", "date": None, "time": None},
+    "timestamp_columns": {"timestamp": {"date": "date", "time": "time"}},
+}
+
+
+def test_hh_mm_times_are_parsed(tmp_path):
+    out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", "pid,diag,date,time\nP01,A,2020-01-05,12:34\n", SIMPLE_TABLE)
+    assert out["timestamp"].to_list() == [dt.datetime(2020, 1, 5, 12, 34)]
+
+
+def test_common_date_formats_are_parsed(tmp_path):
+    # ISO and compact dates are year-first; separated dates are day-first (Danish convention).
+    dates = ["2020-01-05", "2020-01-05 13:45:00", "20200105", "05/01/2020", "5/1/2020", "05-01-2020", "05.01.2020"]
+    table = "pid,diag,date,time\n" + "".join(f"P01,C{i},{d},\n" for i, d in enumerate(dates))
+    out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, SIMPLE_TABLE)
+    assert out.sort("row_idx")["timestamp"].to_list() == [dt.datetime(2020, 1, 5)] * len(dates)
+
+
+def test_null_keys_do_not_match_in_mappings(tmp_path):
+    (tmp_path / "map.csv").write_text('contact_id,region_code\n1,1084\n,9999\n"  ",8888\n')
+    table_cfg = {
+        "columns": {**SIMPLE_TABLE["columns"], "contact_id": None},
+        "timestamp_columns": SIMPLE_TABLE["timestamp_columns"],
+        "mappings": [
+            {
+                "source_column": "contact_id",
+                "via_file": str(tmp_path / "map.csv"),
+                "join_on": "contact_id",
+                "target_columns": {"region_code": None},
+                "how": "left",
+            }
+        ],
+    }
+    table = 'pid,diag,date,time,contact_id\nP01,A,2020-01-05,,1\nP01,B,2020-01-05,,\nP01,C,2020-01-05,,"  "\n'
+    out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, table_cfg)
+    assert out.sort("row_idx")["region_code"].to_list() == ["1084", None, None]  # CSV columns are read as text
+
+
+def test_numeric_subject_ids_are_kept_as_strings(tmp_path):
+    out = run_csv_table(tmp_path, "cpr,x\n0101,a\n,b\n", "pid,diag,date,time\n0101,A,2020-01-05,10:00:00\n", SIMPLE_TABLE)
+    assert out.height == 1
+    mapping = pl.read_csv(tmp_path / "out" / "subject_id_mapping.csv", infer_schema=False)
+    assert mapping["cpr"].to_list() == ["0101"]
+
+
+@pytest.mark.parametrize("write_file_type", ["parquet", "csv"])
+def test_output_does_not_depend_on_chunksize(tmp_path, write_file_type):
+    raw_dir = tmp_path / "raw"
+    write_inputs(raw_dir)
+    for chunksize in (4, 100):
+        run_premeds(tmp_path / str(chunksize), table_configs(raw_dir), raw_dir / "population.csv", write_file_type, chunksize)
+    assert not compare_dirs(tmp_path / "100", tmp_path / "4")

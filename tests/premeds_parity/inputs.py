@@ -1,6 +1,5 @@
 """Raw inputs that pin intended preMEDS behaviour on the edge cases a polars port could change.
 
-Inputs that trigger known bugs are kept out of here on purpose; they live in test_known_bugs.py.
 
 Each value is chosen to hit one behaviour; the comment says which. Files are written at test
 time so the inputs stay reviewable here instead of living as binary fixtures.
@@ -9,6 +8,7 @@ time so the inputs stay reviewable here instead of living as binary fixtures.
 import datetime as dt
 import pyarrow as pa
 import pyarrow.parquet as pq
+from omegaconf import OmegaConf
 from pathlib import Path
 
 # Subject ID mapping source: string IDs, a duplicate and a null.
@@ -78,67 +78,37 @@ def write_inputs(raw_dir: Path) -> None:
     pq.write_table(t_adm_table(), raw_dir / "t_adm.parquet")
 
 
-def table_configs(raw_dir: Path) -> dict:
-    return {
-        "contacts": {
-            "filename": str(raw_dir / "contacts.csv"),
-            "columns": {
-                "pid": "subject_id",
-                "contact_id": None,
-                "diag": "code",
-                "priority": None,
-                "date_start": None,
-                "time_start": None,
-                "date_end": None,
-                "time_end": None,
-                "sor_id": None,
-            },
-            "mappings": [
-                {
-                    "source_column": "contact_id",
-                    "via_file": str(raw_dir / "contact_region.csv"),
-                    "join_on": "contact_id",
-                    "target_columns": {"region_code": None},
-                    "how": "left",
-                },
-                {
-                    "function": "sor",
-                    "source_column": "sor_id",
-                    "source_date_column": "date_start",
-                    "via_file": "sor2_contact_mapping.parquet",
-                    "join_on": "sor_id",
-                },
-            ],
-            "normalize_integer_columns": ["region", "region_code"],
-            "value_map": {
-                "date_end": {".": None},
-                "time_end": {".": None},
-                "priority": {1: "ATA1", 2: "ATA3"},
-            },
-            "timestamp_columns": {
-                "timestamp": {"date": "date_start", "time": "time_start"},
-                "end_timestamp": {"date": "date_end", "time": "time_end"},
-            },
-        },
-        "t_adm": {
-            "filename": str(raw_dir / "t_adm.parquet"),
-            "columns": {
-                "v_cpr": "subject_id",
-                "c_adiag": "code",
-                "d_inddto": "date_start",
-                "v_indtime": "hour_start",
-                "v_indminut": "minute_start",
-                "c_indm": "priority",
-                "c_kontaars": None,
-                "loaded_at": None,
-            },
-            "normalize_integer_columns": ["priority", "c_kontaars"],
-            "value_map": {
-                "priority": {1: "ATA1", 2: "ATA3"},
-                "c_kontaars": {2: "ALCC02", 3: "ALCC03", 9: "ALCC90"},
-            },
-            "timestamp_columns": {
-                "timestamp": {"date": "date_start", "hour": "hour_start", "minute": "minute_start"},
-            },
-        },
-    }
+# Same shape as the YAML tables in configs/preMEDS; $RAW is the raw input directory.
+TABLES_YAML = """
+contacts:
+  filename: $RAW/contacts.csv
+  columns: {pid: subject_id, contact_id: null, diag: code, priority: null, date_start: null,
+            time_start: null, date_end: null, time_end: null, sor_id: null}
+  mappings:
+    - {source_column: contact_id, via_file: $RAW/contact_region.csv, join_on: contact_id,
+       target_columns: {region_code: null}, how: left}
+    - {function: sor, source_column: sor_id, source_date_column: date_start,
+       via_file: sor2_contact_mapping.parquet, join_on: sor_id}
+  normalize_integer_columns: [region, region_code]
+  value_map:
+    date_end: {".": null}
+    time_end: {".": null}
+    priority: {1: ATA1, 2: ATA3}
+  timestamp_columns:
+    timestamp: {date: date_start, time: time_start}
+    end_timestamp: {date: date_end, time: time_end}
+t_adm:
+  filename: $RAW/t_adm.parquet
+  columns: {v_cpr: subject_id, c_adiag: code, d_inddto: date_start, v_indtime: hour_start,
+            v_indminut: minute_start, c_indm: priority, c_kontaars: null, loaded_at: null}
+  normalize_integer_columns: [priority, c_kontaars]
+  value_map:
+    priority: {1: ATA1, 2: ATA3}
+    c_kontaars: {2: ALCC02, 3: ALCC03, 9: ALCC90}
+  timestamp_columns:
+    timestamp: {date: date_start, hour: hour_start, minute: minute_start}
+"""
+
+
+def table_configs(raw_dir: Path):
+    return OmegaConf.create(TABLES_YAML.replace("$RAW", str(raw_dir)))
