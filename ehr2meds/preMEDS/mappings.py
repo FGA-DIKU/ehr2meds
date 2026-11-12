@@ -46,7 +46,9 @@ def join_key(df: pl.DataFrame, column: str) -> pl.Expr:
     dtype = df.schema[column]
     if dtype.is_integer():
         return pl.col(column).cast(pl.Int64).cast(pl.String)
-    return pl.col(column).cast(pl.String).str.strip_chars().str.replace(r"^(-?\d+)\.0*$", "$1")
+    key = pl.col(column).cast(pl.String).str.strip_chars().str.replace(r"^(-?\d+)\.0*$", "$1")
+    # Blank keys count as missing, so they never match (#94).
+    return pl.when(key != "").then(key)
 
 
 def normalize_sor_id(values: pl.Expr) -> pl.Expr:

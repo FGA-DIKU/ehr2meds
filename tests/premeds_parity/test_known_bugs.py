@@ -47,7 +47,7 @@ def test_common_date_formats_are_parsed(tmp_path):
 
 
 def test_null_keys_do_not_match_in_mappings(tmp_path):
-    (tmp_path / "map.csv").write_text("contact_id,region_code\n1,1084\n,9999\n")
+    (tmp_path / "map.csv").write_text('contact_id,region_code\n1,1084\n,9999\n"  ",8888\n')
     table_cfg = {
         "columns": {**SIMPLE_TABLE["columns"], "contact_id": None},
         "timestamp_columns": SIMPLE_TABLE["timestamp_columns"],
@@ -61,9 +61,9 @@ def test_null_keys_do_not_match_in_mappings(tmp_path):
             }
         ],
     }
-    table = "pid,diag,date,time,contact_id\nP01,A,2020-01-05,,1\nP01,B,2020-01-05,,\n"
+    table = 'pid,diag,date,time,contact_id\nP01,A,2020-01-05,,1\nP01,B,2020-01-05,,\nP01,C,2020-01-05,,"  "\n'
     out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, table_cfg)
-    assert out.sort("row_idx")["region_code"].to_list() == ["1084", None]  # CSV columns are read as text
+    assert out.sort("row_idx")["region_code"].to_list() == ["1084", None, None]  # CSV columns are read as text
 
 
 def test_numeric_subject_ids_are_kept_as_strings(tmp_path):
