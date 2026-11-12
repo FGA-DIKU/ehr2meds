@@ -6,9 +6,6 @@ from typing import Iterator, Mapping, Optional
 
 logger = logging.getLogger(__name__)
 
-# Matches pandas' CSV text, so CSV preMEDS output reads the same downstream.
-CSV_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%.f"
-
 
 class DataHandler:
     """Handles data loading and saving operations.
@@ -72,17 +69,14 @@ class DataHandler:
 
             if filename not in self.writers:
                 self.writers[filename] = pq.ParquetWriter(path, table.schema, compression="snappy")
-            writer = self.writers[filename]
 
-            # An all-null chunk column has null type; cast it to the file's type instead of failing.
-            if table.schema != writer.schema:
-                table = table.cast(writer.schema)
-            writer.write_table(table)
+            self.writers[filename].write_table(table)
 
         elif self.write_file_type == "csv":
             first = not os.path.exists(path)
             with open(path, "w" if first else "a") as f:
-                df.write_csv(f, include_header=first, datetime_format=CSV_DATETIME_FORMAT)
+                # Same datetime text as the pandas version, so downstream readers see no change.
+                df.write_csv(f, include_header=first, datetime_format="%Y-%m-%d %H:%M:%S%.f")
 
         else:
             raise ValueError(f"Filetype {self.write_file_type} not implemented.")
