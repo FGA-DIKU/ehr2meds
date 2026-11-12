@@ -1,16 +1,16 @@
-import pandas as pd
-from ehr2meds.preMEDS.constants import ROW_INDEX
+import polars as pl
+from ehr2meds.preMEDS.timestamps import parse_date
 
 
 def apply_mapping(
-    df: pd.DataFrame,
-    map_table: pd.DataFrame,
+    df: pl.DataFrame,
+    map_table: pl.DataFrame,
     join_col: str,
     source_col: str,
     target_columns: dict[str, str | None],
     how: str = "inner",
     drop_source: bool = False,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Join one or more columns from a mapping table onto a dataframe.
 
     ``target_columns`` maps one or more source column names to their output names.
@@ -23,90 +23,74 @@ def apply_mapping(
     if len(output_columns) != len(set(output_columns)):
         raise ValueError("Mapped columns must have unique output names")
 
-    # Prevent missing or empty mapping keys from matching during merges.
-    map_table = map_table.dropna(subset=[join_col])
-    map_table = map_table[map_table[join_col].astype(str).str.strip() != ""]
-
-    if df[source_col].dtype != map_table[join_col].dtype:
-        source_as_numeric = pd.to_numeric(df[source_col], errors="coerce")
-        mapping_as_numeric = pd.to_numeric(map_table[join_col], errors="coerce")
-        mapping_keys_are_numeric = mapping_as_numeric.notna().equals(map_table[join_col].notna())
-        if mapping_keys_are_numeric:
-            # Match equivalent keys such as 5, 5.0, and "5.0".
-            df[source_col] = source_as_numeric
-            map_table[join_col] = mapping_as_numeric
-        else:
-            df[source_col] = df[source_col].astype(str)
-            map_table[join_col] = map_table[join_col].astype(str)
-
-    df = pd.merge(
-        df,
-        map_table[[join_col, *target_columns]],
-        left_on=source_col,
-        right_on=join_col,
+    map_table = map_table.select(join_col, *target_columns)
+    key = "__mapping_key"
+    # Null keys never match, so rows without a key get null targets (left) or are dropped (inner).
+    df = df.with_columns(join_key(df, source_col).alias(key)).join(
+        map_table.with_columns(join_key(map_table, join_col).alias(key)).drop(join_col),
+        on=key,
         how=how,
+        maintain_order="left",
     )
+    df = df.drop(key)
 
-    if join_col != source_col:
-        df = df.drop(columns=[join_col])
     if drop_source:
-        df = df.drop(columns=[source_col])
+        df = df.drop(source_col)
 
     rename_columns = {source: output for source, output in target_columns.items() if output is not None}
-    return df.rename(columns=rename_columns) if rename_columns else df
+    return df.rename(rename_columns)
 
 
-def normalize_sor_id(values: pd.Series) -> pd.Series:
+def join_key(df: pl.DataFrame, column: str) -> pl.Expr:
+    """Key that matches equivalent IDs such as 5, 5.0, and "5.0" without going through floats."""
+    dtype = df.schema[column]
+    if dtype.is_integer():
+        return pl.col(column).cast(pl.Int64).cast(pl.String)
+    key = pl.col(column).cast(pl.String).str.strip_chars().str.replace(r"^(-?\d+)\.0*$", "$1")
+    # Blank keys count as missing, so they never match (#94).
+    return pl.when(key != "").then(key)
+
+
+def normalize_sor_id(values: pl.Expr) -> pl.Expr:
     """Normalize SOR identifiers read from CSV and spreadsheet exports."""
-    values = values.astype("string").str.strip()
-    values = values.str.replace(r'^="(.*)"$', r"\1", regex=True)
-    return values.str.replace(r"\.0$", "", regex=True).replace("", pd.NA)
+    values = values.cast(pl.String).str.strip_chars()
+    values = values.str.replace(r'^="(.*)"$', "$1")
+    values = values.str.replace(r"\.0$", "")
+    return pl.when(values != "").then(values)
 
 
-def add_sor_attributes(df: pd.DataFrame, sor_table: pd.DataFrame, config: dict) -> pd.DataFrame:
+def add_sor_attributes(df: pl.DataFrame, sor_table: pl.DataFrame, config: dict) -> pl.DataFrame:
     """Map each SOR unit and date to its region and primary specialty."""
-    source_id_column = config["source_column"]
-    source_date_column = config["source_date_column"]
-    mapping_id_column = config["join_on"]
-    sor_table = sor_table.rename(columns={mapping_id_column: "mapping_sor_id"})
+    keys = [config["source_column"], config["source_date_column"]]
 
-    contact_keys = df[[source_id_column, source_date_column]].drop_duplicates().copy()
-    contact_keys["normalized_sor_id"] = normalize_sor_id(contact_keys[source_id_column])
-    contact_keys["contact_date"] = pd.to_datetime(
-        contact_keys[source_date_column], format=config.get("date_format"), errors="coerce"
-    ).dt.normalize()
-    candidates = contact_keys.merge(
-        sor_table,
-        left_on="normalized_sor_id",
-        right_on="mapping_sor_id",
-        how="left",
+    contact_keys = (
+        df.select(keys)
+        .unique()
+        .with_columns(
+            normalize_sor_id(pl.col(keys[0])).alias("normalized_sor_id"),
+            # Same parser as the timestamp columns, so a contact's SOR date matches its timestamp date.
+            parse_date(df, keys[1], config.get("date_format")).alias("contact_date"),
+        )
     )
-    is_date_valid = (
-        candidates["mapping_sor_id"].notna()
-        & candidates["contact_date"].notna()
-        & (candidates["valid_from"].isna() | candidates["contact_date"].ge(candidates["valid_from"]))
-        & (candidates["valid_to"].isna() | candidates["contact_date"].le(candidates["valid_to"]))
+    candidates = contact_keys.join(
+        sor_table.select(
+            pl.col(config["join_on"]).alias("normalized_sor_id"), "valid_from", "valid_to", "region", "primary_specialty"
+        ),
+        on="normalized_sor_id",
     )
     date_valid_matches = (
-        candidates.loc[is_date_valid]
-        .sort_values("valid_from", ascending=False, na_position="last")
-        .drop_duplicates([source_id_column, source_date_column], keep="first")
+        candidates.filter(
+            pl.col("contact_date").is_not_null(),
+            pl.col("valid_from").is_null() | (pl.col("contact_date") >= pl.col("valid_from")),
+            pl.col("valid_to").is_null() | (pl.col("contact_date") <= pl.col("valid_to")),
+        )
+        .sort("valid_from", descending=True, nulls_last=True)
+        .unique(subset=keys, keep="first")
+        .select(*keys, "region", pl.col("primary_specialty").alias("specialty"))
     )
-    attributes = contact_keys[[source_id_column, source_date_column]].merge(
-        date_valid_matches[[source_id_column, source_date_column, "region", "primary_specialty"]],
-        on=[source_id_column, source_date_column],
-        how="left",
-        validate="one_to_one",
+    return df.drop("region", "specialty", strict=False).join(
+        date_valid_matches, on=keys, how="left", validate="m:1", maintain_order="left"
     )
-    attributes = attributes.rename(columns={"primary_specialty": "specialty"})
-    result = df.drop(columns=["region", "specialty"], errors="ignore").merge(
-        attributes,
-        on=[source_id_column, source_date_column],
-        how="left",
-        validate="many_to_one",
-        sort=False,
-    )
-    return result.sort_values(ROW_INDEX, kind="stable") if ROW_INDEX in result else result
 
 
 MAPPING_STRATEGIES = {
