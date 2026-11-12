@@ -73,12 +73,6 @@ def test_numeric_subject_ids_are_kept_as_strings(tmp_path):
     assert mapping["cpr"].to_list() == ["0101"]
 
 
-def test_duplicates_are_removed_across_chunks(tmp_path):
-    table = "pid,diag,date,time\nP01,A,2020-01-05,10:00:00\nP01,B,2020-01-05,10:00:00\nP01,A,2020-01-05,10:00:00\n"
-    out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, SIMPLE_TABLE, chunksize=2)
-    assert out["code"].to_list() == ["A", "B"]
-
-
 @pytest.mark.parametrize("write_file_type", ["parquet", "csv"])
 def test_output_does_not_depend_on_chunksize(tmp_path, write_file_type):
     raw_dir = tmp_path / "raw"

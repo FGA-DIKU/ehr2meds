@@ -22,32 +22,11 @@ def map_pids_to_ints(df: pl.DataFrame, subject_id_mapping: Dict[str, int]) -> pl
     return df.with_columns(mapped.alias(SUBJECT_ID)).drop_nulls(SUBJECT_ID)
 
 
-class SeenRows:
-    """Fingerprints of the rows kept so far from one table, so duplicates in later chunks are dropped.
-
-    Two 64-bit hashes per row (16 bytes) instead of the rows themselves; with 128 bits an accidental
-    match between different rows is practically impossible.
-    """
-
-    KEYS = ("__seen_hash_0", "__seen_hash_1")
-
-    def __init__(self):
-        self.fingerprints = None
-
-    def drop_seen(self, df: pl.DataFrame, columns: list[str]) -> pl.DataFrame:
-        row = pl.struct(columns)
-        df = df.with_columns(row.hash(seed=0).alias(self.KEYS[0]), row.hash(seed=1).alias(self.KEYS[1]))
-        if self.fingerprints is not None:
-            df = df.join(self.fingerprints, on=self.KEYS, how="anti", maintain_order="left")
-        new = df.select(self.KEYS)
-        self.fingerprints = new if self.fingerprints is None else pl.concat([self.fingerprints, new])
-        return df.drop(self.KEYS)
-
-
-def clean_data(df: pl.DataFrame, tracker, seen: SeenRows | None = None) -> pl.DataFrame:
+def clean_data(df: pl.DataFrame, tracker) -> pl.DataFrame:
     """Remove rows with missing mandatory values and duplicate records.
 
-    ``seen`` carries rows kept from earlier chunks of the same table, so duplicates are removed across chunks.
+    Duplicates are only removed within this chunk; identical rows in different chunks are both kept.
+    Removing them across chunks needs per-row state for the whole table (tens of GB at billions of rows).
     """
     if all(col in df.columns for col in MANDATORY_COLUMNS):
         before = df.height
@@ -59,8 +38,6 @@ def clean_data(df: pl.DataFrame, tracker, seen: SeenRows | None = None) -> pl.Da
 
     before = df.height
     df = df.unique(subset=columns_to_check, keep="first", maintain_order=True)
-    if seen is not None:
-        df = seen.drop_seen(df, columns_to_check)
     tracker.record_change("Deduplication", df.height - before)
 
     return df
