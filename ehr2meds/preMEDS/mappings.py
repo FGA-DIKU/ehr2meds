@@ -26,7 +26,7 @@ def apply_mapping(
     # Remove null join keys to prevent incorrect matches in pandas merges.
     df = df.dropna(subset=[source_col])
     map_table = map_table.dropna(subset=[join_col])
-    
+
     # Remove empty or whitespace-only keys that dropna() does not catch.
     df = df[df[source_col].astype("string").str.strip() != ""]
     map_table = map_table[map_table[join_col].astype("string").str.strip() != ""]
