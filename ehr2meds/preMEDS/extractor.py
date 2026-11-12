@@ -7,7 +7,6 @@ from ehr2meds.preMEDS.data_quality import (
     get_data_quality_summary,
 )
 from ehr2meds.preMEDS.processors import Processor
-from ehr2meds.preMEDS.utils import SeenRows
 from tqdm import tqdm
 from typing import Dict, Optional, Union
 
@@ -31,7 +30,6 @@ def process_single_table_worker(args):
         processor = Processor()
         summary = []
         next_row_idx = 0
-        seen = SeenRows()
 
         for chunk in tqdm(
             data_handler.load_chunks(table_config["filename"], cols=table_config["columns"]),
@@ -45,7 +43,6 @@ def process_single_table_worker(args):
                 data_handler,
                 subject_id_mapping,
                 row_index_start=next_row_idx,
-                seen=seen,
             )
 
             next_row_idx += len(chunk)

@@ -4,7 +4,6 @@ from ehr2meds.preMEDS.data_quality import DataQualityTracker
 from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
 from ehr2meds.preMEDS.timestamps import add_timestamp_columns
 from ehr2meds.preMEDS.utils import (
-    SeenRows,
     add_row_idx,
     apply_value_map,
     clean_data,
@@ -26,7 +25,6 @@ class Processor:
         data_handler,
         subject_id_mapping: Optional[dict] = None,
         row_index_start: int = 0,
-        seen: Optional[SeenRows] = None,
     ):
         """Process the table.
 
@@ -66,7 +64,7 @@ class Processor:
 
         df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
 
-        df = clean_data(df, tracker=tracker, seen=seen)
+        df = clean_data(df, tracker=tracker)
 
         validate_subject_id(df)
 
