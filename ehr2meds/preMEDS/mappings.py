@@ -1,6 +1,5 @@
 import polars as pl
 from ehr2meds.preMEDS.timestamps import parse_date
-from ehr2meds.preMEDS.utils import as_number
 
 
 def apply_mapping(
@@ -25,24 +24,29 @@ def apply_mapping(
         raise ValueError("Mapped columns must have unique output names")
 
     map_table = map_table.select(join_col, *target_columns)
-    if df.schema[source_col] != map_table.schema[join_col]:
-        mapping_as_numeric = map_table.select(as_number(map_table, join_col))[join_col]
-        if mapping_as_numeric.null_count() == map_table[join_col].null_count():
-            # Match equivalent keys such as 5, 5.0, and "5.0".
-            df = df.with_columns(as_number(df, source_col))
-            map_table = map_table.with_columns(mapping_as_numeric)
-        else:
-            df = df.with_columns(pl.col(source_col).cast(pl.String))
-            map_table = map_table.with_columns(pl.col(join_col).cast(pl.String))
-
+    key = "__mapping_key"
     # Null keys never match, so rows without a key get null targets (left) or are dropped (inner).
-    df = df.join(map_table, left_on=source_col, right_on=join_col, how=how, maintain_order="left")
+    df = df.with_columns(join_key(df, source_col).alias(key)).join(
+        map_table.with_columns(join_key(map_table, join_col).alias(key)).drop(join_col),
+        on=key,
+        how=how,
+        maintain_order="left",
+    )
+    df = df.drop(key)
 
     if drop_source:
         df = df.drop(source_col)
 
     rename_columns = {source: output for source, output in target_columns.items() if output is not None}
     return df.rename(rename_columns)
+
+
+def join_key(df: pl.DataFrame, column: str) -> pl.Expr:
+    """Key that matches equivalent IDs such as 5, 5.0, and "5.0" without going through floats."""
+    dtype = df.schema[column]
+    if dtype.is_integer():
+        return pl.col(column).cast(pl.Int64).cast(pl.String)
+    return pl.col(column).cast(pl.String).str.strip_chars().str.replace(r"^(-?\d+)\.0*$", "$1")
 
 
 def normalize_sor_id(values: pl.Expr) -> pl.Expr:

@@ -41,9 +41,6 @@ class Processor:
         """
         tracker = DataQualityTracker(initial_rows=len(df))
 
-        # shortcut: DataHandler still loads and saves pandas, so frames cross over here and on return;
-        # drop the conversions once data_handler.py is ported.
-        df = pl.from_pandas(df)
         df = add_row_idx(df, start=row_index_start)
         df = remove_timezones(df)
 
@@ -71,7 +68,7 @@ class Processor:
 
         validate_subject_id(df)
 
-        return df.to_pandas(use_pyarrow_extension_array=True), tracker.result()
+        return df, tracker.result()
 
     @staticmethod
     def apply_mappings(
@@ -130,4 +127,4 @@ class Processor:
 
         cols = dict.fromkeys((mapping["join_on"], *target_columns))
 
-        return pl.from_pandas(data_handler.load(str(filename), cols=cols))
+        return data_handler.load(str(filename), cols=cols)

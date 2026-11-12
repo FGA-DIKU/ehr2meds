@@ -96,7 +96,7 @@ def get_data_quality_summary(worker_results):
 
             for column in df.columns:
                 counts = nulls[(table, column)]
-                counts[0] += int(df[column].isna().sum())
+                counts[0] += df[column].null_count()
                 counts[1] += len(df)
 
     return {
