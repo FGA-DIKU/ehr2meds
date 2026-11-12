@@ -46,7 +46,6 @@ def test_common_date_formats_are_parsed(tmp_path):
     assert out.sort("row_idx")["timestamp"].to_list() == [dt.datetime(2020, 1, 5)] * len(dates)
 
 
-@bug("pandas merge matches null keys to each other, so rows with no key pick up the mapping's null-key row")
 def test_null_keys_do_not_match_in_mappings(tmp_path):
     (tmp_path / "map.csv").write_text("contact_id,region_code\n1,1084\n,9999\n")
     table_cfg = {
