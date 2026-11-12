@@ -23,6 +23,10 @@ def apply_mapping(
     if len(output_columns) != len(set(output_columns)):
         raise ValueError("Mapped columns must have unique output names")
 
+    # Prevent missing or empty mapping keys from matching during merges.
+    map_table = map_table.dropna(subset=[join_col])
+    map_table = map_table[map_table[join_col].astype(str).str.strip() != ""]
+
     if df[source_col].dtype != map_table[join_col].dtype:
         source_as_numeric = pd.to_numeric(df[source_col], errors="coerce")
         mapping_as_numeric = pd.to_numeric(map_table[join_col], errors="coerce")
