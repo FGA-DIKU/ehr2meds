@@ -42,8 +42,8 @@ class Processor:
         """
         tracker = DataQualityTracker(initial_rows=len(df))
 
-        # shortcut: mappings and timestamps are still pandas, so frames cross over at those steps;
-        # drop the conversions once mappings.py and timestamps.py are ported.
+        # shortcut: mappings and saving are still pandas, so frames cross over at those steps;
+        # drop the conversions once mappings.py and data_handler.py are ported.
         df = pl.from_pandas(df)
         df = add_row_idx(df, start=row_index_start)
         df = remove_timezones(df)
@@ -67,24 +67,13 @@ class Processor:
 
         df = apply_value_map(df, table_config.get("value_map", {}))
 
-        df = Processor.add_timestamps(df, table_config.get("timestamp_columns", {}))
+        df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
 
         df = clean_data(df, tracker=tracker)
 
         validate_subject_id(df)
 
         return df.to_pandas(use_pyarrow_extension_array=True), tracker.result()
-
-    @staticmethod
-    def add_timestamps(df: pl.DataFrame, timestamp_cfg: dict) -> pl.DataFrame:
-        """Run the pandas timestamp builder on just the columns it reads."""
-        if not timestamp_cfg:
-            return df
-        sources = {
-            cfg[key] for cfg in timestamp_cfg.values() for key in ("date", "time", "hour", "minute", "second") if key in cfg
-        }
-        timestamps = add_timestamp_columns(df.select(sorted(sources)).to_pandas(), timestamp_cfg)
-        return df.with_columns(pl.from_pandas(timestamps[list(timestamp_cfg)]))
 
     @staticmethod
     def apply_mappings(

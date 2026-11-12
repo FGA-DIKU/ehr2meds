@@ -33,16 +33,13 @@ SIMPLE_TABLE = {
 }
 
 
-@bug("pd.to_timedelta rejects 'HH:MM', so the time is silently replaced by midnight")
 def test_hh_mm_times_are_parsed(tmp_path):
     out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", "pid,diag,date,time\nP01,A,2020-01-05,12:34\n", SIMPLE_TABLE)
     assert out["timestamp"].to_list() == [dt.datetime(2020, 1, 5, 12, 34)]
 
 
-@bug("pd.to_datetime infers one format from the first value, so other common formats become NaT and the row is dropped")
 def test_common_date_formats_are_parsed(tmp_path):
     # ISO and compact dates are year-first; separated dates are day-first (Danish convention).
-    # pandas' format="mixed", dayfirst=True is not the fix: it reads "2020-01-05" as 1 May.
     dates = ["2020-01-05", "2020-01-05 13:45:00", "20200105", "05/01/2020", "5/1/2020", "05-01-2020", "05.01.2020"]
     table = "pid,diag,date,time\n" + "".join(f"P01,C{i},{d},\n" for i, d in enumerate(dates))
     out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, SIMPLE_TABLE)
