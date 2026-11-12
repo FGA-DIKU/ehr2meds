@@ -1,4 +1,5 @@
 import pandas as pd
+import polars as pl
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.data_quality import DataQualityTracker
 from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
@@ -41,15 +42,19 @@ class Processor:
         """
         tracker = DataQualityTracker(initial_rows=len(df))
 
+        # shortcut: mappings and timestamps are still pandas, so frames cross over at those steps;
+        # drop the conversions once mappings.py and timestamps.py are ported.
+        df = pl.from_pandas(df)
         df = add_row_idx(df, start=row_index_start)
         df = remove_timezones(df)
 
         df = Processor.apply_mappings(
-            df,
+            df.to_pandas(use_pyarrow_extension_array=True),
             table_config.get("mappings", []),
             data_handler,
             table_config.get("timestamp_columns", {}),
         )
+        df = pl.from_pandas(df)
         tracker.checkpoint("Table mappings", df)
 
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
@@ -62,13 +67,24 @@ class Processor:
 
         df = apply_value_map(df, table_config.get("value_map", {}))
 
-        df = add_timestamp_columns(df, table_config.get("timestamp_columns", {}))
+        df = Processor.add_timestamps(df, table_config.get("timestamp_columns", {}))
 
         df = clean_data(df, tracker=tracker)
 
         validate_subject_id(df)
 
-        return df, tracker.result()
+        return df.to_pandas(use_pyarrow_extension_array=True), tracker.result()
+
+    @staticmethod
+    def add_timestamps(df: pl.DataFrame, timestamp_cfg: dict) -> pl.DataFrame:
+        """Run the pandas timestamp builder on just the columns it reads."""
+        if not timestamp_cfg:
+            return df
+        sources = {
+            cfg[key] for cfg in timestamp_cfg.values() for key in ("date", "time", "hour", "minute", "second") if key in cfg
+        }
+        timestamps = add_timestamp_columns(df.select(sorted(sources)).to_pandas(), timestamp_cfg)
+        return df.with_columns(pl.from_pandas(timestamps[list(timestamp_cfg)]))
 
     @staticmethod
     def apply_mappings(
