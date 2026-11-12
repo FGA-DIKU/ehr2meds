@@ -73,7 +73,6 @@ def test_numeric_subject_ids_are_kept_as_strings(tmp_path):
     assert mapping["cpr"].to_list() == ["0101"]
 
 
-@bug("deduplication runs per chunk, so a duplicate in another chunk is kept")
 def test_duplicates_are_removed_across_chunks(tmp_path):
     table = "pid,diag,date,time\nP01,A,2020-01-05,10:00:00\nP01,B,2020-01-05,10:00:00\nP01,A,2020-01-05,10:00:00\n"
     out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, SIMPLE_TABLE, chunksize=2)
