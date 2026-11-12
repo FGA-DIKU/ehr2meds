@@ -63,10 +63,9 @@ def test_null_keys_do_not_match_in_mappings(tmp_path):
     }
     table = "pid,diag,date,time,contact_id\nP01,A,2020-01-05,,1\nP01,B,2020-01-05,,\n"
     out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, table_cfg)
-    assert out.sort("row_idx")["region_code"].to_list() == [1084, None]
+    assert out.sort("row_idx")["region_code"].to_list() == ["1084", None]  # CSV columns are read as text
 
 
-@bug("numeric subject IDs lose leading zeros, and a null makes them floats ('101.0') that match no row")
 def test_numeric_subject_ids_are_kept_as_strings(tmp_path):
     out = run_csv_table(tmp_path, "cpr,x\n0101,a\n,b\n", "pid,diag,date,time\n0101,A,2020-01-05,10:00:00\n", SIMPLE_TABLE)
     assert out.height == 1
@@ -81,7 +80,6 @@ def test_duplicates_are_removed_across_chunks(tmp_path):
     assert out["code"].to_list() == ["A", "B"]
 
 
-@bug("dtypes are inferred per chunk: parquet writing crashes, csv gets '21000016006.0' and date-only timestamps")
 @pytest.mark.parametrize("write_file_type", ["parquet", "csv"])
 def test_output_does_not_depend_on_chunksize(tmp_path, write_file_type):
     raw_dir = tmp_path / "raw"

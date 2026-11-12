@@ -23,7 +23,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "pandas>=3.0.3",
+    "pandas>=3.0.3", # only used by generate_synthetic_raw_data.py
+    "polars>=1.38,<2", # LazyFrame.collect_batches
     "numpy>=2.5.0",
     "pyarrow>=24.0.0",
     "tqdm>=4.68.3",
