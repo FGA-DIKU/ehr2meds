@@ -1,4 +1,3 @@
-import pandas as pd
 import polars as pl
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.data_quality import DataQualityTracker
@@ -42,19 +41,18 @@ class Processor:
         """
         tracker = DataQualityTracker(initial_rows=len(df))
 
-        # shortcut: mappings and saving are still pandas, so frames cross over at those steps;
-        # drop the conversions once mappings.py and data_handler.py are ported.
+        # shortcut: DataHandler still loads and saves pandas, so frames cross over here and on return;
+        # drop the conversions once data_handler.py is ported.
         df = pl.from_pandas(df)
         df = add_row_idx(df, start=row_index_start)
         df = remove_timezones(df)
 
         df = Processor.apply_mappings(
-            df.to_pandas(use_pyarrow_extension_array=True),
+            df,
             table_config.get("mappings", []),
             data_handler,
             table_config.get("timestamp_columns", {}),
         )
-        df = pl.from_pandas(df)
         tracker.checkpoint("Table mappings", df)
 
         df = normalize_integer_columns(df, table_config.get("normalize_integer_columns", []))
@@ -77,11 +75,11 @@ class Processor:
 
     @staticmethod
     def apply_mappings(
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         mapping_cfg: List[dict],
         data_handler: DataHandler,
         timestamp_cfg: Optional[dict] = None,
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         for mapping in mapping_cfg:
             strategy_name = mapping.get("function")
             strategy = MAPPING_STRATEGIES.get(strategy_name)
@@ -132,4 +130,4 @@ class Processor:
 
         cols = dict.fromkeys((mapping["join_on"], *target_columns))
 
-        return data_handler.load(str(filename), cols=cols)
+        return pl.from_pandas(data_handler.load(str(filename), cols=cols))
