@@ -23,8 +23,13 @@ def apply_mapping(
     if len(output_columns) != len(set(output_columns)):
         raise ValueError("Mapped columns must have unique output names")
 
-    df = df.copy()
-    map_table = map_table.copy()
+    # Remove null join keys to prevent incorrect matches in pandas merges.
+    df = df.dropna(subset=[source_col])
+    map_table = map_table.dropna(subset=[join_col])
+    
+    # Remove empty or whitespace-only keys that dropna() does not catch.
+    df = df[df[source_col].astype("string").str.strip() != ""]
+    map_table = map_table[map_table[join_col].astype("string").str.strip() != ""]
 
     if df[source_col].dtype != map_table[join_col].dtype:
         source_as_numeric = pd.to_numeric(df[source_col], errors="coerce")
@@ -35,25 +40,16 @@ def apply_mapping(
             df[source_col] = source_as_numeric
             map_table[join_col] = mapping_as_numeric
         else:
-            df[source_col] = df[source_col].astype("string")
-            map_table[join_col] = map_table[join_col].astype("string")
-
-    # Prevent missing keys from matching across tables.
-    guard = "__null_join_guard"
-    while guard in df.columns or guard in map_table.columns:
-        guard += "_"
-
-    for table, key, side in ((df, source_col, 1), (map_table, join_col, -1)):
-        missing = table[key].isna() | table[key].astype("string").str.strip().eq("").fillna(False)
-        table[guard] = missing.astype("int8") * side
+            df[source_col] = df[source_col].astype(str)
+            map_table[join_col] = map_table[join_col].astype(str)
 
     df = pd.merge(
         df,
-        map_table[[join_col, *target_columns, guard]],
-        left_on=[source_col, guard],
-        right_on=[join_col, guard],
+        map_table[[join_col, *target_columns]],
+        left_on=source_col,
+        right_on=join_col,
         how=how,
-    ).drop(columns=guard)
+    )
 
     if join_col != source_col:
         df = df.drop(columns=[join_col])
