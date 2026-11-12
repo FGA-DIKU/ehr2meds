@@ -39,7 +39,7 @@ def clean_data(df: pl.DataFrame, tracker) -> pl.DataFrame:
     return df
 
 
-def _as_number(df: pl.DataFrame, col: str) -> pl.Expr:
+def as_number(df: pl.DataFrame, col: str) -> pl.Expr:
     """Parse a column as Float64; unparseable values become null (like pd.to_numeric(errors="coerce"))."""
     dtype = df.schema[col]
     if dtype == pl.String:
@@ -55,7 +55,7 @@ def apply_value_map(df: pl.DataFrame, value_map_cfg: dict) -> pl.DataFrame:
         if col not in df.columns:
             continue
 
-        numeric = _as_number(df, col)
+        numeric = as_number(df, col)
         integer_like = numeric % 1 == 0
         has_int_keys = any(isinstance(key, int) for key in mapping)
 
@@ -97,7 +97,7 @@ def normalize_integer_columns(df: pl.DataFrame, columns: list[str]) -> pl.DataFr
         if df.schema[col].is_integer():
             df = df.with_columns(pl.col(col).cast(pl.Int64))
             continue
-        numeric = _as_number(df, col)
+        numeric = as_number(df, col)
         df = df.with_columns(pl.when(numeric % 1 == 0).then(numeric.cast(pl.Int64, strict=False)).alias(col))
     return df
 
