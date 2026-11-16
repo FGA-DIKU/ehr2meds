@@ -51,6 +51,8 @@ def create_time_delta(df: pl.DataFrame, config: dict) -> pl.Expr:
         if any(name in config for name in TIME_COMPONENTS):
             raise ValueError("Configure either time or hour/minute/second columns, not both")
         column = config["time"]
+        if isinstance(df.schema[column], pl.Duration):
+            return pl.col(column).fill_null(pl.duration())
         if df.schema[column] == pl.Time:
             time = pl.col(column)
         else:

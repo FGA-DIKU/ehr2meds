@@ -8,6 +8,8 @@ The baseline pins the full output for inputs in inputs.py. Regenerate it only fr
 import datetime as dt
 import os
 import polars as pl
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 import shutil
 from ehr2meds.preMEDS.extractor import PREMEDSExtractor
@@ -107,7 +109,7 @@ def test_null_keys_do_not_match_in_mappings(tmp_path):
 def test_numeric_subject_ids_are_kept_as_strings(tmp_path):
     out = run_csv_table(tmp_path, "cpr,x\n0101,a\n,b\n", "pid,diag,date,time\n0101,A,2020-01-05,10:00:00\n", SIMPLE_TABLE)
     assert out.height == 1
-    mapping = pl.read_csv(tmp_path / "out" / "subject_id_mapping.csv", infer_schema=False)
+    mapping = pl.read_parquet(tmp_path / "out" / "subject_id_mapping.parquet")
     assert mapping["cpr"].to_list() == ["0101"]
 
 
@@ -118,3 +120,22 @@ def test_output_does_not_depend_on_chunksize(tmp_path, write_file_type):
     for chunksize in (4, 100):
         run_premeds(tmp_path / str(chunksize), table_configs(raw_dir), raw_dir / "population.csv", write_file_type, chunksize)
     assert not compare_dirs(tmp_path / "100", tmp_path / "4")
+
+
+@pytest.mark.parametrize("time_type", [pa.time32("s"), pa.time64("us"), pa.duration("s")])
+def test_parquet_time_columns_keep_their_time(tmp_path, time_type):
+    # polars' own parquet reader returns time32[s] as all null, which silently dropped times on real data.
+    seconds = [45296, 29700]  # 12:34:56, 08:15:00
+    times = pa.array(seconds, pa.int64()).cast(pa.duration("s")) if time_type == pa.duration("s") else None
+    if times is None:
+        times = pa.array([dt.time(s // 3600, s // 60 % 60, s % 60) for s in seconds], time_type)
+    pq.write_table(
+        pa.table({"pid": ["P01", "P01"], "diag": ["A", "A"], "date": ["2020-01-05"] * 2, "time": times}),
+        tmp_path / "t.parquet",
+    )
+    (tmp_path / "population.csv").write_text("cpr,x\nP01,a\n")
+    run_premeds(
+        tmp_path / "out", {"t": {"filename": str(tmp_path / "t.parquet"), **SIMPLE_TABLE}}, tmp_path / "population.csv"
+    )
+    out = pl.read_parquet(tmp_path / "out" / "t.parquet").sort("row_idx")
+    assert out["timestamp"].to_list() == [dt.datetime(2020, 1, 5, 12, 34, 56), dt.datetime(2020, 1, 5, 8, 15)]

@@ -27,24 +27,31 @@ class DataHandler:
         self.chunksize = chunksize
         self.writers = {}
 
+    def load(self, filename: str, cols: Mapping[str, Optional[str]]) -> pl.DataFrame:
+        return next(self.read(filename, cols, chunksize=None))
+
+    def load_chunks(self, filename: str, cols: Mapping[str, Optional[str]]) -> Iterator[pl.DataFrame]:
+        return self.read(filename, cols, self.chunksize)
+
     @staticmethod
-    def scan(filename: str, cols: Mapping[str, Optional[str]]) -> pl.LazyFrame:
+    def read(filename: str, cols: Mapping[str, Optional[str]], chunksize: Optional[int]) -> Iterator[pl.DataFrame]:
+        """Yield the file in chunks of ``chunksize`` rows, or whole when it is None."""
         if filename.endswith(".parquet"):
-            lf = pl.scan_parquet(filename)
+            # pyarrow, not pl.scan_parquet: polars (1.41-1.42) reads time32[s] columns as all null.
+            if chunksize is None:
+                chunks = [pl.from_arrow(pq.read_table(filename, columns=list(cols)))]
+            else:
+                batches = pq.ParquetFile(filename).iter_batches(columns=list(cols), batch_size=chunksize)
+                chunks = (pl.from_arrow(batch) for batch in batches)
         elif filename.endswith((".csv", ".asc")):
             # Every CSV column is text, so IDs keep leading zeros and each chunk gets the same schema.
-            lf = pl.scan_csv(filename, infer_schema=False)
+            lf = pl.scan_csv(filename, infer_schema=False).select(list(cols))
+            chunks = [lf.collect()] if chunksize is None else lf.collect_batches(chunk_size=chunksize)
         else:
             raise ValueError(f"Unsupported file type: {filename}")
         rename = {k: v for k, v in cols.items() if v is not None}
         # NaN counts as missing, as it did in pandas.
-        return lf.select(list(cols)).rename(rename).with_columns(pl.col(pl.Float32, pl.Float64).fill_nan(None))
-
-    def load(self, filename: str, cols: Mapping[str, Optional[str]]) -> pl.DataFrame:
-        return self.scan(filename, cols).collect()
-
-    def load_chunks(self, filename: str, cols: Mapping[str, Optional[str]]) -> Iterator[pl.DataFrame]:
-        return self.scan(filename, cols).collect_batches(chunk_size=self.chunksize)
+        return (chunk.rename(rename).with_columns(pl.col(pl.Float32, pl.Float64).fill_nan(None)) for chunk in chunks)
 
     def save(self, df: pl.DataFrame, filename: str) -> None:
         """
