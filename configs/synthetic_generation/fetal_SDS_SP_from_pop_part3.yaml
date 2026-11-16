@@ -775,6 +775,14 @@ linked_data:
   Mor - Ordinationer:
     N: ${N}
     columns:
+      ATC:
+        type: choice
+        args:
+          options: ["G03DA04", "H02AB01", "A12CC02", "C08CA05", "G02CX01", "N02BE01"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
       Ordinationstidspunkt:
         type: rand_datetimeseconds
         args:
