@@ -108,15 +108,45 @@ def greater_than_datetimeseconds(min_date, end=2020):
     return min_date + timedelta(seconds=random_seconds)
 
 
+def date_between(start, end, start_offset_days=0, end_offset_days=0, format="%Y-%m-%d"):
+    """Random date from start + start_offset_days to end + end_offset_days. Missing if start or end is."""
+    if start is None or end is None:
+        return None
+    first = datetime.fromisoformat(str(start)) + timedelta(days=start_offset_days)
+    last = datetime.fromisoformat(str(end)) + timedelta(days=end_offset_days)
+    seconds = random.randint(0, max(int((last - first).total_seconds()), 0))
+    return (first + timedelta(seconds=seconds)).strftime(format)
+
+
+def date_offset(anchor, min_days=0, max_days=0, format="%Y-%m-%d"):
+    """Random date min_days to max_days days after anchor (negative for before)."""
+    return date_between(anchor, anchor, min_days, max_days, format)
+
+
+def days_before(anchor, days, format="%Y-%m-%d"):
+    """The date the given number of days before anchor."""
+    return date_offset(anchor, -days, -days, format)
+
+
+def age_at(birthdate, date):
+    """Age in whole years on date. Missing if either date is."""
+    if birthdate is None or date is None:
+        return None
+    birthdate = datetime.fromisoformat(str(birthdate))
+    date = datetime.fromisoformat(str(date))
+    age = date.year - birthdate.year
+    if (date.month, date.day) < (birthdate.month, birthdate.day):
+        age -= 1
+    return age
+
+
 # Specialized functions for SP
-def gestationsalder_with_fraction():
-    weeks = random.randint(0, 42)
-    days = random.randint(0, 7)
-    if days == 7:
-        GA = f"{weeks}"
-    else:
-        GA = f"{weeks} {days}/7"
-    return GA
+def gestationsalder_with_fraction(ga_days):
+    """SP format of a GA in days, e.g. "38 2/7", or "38" on whole weeks."""
+    weeks, days = divmod(int(ga_days), 7)
+    if days == 0:
+        return f"{weeks}"
+    return f"{weeks} {days}/7"
 
 
 # Specialized functions for DST dataset
