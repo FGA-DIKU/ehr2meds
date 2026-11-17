@@ -1,4 +1,3 @@
-import numpy as np
 import random
 
 
@@ -28,8 +27,9 @@ def insert_value(value, row_index, new_value, probability):
 
 
 def insert_nan(value, row_index, probability):
+    # A null, as polars writes NaN as the text "NaN"
     if random.random() < probability:
-        return np.nan
+        return None
     return value
 
 
