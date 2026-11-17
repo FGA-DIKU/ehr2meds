@@ -33,9 +33,11 @@ stages:
   - split_and_shard_subjects:
       n_subjects_per_shard: 10000
       split_fracs:
-          train: 0.8
-          tuning: 0.1
-          held_out: 0.1
+          train: 0.72
+          tuning: 0.09
+          held_out: 0.09
+          domain_adapt_train: 0.09
+          domain_adapt_tuning: 0.01
   - convert_to_subject_sharded
   - convert_to_MEDS_events:
       do_dedup_text_and_numeric: true
