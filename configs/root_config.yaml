@@ -7,3 +7,6 @@ hydra:
 test: False
 
 num_workers: 2
+
+paths:
+  output: ${hydra:run.dir}
