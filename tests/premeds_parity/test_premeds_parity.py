@@ -1,40 +1,20 @@
-"""End-to-end tests of the raw -> preMEDS stage.
+"""pandas vs polars parity check for the raw -> preMEDS stage.
 
-The baseline pins the full output for inputs in inputs.py. Regenerate it only from a known-good run:
+Compares the polars port against output recorded with the pandas version. Delete this folder once the port is
+merged; tests/premeds keeps the tests that don't depend on pandas. Regenerate the baseline only from a known-good run:
 
     UPDATE_PREMEDS_BASELINE=1 pytest tests/premeds_parity
 """
 
-import datetime as dt
 import os
-import polars as pl
-import pyarrow as pa
-import pyarrow.parquet as pq
 import pytest
 import shutil
-from ehr2meds.preMEDS.extractor import PREMEDSExtractor
-from omegaconf import OmegaConf
 from pathlib import Path
+from tests.premeds.test_premeds import run_premeds
 from tests.premeds_parity.compare import compare_dirs
 from tests.premeds_parity.inputs import table_configs, write_inputs
 
 BASELINE = Path(__file__).parent / "baseline"
-
-
-def run_premeds(output: Path, tables: dict, population: Path, write_file_type="parquet", chunksize=100) -> None:
-    cfg = OmegaConf.create(
-        {
-            "paths": {"output": str(output)},
-            "write_file_type": write_file_type,
-            "chunksize": chunksize,
-            "test": False,
-            "num_workers": 1,
-            "subject_id_mapping": {"file": str(population), "subject_id_col": "cpr", "mapping_id_col": None},
-            "tables": tables,
-        }
-    )
-    output.mkdir(parents=True)
-    PREMEDSExtractor(cfg)()
 
 
 @pytest.mark.parametrize("write_file_type", ["csv", "parquet"])
@@ -56,86 +36,3 @@ def test_premeds_output_matches_baseline(tmp_path, capsys, write_file_type):
 
     problems = compare_dirs(expected, output)
     assert not problems, "\n\n".join(problems)
-
-
-def run_csv_table(tmp_path: Path, population_csv: str, table_csv: str, table_cfg: dict) -> pl.DataFrame:
-    """Run one CSV table through preMEDS and return its parquet output."""
-    (tmp_path / "population.csv").write_text(population_csv)
-    (tmp_path / "table.csv").write_text(table_csv)
-    tables = {"table": {"filename": str(tmp_path / "table.csv"), **table_cfg}}
-    run_premeds(tmp_path / "out", tables, tmp_path / "population.csv")
-    return pl.read_parquet(tmp_path / "out" / "table.parquet")
-
-
-SIMPLE_TABLE = {
-    "columns": {"pid": "subject_id", "diag": "code", "date": None, "time": None},
-    "timestamp_columns": {"timestamp": {"date": "date", "time": "time"}},
-}
-
-
-def test_hh_mm_times_are_parsed(tmp_path):
-    out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", "pid,diag,date,time\nP01,A,2020-01-05,12:34\n", SIMPLE_TABLE)
-    assert out["timestamp"].to_list() == [dt.datetime(2020, 1, 5, 12, 34)]
-
-
-def test_common_date_formats_are_parsed(tmp_path):
-    # ISO and compact dates are year-first; separated dates are day-first (Danish convention).
-    dates = ["2020-01-05", "2020-01-05 13:45:00", "20200105", "05/01/2020", "5/1/2020", "05-01-2020", "05.01.2020"]
-    table = "pid,diag,date,time\n" + "".join(f"P01,C{i},{d},\n" for i, d in enumerate(dates))
-    out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, SIMPLE_TABLE)
-    assert out.sort("row_idx")["timestamp"].to_list() == [dt.datetime(2020, 1, 5)] * len(dates)
-
-
-def test_null_keys_do_not_match_in_mappings(tmp_path):
-    (tmp_path / "map.csv").write_text('contact_id,region_code\n1,1084\n,9999\n"  ",8888\n')
-    table_cfg = {
-        "columns": {**SIMPLE_TABLE["columns"], "contact_id": None},
-        "timestamp_columns": SIMPLE_TABLE["timestamp_columns"],
-        "mappings": [
-            {
-                "source_column": "contact_id",
-                "via_file": str(tmp_path / "map.csv"),
-                "join_on": "contact_id",
-                "target_columns": {"region_code": None},
-                "how": "left",
-            }
-        ],
-    }
-    table = 'pid,diag,date,time,contact_id\nP01,A,2020-01-05,,1\nP01,B,2020-01-05,,\nP01,C,2020-01-05,,"  "\n'
-    out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, table_cfg)
-    assert out.sort("row_idx")["region_code"].to_list() == ["1084", None, None]  # CSV columns are read as text
-
-
-def test_numeric_subject_ids_are_kept_as_strings(tmp_path):
-    out = run_csv_table(tmp_path, "cpr,x\n0101,a\n,b\n", "pid,diag,date,time\n0101,A,2020-01-05,10:00:00\n", SIMPLE_TABLE)
-    assert out.height == 1
-    mapping = pl.read_parquet(tmp_path / "out" / "subject_id_mapping.parquet")
-    assert mapping["cpr"].to_list() == ["0101"]
-
-
-@pytest.mark.parametrize("write_file_type", ["parquet", "csv"])
-def test_output_does_not_depend_on_chunksize(tmp_path, write_file_type):
-    raw_dir = tmp_path / "raw"
-    write_inputs(raw_dir)
-    for chunksize in (4, 100):
-        run_premeds(tmp_path / str(chunksize), table_configs(raw_dir), raw_dir / "population.csv", write_file_type, chunksize)
-    assert not compare_dirs(tmp_path / "100", tmp_path / "4")
-
-
-@pytest.mark.parametrize("time_type", [pa.time32("s"), pa.time64("us"), pa.duration("s")])
-def test_parquet_time_columns_keep_their_time(tmp_path, time_type):
-    # polars' own parquet reader returns time32[s] as all null, which silently dropped times on real data.
-    seconds = [45296, 29700]  # 12:34:56, 08:15:00
-    times = pa.array(seconds, pa.int64()).cast(pa.duration("s")) if time_type == pa.duration("s") else None
-    if times is None:
-        times = pa.array([dt.time(s // 3600, s // 60 % 60, s % 60) for s in seconds], time_type)
-    pq.write_table(
-        pa.table({"pid": ["P01", "P01"], "diag": ["A", "A"], "date": ["2020-01-05"] * 2, "time": times}),
-        tmp_path / "t.parquet",
-    )
-    (tmp_path / "population.csv").write_text("cpr,x\nP01,a\n")
-    run_premeds(
-        tmp_path / "out", {"t": {"filename": str(tmp_path / "t.parquet"), **SIMPLE_TABLE}}, tmp_path / "population.csv"
-    )
-    out = pl.read_parquet(tmp_path / "out" / "t.parquet").sort("row_idx")
-    assert out["timestamp"].to_list() == [dt.datetime(2020, 1, 5, 12, 34, 56), dt.datetime(2020, 1, 5, 8, 15)]

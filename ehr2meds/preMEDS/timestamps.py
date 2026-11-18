@@ -18,9 +18,11 @@ TIME_FORMATS = ("%H:%M:%S%.f", "%H:%M")
 def add_timestamp_columns(df: pl.DataFrame, timestamp_config: dict) -> pl.DataFrame:
     """Combine each date with as much valid time information as is available."""
     for output_column, config in timestamp_config.items():
-        date = parse_date(df, config["date"], config.get("format"))
-        warn_unparsed(df, config["date"], date)
-        df = df.with_columns((date + create_time_delta(df, config)).cast(pl.Datetime("us")).alias(output_column))
+        # Parse once into a temporary column; the output may share the date column's name.
+        df = df.with_columns(parse_date(df, config["date"], config.get("format")).alias("__date"))
+        warn_unparsed(df, config["date"])
+        time_delta = create_time_delta(df, config)
+        df = df.with_columns((pl.col("__date") + time_delta).cast(pl.Datetime("us")).alias(output_column)).drop("__date")
     return df
 
 
@@ -38,9 +40,9 @@ def parse_date(df: pl.DataFrame, column: str, date_format: str | None) -> pl.Exp
     return pl.coalesce(values.str.to_date(fmt, strict=False) for fmt in DATE_FORMATS).cast(pl.Datetime("us"))
 
 
-def warn_unparsed(df: pl.DataFrame, column: str, date: pl.Expr) -> None:
-    """Rows without a timestamp are dropped later, so say which values caused it."""
-    failed = df.filter(pl.col(column).is_not_null() & date.is_null())[column]
+def warn_unparsed(df: pl.DataFrame, column: str) -> None:
+    """Dates that match no format become null timestamps, so say which values caused it."""
+    failed = df.filter(pl.col(column).is_not_null() & pl.col("__date").is_null())[column]
     if len(failed):
         examples = failed.cast(pl.String).unique(maintain_order=True).head(5).to_list()
         logger.warning(f"{len(failed):_} values in {column!r} match no date format, e.g. {examples}")

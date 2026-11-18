@@ -23,11 +23,10 @@ def apply_mapping(
     if len(output_columns) != len(set(output_columns)):
         raise ValueError("Mapped columns must have unique output names")
 
-    map_table = map_table.select(join_col, *target_columns)
     key = "__mapping_key"
     # Null keys never match, so rows without a key get null targets (left) or are dropped (inner).
-    df = df.with_columns(join_key(df, source_col).alias(key)).join(
-        map_table.with_columns(join_key(map_table, join_col).alias(key)).drop(join_col),
+    df = df.with_columns(join_key(source_col).alias(key)).join(
+        map_table.with_columns(join_key(join_col).alias(key)).drop(join_col),
         on=key,
         how=how,
         maintain_order="left",
@@ -41,11 +40,8 @@ def apply_mapping(
     return df.rename(rename_columns)
 
 
-def join_key(df: pl.DataFrame, column: str) -> pl.Expr:
+def join_key(column: str) -> pl.Expr:
     """Key that matches equivalent IDs such as 5, 5.0, and "5.0" without going through floats."""
-    dtype = df.schema[column]
-    if dtype.is_integer():
-        return pl.col(column).cast(pl.Int64).cast(pl.String)
     key = pl.col(column).cast(pl.String).str.strip_chars().str.replace(r"^(-?\d+)\.0*$", "$1")
     # Blank keys count as missing, so they never match (#94).
     return pl.when(key != "").then(key)

@@ -83,7 +83,7 @@ def get_data_quality_summary(worker_results):
     nulls = defaultdict(lambda: [0, 0])
 
     for worker in worker_results:
-        for table, row_result, df in worker:
+        for table, row_result, null_counts, height in worker:
             if row_result is None:
                 return None
 
@@ -94,10 +94,10 @@ def get_data_quality_summary(worker_results):
             for stage, delta in row_result["stages"].items():
                 entry["stages"][stage] += delta
 
-            for column in df.columns:
+            for column, null_count in null_counts.items():
                 counts = nulls[(table, column)]
-                counts[0] += df[column].null_count()
-                counts[1] += len(df)
+                counts[0] += null_count
+                counts[1] += height
 
     return {
         "rows": rows,

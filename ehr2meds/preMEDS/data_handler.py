@@ -6,6 +6,11 @@ from typing import Iterator, Mapping, Optional
 
 logger = logging.getLogger(__name__)
 
+# pandas' default NA strings, which the pandas version of this reader turned into missing values.
+CSV_NULL_VALUES = "#N/A|#N/A N/A|#NA|-1.#IND|-1.#QNAN|-NaN|-nan|1.#IND|1.#QNAN|<NA>|N/A|NA|NULL|NaN|None|n/a|nan|null".split(
+    "|"
+)
+
 
 class DataHandler:
     """Handles data loading and saving operations.
@@ -37,7 +42,7 @@ class DataHandler:
     def read(filename: str, cols: Mapping[str, Optional[str]], chunksize: Optional[int]) -> Iterator[pl.DataFrame]:
         """Yield the file in chunks of ``chunksize`` rows, or whole when it is None."""
         if filename.endswith(".parquet"):
-            # pyarrow, not pl.scan_parquet: polars (1.41-1.42) reads time32[s] columns as all null.
+            # pyarrow, not pl.scan_parquet: polars (1.41-1.42) reads time32 ms as seconds, nulling times after 00:01:26.
             if chunksize is None:
                 chunks = [pl.from_arrow(pq.read_table(filename, columns=list(cols)))]
             else:
@@ -45,7 +50,7 @@ class DataHandler:
                 chunks = (pl.from_arrow(batch) for batch in batches)
         elif filename.endswith((".csv", ".asc")):
             # Every CSV column is text, so IDs keep leading zeros and each chunk gets the same schema.
-            lf = pl.scan_csv(filename, infer_schema=False).select(list(cols))
+            lf = pl.scan_csv(filename, infer_schema=False, null_values=CSV_NULL_VALUES).select(list(cols))
             chunks = [lf.collect()] if chunksize is None else lf.collect_batches(chunk_size=chunksize)
         else:
             raise ValueError(f"Unsupported file type: {filename}")
@@ -82,7 +87,7 @@ class DataHandler:
         elif self.write_file_type == "csv":
             first = not os.path.exists(path)
             with open(path, "w" if first else "a") as f:
-                # Same datetime text as the pandas version, so downstream readers see no change.
+                # Always write the time, even when a chunk is all midnight (pandas then wrote only the date).
                 df.write_csv(f, include_header=first, datetime_format="%Y-%m-%d %H:%M:%S%.f")
 
         else:

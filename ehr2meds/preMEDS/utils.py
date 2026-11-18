@@ -1,10 +1,10 @@
 import polars as pl
 from ehr2meds.preMEDS.constants import (
     MANDATORY_COLUMNS,
+    MAPPED_ID,
     ROW_INDEX,
     SUBJECT_ID,
 )
-from typing import Dict
 
 
 def add_row_idx(df: pl.DataFrame, start: int = 0) -> pl.DataFrame:
@@ -12,14 +12,18 @@ def add_row_idx(df: pl.DataFrame, start: int = 0) -> pl.DataFrame:
     return df.with_columns(pl.int_range(start, start + df.height, dtype=pl.Int64).alias(ROW_INDEX))
 
 
-def map_pids_to_ints(df: pl.DataFrame, subject_id_mapping: Dict[str, int]) -> pl.DataFrame:
-    """Map string patient IDs to integers; keep only IDs that are in the mapping."""
-    ids = df[SUBJECT_ID].cast(pl.String)
-    mapped = ids.replace_strict(subject_id_mapping, default=None, return_dtype=pl.Int64)
-    missing = ids.filter(mapped.is_null()).n_unique()
+def map_pids_to_ints(df: pl.DataFrame, subject_id_mapping: pl.DataFrame) -> pl.DataFrame:
+    """Map string patient IDs to integers; keep only IDs that are in the mapping.
+
+    ``subject_id_mapping`` has one row per ID: a String ``subject_id`` and its Int64 ``MAPPED_ID``.
+    """
+    df = df.with_columns(pl.col(SUBJECT_ID).cast(pl.String)).join(
+        subject_id_mapping, on=SUBJECT_ID, how="left", maintain_order="left"
+    )
+    missing = df.filter(pl.col(MAPPED_ID).is_null())[SUBJECT_ID].n_unique()
     if missing:
         print(f"Found {missing} subject IDs in the data that are not in the mapping. These IDs will be dropped")
-    return df.with_columns(mapped.alias(SUBJECT_ID)).drop_nulls(SUBJECT_ID)
+    return df.with_columns(pl.col(MAPPED_ID).alias(SUBJECT_ID)).drop(MAPPED_ID).drop_nulls(SUBJECT_ID)
 
 
 def clean_data(df: pl.DataFrame, tracker) -> pl.DataFrame:
@@ -48,7 +52,7 @@ def as_number(df: pl.DataFrame, col: str) -> pl.Expr:
     dtype = df.schema[col]
     if dtype == pl.String:
         return pl.col(col).str.strip_chars().cast(pl.Float64, strict=False)
-    if dtype.is_numeric():
+    if dtype.is_numeric() or dtype == pl.Boolean:
         return pl.col(col).cast(pl.Float64)
     return pl.lit(None, pl.Float64)
 
@@ -75,15 +79,20 @@ def apply_value_map(df: pl.DataFrame, value_map_cfg: dict) -> pl.DataFrame:
         else:
             out_dtype = df.schema[col]
             base = pl.col(col)
+            # Other keys would be skipped, and fractional values truncated in an integer column.
+            unsupported = {
+                key: value
+                for key, value in mapping.items()
+                if not isinstance(key, int) or (out_dtype.is_integer() and isinstance(value, float) and not value.is_integer())
+            }
+            if unsupported:
+                raise ValueError(
+                    f"value_map on {out_dtype} column {col!r} needs int keys (and whole values if integer): {unsupported}"
+                )
 
         out = base
         for key, value in mapping.items():
-            if isinstance(key, int):
-                hit = numeric == key
-            elif as_string:
-                hit = base == str(key)
-            else:
-                continue
+            hit = numeric == key if isinstance(key, int) else base == str(key)
             out = pl.when(hit).then(pl.lit(value).cast(out_dtype)).otherwise(out)
         df = df.with_columns(out.alias(col))
     return df
