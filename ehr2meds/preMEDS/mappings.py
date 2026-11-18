@@ -24,9 +24,11 @@ def apply_mapping(
         raise ValueError("Mapped columns must have unique output names")
 
     key = "__mapping_key"
+    # Like pandas: when one side is numeric, compare as numbers, so text "08" matches 8.
+    numeric = df.schema[source_col].is_numeric() != map_table.schema[join_col].is_numeric()
     # Null keys never match, so rows without a key get null targets (left) or are dropped (inner).
-    df = df.with_columns(join_key(source_col).alias(key)).join(
-        map_table.with_columns(join_key(join_col).alias(key)).drop(join_col),
+    df = df.with_columns(join_key(source_col, numeric).alias(key)).join(
+        map_table.with_columns(join_key(join_col, numeric).alias(key)).drop(join_col),
         on=key,
         how=how,
         maintain_order="left",
@@ -40,9 +42,11 @@ def apply_mapping(
     return df.rename(rename_columns)
 
 
-def join_key(column: str) -> pl.Expr:
-    """Key that matches equivalent IDs such as 5, 5.0, and "5.0" without going through floats."""
+def join_key(column: str, numeric: bool) -> pl.Expr:
+    """Key that matches equivalent IDs such as 5, 5.0, and "5.0" (and "05" if numeric) without going through floats."""
     key = pl.col(column).cast(pl.String).str.strip_chars().str.replace(r"^(-?\d+)\.0*$", "$1")
+    if numeric:
+        key = key.str.replace(r"^(-?)0+(\d+)$", "$1$2")
     # Blank keys count as missing, so they never match (#94).
     return pl.when(key != "").then(key)
 

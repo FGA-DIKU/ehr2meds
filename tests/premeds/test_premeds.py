@@ -7,6 +7,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 from ehr2meds.preMEDS.extractor import PREMEDSExtractor
+from ehr2meds.preMEDS.mappings import apply_mapping
 from omegaconf import OmegaConf
 from pathlib import Path
 
@@ -132,3 +133,15 @@ def test_output_does_not_depend_on_chunksize(tmp_path, write_file_type):
         if write_file_type == "csv"
         else pl.read_parquet(small).equals(pl.read_parquet(large))
     )
+
+
+def test_padded_text_keys_match_numeric_mapping_keys():
+    # Like pandas: against an integer key, text "08" is the number 8. Text against text stays exact.
+    df = pl.DataFrame({"c_spec": ["08", " 8 ", "8.0", "00", "0101"]})
+    numeric_map = pl.DataFrame({"c_spec": [8, 0, 101], "specialty": ["ENDO", "MIXED", "X"]})
+    out = apply_mapping(df, numeric_map, "c_spec", "c_spec", {"specialty": None}, how="left")
+    assert out["specialty"].to_list() == ["ENDO", "ENDO", "ENDO", "MIXED", "X"]
+
+    text_map = pl.DataFrame({"c_spec": ["101"], "specialty": ["X"]})
+    out = apply_mapping(df.tail(1), text_map, "c_spec", "c_spec", {"specialty": None}, how="left")
+    assert out["specialty"].to_list() == [None]
