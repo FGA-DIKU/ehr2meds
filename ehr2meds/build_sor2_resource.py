@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import pandas as pd
+import polars as pl
 from ehr2meds.preMEDS.mappings import normalize_sor_id
 from pathlib import Path
 
@@ -30,25 +30,24 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    source = pd.read_csv(
-        args.sor_entity_csv,
-        sep=";",
-        usecols=list(SOURCE_COLUMNS),
-        dtype="string",
-    ).rename(columns=SOURCE_COLUMNS)
-    source["sor_id"] = normalize_sor_id(source["sor_id"])
-    source["valid_from"] = pd.to_datetime(source["valid_from"], errors="coerce")
-    source["valid_to"] = pd.to_datetime(source["valid_to"], errors="coerce")
-    source["region"] = normalize_sor_id(source["region"])
-    source["primary_specialty"] = source["primary_specialty"].str.strip().replace("", pd.NA)
-    source = source.dropna(subset=["sor_id"]).drop_duplicates()
-
+    source = (
+        pl.read_csv(args.sor_entity_csv, separator=";", columns=list(SOURCE_COLUMNS), infer_schema=False)
+        .rename(SOURCE_COLUMNS)
+        .with_columns(
+            normalize_sor_id(pl.col("sor_id")),
+            pl.col("valid_from", "valid_to").str.strip_chars().str.to_datetime(strict=False, time_unit="us"),
+            normalize_sor_id(pl.col("region")),
+            pl.col("primary_specialty").str.strip_chars().replace("", None),
+        )
+        .drop_nulls("sor_id")
+        .unique(maintain_order=True)
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    source.to_parquet(args.output, index=False)
-    print(f"Wrote {len(source):,} SOR history rows to {args.output}")
-    print(f"Unique SOR IDs: {source['sor_id'].nunique():,}")
-    print(f"Rows with region: {source['region'].notna().sum():,}")
-    print(f"Rows with primary specialty: {source['primary_specialty'].notna().sum():,}")
+    source.write_parquet(args.output)
+    print(f"Wrote {source.height:,} SOR history rows to {args.output}")
+    print(f"Unique SOR IDs: {source['sor_id'].n_unique():,}")
+    print(f"Rows with region: {source['region'].count():,}")
+    print(f"Rows with primary specialty: {source['primary_specialty'].count():,}")
 
 
 if __name__ == "__main__":

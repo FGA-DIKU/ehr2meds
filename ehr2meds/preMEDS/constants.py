@@ -5,4 +5,5 @@ DISCHARGE = "discharge"
 TIMESTAMP = "timestamp"
 FILENAME = "filename"
 ROW_INDEX = "row_idx"
+MAPPED_ID = "__mapped_subject_id"
 MANDATORY_COLUMNS = [SUBJECT_ID, CODE, TIMESTAMP]

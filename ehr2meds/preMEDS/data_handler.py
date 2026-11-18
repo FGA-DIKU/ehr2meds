@@ -1,11 +1,15 @@
 import logging
 import os
-import pandas as pd
-import pyarrow as pa
+import polars as pl
 import pyarrow.parquet as pq
-from typing import Mapping, Optional
+from typing import Iterator, Mapping, Optional
 
 logger = logging.getLogger(__name__)
+
+# pandas' default NA strings, which the pandas version of this reader turned into missing values.
+CSV_NULL_VALUES = "#N/A|#N/A N/A|#NA|-1.#IND|-1.#QNAN|-NaN|-nan|1.#IND|1.#QNAN|<NA>|N/A|NA|NULL|NaN|None|n/a|nan|null".split(
+    "|"
+)
 
 
 class DataHandler:
@@ -28,47 +32,52 @@ class DataHandler:
         self.chunksize = chunksize
         self.writers = {}
 
-    def load(self, filename: str, cols: Mapping[str, Optional[str]]) -> pd.DataFrame:
-        rename = {k: v for k, v in cols.items() if v is not None}
+    def load(self, filename: str, cols: Mapping[str, Optional[str]]) -> pl.DataFrame:
+        return next(self.read(filename, cols, chunksize=None))
+
+    def load_chunks(self, filename: str, cols: Mapping[str, Optional[str]]) -> Iterator[pl.DataFrame]:
+        return self.read(filename, cols, self.chunksize)
+
+    @staticmethod
+    def read(filename: str, cols: Mapping[str, Optional[str]], chunksize: Optional[int]) -> Iterator[pl.DataFrame]:
+        """Yield the file in chunks of ``chunksize`` rows, or whole when it is None."""
         if filename.endswith(".parquet"):
-            return pd.read_parquet(filename, columns=list(cols)).rename(columns=rename)
+            # pyarrow, not pl.scan_parquet: polars (1.41-1.42) reads time32 ms as seconds, nulling times after 00:01:26.
+            if chunksize is None:
+                chunks = [pl.from_arrow(pq.read_table(filename, columns=list(cols)))]
+            else:
+                batches = pq.ParquetFile(filename).iter_batches(columns=list(cols), batch_size=chunksize)
+                chunks = (pl.from_arrow(batch) for batch in batches)
         elif filename.endswith((".csv", ".asc")):
-            return pd.read_csv(filename, usecols=list(cols), engine="python").rename(columns=rename)
+            # Every CSV column is text, so IDs keep leading zeros and each chunk gets the same schema.
+            lf = pl.scan_csv(filename, infer_schema=False, null_values=CSV_NULL_VALUES).select(list(cols))
+            chunks = [lf.collect()] if chunksize is None else lf.collect_batches(chunk_size=chunksize)
         else:
             raise ValueError(f"Unsupported file type: {filename}")
-
-    def load_chunks(self, filename: str, cols: Mapping[str, Optional[str]]):
         rename = {k: v for k, v in cols.items() if v is not None}
-        if filename.endswith(".parquet"):
-            pf = pq.ParquetFile(filename)
-            for batch in pf.iter_batches(columns=list(cols), batch_size=self.chunksize):
-                yield batch.to_pandas().rename(columns=rename)
-        elif filename.endswith((".csv", ".asc")):
-            for chunk in pd.read_csv(filename, usecols=list(cols), chunksize=self.chunksize, engine="python"):
-                yield chunk.rename(columns=rename)
-        else:
-            raise ValueError(f"Unsupported file type: {filename}")
+        # NaN counts as missing, as it did in pandas.
+        return (chunk.rename(rename).with_columns(pl.col(pl.Float32, pl.Float64).fill_nan(None)) for chunk in chunks)
 
-    def save(self, df: pd.DataFrame, filename: str) -> None:
+    def save(self, df: pl.DataFrame, filename: str) -> None:
         """
-        Save processed data incrementally to a single Parquet file.
+        Save processed data incrementally to a single file.
         """
 
-        if df.empty:
+        if df.is_empty():
             logger.warning(f"Empty DataFrame for {filename}, skipping save")
             return
 
         if self.output_dir is None:
             raise AttributeError("output_dir is not set")
 
-        logger.info(f"Saving {filename} with {len(df):_} rows")
+        logger.info(f"Saving {filename} with {df.height:_} rows")
 
         os.makedirs(self.output_dir, exist_ok=True)
 
         path = os.path.join(self.output_dir, f"{filename}.{self.write_file_type}")
 
         if self.write_file_type == "parquet":
-            table = pa.Table.from_pandas(df, preserve_index=False)
+            table = df.to_arrow()
 
             if filename not in self.writers:
                 self.writers[filename] = pq.ParquetWriter(path, table.schema, compression="snappy")
@@ -76,10 +85,10 @@ class DataHandler:
             self.writers[filename].write_table(table)
 
         elif self.write_file_type == "csv":
-            if not os.path.exists(path):
-                df.to_csv(path, index=False)
-            else:
-                df.to_csv(path, index=False, mode="a", header=False)
+            first = not os.path.exists(path)
+            with open(path, "w" if first else "a") as f:
+                # Always write the time, even when a chunk is all midnight (pandas then wrote only the date).
+                df.write_csv(f, include_header=first, datetime_format="%Y-%m-%d %H:%M:%S%.f")
 
         else:
             raise ValueError(f"Filetype {self.write_file_type} not implemented.")
