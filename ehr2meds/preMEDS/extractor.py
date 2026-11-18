@@ -116,7 +116,7 @@ class PREMEDSExtractor:
         subject_id_mapping = dict(zip(df[id_col], df[map_col]))
 
         # Save the mapping for reference.
-        self.data_handler.save(df, f"{self.cfg.paths.output}/subject_id_mapping")
+        self.data_handler.save(df, "subject_id_mapping")
 
         return subject_id_mapping
 
