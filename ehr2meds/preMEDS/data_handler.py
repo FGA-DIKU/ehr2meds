@@ -6,7 +6,7 @@ from typing import Iterator, Mapping, Optional
 
 logger = logging.getLogger(__name__)
 
-# pandas' default NA strings, which the pandas version of this reader turned into missing values.
+# Common spellings of a missing value in CSV exports; these read as null.
 CSV_NULL_VALUES = "#N/A|#N/A N/A|#NA|-1.#IND|-1.#QNAN|-NaN|-nan|1.#IND|1.#QNAN|<NA>|N/A|NA|NULL|NaN|None|n/a|nan|null".split(
     "|"
 )
@@ -55,7 +55,7 @@ class DataHandler:
         else:
             raise ValueError(f"Unsupported file type: {filename}")
         rename = {k: v for k, v in cols.items() if v is not None}
-        # NaN counts as missing, as it did in pandas.
+        # NaN counts as missing.
         return (chunk.rename(rename).with_columns(pl.col(pl.Float32, pl.Float64).fill_nan(None)) for chunk in chunks)
 
     def save(self, df: pl.DataFrame, filename: str) -> None:
@@ -87,7 +87,7 @@ class DataHandler:
         elif self.write_file_type == "csv":
             first = not os.path.exists(path)
             with open(path, "w" if first else "a") as f:
-                # Always write the time, even when a chunk is all midnight (pandas then wrote only the date).
+                # Always write the time, even when a chunk is all midnight, so every chunk has the same format.
                 df.write_csv(f, include_header=first, datetime_format="%Y-%m-%d %H:%M:%S%.f")
 
         else:

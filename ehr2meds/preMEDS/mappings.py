@@ -24,7 +24,7 @@ def apply_mapping(
         raise ValueError("Mapped columns must have unique output names")
 
     key = "__mapping_key"
-    # Like pandas: when one side is numeric, compare as numbers, so text "08" matches 8.
+    # When one side is numeric, compare keys as numbers, so text "08" matches 8.
     numeric = df.schema[source_col].is_numeric() != map_table.schema[join_col].is_numeric()
     # Null keys never match, so rows without a key get null targets (left) or are dropped (inner).
     df = df.with_columns(join_key(source_col, numeric).alias(key)).join(

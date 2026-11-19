@@ -48,7 +48,7 @@ def clean_data(df: pl.DataFrame, tracker) -> pl.DataFrame:
 
 
 def as_number(df: pl.DataFrame, col: str) -> pl.Expr:
-    """Parse a column as Float64; unparseable values become null (like pd.to_numeric(errors="coerce"))."""
+    """Parse a column as Float64; unparseable values become null."""
     dtype = df.schema[col]
     if dtype == pl.String:
         return pl.col(col).str.strip_chars().cast(pl.Float64, strict=False)

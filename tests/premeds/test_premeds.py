@@ -85,7 +85,7 @@ def test_numeric_subject_ids_are_kept_as_strings(tmp_path):
 
 @pytest.mark.parametrize("time_type", [pa.time32("s"), pa.time64("us"), pa.duration("s")])
 def test_parquet_time_columns_keep_their_time(tmp_path, time_type):
-    # polars' own parquet reader returns time32[s] as all null, which silently dropped times on real data.
+    # polars' own parquet reader misreads time32 columns, which silently dropped times on real data.
     seconds = [45296, 29700]  # 12:34:56, 08:15:00
     times = pa.array(seconds, pa.int64()).cast(pa.duration("s")) if time_type == pa.duration("s") else None
     if times is None:
@@ -103,7 +103,7 @@ def test_parquet_time_columns_keep_their_time(tmp_path, time_type):
 
 
 def test_csv_na_strings_are_missing(tmp_path):
-    # pandas read NA, NULL, ... as missing; a "NULL" code must not survive the mandatory-column filter.
+    # NA, NULL, ... are missing, so a "NULL" code must not survive the mandatory-column filter.
     table = "pid,diag,date,time\nP01,A,2020-01-05,\nP01,NULL,2020-01-05,\nP01,NA,2020-01-05,\n"
     out = run_csv_table(tmp_path, "cpr,x\nP01,a\n", table, SIMPLE_TABLE)
     assert out["code"].to_list() == ["A"]
@@ -136,7 +136,7 @@ def test_output_does_not_depend_on_chunksize(tmp_path, write_file_type):
 
 
 def test_padded_text_keys_match_numeric_mapping_keys():
-    # Like pandas: against an integer key, text "08" is the number 8. Text against text stays exact.
+    # Against an integer key, text "08" is the number 8. Text against text stays exact.
     df = pl.DataFrame({"c_spec": ["08", " 8 ", "8.0", "00", "0101"]})
     numeric_map = pl.DataFrame({"c_spec": [8, 0, 101], "specialty": ["ENDO", "MIXED", "X"]})
     out = apply_mapping(df, numeric_map, "c_spec", "c_spec", {"specialty": None}, how="left")
