@@ -6,7 +6,13 @@ defaults:
 paths:
   output: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population
 
-N: 1000 
+N: 1000
+
+# Records are dated from the birth they link to in synthetic_coherence (see part1). Mother records run from
+# mother_history_days before the pregnancy to mother_followup_days after the birth.
+mother_history_days: -730
+mother_followup_days: 365
+
 linked_data:
   ekokur_all:
     N: ${N}
@@ -17,7 +23,13 @@ linked_data:
           min_val: 1
           max_val: 10
       eksd:
-        type: rand_date
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
       pname:
         type: choice
         args:
@@ -25,8 +37,10 @@ linked_data:
     linked_columns:
       cpr:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
       
 
   epikur_1:
@@ -41,14 +55,20 @@ linked_data:
             args:
               probability: 0.05
       eksd:
-        type: rand_date
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
         args:
-          start: 2010
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
     linked_columns:
       cpr:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   epikur_2:
     N: ${N}
@@ -62,14 +82,20 @@ linked_data:
             args:
               probability: 0.05
       eksd:
-        type: rand_date
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
         args:
-          start: 2010
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
     linked_columns:
       cpr:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   epikur_3:
     N: ${N}
@@ -83,14 +109,20 @@ linked_data:
             args:
               probability: 0.05
       eksd:
-        type: rand_date
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
         args:
-          start: 2010
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
     linked_columns:
       cpr:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
 
   graviditetskomplikation:
@@ -187,12 +219,19 @@ linked_data:
             args:
               probability: 0.8
       "Kontakt dato":
-        type: rand_datetimeseconds
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          format: "%Y-%m-%d %H:%M:%S.%f"
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   Mor - CPMI - Diagnoseliste:
     N: ${N}
@@ -214,14 +253,27 @@ linked_data:
             args:
               probability: 0.05
       Noteret_dato:
-        type: rand_datetimeseconds
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          end_offset_days: 7
+          format: "%Y-%m-%d %H:%M:%S.%f"
       Redigeringsdato:
-        type: rand_datetimeseconds
+        type: date_offset
+        match:
+          anchor: Noteret_dato
+        args:
+          max_days: 30
+          format: "%Y-%m-%d %H:%M:%S.%f"
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   Mor - CPMI - Procedurer:
     N: ${N}
@@ -235,23 +287,56 @@ linked_data:
             args:
               probability: 0.05
       ServiceDate:
-        type: rand_datetimeseconds
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          end_offset_days: 7
+          format: "%Y-%m-%d %H:%M:%S.%f"
       ServiceDatetime:
-        type: rand_datetimeseconds
+        type: date_offset
+        match:
+          anchor: ServiceDate
+        args:
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      ProcedureName:
+        type: choice
+        args:
+          options: ["Kejsersnit", "Akut kejsersnit", "Igangsættelse af fødsel", "Ultralydsscanning", "Amniocentese", "Vakuumekstraktion"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Beskrivelse:
+        type: choice
+        args:
+          options: ["Udført uden komplikationer", "Planlagt", "Akut", "Se journalnotat"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.3
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
 
   Mor - CPMI - Vital parametre:
     N: ${N}
     columns:
       Registreringstidspunkt:
-        type: rand_datetime
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
         args:
-          start: 2010
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S"
       Værdi:
         type: choice
         args:
@@ -263,8 +348,10 @@ linked_data:
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   Mor - Fødselsresume - DEL 1:
     N: ${N}
@@ -297,14 +384,26 @@ linked_data:
           - type: insert_missing
             args:
               probability: 0.25
+      Placenta dato: # within about an hour of the birth
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
+        args:
+          max_days: 0.05
+          format: "%Y-%m-%d %H:%M:%S"
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
     linked_columns:
       MOR_CPR:
-        type: choice
-        file: Population
+        type: choice_unique
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      Fødselstidspunkt: {type: choice_unique, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
       BABY_Fødsel_ID:
-        type: choice
-        file: Population
+        type: choice_unique
+        file: synthetic_coherence
         linked_on: BABY_Fødsel_ID
 
   Mor - Obstetrisk Historik DEL 1:
@@ -319,10 +418,13 @@ linked_data:
           - type: insert_nan
             args:
               probability: 0.6
-      Kontakt dato:
-        type: rand_date
+      Kontakt dato: # booking visit
+        type: date_offset
+        match:
+          anchor: pregnancy_start
         args:
-          start: 2010
+          min_days: 56
+          max_days: 98
       Para:
         type: rand_int
         args:
@@ -340,8 +442,9 @@ linked_data:
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Mor - CPMI - Patientinfo
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
 
   Mor - Obstetrisk Historik DEL 2:
     N: ${N}
@@ -352,16 +455,30 @@ linked_data:
           options: ["34w0d", "35w0d", "36w0d", "37w0d", "38w0d", "39w0d", "40w0d", "41w0d", "42w0d",
                     "34w6d", "35w6d", "36w6d", "37w6d", "38w6d", "39w6d", "40w6d", "41w6d", "42w6d", 
                     "32w3d", "33w3d", "34w3d", "35w3d", "36w3d", "37w3d", "38w3d", "39w3d", "40w3d", "41w3d", "42w3d"]
-      Dato:
-        type: rand_date
+      Dato: # an earlier pregnancy, from age 15 to 90 days before this one
+        type: date_between
+        match:
+          start: mother_birthdate
+          end: pregnancy_start
         args:
-          start: 2010
+          start_offset_days: 5479
+          end_offset_days: -90
+      Udfald:
+        type: choice
+        args:
+          options: ["Levendefødt", "Dødfødt", "Spontan abort", "Provokeret abort", "Ekstrauterin graviditet"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Mor - CPMI - Patientinfo
+        file: synthetic_coherence
         linked_on: MOR_CPR
-  
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      mother_birthdate: {type: choice, file: synthetic_coherence, linked_on: mother_birthdate, hidden: true}
+
   Mor - Rygning:
     N: ${N}
     columns:
@@ -370,22 +487,32 @@ linked_data:
         args: 
           options: ["Tidligere", "Nogle dage", "Aldrig"]
       "Kontakt dato":
-        type: rand_datetimeseconds
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
         args:
-          start: 2010
+          format: "%Y-%m-%d %H:%M:%S.%f"
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Mor - CPMI - Patientinfo
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   Mor - Patientinfo tillæg til CPMI:
     N: ${N}
     columns:
       "Dato for seneste opdatering":
-        type: rand_datetime
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
         args:
-          start: 2010
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S"
       Alkohol - Antal ugentlige genstande: 
         type: rand_int
         args:
@@ -406,8 +533,10 @@ linked_data:
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Mor - CPMI - Patientinfo
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   Mor - Yderligere variable vurderingsskema:
     N: ${N}
@@ -429,14 +558,19 @@ linked_data:
         args:
           options: ["Cervix i mm", "Handlinger"]
       Registreringstidspunkt:
-        type: rand_datetime
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
         args:
-          start: 2010
+          format: "%Y-%m-%d %H:%M:%S"
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Mor - CPMI - Patientinfo
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   notes:
     N: ${N}
@@ -447,7 +581,14 @@ linked_data:
           min_val: 1
           max_val: 10
       Redigeringstidspunkt:
-        type: rand_datetime
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S"
       Notetype:
         type: choice
         args:
@@ -468,8 +609,10 @@ linked_data:
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
 
   t_afl:
     N: ${N}
@@ -477,20 +620,24 @@ linked_data:
       C_TILOPR:
         type: choice
         args:
-          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KLDD20", "KMAB03","KMCA10D”, “KMCA10E"]
+          options: ["KLDD10A", "KLDD10B", "KMAB00", "KMAB01", "KLDD20", "KMAB03","KMCA10D", "KMCA10E"]
         corruptions:
           - type: insert_missing
             args:
               probability: 0.1
       D_ODTO:
-        type: rand_datetime
+        type: date_offset
+        match:
+          anchor: D_INDDTO
         args:
-          start: 2010
+          max_days: 3
+          format: "%Y-%m-%d %H:%M:%S"
     linked_columns:
       V_RECNUM:
         type: choice
-        file: Population
-        linked_on: MOR_Fødsel_ID 
+        file: t_adm
+        linked_on: K_RECNUM
+      D_INDDTO: {type: choice, file: t_adm, linked_on: D_INDDTO, hidden: true}
 
   t_diag:
     N: ${N}
@@ -515,15 +662,15 @@ linked_data:
           - type: insert_missing
             args:
               probability: 0.80
-      D_UDDTO:
-        type: rand_date
-        args:
-          start: 2010
     linked_columns:
       V_RECNUM:
         type: choice
-        file: Population
-        linked_on: MOR_Fødsel_ID 
+        file: t_adm
+        linked_on: K_RECNUM
+      D_UDDTO:
+        type: choice
+        file: t_adm
+        linked_on: D_UDDTO
 
   t_sksopr:
     N: ${N}
@@ -545,7 +692,11 @@ linked_data:
             args:
               probability: 0.05
       D_ODTO:
-        type: rand_date
+        type: date_offset
+        match:
+          anchor: D_INDDTO
+        args:
+          max_days: 3
       V_OTIME:
         type: rand_int
         args:
@@ -559,8 +710,9 @@ linked_data:
     linked_columns:
       V_RECNUM:
         type: choice
-        file: Population
-        linked_on: MOR_Fødsel_ID
+        file: t_adm
+        linked_on: K_RECNUM
+      D_INDDTO: {type: choice, file: t_adm, linked_on: D_INDDTO, hidden: true}
 
   t_sksube:
     N: ${N}
@@ -582,9 +734,11 @@ linked_data:
             args:
               probability: 0.25
       D_ODTO:
-        type: rand_date
+        type: date_offset
+        match:
+          anchor: D_INDDTO
         args:
-          start: 2010
+          max_days: 3
       V_OTIME:
         type: rand_int
         args:
@@ -598,5 +752,275 @@ linked_data:
     linked_columns:
       V_RECNUM:
         type: choice
-        file: Population
-        linked_on: MOR_Fødsel_ID 
+        file: t_adm
+        linked_on: K_RECNUM
+      D_INDDTO: {type: choice, file: t_adm, linked_on: D_INDDTO, hidden: true}
+  Mor - CPMI - Notater:
+    N: ${N}
+    columns:
+      Oprettelsestidspunkt:
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      Notetype:
+        type: choice
+        args:
+          options: ["Journalnotat", "Ambulant notat", "Fødselsjournal", "Epikrise", "Telefonnotat"]
+      Speciale:
+        type: choice
+        args:
+          options: ["Obstetrik", "Gynækologi", "Anæstesiologi", "Neonatologi"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Note:
+        type: rand_string
+        args:
+          min_length: 20
+          max_length: 300
+          include_digits: False
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+
+  Mor - Terminsberegning:
+    N: ${N}
+    columns:
+      Dato: # nuchal scan
+        type: date_offset
+        match:
+          anchor: pregnancy_start
+        args:
+          min_days: 77
+          max_days: 98
+      Terminsdato: # 40 weeks after the pregnancy start
+        type: date_offset
+        match:
+          anchor: pregnancy_start
+        args:
+          min_days: 280
+          max_days: 280
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Metode:
+        type: choice
+        args:
+          options: ["Ultralyd", "Sidste menstruation", "IVF"]
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+
+  Mor - Fødselsresume - DEL 2:
+    N: ${N}
+    columns:
+      Dato:
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
+      Blødning (ml):
+        type: rand_int
+        args:
+          min_val: 50
+          max_val: 2500
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+      Bristning:
+        type: choice
+        args:
+          options: ["Ingen", "1. grad", "2. grad", "3. grad", "4. grad"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+    linked_columns:
+      MOR_CPR:
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      Fødselstidspunkt: {type: choice_unique, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+
+  Mor - CPMI - Mikrobiologi Del 1:
+    N: ${N}
+    columns:
+      Provetagningstidspunkt:
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      Materiale:
+        type: choice
+        args:
+          options: ["Urin", "Vaginalpodning", "Cervixpodning", "Blod", "Rektalpodning"]
+      Komponentnavn:
+        type: choice
+        args:
+          options: ["Dyrkning", "GBS dyrkning", "Chlamydia trachomatis DNA", "Mikroskopi"]
+      Proveresultat:
+        type: choice
+        args:
+          options: ["Ikke påvist", "Påvist", "Escherichia coli", "Streptococcus agalactiae (gruppe B)", "Blandingsflora"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+
+  Mor - Histologi og Cytologi:
+    N: ${N}
+    columns:
+      Bestillingstidspunkt:
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      Materiale:
+        type: choice
+        args:
+          options: ["Placenta", "Cervixcytologi", "Navlesnor"]
+      Diagnose:
+        type: choice
+        args:
+          options: ["Normal placenta", "Chorioamnionitis", "Infarkt", "Normal cytologi"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+
+  Mor - Ordinationer:
+    N: ${N}
+    columns:
+      ATC:
+        type: choice
+        args:
+          options: ["G03DA04", "H02AB01", "A12CC02", "C08CA05", "G02CX01", "N02BE01"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+      Ordinationstidspunkt:
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      Lægemiddel:
+        type: choice
+        args:
+          options: ["Paracetamol", "Betamethason", "Magnesiumsulfat", "Nifedipin", "Atosiban", "Ampicillin"]
+      Dosis:
+        type: choice
+        args:
+          options: ["1 g", "12 mg", "4 g", "20 mg", "6,75 mg", "2 g"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+
+  Mor - Udleveret medicin:
+    N: ${N}
+    columns:
+      Udleveringstidspunkt:
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      Lægemiddel:
+        type: choice
+        args:
+          options: ["Paracetamol", "Betamethason", "Nifedipin", "Atosiban", "Ampicillin"]
+      Antal:
+        type: rand_int
+        args:
+          min_val: 1
+          max_val: 10
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+
+  Mor - Obstetriske kommentarer:
+    N: ${N}
+    columns:
+      Dato:
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          end_offset_days: 7
+      Kommentar:
+        type: rand_string
+        args:
+          min_length: 20
+          max_length: 200
+          include_digits: False
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
+    linked_columns:
+      MOR_CPR:
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}

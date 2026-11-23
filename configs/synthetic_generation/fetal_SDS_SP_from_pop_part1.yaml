@@ -9,7 +9,13 @@ paths:
 N: 1000
 N_population: 1500
 
-data: 
+# Records are dated from the birth they link to in synthetic_coherence. Mother records run from
+# mother_history_days before the pregnancy (pregnancy_start) to mother_followup_days after the birth
+# (Fødselstidspunkt).
+mother_history_days: -730
+mother_followup_days: 365
+
+data:
   Population:
     N: ${N_population}
     columns:
@@ -43,18 +49,85 @@ data:
               probability: 0.05
       Fødselstidspunkt:
         type: rand_datetimeseconds
-        
+
+# Linked columns that read the same file come from the same row of it. Columns with hidden: true are only
+# used to date the other columns and are not saved.
 linked_data:
+  # Not a real table. It only exists to keep the synthetic tables coherent: one row per Population birth, with
+  # that birth's IDs plus the father, GA, pregnancy start and mother's birth date. Tables that need more than
+  # one fact about a birth link here, so their CPRs, dates, GA and ages all come from the same birth.
+  synthetic_coherence:
+    N: ${N_population}
+    linked_columns:
+      BABY_CPR:
+        type: choice_unique
+        file: Population
+        linked_on: BABY_CPR
+      MOR_CPR:
+        type: choice_unique
+        file: Population
+        linked_on: MOR_CPR
+      BABY_Fødsel_ID:
+        type: choice_unique
+        file: Population
+        linked_on: BABY_Fødsel_ID
+      MOR_Fødsel_ID:
+        type: choice_unique
+        file: Population
+        linked_on: MOR_Fødsel_ID
+      Fødselstidspunkt:
+        type: choice_unique
+        file: Population
+        linked_on: Fødselstidspunkt
+    columns:
+      father_cpr:
+        type: person_id
+      ga_days:
+        type: mix_function
+        args:
+          functions:
+            - type: rand_int # term
+              args:
+                min_val: 259
+                max_val: 293
+            - type: rand_int # preterm
+              args:
+                min_val: 154
+                max_val: 258
+            - type: rand_int # post-term
+              args:
+                min_val: 294
+                max_val: 300
+          probabilities: [0.8, 0.15, 0.05]
+      pregnancy_start:
+        type: days_before
+        match:
+          anchor: Fødselstidspunkt
+          days: ga_days
+        args:
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      mother_birthdate: # mother aged 18-44 at the birth
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
+        args:
+          min_days: -16070
+          max_days: -6575
+          format: "%Y-%m-%d %H:%M:%S.%f"
+
   Barn - Fødselsinfo:
     N: ${N}
     linked_columns:
       BABY_CPR:
-        type: choice
-        file: Population
+        type: choice_unique
+        file: synthetic_coherence
         linked_on: BABY_CPR
+      ga_days: {type: choice_unique, file: synthetic_coherence, linked_on: ga_days, hidden: true}
     columns:
       Gestationsalder:
         type: gestationsalder_with_fraction
+        match:
+          ga_days: ga_days
         corruptions:
           - type: insert_missing
             args:
@@ -66,8 +139,10 @@ linked_data:
     linked_columns:
       cpr:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
     corruptions:
       - type: row_dropout
         args:
@@ -79,11 +154,19 @@ linked_data:
         args:
           prefix: "D"
       dato_start:
-        type: rand_date
-      dato_slut:
-        type: greater_than_date
+        type: date_between
         match:
-          min_date: dato_start
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+      dato_slut:
+        type: date_offset
+        match:
+          anchor: dato_start
+        args:
+          max_days: 7
       dw_ek_forloeb: 
         type: rand_int
         args:
@@ -133,22 +216,15 @@ linked_data:
     N: ${N}
     columns:
       ALDER_MODER:
-        type: rand_int
-        args:
-          min_val: 18
-          max_val: 45
+        type: age_at
+        match:
+          birthdate: mother_birthdate
+          date: Fødselstidspunkt
       BMI_MODER:
         type: rand_float
         args:
           min_val: 18
           max_val: 40
-      CPR_FADER:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
       FLERFOLDSGRAVIDITET:
         type: choice
         args:
@@ -178,16 +254,18 @@ linked_data:
         args:
           options: [1, 2, 3, 4]
       FOEDSELSDATO:
-        type: rand_date
-      GESTATIONSALDER_DAGE:
-        type: rand_int
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
+      FOEDSELSAAR:
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
         args:
-          min_val: 200
-          max_val: 315
+          format: "%Y"
         corruptions:
-          - type: insert_value
+          - type: insert_missing
             args:
-              new_value: "."
               probability: 0.05
       LEVENDE_ELLER_DOEDFOEDT:
         type: choice
@@ -209,37 +287,72 @@ linked_data:
     linked_columns:
       CPR_BARN:
         type: choice_unique
-        file: Population
+        file: synthetic_coherence
         linked_on: BABY_CPR
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "INVALID"
+              probability: 0.05
       CPR_MODER:
-        type: choice
-        file: Population
+        type: choice_unique
+        file: synthetic_coherence
         linked_on: MOR_CPR
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "INVALID"
+              probability: 0.05
+      CPR_FADER:
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: father_cpr
+        corruptions:
+          - type: truncation
+            args:
+              max_length: 10
+              probability: 0.05
       FOEDSELSLOEBENUMMER:
-        type: choice
-        file: Population
-        linked_on: BABY_CPR
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: MOR_Fødsel_ID
+      GESTATIONSALDER_DAGE:
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: ga_days
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "."
+              probability: 0.05
+      Fødselstidspunkt: {type: choice_unique, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+      mother_birthdate: {type: choice_unique, file: synthetic_coherence, linked_on: mother_birthdate, hidden: true}
 
   Mor - CPMI - Patientinfo:
     N: ${N_population}
     linked_columns:
       MOR_CPR:
         type: choice_unique
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
-    columns:
       Fødselsdato:
-        type: rand_datetimeseconds
-        args:
-          start: 1977
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: mother_birthdate
+      Fødselstidspunkt: {type: choice_unique, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+    columns:
       Køn:
         type: choice
         args:
-          options: ["Mand", "Kvinde"]
-      Dødsdato:
-        type: greater_than_datetimeseconds
+          options: ["Kvinde"]
+      Dødsdato: # after the mother's last record
+        type: date_offset
         match:
-          min_date: Fødselsdato
+          anchor: Fødselstidspunkt
+        args:
+          min_days: ${mother_followup_days}
+          max_days: 730
+          format: "%Y-%m-%d %H:%M:%S.%f"
         corruptions:
           - type: insert_nan
             args:
@@ -248,6 +361,15 @@ linked_data:
   #MFR3
     N: ${N}
     columns:
+      Alder_Mor:
+        type: age_at
+        match:
+          birthdate: mother_birthdate
+          date: Fødselstidspunkt
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.05
       AntalBoernIFoedslen:
         type: choice
         args:
@@ -272,24 +394,19 @@ linked_data:
             args:
               max_length: 10
               probability: 0.05
-      DW_EK_Foedsel:
-        type: person_id
-        corruptions:
-          - type: truncation
-            args:
-              max_length: 10
-              probability: 0.05
       FoedselsDato_Barn:
-        type: rand_date
-      Gestationsalder:
-        type: rand_int
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
+      FoedselsAar:
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
         args:
-          min_val: 200
-          max_val: 315
+          format: "%Y"
         corruptions:
-          - type: insert_value
+          - type: insert_missing
             args:
-              new_value: "."
               probability: 0.05
       Hoejde_Mor:
         type: rand_float
@@ -354,16 +471,37 @@ linked_data:
     linked_columns:
       CPRnummer_Barn:
         type: choice_unique
-        file: Population
+        file: synthetic_coherence
         linked_on: BABY_CPR
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "INVALID"
+              probability: 0.05
       CPRnummer_Mor:
-        type: choice
-        file: Population
+        type: choice_unique
+        file: synthetic_coherence
         linked_on: MOR_CPR
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "INVALID"
+              probability: 0.05
       DW_EK_Foedsel:
-        type: choice
-        file: Population
+        type: choice_unique
+        file: synthetic_coherence
         linked_on: BABY_Fødsel_ID
+      Gestationsalder:
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: ga_days
+        corruptions:
+          - type: insert_value
+            args:
+              new_value: "."
+              probability: 0.05
+      Fødselstidspunkt: {type: choice_unique, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+      mother_birthdate: {type: choice_unique, file: synthetic_coherence, linked_on: mother_birthdate, hidden: true}
 
   t_adm:
     N: ${N}
@@ -396,24 +534,32 @@ linked_data:
         args:
           min_val: 1
           max_val: 10
+      K_RECNUM:
+        type: person_id
       D_INDDTO:
-        type: rand_date
-        args:
-          start: 2010
-      D_UDDTO:
-        type: greater_than_date
+        type: date_between
         match:
-          min_date: D_INDDTO
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+      D_UDDTO:
+        type: date_offset
+        match:
+          anchor: D_INDDTO
+        args:
+          max_days: 14
         corruptions:
           - type: insert_value
             args:
               new_value: "."
               probability: 0.15
       V_ALDER:
-        type: rand_int
-        args:
-          min_val: 18
-          max_val: 60
+        type: age_at
+        match:
+          birthdate: mother_birthdate
+          date: D_INDDTO
       V_INDTIME:
         type: rand_int
         args:
@@ -440,11 +586,10 @@ linked_data:
           min_val: 0
           max_val: 59
     linked_columns:
-      K_RECNUM:
-        type: choice
-        file: Population
-        linked_on: MOR_Fødsel_ID # Not correct, just to take some ID
       V_CPR:
         type: choice
-        file: Population
-        linked_on: MOR_CPR 
+        file: synthetic_coherence
+        linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+      mother_birthdate: {type: choice, file: synthetic_coherence, linked_on: mother_birthdate, hidden: true}

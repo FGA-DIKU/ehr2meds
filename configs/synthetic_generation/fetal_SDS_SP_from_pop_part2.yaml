@@ -7,48 +7,67 @@ paths:
   output: ${oc.env:EHR2MEDS_DATA}/raw/fetal_data/SDS_AND_SP_from_population
 
 N: 1000
-data: # Mangler DAR
+
+# Records are dated from the birth they link to in synthetic_coherence (see part1). Mother records run from
+# mother_history_days before the pregnancy to mother_followup_days after the birth, child records from the
+# birth to child_followup_days after it.
+mother_history_days: -730
+mother_followup_days: 365
+child_followup_days: 730
+
+# Mangler DAR
+linked_data: # Data that needs to be linked to the data above
   CPR_immigration:
     N: ${N}
-    columns:
+    linked_columns:
       V_PNR:
-        type: person_id
+        type: choice_unique
+        file: Population
+        linked_on: MOR_CPR
         corruptions:
           - type: truncation
             args:
               max_length: 10
               probability: 0.05
               forced_idx: [3]
+    columns:
       fodested_kode:
         type: rand_int
-        args: 
+        args:
           min_val: 0
           max_val: 900
-  
+
   kernefamilie:
     N: ${N}
-    columns:
+    linked_columns:
       v_pnr:
-        type: person_id
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: BABY_CPR
         corruptions:
           - type: truncation
             args:
               max_length: 10
               probability: 0.05
       v_mor_pnr:
-        type: person_id
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: MOR_CPR
         corruptions:
           - type: insert_value
             args:
               new_value: "INVALID"
               probability: 0.05
       v_far_pnr:
-        type: person_id
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: father_cpr
         corruptions:
           - type: insert_value
             args:
               new_value: "INVALID"
               probability: 0.05
+    columns:
       sosk:
         type: person_id
         corruptions:
@@ -62,21 +81,34 @@ data: # Mangler DAR
           min_val: 1
           max_val: 5
 
-  ivf_behandlingsforloeb: 
+  ivf_behandlingsforloeb:
     N: ${N}
-    columns:
+    linked_columns:
       CPRnummer:
-        type: person_id
+        type: choice_unique
+        file: synthetic_coherence
+        linked_on: MOR_CPR
         corruptions:
           - type: truncation
             args:
               max_length: 10
               probability: 0.05
-      Alder_behandlingsstart:
-        type: rand_int
+      pregnancy_start: {type: choice_unique, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      mother_birthdate: {type: choice_unique, file: synthetic_coherence, linked_on: mother_birthdate, hidden: true}
+    columns:
+      Transferering_dato: # embryo transfer about two weeks into the pregnancy
+        type: date_offset
+        match:
+          anchor: pregnancy_start
         args:
-          min_val: 18
-          max_val: 45
+          min_days: 14
+          max_days: 19
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      Alder_behandlingsstart:
+        type: age_at
+        match:
+          birthdate: mother_birthdate
+          date: Transferering_dato
       Graviditet:
         type: choice
         args:
@@ -111,24 +143,32 @@ data: # Mangler DAR
         args:
           min_val: 150
           max_val: 200
-      Transferering_dato:
-        type: rand_datetimeseconds
 
   epikur:
   #LSR
     N: ${N}
-    columns:
+    linked_columns:
       cpr:
-        type: person_id
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
         corruptions:
           - type: truncation
             args:
               max_length: 10
               probability: 0.05
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+    columns:
       eksd:
-        type: rand_datetime
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
         args:
-          start: 2000
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S"
       ATC:
         type: medical_code
         args:
@@ -142,16 +182,28 @@ data: # Mangler DAR
   SSR_GP:
   # Dont know what this is on NGC
     N: ${N}
-    columns:
+    linked_columns:
       CPR:
-        type: person_id
+        type: choice
+        file: synthetic_coherence
+        linked_on: MOR_CPR
         corruptions:
           - type: truncation
             args:
               max_length: 10
               probability: 0.05
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
+    columns:
       Date:
-        type: rand_datetime
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S"
       Ydelse:
         type: rand_int
         args:
@@ -163,20 +215,22 @@ data: # Mangler DAR
           min_val: 1
           max_val: 52
 
-linked_data: # Data that needs to be linked to the data above
   amning_afl:
   #BDB
     N: ${N}
     linked_columns:
       CPR:
-        type: choice
-        file: Population
+        type: choice_unique
+        file: synthetic_coherence
         linked_on: BABY_CPR
+      Fødselstidspunkt: {type: choice_unique, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
     columns:
       BIRTHDATE:
-        type: rand_datetime
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
         args:
-          start: 2000
+          format: "%Y-%m-%d %H:%M:%S"
       VARIGHED_DAGE:
         type: rand_int
         args:
@@ -189,17 +243,23 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: BABY_CPR
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
     columns:
       BIRTHDATE:
-        type: rand_datetime
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
         args:
-          start: 2000
+          format: "%Y-%m-%d %H:%M:%S"
       MEASUREMENTDATE:
-        type: rand_datetime
+        type: date_offset
+        match:
+          anchor: Fødselstidspunkt
         args:
-          start: 2000
+          max_days: ${child_followup_days}
+          format: "%Y-%m-%d %H:%M:%S"
       #MEASUREMENT_TIME:
       #  type: greater_than_datetime
       #  match:
@@ -238,7 +298,13 @@ linked_data: # Data that needs to be linked to the data above
     N: ${N}
     columns:
       SAMPLINGDATE:
-        type: rand_date
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
       SAMPLINGTIME:
         type: rand_timemicroseconds
       ANALYSISCODE:
@@ -268,14 +334,14 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       PATIENT_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
   procedurer_andre:
   #LPR3
     N: ${N}
     columns:
-      dato_start:
-        type: rand_date
       tidspunkt_start:
         type: rand_timemicroseconds
       procedurekode:
@@ -287,17 +353,19 @@ linked_data: # Data that needs to be linked to the data above
         args:
           options: ["P", "+"]
     linked_columns:
-      dw_ek_kontakt: 
+      dw_ek_kontakt:
         type: choice
         file: kontakter_all
         linked_on: dw_ek_kontakt
+      dato_start:
+        type: choice
+        file: kontakter_all
+        linked_on: dato_start
 
   procedurer_kirurgi:
   #LPR3
     N: ${N}
     columns:
-      dato_start:
-        type: rand_date
       tidspunkt_start:
         type: rand_timemicroseconds
       procedurekode:
@@ -309,21 +377,31 @@ linked_data: # Data that needs to be linked to the data above
         args:
           options: ["P", "+"]
     linked_columns:
-      dw_ek_kontakt: 
+      dw_ek_kontakt:
         type: choice
         file: kontakter_all
         linked_on: dw_ek_kontakt
-        
+      dato_start:
+        type: choice
+        file: kontakter_all
+        linked_on: dato_start
+
   LPR2_hosp_admissions:
     N: ${N}
     columns:
       D_AMBDTO:
-        type: rand_datetime
+        type: date_offset
+        match:
+          anchor: D_INDDTO
+        args:
+          max_days: 1
+          format: "%Y-%m-%d %H:%M:%S"
     linked_columns:
-      V_RECNUM: 
+      V_RECNUM:
         type: choice
         file: t_adm
         linked_on: K_RECNUM
+      D_INDDTO: {type: choice, file: t_adm, linked_on: D_INDDTO, hidden: true}
   
   infektioner:
   #MFR2
@@ -402,21 +480,34 @@ linked_data: # Data that needs to be linked to the data above
     N: ${N}
     columns:
       Aktionsdiagnose:
-        type: medical_code
+        type: mix_function
         args:
-          prefix: "D"
+          functions:
+            - type: medical_code
+              args:
+                prefix: "D"
+            - type: choice
+              args:
+                options: ["DP77", "DP271", "DP520", "DP521", "DP522", "DP101", "DP072", "DP073"]
+          probabilities: [0.7, 0.3]
       Priority:
         type: choice
         args:
           options: [1, 2, 3]
-      Datostart:
-        type: rand_date
+      Datostart: # neonatal contacts
+        type: date_offset
+        match:
+          anchor: FoedselsDato_Barn
+        args:
+          max_days: 90
       Tidspunktstart:
         type: rand_time
       Datoslut:
-        type: greater_than_date
+        type: date_offset
         match:
-          min_date: Datostart
+          anchor: Datostart
+        args:
+          max_days: 7
       Tidspunktslut:
         type: rand_time
       contact_id:
@@ -429,6 +520,7 @@ linked_data: # Data that needs to be linked to the data above
         type: choice_unique
         file: nyfoedte
         linked_on: DW_EK_Nyfoedt
+      FoedselsDato_Barn: {type: choice_unique, file: nyfoedte, linked_on: FoedselsDato_Barn, hidden: true}
 
   mor_diagnoser:
   #MFR3 
@@ -445,10 +537,13 @@ linked_data: # Data that needs to be linked to the data above
               args:
                 options: ["BKHA1", "DD259", "DD250", "DD250C", "DD251", "DD252", "DD250A", "DD250B", "DO341", "DO3414", "DO420", "DO422", "DO424","DO601"]
           probabilities: [0.7, 0.3]
-      StartDato_Kontakt:
-        type: rand_datetime
+      StartDato_Kontakt: # the last 12 weeks before the birth, always inside the pregnancy
+        type: date_offset
+        match:
+          anchor: FoedselsDato_Barn
         args:
-          start: 2016
+          min_days: -84
+          format: "%Y-%m-%d %H:%M:%S"
       DiagnoseType:
         type: choice
         args:
@@ -458,6 +553,7 @@ linked_data: # Data that needs to be linked to the data above
         type: choice_unique
         file: nyfoedte
         linked_on: DW_EK_Foedsel
+      FoedselsDato_Barn: {type: choice_unique, file: nyfoedte, linked_on: FoedselsDato_Barn, hidden: true}
 
   mor_procedurer:
   #MFR3 
@@ -472,34 +568,51 @@ linked_data: # Data that needs to be linked to the data above
                 prefix: "DD"
             - type: choice
               args:
-                options: ["KLDC00", "KLDC03",“KMCA10D”, “KMCA10E“]
+                options: ["KLDC00", "KLDC03", "KMCA10D", "KMCA10E"]
           probabilities: [0.7, 0.3]
-      StartDato_Procedure:
-        type: rand_date
+      StartDato_Procedure: # the last 12 weeks before the birth, always inside the pregnancy
+        type: date_offset
+        match:
+          anchor: FoedselsDato_Barn
+        args:
+          min_days: -84
     linked_columns:
       DW_EK_Foedsel:
         type: choice_unique
         file: nyfoedte
         linked_on: DW_EK_Foedsel
+      FoedselsDato_Barn: {type: choice_unique, file: nyfoedte, linked_on: FoedselsDato_Barn, hidden: true}
 
   Mor - CPMI - ADT hændelser:
     N: ${N}
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
     columns:
       ADT_haendelse:
         type: choice
         args:
           options: ["Indlæggelse", "Flyt_ind", "Tilbage fra orlov"]
       Flyt_ind:
-        type: rand_datetime
-      Flyt_ud:
-        type: greater_than_datetime
+        type: date_between
         match:
-          min_date: Flyt_ind
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S"
+      Flyt_ud:
+        type: date_offset
+        match:
+          anchor: Flyt_ind
+        args:
+          max_days: 7
+          format: "%Y-%m-%d %H:%M:%S"
       Afsnit:
         type: choice
         args:
@@ -511,15 +624,27 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
     columns:
       Administrationstidspunkt:
-        type: rand_datetimeseconds
-      Bestillingsdato:
-        type: greater_than_datetimeseconds
+        type: date_between
         match:
-          min_date: Administrationstidspunkt
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S.%f"
+      Bestillingsdato:
+        type: date_offset
+        match:
+          anchor: Administrationstidspunkt
+        args:
+          max_days: 2
+          format: "%Y-%m-%d %H:%M:%S.%f"
       ATC:
         type: medical_code
         args:
@@ -530,11 +655,20 @@ linked_data: # Data that needs to be linked to the data above
     linked_columns:
       MOR_CPR:
         type: choice
-        file: Population
+        file: synthetic_coherence
         linked_on: MOR_CPR
+      pregnancy_start: {type: choice, file: synthetic_coherence, linked_on: pregnancy_start, hidden: true}
+      Fødselstidspunkt: {type: choice, file: synthetic_coherence, linked_on: Fødselstidspunkt, hidden: true}
     columns:
       Prøvetagningstidspunkt:
-        type: rand_datetimeseconds
+        type: date_between
+        match:
+          start: pregnancy_start
+          end: Fødselstidspunkt
+        args:
+          start_offset_days: ${mother_history_days}
+          end_offset_days: ${mother_followup_days}
+          format: "%Y-%m-%d %H:%M:%S.%f"
       BestOrd:
         type: mix_function
         args:
@@ -548,12 +682,16 @@ linked_data: # Data that needs to be linked to the data above
                           "Trombocytter", "ALBU, H", "KALIUM;P", "LEUKOCYTTER;B", "ALBUMIN;P", "ELEKTROKARDIOGRAFI [EKG12];PT"]
           probabilities: [0.4, 0.6]
       Resultatdato:
-        type: rand_date
+        type: date_offset
+        match:
+          anchor: Prøvetagningstidspunkt
+        args:
+          max_days: 7
       Resultatværdi:
         type: mix_function
         args:
           functions:
-            - type: rand_float 
+            - type: rand_float
               args:
                 min_val: 0.001
                 max_val: 100
@@ -565,3 +703,35 @@ linked_data: # Data that needs to be linked to the data above
               args:
                 options: ["Positive", "Negative", "Ikke påvist", "påvist", "0 Rhd pos"]
           probabilities: [0.4, 0.4, 0.2]
+      Enhed:
+        type: choice
+        args:
+          options: ["mmol/L", "g/L", "mg/L", "µg/L", "nmol/L", "pmol/L", "x 10^9/L"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.1
+      Antibiotika:
+        type: choice
+        args:
+          options: ["Ampicillin", "Cefuroxim", "Gentamicin", "Mecillinam", "Nitrofurantoin", "Sulfamethizol"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.8
+      Følsomhed:
+        type: choice
+        args:
+          options: ["S", "I", "R"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.8
+      Organisme:
+        type: choice
+        args:
+          options: ["Escherichia coli", "Streptococcus agalactiae (gruppe B)", "Staphylococcus aureus", "Enterococcus faecalis", "Klebsiella pneumoniae"]
+        corruptions:
+          - type: insert_missing
+            args:
+              probability: 0.8
