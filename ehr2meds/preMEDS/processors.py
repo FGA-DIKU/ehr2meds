@@ -1,4 +1,4 @@
-import pandas as pd
+import polars as pl
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.data_quality import DataQualityTracker
 from ehr2meds.preMEDS.mappings import MAPPING_STRATEGIES, apply_mapping
@@ -72,11 +72,11 @@ class Processor:
 
     @staticmethod
     def apply_mappings(
-        df: pd.DataFrame,
+        df: pl.DataFrame,
         mapping_cfg: List[dict],
         data_handler: DataHandler,
         timestamp_cfg: Optional[dict] = None,
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         for mapping in mapping_cfg:
             strategy_name = mapping.get("function")
             strategy = MAPPING_STRATEGIES.get(strategy_name)

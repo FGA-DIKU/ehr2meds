@@ -1,13 +1,16 @@
 import logging
+import logging.handlers
+import multiprocessing
+import polars as pl
+from ehr2meds.preMEDS.constants import MAPPED_ID, SUBJECT_ID
 from ehr2meds.preMEDS.data_handler import DataHandler
 from ehr2meds.preMEDS.data_quality import (
     format_data_quality_summary,
     get_data_quality_summary,
 )
 from ehr2meds.preMEDS.processors import Processor
-from multiprocessing import Pool
 from tqdm import tqdm
-from typing import Dict, Optional, Union
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +50,9 @@ def process_single_table_worker(args):
             next_row_idx += len(chunk)
             data_handler.save(processed_chunk, table_name)
 
-            summary.append([table_config["filename"], row_result, processed_chunk])
+            # Only counts go back to the parent; sending the chunk would hold the whole table in its memory.
+            null_counts = processed_chunk.null_count().row(0, named=True)
+            summary.append([table_config["filename"], row_result, null_counts, processed_chunk.height])
 
             if test:
                 break
@@ -62,6 +67,13 @@ def process_single_table_worker(args):
 
     finally:
         data_handler.close()
+
+
+def init_worker_logging(queue, level: int) -> None:
+    """spawn workers start without the parent's logging setup, so send their records to the parent."""
+    root = logging.getLogger()
+    root.handlers = [logging.handlers.QueueHandler(queue)]
+    root.setLevel(level)
 
 
 class PREMEDSExtractor:
@@ -89,7 +101,7 @@ class PREMEDSExtractor:
         subject_id_mapping = self.get_subject_id_mapping()
         self.process_tables(subject_id_mapping)
 
-    def get_subject_id_mapping(self) -> Union[None, Dict[str, int]]:
+    def get_subject_id_mapping(self) -> Optional[pl.DataFrame]:
         if not self.cfg.get("subject_id_mapping"):
             return None
         # Load existing mapping if available
@@ -99,28 +111,25 @@ class PREMEDSExtractor:
         cols = {id_col: None} | ({map_col: None} if map_col is not None else {})
         df = (
             self.data_handler.load(self.cfg.subject_id_mapping.file, cols=cols)
-            .dropna(subset=[id_col], how="any")
-            .drop_duplicates(subset=[id_col])
+            .drop_nulls(id_col)
+            .unique(subset=[id_col], keep="first")
+            .with_columns(pl.col(id_col).cast(pl.String))
+            # Always sort by the ID column for consistent mapping
+            .sort(id_col)
         )
-        logger.info(f"Number of patients in dataframe: {len(df)}")
-        if df[id_col].dtype != object:
-            df[id_col] = df[id_col].astype(str)
-
-        # Always sort by the ID column for consistent mapping
-        df = df.sort_values(by=id_col).reset_index(drop=True)
+        logger.info(f"Number of patients in dataframe: {df.height}")
 
         # If no mapping column is provided, create a int-based mapping
         if not map_col:
-            df["mapping"] = df.index
             map_col = "mapping"
-        subject_id_mapping = dict(zip(df[id_col], df[map_col]))
+            df = df.with_columns(pl.int_range(pl.len(), dtype=pl.Int64).alias(map_col))
 
         # Save the mapping for reference.
         self.data_handler.save(df, "subject_id_mapping")
 
-        return subject_id_mapping
+        return df.select(pl.col(id_col).alias(SUBJECT_ID), pl.col(map_col).cast(pl.Int64).alias(MAPPED_ID))
 
-    def process_tables(self, subject_id_mapping: Optional[Dict[str, int]] = None) -> None:
+    def process_tables(self, subject_id_mapping: Optional[pl.DataFrame] = None) -> None:
         """Processes each table in the tables config using parallel workers"""
 
         # Prepare arguments for the worker pool
@@ -139,11 +148,19 @@ class PREMEDSExtractor:
 
         logger.info(f"Starting multiprocessing pool with {self.cfg.num_workers} workers. Test enabled: {self.cfg.test}")
 
-        with Pool(processes=self.cfg.num_workers) as pool:
-            worker_results = pool.map(
-                process_single_table_worker,
-                worker_tasks,
-            )
+        # spawn, not fork: forking after polars has started its thread pool can deadlock the workers.
+        context = multiprocessing.get_context("spawn")
+        log_queue = context.Queue()
+        root = logging.getLogger()
+        listener = logging.handlers.QueueListener(log_queue, *root.handlers, respect_handler_level=True)
+        listener.start()
+        try:
+            with context.Pool(
+                processes=self.cfg.num_workers, initializer=init_worker_logging, initargs=(log_queue, root.level)
+            ) as pool:
+                worker_results = pool.map(process_single_table_worker, worker_tasks)
+        finally:
+            listener.stop()
 
         results = get_data_quality_summary(worker_results)
 
